@@ -58,10 +58,15 @@ export default function Connect() {
   };
 
   const connectGithub = async () => {
-    await supabase.auth.linkIdentity({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
-      options: { redirectTo: `${window.location.origin}/connect?step=2`, scopes: 'repo' }
+      options: {
+        scopes: 'repo read:user',
+        redirectTo: `${window.location.origin}/connect?step=2`,
+        skipBrowserRedirect: false
+      }
     });
+    if (error) toast.error('Failed to connect GitHub');
   };
 
   const handleSupabaseKeyChange = (val: string) => {
