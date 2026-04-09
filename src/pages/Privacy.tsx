@@ -1,11 +1,13 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import BackButton from '@/components/BackButton';
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
+        <BackButton useHistory label="Back" />
         <h1 className="text-foreground text-4xl font-semibold">Privacy Policy</h1>
         <p className="text-muted-foreground text-sm mt-2">Last updated: April 2026</p>
         <div className="mt-10 space-y-8 text-muted-foreground leading-[1.8]">
