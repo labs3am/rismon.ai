@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -161,8 +162,8 @@ export default function Connect() {
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
-        <Link to="/dashboard" className="text-muted-foreground text-sm hover:text-foreground transition-colors">← Dashboard</Link>
-        <h1 className="text-foreground text-[28px] font-semibold mt-6">Connect an app</h1>
+        <BackButton to="/dashboard" label="Dashboard" />
+        <h1 className="text-foreground text-[28px] font-semibold">Connect an app</h1>
 
         {/* Progress */}
         <div className="flex items-center gap-2 mt-6">

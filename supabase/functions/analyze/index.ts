@@ -76,7 +76,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey } = await req.json();
+    const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey, app_id, github_owner, github_repo_name } = await req.json();
     const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
     if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_KEY not configured");
 
@@ -84,6 +84,24 @@ serve(async (req) => {
     let userContent = "";
 
     if (action === "read_code") {
+      // Validate repo matches saved app if app_id provided
+      if (app_id && github_owner && github_repo_name) {
+        const { data: appRecord, error: appErr } = await supabase
+          .from("apps")
+          .select("github_owner, github_repo_name")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .single();
+
+        if (appErr || !appRecord) {
+          return new Response(JSON.stringify({ error: "unauthorized", message: "App not found or not owned by you" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        if (appRecord.github_owner !== github_owner || appRecord.github_repo_name !== github_repo_name) {
+          return new Response(JSON.stringify({ error: "unauthorized", message: "Repository does not match the connected app" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+
       // Run pre-checks before sending to Claude
       const securityPreFound = runSecurityPreChecks(codeBundle || "", appSupabaseUrl, appSupabaseAnonKey);
 

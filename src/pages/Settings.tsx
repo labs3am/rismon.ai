@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import BackButton from '@/components/BackButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -58,6 +59,7 @@ export default function Settings() {
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
+        <BackButton to="/dashboard" label="Dashboard" />
         <h1 className="text-foreground text-[28px] font-semibold">Settings</h1>
 
         {/* Profile */}
