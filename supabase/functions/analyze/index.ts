@@ -76,7 +76,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey } = await req.json();
+    const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey, app_id, github_owner, github_repo_name } = await req.json();
     const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
     if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_KEY not configured");
 
