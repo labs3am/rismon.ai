@@ -161,7 +161,7 @@ export default function Analyze() {
 
         // Call edge function
         const { data, error } = await supabase.functions.invoke('analyze', {
-          body: { action: 'read_code', codeBundle, tableNames, platform: app.platform }
+          body: { action: 'read_code', codeBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name }
         });
         if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
 
