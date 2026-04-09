@@ -6,12 +6,12 @@ import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
 
 const personas = [
-  { icon: Rocket, title: 'Startup founders', q: 'I built a paid app.\nAre my premium features actually\nlocked for users who have not paid?' },
-  { icon: Store, title: 'Small business owners', q: "I built a booking system.\nCan my customers see each other's\npersonal details and information?" },
-  { icon: ShoppingBag, title: 'Ecommerce builders', q: "I built an online store.\nCan customers see other people's\norders and payment details?" },
-  { icon: Briefcase, title: 'Freelancers and agencies', q: 'I build apps for clients.\nCan I verify my work properly\nbefore I deliver it to them?' },
-  { icon: Heart, title: 'Healthcare professionals', q: "I built a patient system.\nWho can actually access my patients'\nprivate records right now?" },
-  { icon: GraduationCap, title: 'Educators and creators', q: 'I built a course platform.\nCan students access paid content\nwithout actually paying?' },
+  { icon: Rocket, title: 'Startup founders', q: 'You built a paid app.\nAre your premium features\nactually locked for users\nwho have not paid?\nOr can anyone access them free?' },
+  { icon: Store, title: 'Small business owners', q: "You built a booking system.\nCan your customers see each\nother's personal details?\nOr is their data protected?" },
+  { icon: ShoppingBag, title: 'Ecommerce builders', q: "You built an online store.\nCan your customers see other\npeople's orders and payments?\nOr is each order private?" },
+  { icon: Briefcase, title: 'Freelancers and agencies', q: 'You build apps for clients.\nCan you verify your work is\ncorrect before you deliver it?\nOr are you guessing?' },
+  { icon: Heart, title: 'Healthcare professionals', q: "You built a patient system.\nWho can actually access your\npatients' private records?\nOnly doctors or everyone?" },
+  { icon: GraduationCap, title: 'Educators and creators', q: 'You built a course platform.\nCan students access your paid\ncontent without actually paying?\nOr is it properly locked?' },
 ];
 
 const steps = [
@@ -54,9 +54,9 @@ export default function Index() {
       {/* HERO */}
       <section className="pt-40 pb-28 px-6 text-center">
         <div className="max-w-[800px] mx-auto">
-          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you actually know<br />what your AI built?</h1>
+          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you actually know<br />what it built for you?</h1>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-6">
-            You described your idea. The AI built something. Rismon.ai reads your entire app and tells you exactly what was built, what works, and what needs fixing. In plain English. Always.
+            You had an idea. You described it to an AI. The AI built something. But do you know exactly what it built? Rismon.ai reads your entire app and tells you what was built, what works, and what needs fixing. In plain English. Always.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
             <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3.5 rounded-lg text-base font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
@@ -91,9 +91,9 @@ export default function Index() {
             ))}
           </div>
           <div className="text-center mt-12">
-            <p className="text-muted-foreground">If any of these made you think —</p>
+            <p className="text-muted-foreground">If any of these made you pause —</p>
             <p className="text-foreground text-xl font-semibold mt-2">Rismon.ai was built for you.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check my app free</Link>
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check your app free</Link>
           </div>
         </div>
       </section>
