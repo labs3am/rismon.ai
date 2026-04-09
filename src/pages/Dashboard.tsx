@@ -59,7 +59,6 @@ export default function Dashboard() {
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
 
-      // Check weekly scan limit
       const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
       const weeklyScans = (limits || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
@@ -165,7 +164,14 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <Link to="/connect" className="text-primary text-sm mt-4 inline-block hover:underline">+ Connect another app</Link>
+            {/* Show unlock link instead of connect link when at limit */}
+            {apps.length >= 1 ? (
+              <button onClick={() => setWaitlistOpen(true)} className="text-sm mt-4 inline-block hover:underline" style={{ color: '#6366f1' }}>
+                Unlock unlimited apps →
+              </button>
+            ) : (
+              <Link to="/connect" className="text-primary text-sm mt-4 inline-block hover:underline">+ Connect another app</Link>
+            )}
           </div>
         )}
       </div>

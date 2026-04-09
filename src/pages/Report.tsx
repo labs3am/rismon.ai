@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle, Copy, Check } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -11,14 +12,7 @@ export default function Report() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState('');
-  const [genMsgIdx, setGenMsgIdx] = useState(0);
-  const genMsgs = ['Generating your fix prompts...', 'Learning your code style...', 'Writing prompts that match how your app was built...'];
-
-  useEffect(() => {
-    if (!generating) return;
-    const t = setInterval(() => setGenMsgIdx(i => (i + 1) % genMsgs.length), 3000);
-    return () => clearInterval(t);
-  }, [generating]);
+  const generateStarted = useRef(false);
 
   useEffect(() => {
     if (!analysisId) return;
@@ -27,8 +21,9 @@ export default function Report() {
       if (!data) { toast.error('Report not found'); return; }
 
       if (!data.fix_prompts || data.status === 'generating_prompts') {
+        if (generateStarted.current) return;
+        generateStarted.current = true;
         setGenerating(true);
-        // Generate fix prompts
         const { data: app } = await supabase.from('apps').select('*').eq('id', data.app_id).single();
         const { data: result, error } = await supabase.functions.invoke('analyze', {
           body: {
@@ -46,6 +41,8 @@ export default function Report() {
       }
       setAnalysis(data);
       setLoading(false);
+      localStorage.removeItem('rismon_active_analysis');
+      localStorage.removeItem('rismon_analysis_stage');
     };
     load();
   }, [analysisId]);
@@ -62,15 +59,7 @@ export default function Report() {
   };
 
   if (loading || generating) {
-    return (
-      <div className="min-h-screen bg-background">
-        <DashboardNavbar />
-        <div className="flex flex-col items-center justify-center pt-40">
-          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin-slow" />
-          <p className="text-foreground text-xl font-semibold mt-6">{generating ? genMsgs[genMsgIdx] : 'Loading report...'}</p>
-        </div>
-      </div>
-    );
+    return <AnalysisLoadingScreen stage="generating" />;
   }
 
   if (!analysis) return null;
@@ -105,7 +94,7 @@ export default function Report() {
         {Array.isArray(fix_prompts) && fix_prompts.length > 0 && (
           <div className="mt-10">
             <h2 className="text-foreground text-[22px] font-semibold">Your fix prompts</h2>
-            <p className="text-muted-foreground text-sm mt-1">Generated specifically for your app and your code patterns. Copy each prompt and paste it into your platform.</p>
+            <p className="text-muted-foreground text-sm mt-1">Made for your app and your code. Copy each prompt and paste it into your platform.</p>
             <div className="mt-6 space-y-5">
               {fix_prompts.map((fp: any, i: number) => {
                 const pc = platformColors[fp.platform?.toLowerCase()] || platformColors.general;
@@ -140,7 +129,7 @@ export default function Report() {
         {/* What works */}
         {Array.isArray(what_works) && what_works.length > 0 && (
           <div className="mt-10">
-            <h2 className="text-foreground text-xl font-semibold">What your app does correctly</h2>
+            <h2 className="text-foreground text-xl font-semibold">What your app does right</h2>
             <div className="mt-4 space-y-2">
               {what_works.map((w: string, i: number) => (
                 <div key={i} className="flex items-center gap-2.5"><CheckCircle size={16} className="text-success shrink-0" /><span className="text-muted-foreground text-[15px]">{w}</span></div>

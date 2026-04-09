@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2 } from 'lucide-react';
+import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,10 +29,27 @@ export default function Connect() {
   const [supabaseKey, setSupabaseKey] = useState('');
   const [serviceRoleWarning, setServiceRoleWarning] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [appLimitReached, setAppLimitReached] = useState(false);
+  const [existingAppName, setExistingAppName] = useState('');
+  const [checkingLimit, setCheckingLimit] = useState(true);
+
+  // Check app limit
+  useEffect(() => {
+    if (!user) return;
+    const checkLimit = async () => {
+      const { data, count } = await supabase.from('apps').select('app_name', { count: 'exact' }).eq('user_id', user.id);
+      if ((count || 0) >= 1) {
+        setAppLimitReached(true);
+        setExistingAppName(data?.[0]?.app_name || 'your app');
+      }
+      setCheckingLimit(false);
+    };
+    checkLimit();
+  }, [user]);
 
   useEffect(() => {
     if (searchParams.get('step') === '2') setStep(2);
-    // Check GitHub connection
     const checkGithub = async () => {
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s?.provider_token) {
@@ -78,18 +96,13 @@ export default function Connect() {
     if (!user || !selectedRepo) return;
     setSaving(true);
     const { data, error } = await supabase.from('apps').insert({
-      user_id: user.id,
-      app_name: appName,
-      github_repo_url: selectedRepo.html_url,
-      github_repo_name: selectedRepo.name,
-      github_owner: selectedRepo.owner.login,
-      supabase_url: supabaseUrl || null,
-      supabase_anon_key: supabaseKey || null,
-      platform: platform === 'Other AI' ? otherPlatform : platform,
-      status: 'active',
+      user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
+      github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
+      supabase_url: supabaseUrl || null, supabase_anon_key: supabaseKey || null,
+      platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
     }).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
-    toast.success('App connected successfully');
+    toast.success('App connected');
     navigate(`/analyze/${data.id}`);
   };
 
@@ -102,13 +115,47 @@ export default function Connect() {
       platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
     }).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
-    toast.success('App connected successfully');
+    toast.success('App connected');
     navigate(`/analyze/${data.id}`);
   };
 
   const relDate = (d: string) => { const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000); return days === 0 ? 'today' : `${days}d ago`; };
   const filteredRepos = repos.filter(r => r.name.toLowerCase().includes(repoSearch.toLowerCase()));
   const inputClass = "w-full bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors";
+
+  if (checkingLimit) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNavbar />
+        <div className="pt-24 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      </div>
+    );
+  }
+
+  // App limit reached screen
+  if (appLimitReached) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNavbar />
+        <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
+        <div className="flex items-center justify-center pt-32 px-4">
+          <div className="bg-card border border-border rounded-2xl p-10 max-w-[480px] w-full text-center">
+            <Lock size={48} className="text-primary mx-auto" />
+            <h2 className="text-foreground text-[22px] font-semibold mt-5">You have used your free app</h2>
+            <p className="text-muted-foreground text-[15px] mt-3 leading-relaxed">
+              The free plan includes 1 app. You are already protecting <strong className="text-foreground">{existingAppName}</strong>. Upgrade to Pro to connect and analyze unlimited apps.
+            </p>
+            <button onClick={() => setWaitlistOpen(true)} className="w-full bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-7 hover:bg-primary/90 transition-colors">
+              Join Pro waitlist
+            </button>
+            <Link to="/dashboard" className="block w-full text-center text-muted-foreground py-3 rounded-lg text-sm mt-2 hover:text-foreground transition-colors">
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -212,7 +259,7 @@ export default function Connect() {
               <h2 className="text-foreground text-lg font-semibold">Connect Supabase</h2>
               <span className="text-muted-foreground text-[11px] bg-muted px-2.5 py-1 rounded-full">OPTIONAL</span>
             </div>
-            <p className="text-muted-foreground text-sm mt-3">Connecting Supabase lets Rismon.ai check your database structure and find more gaps in your data access. Use your anon key only.</p>
+            <p className="text-muted-foreground text-sm mt-3">Connecting Supabase lets Rismon.ai check your database structure and find more gaps. Use your anon key only.</p>
             <div className="mt-6 space-y-4">
               <div>
                 <label className="text-foreground text-sm font-medium block mb-1.5">Supabase Project URL</label>
@@ -227,7 +274,7 @@ export default function Connect() {
             {serviceRoleWarning && (
               <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
-                <p className="text-destructive text-sm">This is your admin key. Never share this with anyone. Please use your anon public key. Find it: Supabase → Settings → API → anon public</p>
+                <p className="text-destructive text-sm">This is your admin key. Never share this. Use your anon public key instead. Find it: Supabase → Settings → API → anon public</p>
               </div>
             )}
             <div className="flex gap-3 mt-6">

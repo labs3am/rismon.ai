@@ -1,21 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Clock, CheckCircle } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
+import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-const readingMessages = ['Connecting to your GitHub...', 'Reading authentication files...', 'Analyzing payment logic...', 'Checking user permissions...', 'Reading database structure...', 'Understanding what was built...', 'Preparing your questions...'];
-const analysisMessages = ['Comparing your answers to your code...', 'Finding gaps between intent and reality...', 'Checking security issues...', 'Finding unknown features...', 'Preparing your report...'];
 
 export default function Analyze() {
   const { appId } = useParams();
   const { user, session } = useAuth();
   const navigate = useNavigate();
   const [stage, setStage] = useState<'checking' | 'reading' | 'describe' | 'analyzing' | 'review'>('checking');
-  const [msgIdx, setMsgIdx] = useState(0);
   const [app, setApp] = useState<any>(null);
   const [analysisId, setAnalysisId] = useState('');
   const [codeUnderstanding, setCodeUnderstanding] = useState<any>(null);
@@ -29,22 +26,62 @@ export default function Analyze() {
   const [decisions, setDecisions] = useState<Record<string, string>>({});
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [fileCount, setFileCount] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
+  const [currentFile, setCurrentFile] = useState('');
 
-  // Cycle messages
+  // Prevent double API calls
+  const readingStarted = useRef(false);
+  const analysisStarted = useRef(false);
+
+  // Persist stage to localStorage
   useEffect(() => {
-    if (stage !== 'reading' && stage !== 'analyzing') return;
-    const msgs = stage === 'reading' ? readingMessages : analysisMessages;
-    const t = setInterval(() => setMsgIdx(i => (i + 1) % msgs.length), 3000);
-    return () => clearInterval(t);
+    if (stage === 'reading' || stage === 'analyzing') {
+      localStorage.setItem('rismon_analysis_stage', stage);
+    }
   }, [stage]);
 
-  // Load app and check limits
+  useEffect(() => {
+    if (analysisId) {
+      localStorage.setItem('rismon_active_analysis', analysisId);
+    }
+  }, [analysisId]);
+
+  // Load app and check limits, resume from saved state
   useEffect(() => {
     if (!user || !appId) return;
     const load = async () => {
       const { data: appData } = await supabase.from('apps').select('*').eq('id', appId).single();
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
+
+      // Check for existing in-progress analysis
+      const savedId = localStorage.getItem('rismon_active_analysis');
+      const savedStage = localStorage.getItem('rismon_analysis_stage');
+
+      if (savedId) {
+        const { data: existing } = await supabase.from('analyses').select('*').eq('id', savedId).eq('app_id', appId).single();
+        if (existing) {
+          setAnalysisId(existing.id);
+          if (existing.status === 'questions_ready' && existing.code_understanding) {
+            setCodeUnderstanding(existing.code_understanding);
+            setQuestions(existing.smart_questions || []);
+            setStage('describe');
+            return;
+          }
+          if (existing.status === 'review_pending' || existing.status === 'complete') {
+            navigate(`/report/${existing.id}`);
+            return;
+          }
+          // If reading was already done (has code_understanding), skip to describe
+          if (existing.code_understanding) {
+            setCodeUnderstanding(existing.code_understanding);
+            setQuestions(existing.smart_questions || []);
+            setStage('describe');
+            return;
+          }
+        }
+      }
 
       // Check weekly limit
       const now = new Date();
@@ -60,11 +97,23 @@ export default function Analyze() {
   // Stage 1: Reading
   useEffect(() => {
     if (stage !== 'reading' || !app || !user) return;
+    if (readingStarted.current) return;
+    readingStarted.current = true;
+
     const run = async () => {
       try {
         const { data: { session: s } } = await supabase.auth.getSession();
         const token = s?.provider_token;
         if (!token) { toast.error('GitHub token expired. Please reconnect GitHub from the connect page.'); navigate('/dashboard'); return; }
+
+        // Create analysis record first
+        const { data: analysis } = await supabase.from('analyses').insert({
+          app_id: appId, user_id: user.id, status: 'reading'
+        }).select().single();
+        if (analysis) {
+          setAnalysisId(analysis.id);
+          localStorage.setItem('rismon_active_analysis', analysis.id);
+        }
 
         // Fetch file tree
         const treeRes = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/git/trees/HEAD?recursive=1`, {
@@ -79,9 +128,14 @@ export default function Analyze() {
           .filter((f: any) => f.type === 'blob' && exts.some(e => f.path.endsWith(e)) && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
           .slice(0, 20);
 
+        setTotalFiles(files.length);
+
         // Fetch file contents
         let codeBundle = '';
-        for (const f of files) {
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          setFileCount(i + 1);
+          setCurrentFile(f.path);
           try {
             const res = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`, {
               headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
@@ -111,20 +165,19 @@ export default function Analyze() {
         });
         if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
 
-        // Save to analyses
-        const { data: analysis } = await supabase.from('analyses').insert({
-          app_id: appId, user_id: user.id,
-          code_understanding: data.app_understanding,
-          smart_questions: data.questions,
-          status: 'questions_ready'
-        }).select().single();
-
+        // Update analysis record
         if (analysis) {
-          setAnalysisId(analysis.id);
-          setCodeUnderstanding(data.app_understanding);
-          setQuestions(data.questions || []);
-          setStage('describe');
+          await supabase.from('analyses').update({
+            code_understanding: data.app_understanding,
+            smart_questions: data.questions,
+            status: 'questions_ready'
+          }).eq('id', analysis.id);
         }
+
+        setCodeUnderstanding(data.app_understanding);
+        setQuestions(data.questions || []);
+        setStage('describe');
+        localStorage.setItem('rismon_analysis_stage', 'describe');
       } catch (e: any) {
         toast.error(e.message || 'Analysis failed');
         navigate('/dashboard');
@@ -135,13 +188,14 @@ export default function Analyze() {
 
   // Stage 3: Analysis
   const runAnalysis = useCallback(async () => {
+    if (analysisStarted.current) return;
+    analysisStarted.current = true;
     setStage('analyzing');
-    setMsgIdx(0);
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
         body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers }
       });
-      if (error || !data) { toast.error('Analysis failed'); return; }
+      if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
 
       await supabase.from('analyses').update({
         user_answers: answers, gaps: data.gaps, unknown_features: data.unknown_features,
@@ -160,7 +214,13 @@ export default function Analyze() {
 
       setAnalysisResult(data);
       setStage('review');
-    } catch { toast.error('Analysis failed'); }
+      // Clean up localStorage on completion of review stage
+      localStorage.removeItem('rismon_active_analysis');
+      localStorage.removeItem('rismon_analysis_stage');
+    } catch {
+      toast.error('Analysis failed');
+      analysisStarted.current = false;
+    }
   }, [codeUnderstanding, description, answers, analysisId, user]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
@@ -169,6 +229,8 @@ export default function Analyze() {
 
   const generatePrompts = async () => {
     await supabase.from('analyses').update({ status: 'generating_prompts' }).eq('id', analysisId);
+    localStorage.removeItem('rismon_active_analysis');
+    localStorage.removeItem('rismon_analysis_stage');
     navigate(`/report/${analysisId}`);
   };
 
@@ -191,20 +253,15 @@ export default function Analyze() {
     );
   }
 
-  // Loading screens
+  // Loading screens with animated visuals
   if (stage === 'checking' || stage === 'reading' || stage === 'analyzing') {
-    const msgs = stage === 'reading' ? readingMessages : analysisMessages;
     return (
-      <div className="min-h-screen bg-background">
-        <DashboardNavbar />
-        <div className="flex flex-col items-center justify-center pt-40 px-6">
-          <p className="text-muted-foreground text-sm mb-10">Rismon.ai</p>
-          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin-slow" />
-          <h2 className="text-foreground text-[28px] font-semibold mt-6">{stage === 'reading' ? 'Reading your app...' : stage === 'analyzing' ? 'Analyzing your app...' : 'Loading...'}</h2>
-          <p className="text-muted-foreground mt-3 transition-opacity duration-500">{msgs[msgIdx]}</p>
-          <p className="text-dimmed text-[13px] mt-8">Your code is read and immediately discarded. Nothing is stored.</p>
-        </div>
-      </div>
+      <AnalysisLoadingScreen
+        stage={stage === 'checking' ? 'reading' : stage}
+        fileCount={fileCount}
+        totalFiles={totalFiles}
+        currentFile={currentFile}
+      />
     );
   }
 
@@ -216,7 +273,7 @@ export default function Analyze() {
         <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
           <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
           <h2 className="text-foreground text-2xl font-semibold">Tell us about your app</h2>
-          <p className="text-muted-foreground mt-2">We have studied your code. Now tell us what your app is supposed to do.</p>
+          <p className="text-muted-foreground mt-2">We have read your code. Now tell us what your app is supposed to do.</p>
           {codeUnderstanding && (
             <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
               <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>What we found in your code:</p>
