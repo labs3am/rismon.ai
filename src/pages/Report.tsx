@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle, Copy, Check, AlertTriangle, Shield, MinusCircle } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import BackButton from '@/components/BackButton';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -79,7 +80,6 @@ export default function Report() {
     general: { bg: 'rgba(113,113,122,0.1)', text: '#71717a' },
   };
 
-  // Default security areas if none returned
   const defaultSecurityAreas = [
     { id: 'sec_api_keys', title: 'API key exposure', status: 'not_checked', explanation: 'Connect your app to check for exposed keys' },
     { id: 'sec_rls', title: 'Database protection (RLS)', status: 'not_checked', explanation: 'Connect Supabase for database security checks' },
@@ -95,10 +95,10 @@ export default function Report() {
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
-        <Link to="/dashboard" className="text-muted-foreground text-sm hover:text-foreground">← Dashboard</Link>
+        <BackButton to="/dashboard" label="Dashboard" />
 
         {/* SECTION 1: Score and summary */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-4">
           <div className="w-[130px] h-[130px] rounded-full flex items-center justify-center mx-auto" style={{ border: `3px solid ${scoreColor}` }}>
             <span className="text-foreground text-4xl font-bold">{score}</span>
           </div>
@@ -151,7 +151,6 @@ export default function Report() {
             {securityItems.map((s: any, i: number) => {
               const isPassed = s.status === 'passed';
               const isNotChecked = s.status === 'not_checked';
-              const isIssue = !isPassed && !isNotChecked;
 
               if (isPassed) {
                 return (
@@ -177,7 +176,6 @@ export default function Report() {
                 );
               }
 
-              // Issue found
               const bc = s.severity === 'critical' ? '#ef4444' : s.severity === 'high' ? '#f97316' : s.severity === 'medium' ? '#f59e0b' : '#6366f1';
               return (
                 <div key={s.id || i} className="bg-card border border-border rounded-r-2xl p-6" style={{ borderLeft: `4px solid ${bc}` }}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, Github, Clock } from 'lucide-react';
+import { PlusCircle, Github, Clock, Zap } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ interface App {
   id: string;
   app_name: string | null;
   github_repo_name: string | null;
+  github_owner: string | null;
   platform: string | null;
   latest_score: number | null;
   latest_date: string | null;
@@ -21,9 +22,11 @@ export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
   const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0 });
+  const [weeklyScans, setWeeklyScans] = useState(0);
   const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [reconnectModal, setReconnectModal] = useState<App | null>(null);
   const navigate = useNavigate();
 
   const getGreeting = () => {
@@ -32,6 +35,14 @@ export default function Dashboard() {
     if (h < 12) return `Good morning, ${name}`;
     if (h < 18) return `Good afternoon, ${name}`;
     return `Good evening, ${name}`;
+  };
+
+  const getResetDay = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun
+    if (dayOfWeek === 6) return 'tomorrow';
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[0]; // resets on Sunday
   };
 
   useEffect(() => {
@@ -44,7 +55,8 @@ export default function Dashboard() {
         const appAnalyses = (analysesData || []).filter(a => a.app_id === app.id);
         const latest = appAnalyses[0];
         return {
-          id: app.id, app_name: app.app_name, github_repo_name: app.github_repo_name, platform: app.platform,
+          id: app.id, app_name: app.app_name, github_repo_name: app.github_repo_name,
+          github_owner: app.github_owner, platform: app.platform,
           latest_score: latest?.intent_match_score ?? null,
           latest_date: latest?.created_at ?? null,
           has_analyses: appAnalyses.length > 0,
@@ -60,11 +72,12 @@ export default function Dashboard() {
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
 
       const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
-      const weeklyScans = (limits || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
+      const ws = (limits || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
       setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });
-      setWeeklyLimitReached(weeklyScans >= 3);
+      setWeeklyScans(ws);
+      setWeeklyLimitReached(ws >= 3);
       setLoading(false);
     };
     load();
@@ -85,6 +98,32 @@ export default function Dashboard() {
     return { bg: 'rgba(34,197,94,0.15)', text: '#22c55e' };
   };
 
+  const handleAnalyzeNow = async (app: App) => {
+    // Check if GitHub token is available
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const token = s?.provider_token;
+
+    if (token) {
+      // Token available — go directly to analyze with saved repo
+      navigate(`/analyze/${app.id}`);
+    } else {
+      // Token expired — show reconnect modal
+      setReconnectModal(app);
+    }
+  };
+
+  const handleReconnectGithub = async () => {
+    if (!reconnectModal) return;
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        scopes: 'repo read:user',
+        redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
+        skipBrowserRedirect: false
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -98,12 +137,61 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
+
+      {/* Reconnect GitHub Modal */}
+      {reconnectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="rounded-2xl p-8 max-w-[400px] w-full mx-4 text-center" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
+            <Github size={36} style={{ color: '#71717a' }} className="mx-auto" />
+            <h3 className="text-foreground text-[20px] font-semibold mt-4">Reconnect GitHub</h3>
+            <p className="mt-2 text-sm" style={{ color: '#71717a' }}>
+              We need to reconnect to GitHub to read your {reconnectModal.github_repo_name} repository. We will use the same repository you connected before.
+            </p>
+            <p className="mt-2 font-mono text-xs" style={{ color: '#52525b' }}>
+              {reconnectModal.github_owner}/{reconnectModal.github_repo_name}
+            </p>
+            <button onClick={handleReconnectGithub}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">
+              Reconnect GitHub
+            </button>
+            <button onClick={() => setReconnectModal(null)}
+              className="w-full text-muted-foreground py-3 rounded-lg text-sm mt-2 hover:text-foreground transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
         <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
         <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
+        {/* Free Plan Status Card */}
+        <div className="rounded-xl p-4 mt-6 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap size={18} style={{ color: '#6366f1' }} />
+              <span className="text-foreground text-sm font-semibold">Free Plan</span>
+            </div>
+            <button onClick={() => setWaitlistOpen(true)} className="text-[13px] hover:underline" style={{ color: '#6366f1' }}>
+              Upgrade to Pro →
+            </button>
+          </div>
+          <div className="flex gap-6 mt-3">
+            <span className="text-[13px]" style={{ color: stats.apps >= 1 ? '#f59e0b' : '#71717a' }}>
+              {stats.apps} of 1 app used
+            </span>
+            <span className="text-[13px]" style={{ color: weeklyScans >= 3 ? '#ef4444' : '#71717a' }}>
+              {weeklyScans} of 3 scans used this week
+            </span>
+            <span className="text-[13px]" style={{ color: '#71717a' }}>
+              Resets {getResetDay()}
+            </span>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-8">
+        <div className="grid grid-cols-3 gap-4">
           {[{ v: stats.apps, l: 'Apps connected' }, { v: stats.thisWeek, l: 'Analyses this week' }, { v: stats.totalGaps, l: 'Total gaps found' }].map((s, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-5">
               <p className="text-foreground text-[32px] font-bold">{s.v}</p>
@@ -143,7 +231,7 @@ export default function Dashboard() {
                     {app.platform && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>{app.platform}</span>}
                   </div>
                   {app.github_repo_name && (
-                    <div className="flex items-center gap-1.5 mt-2"><Github size={14} className="text-muted-foreground" /><span className="text-muted-foreground text-sm">{app.github_repo_name}</span></div>
+                    <div className="flex items-center gap-1.5 mt-2"><Github size={14} className="text-muted-foreground" /><span className="text-muted-foreground text-sm">{app.github_owner}/{app.github_repo_name}</span></div>
                   )}
                   <div className="mt-4">
                     {app.has_analyses && app.latest_score !== null ? (
@@ -156,7 +244,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   <div className="flex gap-3 mt-5">
-                    <button onClick={() => navigate(`/analyze/${app.id}`)} className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Analyze now</button>
+                    <button onClick={() => handleAnalyzeNow(app)} className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Analyze now</button>
                     {app.has_analyses && app.latest_analysis_id && (
                       <Link to={`/report/${app.latest_analysis_id}`} className="border border-hover-border text-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:border-muted-foreground/30 transition-colors">View last report</Link>
                     )}
@@ -164,7 +252,6 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            {/* Show unlock link instead of connect link when at limit */}
             {apps.length >= 1 ? (
               <button onClick={() => setWaitlistOpen(true)} className="text-sm mt-4 inline-block hover:underline" style={{ color: '#6366f1' }}>
                 Unlock unlimited apps →
