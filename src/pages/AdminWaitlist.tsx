@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminWaitlist() {
@@ -8,20 +8,19 @@ export default function AdminWaitlist() {
   const [entries, setEntries] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (password === 'rismon2026admin') {
-      setAuthed(true);
-      setDenied(false);
-      loadData();
-    } else {
-      setDenied(true);
-    }
-  };
-
-  const loadData = async () => {
+  const handleLogin = async () => {
     setLoading(true);
-    const { data } = await supabase.from('waitlist').select('*').order('created_at', { ascending: false });
-    setEntries(data || []);
+    setDenied(false);
+    const { data, error } = await supabase.functions.invoke('admin-waitlist', {
+      body: { password }
+    });
+    if (error || data?.error) {
+      setDenied(true);
+      setLoading(false);
+      return;
+    }
+    setEntries(data.entries || []);
+    setAuthed(true);
     setLoading(false);
   };
 
@@ -60,7 +59,9 @@ export default function AdminWaitlist() {
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
             className="w-full mt-6 bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary" />
-          <button onClick={handleLogin} className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium hover:bg-primary/90">Enter</button>
+          <button onClick={handleLogin} disabled={loading} className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+            {loading ? 'Checking...' : 'Enter'}
+          </button>
           {denied && <p className="text-destructive text-sm mt-3">Access denied</p>}
         </div>
       </div>
@@ -90,30 +91,26 @@ export default function AdminWaitlist() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="mt-8 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-        ) : (
-          <div className="mt-8 rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e1e' }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: '#1a1a1a' }}>
-                  <th className="text-left text-foreground font-medium px-4 py-3 w-12">#</th>
-                  <th className="text-left text-foreground font-medium px-4 py-3">Email</th>
-                  <th className="text-left text-foreground font-medium px-4 py-3">Date joined</th>
+        <div className="mt-8 rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e1e' }}>
+          <table className="w-full text-sm">
+            <thead>
+              <tr style={{ background: '#1a1a1a' }}>
+                <th className="text-left text-foreground font-medium px-4 py-3 w-12">#</th>
+                <th className="text-left text-foreground font-medium px-4 py-3">Email</th>
+                <th className="text-left text-foreground font-medium px-4 py-3">Date joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e, i) => (
+                <tr key={e.id} style={{ background: i % 2 === 0 ? '#111111' : '#0d0d0d' }}>
+                  <td className="text-foreground px-4 py-3">{i + 1}</td>
+                  <td className="text-foreground px-4 py-3">{e.email}</td>
+                  <td className="px-4 py-3" style={{ color: '#71717a' }}>{e.created_at ? formatDate(e.created_at) : ''}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {entries.map((e, i) => (
-                  <tr key={e.id} style={{ background: i % 2 === 0 ? '#111111' : '#0d0d0d' }}>
-                    <td className="text-foreground px-4 py-3">{i + 1}</td>
-                    <td className="text-foreground px-4 py-3">{e.email}</td>
-                    <td className="px-4 py-3" style={{ color: '#71717a' }}>{e.created_at ? formatDate(e.created_at) : ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
