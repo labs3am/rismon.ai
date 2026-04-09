@@ -271,6 +271,7 @@ export default function Analyze() {
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
         <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
+          <BackButton to="/dashboard" label="Dashboard" />
           <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
           <h2 className="text-foreground text-2xl font-semibold">Tell us about your app</h2>
           <p className="text-muted-foreground mt-2">We have read your code. Now tell us what your app is supposed to do.</p>
@@ -353,6 +354,7 @@ export default function Analyze() {
       <div className="min-h-screen bg-background pb-24">
         <DashboardNavbar />
         <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
+          <BackButton to="/dashboard" label="Dashboard" />
           {/* Score */}
           <div className="text-center">
             <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center mx-auto" style={{ border: `3px solid ${scoreColor}` }}>
