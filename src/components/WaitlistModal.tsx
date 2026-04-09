@@ -32,8 +32,12 @@ export default function WaitlistModal({ isOpen, onClose }: Props) {
         {submitted ? (
           <div className="text-center py-4">
             <CheckCircle className="text-success mx-auto" size={48} />
-            <p className="text-foreground text-lg font-semibold mt-4">You are on the list 🙏</p>
-            <p className="text-muted-foreground text-sm mt-2">We will email you before we launch.</p>
+            <p className="text-foreground text-[18px] font-semibold mt-4">You are on the waitlist.</p>
+            <p className="text-sm mt-2" style={{ color: '#71717a' }}>
+              We will email you at <span className="text-foreground">{email}</span> before Rismon.ai Pro launches. You will be among the first to know.
+            </p>
+            <p className="text-[12px] mt-3" style={{ color: '#3f3f46' }}>No spam. One email when we launch.</p>
+            <button onClick={onClose} className="mt-5 text-sm bg-transparent border-none cursor-pointer" style={{ color: '#71717a' }}>Close</button>
           </div>
         ) : (
           <>

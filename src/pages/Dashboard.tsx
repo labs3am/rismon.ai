@@ -217,7 +217,7 @@ export default function Dashboard() {
           <div className="mt-16 border-2 border-dashed border-input rounded-2xl p-16 text-center">
             <PlusCircle size={48} className="text-dimmed mx-auto" />
             <p className="text-foreground text-xl font-semibold mt-5">Connect your first app</p>
-            <p className="text-muted-foreground text-[15px] max-w-[400px] mx-auto mt-3">Connect your GitHub repository to start your first analysis. Read only access — we never store or edit your code.</p>
+            <p className="text-muted-foreground text-[15px] max-w-[400px] mx-auto mt-3">Connect your GitHub repository to start your first analysis. Read only access. We never store or edit your code.</p>
             <Link to="/connect" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-7 hover:bg-primary/90 transition-colors">Connect an app</Link>
           </div>
         ) : (

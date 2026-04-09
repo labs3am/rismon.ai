@@ -269,7 +269,7 @@ export default function Connect() {
               <div>
                 <label className="text-foreground text-sm font-medium block mb-1.5">Anon public key</label>
                 <input value={supabaseKey} onChange={e => handleSupabaseKeyChange(e.target.value)} placeholder="eyJhbG..." className={inputClass} />
-                <p className="text-subtle text-xs mt-1">Use your anon key only — never your service role key.</p>
+                <p className="text-subtle text-xs mt-1">Use your anon key only. Never your service role key.</p>
               </div>
             </div>
             {serviceRoleWarning && (

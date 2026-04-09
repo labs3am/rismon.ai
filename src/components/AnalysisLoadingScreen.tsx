@@ -88,7 +88,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
 
   const messages = stage === 'reading' ? readingMessages : stage === 'analyzing' ? analyzingMessages : generatingMessages;
 
-  // Rotate messages every 3 seconds
   useEffect(() => {
     const t = setInterval(() => {
       setMsgFade(true);
@@ -100,13 +99,11 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
     return () => clearInterval(t);
   }, [messages.length]);
 
-  // Rotate tips
   useEffect(() => {
     const t = setInterval(() => setTipIdx(i => (i + 1) % tips.length), 5000);
     return () => clearInterval(t);
   }, []);
 
-  // Code line animation for reading stage
   useEffect(() => {
     if (stage !== 'reading') return;
     setVisibleLines(0);
@@ -129,7 +126,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
     return () => clearInterval(lineTimer);
   }, [stage, codeRound]);
 
-  // Prompt typing animation for generating stage
   useEffect(() => {
     if (stage !== 'generating') return;
     const currentPrompt = fakePrompts[promptIdx % fakePrompts.length];
@@ -163,7 +159,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-start pt-12 md:pt-16 px-4">
-        {/* Reading stage: fake code editor */}
         {stage === 'reading' && (
           <div className="w-full max-w-[480px] mx-auto rounded-2xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
             <div className="flex items-center px-5 py-3 border-b" style={{ borderColor: '#1e1e1e' }}>
@@ -176,15 +171,12 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
             </div>
             <div className="p-5 min-h-[320px]">
               {fakeCodeLines.map((line, i) => (
-                <div
-                  key={`${codeRound}-${i}`}
-                  className="flex items-center gap-3 h-6"
+                <div key={`${codeRound}-${i}`} className="flex items-center gap-3 h-6"
                   style={{
                     opacity: i < visibleLines ? (fadeOut ? 0 : 1) : 0,
                     transform: i < visibleLines ? 'translateX(0)' : 'translateX(-20px)',
                     transition: fadeOut ? 'opacity 0.6s ease' : 'opacity 0.3s ease, transform 0.3s ease',
-                  }}
-                >
+                  }}>
                   <span className="text-xs w-5 text-right shrink-0" style={{ color: '#3f3f46' }}>{line.num}</span>
                   <span className="text-sm font-mono" style={{ color: line.color }}>{line.text}</span>
                 </div>
@@ -196,7 +188,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
           </div>
         )}
 
-        {/* Analyzing stage: comparison visual */}
         {stage === 'analyzing' && (
           <div className="w-full max-w-[600px] mx-auto">
             <div className="flex items-stretch gap-3 md:gap-6">
@@ -226,7 +217,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
           </div>
         )}
 
-        {/* Generating stage: prompt builder */}
         {stage === 'generating' && (
           <div className="w-full max-w-[480px] mx-auto">
             <div className="rounded-2xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
@@ -252,7 +242,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
           <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>{currentMsg.line2}</p>
         </div>
 
-        {/* File counter (reading only) */}
         {stage === 'reading' && totalFiles > 0 && (
           <div className="mt-8 text-center">
             <p className="text-sm" style={{ color: '#71717a' }}>Reading file {fileCount} of {totalFiles}</p>
@@ -261,11 +250,11 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         )}
       </div>
 
-      {/* Bottom tips */}
-      <div className="border-t px-6 md:px-10 py-5" style={{ borderColor: '#1e1e1e' }}>
-        <div className="max-w-[600px] mx-auto">
-          <span className="text-xs font-semibold" style={{ color: '#6366f1' }}>TIP: </span>
-          <span className="text-xs" style={{ color: '#52525b' }}>{tips[tipIdx]}</span>
+      {/* Bottom tips - fixed and centered */}
+      <div className="fixed bottom-0 left-0 right-0 w-full" style={{ background: '#080808', borderTop: '1px solid #1e1e1e', padding: '16px 40px' }}>
+        <div className="max-w-[600px] mx-auto flex items-center justify-center gap-2">
+          <span className="text-[11px] font-semibold shrink-0" style={{ color: '#6366f1', letterSpacing: '0.1em' }}>TIP</span>
+          <span className="text-[13px] text-center leading-[1.5]" style={{ color: '#52525b' }}>{tips[tipIdx]}</span>
         </div>
       </div>
 

@@ -22,22 +22,17 @@ const steps = [
   { n: '05', title: 'Get your report', text: 'Plain English report showing\nevery gap plus exact prompts\nto fix each issue.' },
 ];
 
-const bizChecks = [
-  { icon: CheckCircle, title: 'What your app does', text: 'We explain your entire app\nin plain English before anything else.' },
-  { icon: CreditCard, title: 'Payment gates', text: 'Are paid features actually\nblocked for users who have not paid?' },
-  { icon: Users, title: 'User roles', text: 'Can right users do right things?\nAre wrong users blocked?' },
-  { icon: Key, title: 'Admin access', text: 'Is your admin panel protected\nfrom regular users?' },
-  { icon: Search, title: 'Unknown features', text: 'Did AI build things you\nnever asked for?' },
-  { icon: GitBranch, title: 'Intent vs reality', text: 'Does your code match what\nyou described when building?' },
-];
-
-const secChecks = [
-  { icon: AlertTriangle, title: 'API key exposure', text: 'Are your secret keys exposed\nin code or GitHub history?' },
-  { icon: Database, title: 'Database exposure', text: 'Is your user data protected\nor publicly readable by anyone?' },
-  { icon: Lock, title: 'Authentication gaps', text: 'Are all your routes and pages\nproperly protected?' },
-  { icon: Shield, title: 'Environment variables', text: 'Are secrets hardcoded in code\nor accidentally committed?' },
-  { icon: Globe, title: 'API protection', text: 'Are your backend routes\nprotected from direct access?' },
-  { icon: RefreshCw, title: 'Dependency risks', text: 'Are your packages outdated\nor have known vulnerabilities?' },
+const platforms = [
+  { name: 'Lovable', bg: '#ff4d4d', letter: 'L' },
+  { name: 'Bolt', bg: '#f5a623', letter: 'B' },
+  { name: 'Cursor', bg: '#4a9eff', letter: 'C' },
+  { name: 'Emergent', bg: '#22c55e', letter: 'E' },
+  { name: 'Replit', bg: '#f26207', letter: 'R' },
+  { name: 'v0', bg: '#000000', letter: 'V', border: '#333' },
+  { name: 'Windsurf', bg: '#06b6d4', letter: 'W' },
+  { name: 'Copilot', bg: '#24292e', letter: 'G' },
+  { name: 'Claude Code', bg: '#c96442', letter: 'C' },
+  { name: 'Gemini', bg: '#4285f4', letter: 'G' },
 ];
 
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
@@ -65,10 +60,22 @@ export default function Index() {
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
         </div>
 
-        {/* Platforms */}
-        <div className="mt-16">
-          <p className="text-dimmed text-xs uppercase tracking-[0.1em]">Works with apps built on</p>
-          <p className="text-subtle text-sm mt-4">Lovable · Bolt · Cursor · Emergent · Replit · v0 · Windsurf · and more</p>
+        {/* Platform pills */}
+        <div className="mt-12 max-w-[800px] mx-auto">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.08em]" style={{ color: '#3f3f46' }}>Works with every AI coding platform</p>
+          <div className="flex flex-wrap justify-center gap-2.5 mt-5">
+            {platforms.map((p, i) => (
+              <div key={i} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 transition-colors" style={{ background: '#111111', border: '1px solid #1e1e1e' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#2e2e2e'; e.currentTarget.style.background = '#161616'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.background = '#111111'; }}>
+                <div className="w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold text-white" style={{ background: p.bg, border: p.border ? `1px solid ${p.border}` : undefined }}>{p.letter}</div>
+                <span className="text-[13px] font-medium text-white">{p.name}</span>
+              </div>
+            ))}
+            <div className="inline-flex items-center rounded-lg px-4 py-2 italic text-[13px]" style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#52525b' }}>
+              + more platforms
+            </div>
+          </div>
         </div>
       </section>
 
@@ -78,7 +85,7 @@ export default function Index() {
           <div className="text-center">
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Not sure? Ask yourself:</h2>
             <p className="text-muted-foreground text-lg max-w-[560px] mx-auto mt-4 leading-[1.7]">
-              If you built with AI — do you actually know what it built? Not what you asked for. What was actually built.
+              If you built with AI, do you actually know what it built? Not what you asked for. What was actually built.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
@@ -91,7 +98,7 @@ export default function Index() {
             ))}
           </div>
           <div className="text-center mt-12">
-            <p className="text-muted-foreground">If any of these made you pause —</p>
+            <p className="text-muted-foreground">If any of these made you pause,</p>
             <p className="text-foreground text-xl font-semibold mt-2">Rismon.ai was built for you.</p>
             <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check your app free</Link>
           </div>
@@ -117,34 +124,65 @@ export default function Index() {
         </div>
       </section>
 
-      {/* WHAT WE CHECK */}
-      <section className="py-28 px-6">
+      {/* WHAT WE FIND */}
+      <section id="what-we-check" className="py-[100px] px-6 md:px-10" style={{ background: '#0a0a0a' }}>
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
-            <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHAT WE ANALYZE</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Everything Rismon.ai checks</h2>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#6366f1' }}>WHAT WE FIND</p>
+            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3 max-w-[600px] mx-auto">Most AI-built apps have at least one of these problems</h2>
+            <p className="text-[16px] mt-3" style={{ color: '#71717a' }}>We check for all of them. You might be surprised what we find.</p>
           </div>
 
-          <p className="text-primary text-[11px] font-semibold tracking-[0.1em] uppercase mt-12">BUSINESS VERIFICATION</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {bizChecks.map((c, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-7 hover:border-hover-border transition-colors">
-                <c.icon size={20} className="text-primary" />
-                <p className="text-foreground text-[15px] font-semibold mt-3">{c.title}</p>
-                <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{c.text}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mt-[60px]">
+            {/* Business problems */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#f59e0b' }}>BUSINESS PROBLEMS</p>
+              <div className="space-y-3">
+                {[
+                  { icon: CreditCard, title: 'Paid features that anyone can access', text: 'Your payment exists. The check does not.' },
+                  { icon: Shield, title: 'Admin pages open to every user', text: 'Any user can reach your admin panel right now.' },
+                  { icon: Users, title: 'Wrong users doing wrong things', text: 'Sellers accessing buyer data. Free users in paid sections.' },
+                  { icon: Search, title: 'Features you never asked for', text: 'Your AI built extra things. Do you know what they are?' },
+                  { icon: GitBranch, title: 'Code that does not match your vision', text: 'You described one thing. The AI built something slightly different.' },
+                ].map((c, i) => (
+                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #f59e0b', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#f59e0b' }}>
+                    <div className="flex items-center gap-2">
+                      <c.icon size={16} style={{ color: '#f59e0b' }} />
+                      <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
+                    </div>
+                    <p className="text-[13px] mt-1" style={{ color: '#71717a' }}>{c.text}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Security problems */}
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#ef4444' }}>SECURITY PROBLEMS</p>
+              <div className="space-y-3">
+                {[
+                  { icon: Key, title: 'API keys exposed in your code', text: 'Your OpenAI or Stripe key is visible to anyone who looks.' },
+                  { icon: Database, title: 'User data readable by anyone', text: 'Your database has no protection. All records publicly accessible.' },
+                  { icon: Lock, title: 'Private pages with no login check', text: 'Pages that should need login are open to everyone.' },
+                  { icon: AlertTriangle, title: 'Secrets hardcoded in code', text: 'Passwords and keys written directly in your files.' },
+                  { icon: Globe, title: 'API routes anyone can call', text: 'Your backend has no protection from direct requests.' },
+                ].map((c, i) => (
+                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #ef4444', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}>
+                    <div className="flex items-center gap-2">
+                      <c.icon size={16} style={{ color: '#ef4444' }} />
+                      <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
+                    </div>
+                    <p className="text-[13px] mt-1" style={{ color: '#71717a' }}>{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <p className="text-destructive text-[11px] font-semibold tracking-[0.1em] uppercase mt-12">SECURITY VERIFICATION</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {secChecks.map((c, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-7 hover:border-hover-border transition-colors">
-                <c.icon size={20} className="text-destructive" />
-                <p className="text-foreground text-[15px] font-semibold mt-3">{c.title}</p>
-                <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{c.text}</p>
-              </div>
-            ))}
+          <div className="text-center mt-12">
+            <p className="text-foreground text-[20px] font-semibold">Rismon.ai checks all of these. In 60 seconds.</p>
+            <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>For free. No card needed.</p>
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check my app now</Link>
           </div>
         </div>
       </section>
@@ -173,7 +211,7 @@ export default function Index() {
       </section>
 
       {/* PRICING */}
-      <section className="py-28 px-6">
+      <section id="pricing" className="py-28 px-6">
         <div className="max-w-[960px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
@@ -198,7 +236,7 @@ export default function Index() {
 
             {/* Pro */}
             <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(99,102,241,0.12)' }}>
-              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>FOUNDING MEMBER — FIRST 50 ONLY</span>
+              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
               <p className="text-foreground text-[28px] font-bold">Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">₹999/month</p>
               <p className="text-muted-foreground text-sm mt-1">or ₹799/month billed quarterly</p>
