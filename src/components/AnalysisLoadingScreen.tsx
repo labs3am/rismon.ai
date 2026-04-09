@@ -1,51 +1,41 @@
 import { useState, useEffect } from 'react';
 
-const readingMessages = [
-  "Sneaking into your codebase...",
-  "Reading 847 lines so you don't have to...",
-  "Finding the things your AI forgot to mention...",
-  "Checking if your payments actually work...",
-  "Looking for doors your AI left unlocked...",
-  "Counting tables in your database...",
-  "Investigating suspicious admin routes...",
-  "Asking your code some tough questions...",
-  "Discovering features you didn't know existed...",
-  "Reading the fine print your AI skipped...",
-  "Checking who can see what in your app...",
-  "Making sure your secrets are actually secret...",
+interface TwoLineMessage {
+  line1: string;
+  line2: string;
+}
+
+const readingMessages: TwoLineMessage[] = [
+  { line1: "Sneaking into your codebase...", line2: "Reading your authentication files" },
+  { line1: "Your AI worked hard. We check its homework...", line2: "Scanning for exposed API keys and secrets" },
+  { line1: "Looking for doors your AI left unlocked...", line2: "Checking if your admin panel is protected" },
+  { line1: "Reading 800+ lines so you do not have to...", line2: "Analyzing your payment and subscription logic" },
+  { line1: "Investigating suspicious activity...", line2: "Checking who can access what in your app" },
+  { line1: "Your database has some explaining to do...", line2: "Checking if user data is protected or public" },
+  { line1: "Finding features your AI built in secret...", line2: "Looking for code you never asked for" },
+  { line1: "Making sure secrets are actually secret...", line2: "Scanning GitHub history for exposed keys" },
+  { line1: "Checking if free users found a loophole...", line2: "Verifying your payment gates are locked" },
+  { line1: "Reading the fine print your AI skipped...", line2: "Checking your database access rules" },
+  { line1: "Is your admin page a public tourist spot?", line2: "Verifying admin routes require proper access" },
+  { line1: "Almost done spying on your code...", line2: "Understanding your full app structure" },
 ];
 
-const analyzingMessages = [
-  "Comparing what you said to what was built...",
-  "Finding the gaps between dream and reality...",
-  "Your AI worked hard. We check its homework...",
-  "Looking for things that could go wrong...",
-  "Cross-referencing your vision with your code...",
-  "Hunting for the sneaky security stuff...",
-  "Checking if your business logic makes sense...",
-  "Making sure the right people see the right things...",
-  "Verifying your payment gates are actually locked...",
-  "Almost there. Your report is taking shape...",
+const analyzingMessages: TwoLineMessage[] = [
+  { line1: "Comparing your vision to reality...", line2: "Matching your description to your code" },
+  { line1: "Your AI meant well. Let us see what happened...", line2: "Finding gaps between intent and implementation" },
+  { line1: "Hunting for the sneaky stuff...", line2: "Checking security configurations" },
+  { line1: "Who can see what? Good question...", line2: "Analyzing user role and permission logic" },
+  { line1: "Are paying users actually paying?", line2: "Verifying subscription and payment gates" },
+  { line1: "Cross-referencing everything...", line2: "Comparing code patterns to your business" },
+  { line1: "Preparing your honest report...", line2: "Ranking issues by business impact" },
 ];
 
-const generatingMessages = [
-  "Writing your fix instructions...",
-  "Learning how your code thinks...",
-  "Crafting prompts your AI will actually understand...",
-  "Making fixes that match your code style...",
-  "Writing the exact words to make Lovable behave...",
-  "Almost ready. Good things take a moment...",
-  "Packaging your fixes with care...",
-  "Your prompts are being hand-crafted by AI...",
-  "Making sure each fix is specific to your app...",
-  "Putting the finishing touches on your report...",
-];
-
-const subMessages = [
-  "This usually takes about 30 seconds",
-  "Your code is never stored",
-  "We read everything so you don't have to",
-  "Almost done. Promise.",
+const generatingMessages: TwoLineMessage[] = [
+  { line1: "Learning how your code thinks...", line2: "Matching fix style to your codebase" },
+  { line1: "Writing words that Lovable will understand...", line2: "Generating platform specific fix prompts" },
+  { line1: "Making sure each fix actually fits...", line2: "Customizing prompts to your code patterns" },
+  { line1: "Hand-crafting your fixes with care...", line2: "Writing step by step repair instructions" },
+  { line1: "Almost ready. Good things take a moment...", line2: "Finalizing your complete fix report" },
 ];
 
 const tips = [
@@ -88,7 +78,6 @@ interface Props {
 
 export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles = 0, currentFile = '', promptCount = 0, totalPrompts = 0 }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
-  const [subIdx, setSubIdx] = useState(0);
   const [tipIdx, setTipIdx] = useState(0);
   const [codeRound, setCodeRound] = useState(0);
   const [visibleLines, setVisibleLines] = useState(0);
@@ -99,16 +88,15 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
 
   const messages = stage === 'reading' ? readingMessages : stage === 'analyzing' ? analyzingMessages : generatingMessages;
 
-  // Rotate messages
+  // Rotate messages every 3 seconds
   useEffect(() => {
     const t = setInterval(() => {
       setMsgFade(true);
       setTimeout(() => {
         setMsgIdx(i => (i + 1) % messages.length);
-        setSubIdx(i => (i + 1) % subMessages.length);
         setMsgFade(false);
       }, 400);
-    }, 2500);
+    }, 3000);
     return () => clearInterval(t);
   }, [messages.length]);
 
@@ -156,11 +144,13 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
     return () => clearTimeout(t);
   }, [stage, promptCharIdx, promptIdx]);
 
+  const currentMsg = messages[msgIdx];
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top status bar */}
-      <div className="w-full border-b border-border px-6 md:px-10 py-3 flex items-center justify-between" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-        <span className="text-muted-foreground text-[13px]">
+      <div className="w-full border-b px-6 md:px-10 py-3 flex items-center justify-between" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
+        <span className="text-[13px]" style={{ color: '#71717a' }}>
           {stage === 'reading' && 'Rismon.ai is reading your app'}
           {stage === 'analyzing' && 'Rismon.ai is analyzing your app'}
           {stage === 'generating' && 'Rismon.ai is writing your fix prompts'}
@@ -176,7 +166,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         {/* Reading stage: fake code editor */}
         {stage === 'reading' && (
           <div className="w-full max-w-[480px] mx-auto rounded-2xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
-            {/* Editor header */}
             <div className="flex items-center px-5 py-3 border-b" style={{ borderColor: '#1e1e1e' }}>
               <div className="flex gap-2">
                 <span className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
@@ -185,7 +174,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
               </div>
               <span className="text-xs mx-auto" style={{ color: '#52525b' }}>app-analysis.ts</span>
             </div>
-            {/* Code lines */}
             <div className="p-5 min-h-[320px]">
               {fakeCodeLines.map((line, i) => (
                 <div
@@ -202,15 +190,8 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
                 </div>
               ))}
             </div>
-            {/* Progress bar */}
             <div className="mx-5 mb-5 rounded-full overflow-hidden" style={{ background: '#1e1e1e', height: '3px' }}>
-              <div
-                className="h-full rounded-full"
-                style={{
-                  background: 'linear-gradient(90deg, #6366f1, #818cf8)',
-                  animation: 'progressSweep 8s ease-in-out infinite',
-                }}
-              />
+              <div className="h-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #818cf8)', animation: 'progressSweep 8s ease-in-out infinite' }} />
             </div>
           </div>
         )}
@@ -219,7 +200,6 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         {stage === 'analyzing' && (
           <div className="w-full max-w-[600px] mx-auto">
             <div className="flex items-stretch gap-3 md:gap-6">
-              {/* Left: description */}
               <div className="flex-1 rounded-xl p-5" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
                 <p className="text-xs font-semibold mb-4" style={{ color: '#818cf8' }}>Your description</p>
                 {['Users pay for premium', 'Admin panel is private', 'Orders are per-user', 'Roles control access'].map((t, i) => (
@@ -228,13 +208,11 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
                   </div>
                 ))}
               </div>
-              {/* Arrows */}
               <div className="flex flex-col justify-center gap-2">
                 {[0, 1, 2].map(i => (
                   <div key={i} className="text-primary" style={{ animation: `pulse 1.5s ease-in-out ${i * 0.3}s infinite` }}>→</div>
                 ))}
               </div>
-              {/* Right: code findings */}
               <div className="flex-1 rounded-xl p-5" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
                 <p className="text-xs font-semibold mb-4" style={{ color: '#f59e0b' }}>What we found in code</p>
                 {['Payment gate missing', 'Admin route exposed', 'No RLS on orders', 'Roles unchecked'].map((t, i) => (
@@ -244,7 +222,7 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
                 ))}
               </div>
             </div>
-            <p className="text-muted-foreground text-[15px] text-center mt-8">Comparing your vision to your code</p>
+            <p className="text-[15px] text-center mt-8" style={{ color: '#71717a' }}>Comparing your vision to your code</p>
           </div>
         )}
 
@@ -262,32 +240,22 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
                 </p>
               </div>
             </div>
-            <p className="text-muted-foreground text-sm text-center mt-5">
+            <p className="text-sm text-center mt-5" style={{ color: '#71717a' }}>
               Writing prompt {promptCount || (promptIdx + 1)} of {totalPrompts || '...'}
             </p>
           </div>
         )}
 
-        {/* Rotating messages */}
-        <div className="mt-10 text-center max-w-[480px] mx-auto">
-          <p
-            className="text-foreground text-lg font-medium"
-            style={{ opacity: msgFade ? 0 : 1, transition: 'opacity 0.4s ease' }}
-          >
-            {messages[msgIdx]}
-          </p>
-          <p
-            className="text-[13px] mt-2"
-            style={{ color: '#52525b', opacity: msgFade ? 0 : 1, transition: 'opacity 0.4s ease' }}
-          >
-            {subMessages[subIdx]}
-          </p>
+        {/* Two-line rotating messages */}
+        <div className="mt-10 text-center max-w-[480px] mx-auto" style={{ opacity: msgFade ? 0 : 1, transition: 'opacity 0.4s ease' }}>
+          <p className="text-foreground text-[20px] font-semibold">{currentMsg.line1}</p>
+          <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>{currentMsg.line2}</p>
         </div>
 
         {/* File counter (reading only) */}
         {stage === 'reading' && totalFiles > 0 && (
           <div className="mt-8 text-center">
-            <p className="text-muted-foreground text-sm">Reading file {fileCount} of {totalFiles}</p>
+            <p className="text-sm" style={{ color: '#71717a' }}>Reading file {fileCount} of {totalFiles}</p>
             {currentFile && <p className="text-xs font-mono mt-1" style={{ color: '#52525b' }}>{currentFile}</p>}
           </div>
         )}
