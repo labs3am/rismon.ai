@@ -65,7 +65,7 @@ export default function Analyze() {
           setAnalysisId(existing.id);
           if (existing.status === 'questions_ready' && existing.code_understanding) {
             setCodeUnderstanding(existing.code_understanding);
-            setQuestions(existing.smart_questions || []);
+            setQuestions((existing.smart_questions as any[]) || []);
             setStage('describe');
             return;
           }
@@ -73,10 +73,9 @@ export default function Analyze() {
             navigate(`/report/${existing.id}`);
             return;
           }
-          // If reading was already done (has code_understanding), skip to describe
           if (existing.code_understanding) {
             setCodeUnderstanding(existing.code_understanding);
-            setQuestions(existing.smart_questions || []);
+            setQuestions((existing.smart_questions as any[]) || []);
             setStage('describe');
             return;
           }
