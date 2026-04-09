@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Clock, CheckCircle } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
