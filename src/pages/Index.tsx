@@ -4,6 +4,16 @@ import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircl
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
+import lovableLogo from '@/assets/logos/lovable.png';
+import boltLogo from '@/assets/logos/bolt.png';
+import cursorLogo from '@/assets/logos/cursor.png';
+import emergentLogo from '@/assets/logos/emergent.png';
+import replitLogo from '@/assets/logos/replit.png';
+import v0Logo from '@/assets/logos/v0.png';
+import windsurfLogo from '@/assets/logos/windsurf.png';
+import copilotLogo from '@/assets/logos/copilot.png';
+import claudeLogo from '@/assets/logos/claude.png';
+import geminiLogo from '@/assets/logos/gemini.png';
 
 const personas = [
   { icon: Rocket, title: 'Startup founders', q: 'You built a paid app.\nAre your premium features\nactually locked for users\nwho have not paid?\nOr can anyone access them free?' },
@@ -23,16 +33,16 @@ const steps = [
 ];
 
 const platforms = [
-  { name: 'Lovable', bg: '#ff4d4d', letter: 'L' },
-  { name: 'Bolt', bg: '#f5a623', letter: 'B' },
-  { name: 'Cursor', bg: '#4a9eff', letter: 'C' },
-  { name: 'Emergent', bg: '#22c55e', letter: 'E' },
-  { name: 'Replit', bg: '#f26207', letter: 'R' },
-  { name: 'v0', bg: '#000000', letter: 'V', border: '#333' },
-  { name: 'Windsurf', bg: '#06b6d4', letter: 'W' },
-  { name: 'Copilot', bg: '#24292e', letter: 'G' },
-  { name: 'Claude Code', bg: '#c96442', letter: 'C' },
-  { name: 'Gemini', bg: '#4285f4', letter: 'G' },
+  { name: 'Lovable', logo: lovableLogo },
+  { name: 'Bolt', logo: boltLogo },
+  { name: 'Cursor', logo: cursorLogo },
+  { name: 'Emergent', logo: emergentLogo },
+  { name: 'Replit', logo: replitLogo },
+  { name: 'v0', logo: v0Logo },
+  { name: 'Windsurf', logo: windsurfLogo },
+  { name: 'Copilot', logo: copilotLogo },
+  { name: 'Claude Code', logo: claudeLogo },
+  { name: 'Gemini', logo: geminiLogo },
 ];
 
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
