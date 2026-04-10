@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { CheckCircle, AlertTriangle, Loader2, Lock, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
@@ -13,23 +13,28 @@ const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Win
 interface Repo { name: string; full_name: string; html_url: string; owner: { login: string }; updated_at: string; }
 
 export default function Connect() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [appName, setAppName] = useState('');
   const [platform, setPlatform] = useState('');
   const [otherPlatform, setOtherPlatform] = useState('');
-  const [githubConnected, setGithubConnected] = useState(false);
+
+  // GitHub PAT state
   const [githubToken, setGithubToken] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [tokenConnected, setTokenConnected] = useState(false);
   const [repos, setRepos] = useState<Repo[]>([]);
   const [selectedRepo, setSelectedRepo] = useState<Repo | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
   const [loadingRepos, setLoadingRepos] = useState(false);
-  const [oauthWarning, setOauthWarning] = useState('');
+  const [tokenError, setTokenError] = useState('');
+
+  // Supabase optional
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
   const [serviceRoleWarning, setServiceRoleWarning] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [appLimitReached, setAppLimitReached] = useState(false);
@@ -50,74 +55,34 @@ export default function Connect() {
     checkLimit();
   }, [user]);
 
-  useEffect(() => {
-    if (searchParams.get('step') === '2') setStep(2);
-    const checkGithub = async () => {
-      const { data: { session: s } } = await supabase.auth.getSession();
-      const storedEmail = localStorage.getItem('rismon_pre_oauth_email');
-      const storedUserId = localStorage.getItem('rismon_pre_oauth_userid');
+  const isTokenValid = (t: string) => t.startsWith('ghp_') || t.startsWith('github_pat_');
 
-      // If we have stored values, we just came back from GitHub OAuth
-      if (storedEmail) {
-        localStorage.removeItem('rismon_pre_oauth_email');
-        localStorage.removeItem('rismon_pre_oauth_userid');
-
-        const currentUserId = s?.user?.id;
-
-        if (storedUserId && currentUserId && currentUserId !== storedUserId) {
-          // Session switched — gentle warning, no logout
-          setOauthWarning('GitHub was connected but your session changed. Please click Connect GitHub again to complete the connection.');
-          return;
-        }
-
-        if (s?.provider_token) {
-          setGithubToken(s.provider_token);
-          setGithubConnected(true);
-          fetchRepos(s.provider_token);
-        } else {
-          setOauthWarning('Could not get GitHub access. Please click Connect GitHub again.');
-        }
-        return;
-      }
-
-      // Normal page load — check existing GitHub identity
-      if (s?.provider_token) {
-        setGithubToken(s.provider_token);
-        setGithubConnected(true);
-        fetchRepos(s.provider_token);
-      } else {
-        const ghId = s?.user?.identities?.find(i => i.provider === 'github');
-        if (ghId) setGithubConnected(true);
-      }
-    };
-    checkGithub();
-  }, [searchParams]);
-
-  const fetchRepos = async (token: string) => {
-    setLoadingRepos(true);
-    try {
-      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-      });
-      if (res.ok) setRepos(await res.json());
-    } catch { toast.error('Failed to fetch repos'); }
-    setLoadingRepos(false);
+  const handleTokenChange = (val: string) => {
+    setGithubToken(val);
+    setTokenError('');
+    setTokenConnected(false);
+    setRepos([]);
+    setSelectedRepo(null);
   };
 
-  const connectGithub = async () => {
-    setOauthWarning('');
-    if (user) {
-      localStorage.setItem('rismon_pre_oauth_email', user.email || '');
-      localStorage.setItem('rismon_pre_oauth_userid', user.id);
+  const connectWithToken = async () => {
+    if (!isTokenValid(githubToken)) {
+      setTokenError('This does not look like a valid GitHub token');
+      return;
     }
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        scopes: 'repo read:user',
-        redirectTo: `${window.location.origin}/connect?step=2`,
-      }
-    });
-    if (error) toast.error('Failed to connect GitHub');
+    setLoadingRepos(true);
+    setTokenError('');
+    try {
+      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
+        headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error('Failed');
+      setRepos(await res.json());
+      setTokenConnected(true);
+    } catch {
+      setTokenError('Could not connect to GitHub. Check your token has repo access.');
+    }
+    setLoadingRepos(false);
   };
 
   const handleSupabaseKeyChange = (val: string) => {
@@ -125,28 +90,19 @@ export default function Connect() {
     setServiceRoleWarning(val.includes('service_role'));
   };
 
-  const handleComplete = async () => {
+  const saveApp = async (withSupabase: boolean) => {
     if (!user || !selectedRepo) return;
     setSaving(true);
-    const { data, error } = await supabase.from('apps').insert({
-      user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
-      github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
-      supabase_url: supabaseUrl || null, supabase_anon_key: supabaseKey || null,
-      platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
-    }).select().single();
-    if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
-    toast.success('App connected');
-    navigate(`/analyze/${data.id}`);
-  };
-
-  const handleSkipSupabase = async () => {
-    if (!user || !selectedRepo) return;
-    setSaving(true);
-    const { data, error } = await supabase.from('apps').insert({
+    const payload: any = {
       user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
       github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
       platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
-    }).select().single();
+    };
+    if (withSupabase) {
+      payload.supabase_url = supabaseUrl || null;
+      payload.supabase_anon_key = supabaseKey || null;
+    }
+    const { data, error } = await supabase.from('apps').insert(payload).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
     toast.success('App connected');
     navigate(`/analyze/${data.id}`);
@@ -165,7 +121,6 @@ export default function Connect() {
     );
   }
 
-  // App limit reached screen
   if (appLimitReached) {
     return (
       <div className="min-h-screen bg-background">
@@ -239,52 +194,106 @@ export default function Connect() {
           </div>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2 — GitHub PAT */}
         {step === 2 && (
           <div className="bg-card border border-border rounded-2xl p-8 mt-8">
-            <h2 className="text-foreground text-lg font-semibold">Connect your GitHub</h2>
-            <div className="rounded-xl p-4 mt-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
-              <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-primary" /><span className="text-foreground text-sm font-semibold">Read only. Always.</span></div>
-              <div className="mt-3 space-y-1.5">
-                {['We connect to read your code only', 'We can never edit, delete, or change anything', 'Your code is analyzed and immediately discarded', 'Nothing is stored on our servers'].map((t, i) => (
-                  <div key={i} className="flex items-center gap-2"><CheckCircle size={13} className="text-success shrink-0" /><span className="text-muted-foreground text-[13px]">{t}</span></div>
-                ))}
+            <h2 className="text-foreground text-[18px] font-semibold">Connect your GitHub</h2>
+            <p className="text-muted-foreground text-[14px] mt-2">
+              Create a read-only token so Rismon.ai can read your repository.
+            </p>
+
+            {/* Instructions card */}
+            <div className="rounded-xl p-5 mt-5" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
+              <div className="space-y-3 text-[13px]">
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground font-medium shrink-0">1.</span>
+                  <span className="text-muted-foreground">
+                    Open{' '}
+                    <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                      github.com/settings/tokens <ExternalLink size={12} />
+                    </a>
+                  </span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground font-medium shrink-0">2.</span>
+                  <span className="text-muted-foreground">Click <strong className="text-foreground">Generate new token (classic)</strong></span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground font-medium shrink-0">3.</span>
+                  <span className="text-muted-foreground">Check only the <strong className="text-foreground">repo</strong> checkbox</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground font-medium shrink-0">4.</span>
+                  <span className="text-muted-foreground">Copy the token and paste below</span>
+                </div>
               </div>
             </div>
-            <p className="text-subtle text-xs mt-2">GitHub is for connecting your app only. It is not used for login.</p>
 
-            {oauthWarning && (
-              <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
-                <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-amber-400 text-sm">{oauthWarning}</p>
-              </div>
-            )}
-
-            {!githubConnected || !githubToken ? (
-              <div className="text-center mt-6">
-                <Github size={40} className="text-muted-foreground mx-auto" />
-                <button onClick={connectGithub} className="mt-4 border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto hover:border-muted-foreground/30 transition-colors">
-                  <Github size={16} /> Connect GitHub
+            {/* Token input */}
+            <div className="mt-6">
+              <label className="text-foreground text-sm font-medium block mb-1.5">Your GitHub token</label>
+              <div className="relative">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  value={githubToken}
+                  onChange={e => handleTokenChange(e.target.value)}
+                  placeholder="ghp_..."
+                  className={`${inputClass} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken(!showToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showToken ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-            ) : (
+
+              {/* Validation feedback */}
+              {githubToken && !isTokenValid(githubToken) && !tokenError && (
+                <p className="text-destructive text-xs mt-1.5">This does not look like a valid GitHub token</p>
+              )}
+              {tokenError && (
+                <p className="text-destructive text-xs mt-1.5">{tokenError}</p>
+              )}
+              {githubToken && isTokenValid(githubToken) && !tokenConnected && !tokenError && (
+                <div className="flex items-center gap-1 mt-1.5">
+                  <CheckCircle size={13} className="text-success" />
+                  <span className="text-success text-xs">Token format valid</span>
+                </div>
+              )}
+            </div>
+
+            {/* Connect button */}
+            {!tokenConnected && (
+              <button
+                onClick={connectWithToken}
+                disabled={!githubToken || !isTokenValid(githubToken) || loadingRepos}
+                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {loadingRepos && <Loader2 size={16} className="animate-spin" />}
+                Connect
+              </button>
+            )}
+
+            {/* Repo selection */}
+            {tokenConnected && (
               <div className="mt-6">
-                <div className="flex items-center gap-2 mb-4"><CheckCircle size={18} className="text-success" /><span className="text-success text-[15px]">GitHub connected</span></div>
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle size={18} className="text-success" />
+                  <span className="text-success text-[15px]">GitHub connected</span>
+                </div>
                 <label className="text-foreground text-[15px] font-medium block mb-2">Select the repository to analyze</label>
                 <input value={repoSearch} onChange={e => setRepoSearch(e.target.value)} placeholder="Search your repositories..." className={`${inputClass} mb-3`} />
-                {loadingRepos ? (
-                  <div className="flex justify-center py-4"><Loader2 className="animate-spin text-muted-foreground" /></div>
-                ) : (
-                  <div className="max-h-60 overflow-y-auto border border-border rounded-lg">
-                    {filteredRepos.map(r => (
-                      <button key={r.full_name} onClick={() => setSelectedRepo(r)}
-                        className={`w-full text-left px-4 py-3 border-b border-border last:border-0 transition-colors ${selectedRepo?.full_name === r.full_name ? 'bg-primary/10' : 'hover:bg-muted/50'}`}>
-                        <p className="text-foreground text-sm font-medium">{r.name}</p>
-                        <p className="text-muted-foreground text-xs mt-0.5">Updated {relDate(r.updated_at)}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div className="max-h-60 overflow-y-auto border border-border rounded-lg">
+                  {filteredRepos.map(r => (
+                    <button key={r.full_name} onClick={() => setSelectedRepo(r)}
+                      className={`w-full text-left px-4 py-3 border-b border-border last:border-0 transition-colors ${selectedRepo?.full_name === r.full_name ? 'bg-primary/10' : 'hover:bg-muted/50'}`}>
+                      <p className="text-foreground text-sm font-medium">{r.name}</p>
+                      <p className="text-muted-foreground text-xs mt-0.5">Updated {relDate(r.updated_at)}</p>
+                    </button>
+                  ))}
+                </div>
                 <button onClick={() => setStep(3)} disabled={!selectedRepo}
                   className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors disabled:opacity-50">Next →</button>
               </div>
@@ -308,7 +317,7 @@ export default function Connect() {
               <div>
                 <label className="text-foreground text-sm font-medium block mb-1.5">Anon public key</label>
                 <input value={supabaseKey} onChange={e => handleSupabaseKeyChange(e.target.value)} placeholder="eyJhbG..." className={inputClass} />
-                <p className="text-subtle text-xs mt-1">Use your anon key only. Never your service role key.</p>
+                <p className="text-muted-foreground text-xs mt-1">Use your anon key only. Never your service role key.</p>
               </div>
             </div>
             {serviceRoleWarning && (
@@ -318,8 +327,8 @@ export default function Connect() {
               </div>
             )}
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSkipSupabase} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">Skip for now →</button>
-              <button onClick={handleComplete} disabled={saving || serviceRoleWarning}
+              <button onClick={() => saveApp(false)} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">Skip for now →</button>
+              <button onClick={() => saveApp(true)} disabled={saving || serviceRoleWarning}
                 className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
                 {saving && <Loader2 size={16} className="animate-spin" />} Connect Supabase
               </button>
