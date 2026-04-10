@@ -49,9 +49,10 @@ export default function Index() {
       {/* HERO */}
       <section className="pt-40 pb-28 px-6 text-center">
         <div className="max-w-[800px] mx-auto">
-          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you actually know<br />what it built for you?</h1>
-          <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-6">
-            You had an idea. You described it to an AI. The AI built something. But do you know exactly what it built? Rismon.ai reads your entire app and tells you what was built, what works, and what needs fixing. In plain English. Always.
+          <p className="text-[13px]" style={{ color: '#818cf8' }}>Built for non-technical founders</p>
+          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1] mt-4">Do you know what your<br />AI actually built?</h1>
+          <p className="text-[18px] leading-[1.7] max-w-[520px] mx-auto mt-5" style={{ color: '#71717a' }}>
+            Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
             <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3.5 rounded-lg text-base font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
