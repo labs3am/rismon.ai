@@ -253,6 +253,13 @@ export default function Connect() {
             </div>
             <p className="text-subtle text-xs mt-2">GitHub is for connecting your app only. It is not used for login.</p>
 
+            {oauthWarning && (
+              <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+                <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-amber-400 text-sm">{oauthWarning}</p>
+              </div>
+            )}
+
             {!githubConnected || !githubToken ? (
               <div className="text-center mt-6">
                 <Github size={40} className="text-muted-foreground mx-auto" />
