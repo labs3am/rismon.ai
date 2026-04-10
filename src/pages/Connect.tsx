@@ -53,18 +53,34 @@ export default function Connect() {
   useEffect(() => {
     if (searchParams.get('step') === '2') setStep(2);
     const checkGithub = async () => {
-      const originalUserId = localStorage.getItem('rismon_original_user');
       const { data: { session: s } } = await supabase.auth.getSession();
+      const storedEmail = localStorage.getItem('rismon_pre_oauth_email');
+      const storedUserId = localStorage.getItem('rismon_pre_oauth_userid');
 
-      // Check if session was replaced during GitHub OAuth
-      if (originalUserId && s?.user?.id !== originalUserId) {
-        localStorage.removeItem('rismon_original_user');
-        toast.error('Session changed during GitHub connect. Please log in again.');
-        navigate('/login');
+      // If we have stored values, we just came back from GitHub OAuth
+      if (storedEmail) {
+        localStorage.removeItem('rismon_pre_oauth_email');
+        localStorage.removeItem('rismon_pre_oauth_userid');
+
+        const currentUserId = s?.user?.id;
+
+        if (storedUserId && currentUserId && currentUserId !== storedUserId) {
+          // Session switched — gentle warning, no logout
+          setOauthWarning('GitHub was connected but your session changed. Please click Connect GitHub again to complete the connection.');
+          return;
+        }
+
+        if (s?.provider_token) {
+          setGithubToken(s.provider_token);
+          setGithubConnected(true);
+          fetchRepos(s.provider_token);
+        } else {
+          setOauthWarning('Could not get GitHub access. Please click Connect GitHub again.');
+        }
         return;
       }
-      if (originalUserId) localStorage.removeItem('rismon_original_user');
 
+      // Normal page load — check existing GitHub identity
       if (s?.provider_token) {
         setGithubToken(s.provider_token);
         setGithubConnected(true);
@@ -75,7 +91,7 @@ export default function Connect() {
       }
     };
     checkGithub();
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   const fetchRepos = async (token: string) => {
     setLoadingRepos(true);
