@@ -52,7 +52,18 @@ export default function Connect() {
   useEffect(() => {
     if (searchParams.get('step') === '2') setStep(2);
     const checkGithub = async () => {
+      const originalUserId = localStorage.getItem('rismon_original_user');
       const { data: { session: s } } = await supabase.auth.getSession();
+
+      // Check if session was replaced during GitHub OAuth
+      if (originalUserId && s?.user?.id !== originalUserId) {
+        localStorage.removeItem('rismon_original_user');
+        toast.error('Session changed during GitHub connect. Please log in again.');
+        navigate('/login');
+        return;
+      }
+      if (originalUserId) localStorage.removeItem('rismon_original_user');
+
       if (s?.provider_token) {
         setGithubToken(s.provider_token);
         setGithubConnected(true);
@@ -63,7 +74,7 @@ export default function Connect() {
       }
     };
     checkGithub();
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const fetchRepos = async (token: string) => {
     setLoadingRepos(true);
@@ -77,12 +88,17 @@ export default function Connect() {
   };
 
   const connectGithub = async () => {
+    // Store current user ID to detect session replacement after OAuth
+    if (user) {
+      localStorage.setItem('rismon_original_user', user.id);
+    }
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
         scopes: 'repo read:user',
         redirectTo: `${window.location.origin}/connect?step=2`,
-        skipBrowserRedirect: false
+        skipBrowserRedirect: false,
+        queryParams: { prompt: 'consent' }
       }
     });
     if (error) toast.error('Failed to connect GitHub');
