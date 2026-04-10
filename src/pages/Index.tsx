@@ -79,7 +79,7 @@ export default function Index() {
               <div key={i} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 transition-colors" style={{ background: '#111111', border: '1px solid #1e1e1e' }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#2e2e2e'; e.currentTarget.style.background = '#161616'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.background = '#111111'; }}>
-                <div className="w-5 h-5 rounded flex items-center justify-center text-[11px] font-bold text-white" style={{ background: p.bg, border: p.border ? `1px solid ${p.border}` : undefined }}>{p.letter}</div>
+                <img src={p.logo} alt={p.name} className="w-5 h-5 rounded object-contain" loading="lazy" width={20} height={20} />
                 <span className="text-[13px] font-medium text-white">{p.name}</span>
               </div>
             ))}
