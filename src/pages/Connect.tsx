@@ -26,6 +26,7 @@ export default function Connect() {
   const [selectedRepo, setSelectedRepo] = useState<Repo | null>(null);
   const [repoSearch, setRepoSearch] = useState('');
   const [loadingRepos, setLoadingRepos] = useState(false);
+  const [oauthWarning, setOauthWarning] = useState('');
   const [supabaseUrl, setSupabaseUrl] = useState('');
   const [supabaseKey, setSupabaseKey] = useState('');
   const [serviceRoleWarning, setServiceRoleWarning] = useState(false);
