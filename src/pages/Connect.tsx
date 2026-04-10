@@ -105,17 +105,16 @@ export default function Connect() {
   };
 
   const connectGithub = async () => {
-    // Store current user ID to detect session replacement after OAuth
+    setOauthWarning('');
     if (user) {
-      localStorage.setItem('rismon_original_user', user.id);
+      localStorage.setItem('rismon_pre_oauth_email', user.email || '');
+      localStorage.setItem('rismon_pre_oauth_userid', user.id);
     }
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
         scopes: 'repo read:user',
         redirectTo: `${window.location.origin}/connect?step=2`,
-        skipBrowserRedirect: false,
-        queryParams: { prompt: 'consent' }
       }
     });
     if (error) toast.error('Failed to connect GitHub');
