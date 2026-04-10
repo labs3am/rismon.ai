@@ -49,10 +49,10 @@ export default function Index() {
       {/* HERO */}
       <section className="pt-40 pb-28 px-6 text-center">
         <div className="max-w-[800px] mx-auto">
-          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you actually know<br />what it built for you?</h1>
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4" style={{ color: '#a78bfa' }}>Made for non-technical founders</p>
+          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
-            You had an idea. You described it to an AI. The AI built something. But do you actually know what it built? Rismon.ai reads your entire codebase and tells you what was built, what works, and what needs fixing. In plain English. Always.
+            Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
             <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3.5 rounded-lg text-base font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
@@ -116,7 +116,7 @@ export default function Index() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-14">
             {steps.map((s, i) => (
               <div key={i}>
-                <p className="text-4xl font-bold" style={{ color: 'rgba(99,102,241,0.3)' }}>{s.n}</p>
+                <p className="text-4xl font-bold" style={{ color: 'rgba(249,115,22,0.3)' }}>{s.n}</p>
                 <p className="text-foreground text-[17px] font-semibold mt-3">{s.title}</p>
                 <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{s.text}</p>
               </div>
@@ -129,7 +129,7 @@ export default function Index() {
       <section id="what-we-check" className="py-[100px] px-6 md:px-10" style={{ background: '#0a0a0a' }}>
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#6366f1' }}>WHAT WE FIND</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#f97316' }}>WHAT WE FIND</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3 max-w-[600px] mx-auto">Most AI-built apps have at least one of these problems</h2>
             <p className="text-[16px] mt-3" style={{ color: '#71717a' }}>We check for all of them. You might be surprised what we find.</p>
           </div>
@@ -236,8 +236,8 @@ export default function Index() {
             </div>
 
             {/* Pro */}
-            <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(99,102,241,0.12)' }}>
-              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
+            <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
+              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
               <p className="text-foreground text-[28px] font-bold">Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">₹999/month</p>
               <p className="text-muted-foreground text-sm mt-1">or ₹799/month billed quarterly</p>
