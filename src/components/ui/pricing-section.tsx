@@ -104,9 +104,10 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
   );
 };
 
-export default function PricingSection() {
+export default function PricingSection({ onWaitlist }: { onWaitlist?: () => void }) {
   const [isYearly, setIsYearly] = useState(false);
   const pricingRef = useRef<HTMLElement>(null);
+  const navigate = useNavigate();
 
   const togglePricingPeriod = (value: string) =>
     setIsYearly(Number.parseInt(value) === 1);
