@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, MessageSquare, AlertCircle, Wrench } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import PricingSection from '@/components/ui/pricing-section';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
@@ -57,6 +56,9 @@ const platforms = [
   { name: 'Claude Code', logo: claudeLogo },
   { name: 'Gemini', logo: geminiLogo },
 ];
+
+const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
+const proFeatures = ['Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -232,9 +234,50 @@ export default function Index() {
       </section>
 
       {/* PRICING */}
-      <div id="pricing">
-        <PricingSection onWaitlist={() => setWaitlistOpen(true)} />
-      </div>
+      <section id="pricing" className="py-28 px-6">
+        <div className="max-w-[960px] mx-auto">
+          <div className="text-center">
+            <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
+            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+            {/* Free */}
+            <div className="bg-card border border-border rounded-2xl p-8">
+              <p className="text-foreground text-[28px] font-bold">Free</p>
+              <p className="text-muted-foreground mt-1">₹0 / forever</p>
+              <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
+              <div className="mt-4 space-y-2.5">
+                {freeFeatures.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-success shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <div className="border-t border-border my-6" />
+              <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
+              <p className="text-muted-foreground text-sm mt-1">Founders understanding their first AI-built app</p>
+              <Link to="/signup" className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Get started free</Link>
+            </div>
+
+            {/* Pro */}
+            <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
+              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
+              <p className="text-foreground text-[28px] font-bold">Pro</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">₹999/month</p>
+              <p className="text-muted-foreground text-sm mt-1">or ₹799/month billed quarterly</p>
+              <p className="text-subtle text-xs mt-1">Regular price ₹1,499 after first 50</p>
+              <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
+              <div className="mt-4 space-y-2.5">
+                {proFeatures.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <div className="border-t border-border my-6" />
+              <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
+              <p className="text-muted-foreground text-sm mt-1">Founders with real users who need continuous protection</p>
+              <button onClick={() => setWaitlistOpen(true)} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Join founding member waitlist</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* WHY WE BUILT THIS */}
       <section className="py-28 px-6">
