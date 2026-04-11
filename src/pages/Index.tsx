@@ -15,6 +15,19 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
+import questionsScreenshot from '@/assets/screenshots/questions-screen.jpg';
+import scoreScreenshot from '@/assets/screenshots/score-screen.jpg';
+
+const faqs = [
+  { q: 'Do you store my code?', a: 'No. We read your code during the analysis and discard it immediately after. We never store your source code on our servers.' },
+  { q: 'Is my code safe?', a: 'Yes. We use read-only access to your GitHub repository. We cannot modify, delete, or push anything to your code. Your code never leaves the analysis pipeline.' },
+  { q: 'Do I need to know how to code?', a: 'Not at all. Rismon.ai was built specifically for non-technical founders. Everything is explained in plain English. No jargon, no code snippets, no confusion.' },
+  { q: 'How long does an analysis take?', a: 'About 60 seconds. We read your codebase, ask you a few plain English questions about your app, and deliver your full report with a match score.' },
+  { q: 'What AI platforms do you support?', a: 'We support every AI coding platform including Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If it produces code on GitHub, we can analyze it.' },
+  { q: 'What is the intent match score?', a: 'It is a percentage showing how closely what was actually built matches what you described. A score of 100% means your app does exactly what you intended. Lower scores highlight gaps and missing features.' },
+  { q: 'Can I use Rismon.ai for free?', a: 'Yes. The free plan includes 1 app, 3 scans per week, full reports, and fix prompts. No credit card required.' },
+  { q: 'What kind of issues do you find?', a: 'We find business logic gaps (paid features not locked, wrong user permissions), security issues (exposed API keys, missing auth checks, unprotected database), and unexpected features the AI built without you asking.' },
+];
 
 const personas = [
   { icon: Rocket, title: 'Startup founders', q: 'You built a paid app.\nAre your premium features\nactually locked for users\nwho have not paid?\nOr can anyone access them free?' },
