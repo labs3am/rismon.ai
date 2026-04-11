@@ -280,27 +280,22 @@ export default function Index() {
       </section>
 
       {/* WHY WE BUILT THIS */}
-      <section className="py-24 px-6 bg-input-bg">
-        <div className="max-w-[860px] mx-auto">
-          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase text-center">WHY WE BUILT THIS</p>
-          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-4 text-center leading-tight">Every founder deserves to understand what they built</h2>
-          
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-            <p className="text-muted-foreground text-[15px] leading-[1.8]">
-              AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours.
-            </p>
-            <p className="text-muted-foreground text-[15px] leading-[1.8]">
-              But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.
-            </p>
-          </div>
+      <section className="py-28 px-6">
+        <div className="max-w-[720px] mx-auto text-center">
+          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
+          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
+          <div className="text-muted-foreground text-base leading-[1.9] mt-6 text-left md:text-center whitespace-pre-line">
+{`AI tools have made building software accessible to everyone.
 
-          <div className="mt-12 border-t border-border pt-10 text-center">
-            <p className="text-foreground text-lg md:text-xl font-medium leading-relaxed max-w-[600px] mx-auto">
-              Rismon.ai exists to change that.
-            </p>
-            <p className="text-muted-foreground text-[15px] leading-[1.8] mt-4 max-w-[540px] mx-auto">
-              We read your app. We explain it to you. We tell you what is wrong. We give you the fix. <span className="text-primary font-medium">In plain English. Every time.</span>
-            </p>
+Anyone can now describe an idea and have a working app in hours.
+
+But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.
+
+Rismon.ai exists to change that.
+
+We read your app. We explain it to you. We tell you what is wrong. We give you the fix.
+
+In plain English. Every time.`}
           </div>
         </div>
       </section>
