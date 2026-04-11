@@ -8,61 +8,88 @@ const corsHeaders = {
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
 function buildReminderEmailHtml(userName: string): string {
-  const name = userName || "there";
+  const name = userName || "Founder";
+
+  const step = (num: string, title: string, desc: string) => `
+    <tr>
+      <td style="padding:16px 0;border-bottom:1px solid #1a1a1a;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="48" valign="top">
+              <div style="width:40px;height:40px;border-radius:10px;background-color:#1a1a1a;color:#f97316;font-size:14px;font-weight:700;text-align:center;line-height:40px;">${num}</div>
+            </td>
+            <td style="padding-left:14px;" valign="top">
+              <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#f5f5f5;">${title}</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 0;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;">
-        
+      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border-radius:12px;overflow:hidden;border:1px solid #1a1a1a;">
+
         <!-- Header -->
-        <tr><td style="background-color:#0a0a0a;padding:32px 40px;text-align:center;">
-          <h1 style="margin:0;font-size:24px;font-weight:700;color:#f97316;">Rismon.ai</h1>
-          <p style="margin:6px 0 0;font-size:13px;color:#a1a1aa;">Your AI app auditor</p>
+        <tr><td style="padding:32px 40px;text-align:center;border-bottom:1px solid #1a1a1a;">
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f97316;">Rismon.ai</h1>
+          <p style="margin:6px 0 0;font-size:12px;color:#a1a1aa;letter-spacing:0.5px;">Your AI App Auditor</p>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="padding:36px 40px;">
-          <h2 style="margin:0 0 16px;font-size:20px;font-weight:600;color:#0a0a0a;">Hey ${name} 👋</h2>
-          
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#3f3f46;">
-            We noticed you signed up for Rismon.ai but haven't connected your app yet. You're just one step away from getting a full audit of what your AI actually built.
+          <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#f5f5f5;">Dear ${name} 👋</p>
+
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#d4d4d8;">
+            We noticed you haven't completed the setup process yet — and you're so close!
           </p>
 
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#3f3f46;">
-            Here's what Rismon does once you connect your app:
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#d4d4d8;">
+            It's really easy. Here are the <strong style="color:#f97316;">five steps</strong> to know your app completely:
           </p>
 
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-            <tr><td style="padding:10px 0;font-size:14px;color:#3f3f46;">✅ <strong>Reads your entire codebase</strong> — understands what was built</td></tr>
-            <tr><td style="padding:10px 0;font-size:14px;color:#3f3f46;">✅ <strong>Asks you smart questions</strong> — in plain English, no tech jargon</td></tr>
-            <tr><td style="padding:10px 0;font-size:14px;color:#3f3f46;">✅ <strong>Gives you an Intent Match Score</strong> — how close is the code to your vision</td></tr>
-            <tr><td style="padding:10px 0;font-size:14px;color:#3f3f46;">✅ <strong>Finds security issues</strong> — before your users do</td></tr>
+          <!-- Steps -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+            ${step("01", "Create your account", "Sign up with your email. Takes 30 seconds. No credit card needed.")}
+            ${step("02", "Connect your app", "Connect your GitHub repo. Read-only access. We never store your code.")}
+            ${step("03", "We study your app", "Rismon.ai reads your entire codebase and understands what was actually built.")}
+            ${step("04", "Tell us your business", "Describe what your app is supposed to do. Plain English only.")}
+            ${step("05", "Get your report", "Plain English report showing every gap plus exact prompts to fix each issue.")}
           </table>
 
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#d4d4d8;">
+            You've already completed step 1 — now just connect your app and let Rismon do the rest.
+          </p>
+
+          <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:8px 0 28px;">
-              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:8px;">
-                Connect my app now →
+            <tr><td align="center" style="padding:4px 0 32px;">
+              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
+                Connect my app →
               </a>
             </td></tr>
           </table>
 
-          <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#3f3f46;">
-            Having trouble? Just reply to this email — we're here to help.
-          </p>
+          <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#a1a1aa;">
+              💬 Facing any issues or have questions? Just <strong style="color:#f5f5f5;">hit reply</strong> — we're here to help you every step of the way.
+            </p>
+          </div>
 
-          <p style="margin:24px 0 0;font-size:15px;color:#3f3f46;">
+          <p style="margin:28px 0 0;font-size:14px;color:#a1a1aa;">
             Best,<br/>
-            <strong>The Rismon.ai Team</strong>
+            <strong style="color:#f5f5f5;">The Rismon.ai Team</strong>
           </p>
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="background-color:#fafafa;padding:20px 40px;text-align:center;border-top:1px solid #e5e5e5;">
-          <p style="margin:0;font-size:12px;color:#a1a1aa;">
+        <tr><td style="padding:20px 40px;text-align:center;border-top:1px solid #1a1a1a;">
+          <p style="margin:0;font-size:11px;color:#52525b;">
             You're receiving this because you signed up on Rismon.ai.<br/>
             © 2026 Rismon.ai — Built for non-technical founders.
           </p>
