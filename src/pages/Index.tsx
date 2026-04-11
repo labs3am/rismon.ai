@@ -15,8 +15,6 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
-import questionsScreenshot from '@/assets/screenshots/questions-screen.jpg';
-import scoreScreenshot from '@/assets/screenshots/score-screen.jpg';
 
 const faqs = [
   { q: 'Do you store my code?', a: 'No. We read your code during the analysis and discard it immediately after. We never store your source code on our servers.' },
