@@ -302,6 +302,56 @@ In plain English. Every time.`}
         </div>
       </section>
 
+      {/* SEE IT IN ACTION */}
+      <section className="bg-input-bg py-24 px-6">
+        <div className="max-w-[1100px] mx-auto">
+          <div className="text-center">
+            <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">SEE IT IN ACTION</p>
+            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Plain English questions. Clear score.</h2>
+            <p className="text-muted-foreground text-lg max-w-[520px] mx-auto mt-4 leading-[1.7]">
+              We ask simple questions about your app. You answer in plain English. Then we show you exactly how well your app matches what you described.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-14">
+            <div>
+              <p className="text-primary text-xs font-semibold tracking-[0.08em] uppercase mb-4">AI asks you simple questions</p>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-lg">
+                <img src={questionsScreenshot} alt="Rismon.ai asking plain English questions about your app" className="w-full" loading="lazy" width={800} height={600} />
+              </div>
+              <p className="text-muted-foreground text-sm mt-3">No code. No jargon. Just yes/no and plain English answers.</p>
+            </div>
+            <div>
+              <p className="text-primary text-xs font-semibold tracking-[0.08em] uppercase mb-4">Your app gets a match score</p>
+              <div className="rounded-2xl overflow-hidden border border-border shadow-lg">
+                <img src={scoreScreenshot} alt="Rismon.ai showing intent match score and business logic gaps" className="w-full" loading="lazy" width={800} height={600} />
+              </div>
+              <p className="text-muted-foreground text-sm mt-3">See exactly what matches your vision and what needs fixing.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-28 px-6">
+        <div className="max-w-[720px] mx-auto">
+          <div className="text-center">
+            <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">FAQ</p>
+            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Frequently asked questions</h2>
+          </div>
+          <Accordion type="single" collapsible className="mt-12">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+                <AccordionTrigger className="text-foreground text-[16px] font-medium hover:no-underline hover:text-primary py-5">{faq.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground text-[15px] leading-[1.7]">{faq.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          <div className="text-center mt-10">
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
