@@ -46,11 +46,18 @@ export default function Settings() {
 
   const deleteAccount = async () => {
     if (!user) return;
-    await supabase.from('analyses').delete().eq('user_id', user.id);
-    await supabase.from('apps').delete().eq('user_id', user.id);
-    await supabase.from('profiles').delete().eq('id', user.id);
-    await signOut();
-    navigate('/');
+    try {
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) {
+        toast.error('Failed to delete account. Please try again.');
+        return;
+      }
+      await signOut();
+      toast.success('Account deleted successfully');
+      navigate('/');
+    } catch {
+      toast.error('Something went wrong. Please try again.');
+    }
   };
 
   const inputClass = "w-full bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors";
