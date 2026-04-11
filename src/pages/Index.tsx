@@ -233,7 +233,7 @@ export default function Index() {
 
       {/* PRICING */}
       <div id="pricing">
-        <PricingSection />
+        <PricingSection onWaitlist={() => setWaitlistOpen(true)} />
       </div>
 
       {/* WHY WE BUILT THIS */}
