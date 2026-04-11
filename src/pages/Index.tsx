@@ -15,8 +15,6 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
-import questionsScreenshot from '@/assets/screenshots/questions-screen.jpg';
-import scoreScreenshot from '@/assets/screenshots/score-screen.jpg';
 
 const faqs = [
   { q: 'Do you store my code?', a: 'No. We read your code during the analysis and discard it immediately after. We never store your source code on our servers.' },
@@ -302,34 +300,6 @@ In plain English. Every time.`}
         </div>
       </section>
 
-      {/* SEE IT IN ACTION */}
-      <section className="bg-input-bg py-24 px-6">
-        <div className="max-w-[1100px] mx-auto">
-          <div className="text-center">
-            <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">SEE IT IN ACTION</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Plain English questions. Clear score.</h2>
-            <p className="text-muted-foreground text-lg max-w-[520px] mx-auto mt-4 leading-[1.7]">
-              We ask simple questions about your app. You answer in plain English. Then we show you exactly how well your app matches what you described.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-14">
-            <div>
-              <p className="text-primary text-xs font-semibold tracking-[0.08em] uppercase mb-4">AI asks you simple questions</p>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-lg">
-                <img src={questionsScreenshot} alt="Rismon.ai asking plain English questions about your app" className="w-full" loading="lazy" width={800} height={600} />
-              </div>
-              <p className="text-muted-foreground text-sm mt-3">No code. No jargon. Just yes/no and plain English answers.</p>
-            </div>
-            <div>
-              <p className="text-primary text-xs font-semibold tracking-[0.08em] uppercase mb-4">Your app gets a match score</p>
-              <div className="rounded-2xl overflow-hidden border border-border shadow-lg">
-                <img src={scoreScreenshot} alt="Rismon.ai showing intent match score and business logic gaps" className="w-full" loading="lazy" width={800} height={600} />
-              </div>
-              <p className="text-muted-foreground text-sm mt-3">See exactly what matches your vision and what needs fixing.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* FAQ */}
       <section id="faq" className="py-28 px-6">
