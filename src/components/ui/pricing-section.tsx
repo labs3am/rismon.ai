@@ -201,6 +201,7 @@ export default function PricingSection({ onWaitlist }: { onWaitlist?: () => void
 
                 <CardContent className="p-8 pt-6">
                   <button
+                    onClick={() => plan.popular ? onWaitlist?.() : navigate('/signup')}
                     className={cn(
                       "w-full py-3 rounded-lg text-sm font-medium transition-colors",
                       plan.popular
