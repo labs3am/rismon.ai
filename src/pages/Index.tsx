@@ -280,7 +280,7 @@ export default function Index() {
             {/* Free */}
             <div className="bg-card border border-border rounded-2xl p-8">
               <p className="text-foreground text-[28px] font-bold">Free</p>
-              <p className="text-muted-foreground mt-1">₹0 / forever</p>
+              <p className="text-muted-foreground mt-1">$0 / forever</p>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
               <div className="mt-4 space-y-2.5">
                 {freeFeatures.map((f, i) => (
@@ -297,9 +297,9 @@ export default function Index() {
             <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
               <p className="text-foreground text-[28px] font-bold">Pro</p>
-              <p className="text-foreground text-2xl font-semibold mt-1">₹999/month</p>
-              <p className="text-muted-foreground text-sm mt-1">or ₹799/month billed quarterly</p>
-              <p className="text-subtle text-xs mt-1">Regular price ₹1,499 after first 50</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
+              <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
+              <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
               <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
               <div className="mt-4 space-y-2.5">
                 {proFeatures.map((f, i) => (
