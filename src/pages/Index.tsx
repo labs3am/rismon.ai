@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -19,6 +19,8 @@ import geminiLogo from '@/assets/logos/gemini.png';
 const faqs = [
   { q: 'Do you store my code?', a: 'No. We read your code during the analysis and discard it immediately after. We never store your source code on our servers.' },
   { q: 'Is my code safe?', a: 'Yes. We use read-only access to your GitHub repository. We cannot modify, delete, or push anything to your code. Your code never leaves the analysis pipeline.' },
+  { q: 'Do you log my IP address?', a: 'No. We do not log, store, or track IP addresses. Our hosting provides only aggregated country-level visitor counts with no personally identifiable information.' },
+  { q: 'Can I verify your privacy claims?', a: 'Yes. Rismon.ai is fully open source. You can read every line of code that touches your data on our GitHub repository. Nothing is hidden.' },
   { q: 'Do I need to know how to code?', a: 'Not at all. Rismon.ai was built specifically for non-technical founders. Everything is explained in plain English. No jargon, no code snippets, no confusion.' },
   { q: 'How long does an analysis take?', a: 'About 60 seconds. We read your codebase, ask you a few plain English questions about your app, and deliver your full report with a match score.' },
   { q: 'What AI platforms do you support?', a: 'We support every AI coding platform including Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If it produces code on GitHub, we can analyze it.' },
@@ -229,6 +231,40 @@ export default function Index() {
                 <p className="text-muted-foreground text-sm mt-2">{item.text}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECURITY & PRIVACY */}
+      <section className="py-24 px-6" style={{ background: '#0a0a0a' }}>
+        <div className="max-w-[1000px] mx-auto">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">SECURITY & PRIVACY</p>
+            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Your code is yours. We just read it once.</h2>
+            <p className="text-muted-foreground text-lg max-w-[560px] mx-auto mt-4 leading-[1.7]">
+              We built Rismon.ai with privacy as the foundation. Here is exactly how your data is handled.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
+            {[
+              { icon: EyeOff, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
+              { icon: Eye, title: 'Read-only GitHub access', text: 'We cannot modify, delete, or push anything to your repository. Read-only. Always.' },
+              { icon: ShieldCheck, title: 'No IP logging', text: 'We do not log or store IP addresses. Our analytics are aggregated country-level only.' },
+              { icon: Code2, title: 'Fully open source', text: 'Every line of Rismon.ai is on GitHub. Verify our claims yourself. Nothing is hidden.' },
+              { icon: Timer, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens in our database.' },
+              { icon: Lock, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data with anyone.' },
+            ].map((item, i) => (
+              <div key={i} className="p-5 rounded-xl" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
+                <item.icon size={22} className="text-primary" />
+                <p className="text-foreground text-[15px] font-semibold mt-3">{item.title}</p>
+                <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: '#71717a' }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <a href="https://github.com/ArismonAI/rismon" target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium hover:underline">
+              View our source code on GitHub →
+            </a>
           </div>
         </div>
       </section>
