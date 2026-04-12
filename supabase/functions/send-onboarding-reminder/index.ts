@@ -97,7 +97,7 @@ function buildAnalysisReminderHtml(userName: string): string {
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center" style="padding:4px 0 28px;">
-              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
+              <a href="https://rismon.ai/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
                 Analyze my app now →
               </a>
             </td></tr>
@@ -117,9 +117,9 @@ function buildAnalysisReminderHtml(userName: string): string {
         <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
           <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#f5f5f5;">Rismon.ai</p>
           <p style="margin:0 0 8px;font-size:12px;color:#52525b;">
-            <a href="https://rismonai.lovable.app/privacy" style="color:#52525b;text-decoration:underline;">Privacy</a>
+            <a href="https://rismon.ai/privacy" style="color:#52525b;text-decoration:underline;">Privacy</a>
             &nbsp;·&nbsp;
-            <a href="https://rismonai.lovable.app/terms" style="color:#52525b;text-decoration:underline;">Terms</a>
+            <a href="https://rismon.ai/terms" style="color:#52525b;text-decoration:underline;">Terms</a>
             &nbsp;·&nbsp;
             <a href="https://github.com/labs3am/rismon.ai" style="color:#52525b;text-decoration:underline;">Source code</a>
           </p>
