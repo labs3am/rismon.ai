@@ -1,28 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-export default function AdminWaitlist() {
-  const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
-  const [denied, setDenied] = useState(false);
-  const [entries, setEntries] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setDenied(false);
-    const { data, error } = await supabase.functions.invoke('admin-waitlist', {
-      body: { password }
-    });
-    if (error || data?.error) {
-      setDenied(true);
+export default function AdminWaitlist() {
+  const navigate = useNavigate();
+  const [authed, setAuthed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState<any[]>([]);
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
+        navigate('/');
+        return;
+      }
+      // Fetch waitlist
+      const { data, error } = await supabase.functions.invoke('admin-waitlist', {
+        body: { admin_email: user.email }
+      });
+      if (error || data?.error) {
+        navigate('/');
+        return;
+      }
+      setEntries(data.entries || []);
+      setAuthed(true);
       setLoading(false);
-      return;
-    }
-    setEntries(data.entries || []);
-    setAuthed(true);
-    setLoading(false);
-  };
+    };
+    check();
+  }, [navigate]);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -51,22 +59,15 @@ export default function AdminWaitlist() {
     URL.revokeObjectURL(url);
   };
 
-  if (!authed) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="max-w-[360px] w-full text-center">
-          <h1 className="text-foreground text-[24px] font-semibold">Admin access</h1>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password"
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            className="w-full mt-6 bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary" />
-          <button onClick={handleLogin} disabled={loading} className="w-full mt-3 bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-            {loading ? 'Checking...' : 'Enter'}
-          </button>
-          {denied && <p className="text-destructive text-sm mt-3">Access denied</p>}
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
+
+  if (!authed) return null;
 
   return (
     <div className="min-h-screen bg-background px-6 py-10">

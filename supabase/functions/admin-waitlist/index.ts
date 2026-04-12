@@ -4,7 +4,7 @@ const corsHeaders = {
 };
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "rismon2026admin";
+const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,9 +12,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { password } = await req.json();
+    // Verify the caller is authenticated and is an admin
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (password !== ADMIN_PASSWORD) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user || !ADMIN_EMAILS.includes(user.email || '')) {
       return new Response(JSON.stringify({ error: "Access denied" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -22,10 +36,7 @@ Deno.serve(async (req) => {
     }
 
     // Use service role to bypass RLS
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data, error } = await supabase
       .from("waitlist")
