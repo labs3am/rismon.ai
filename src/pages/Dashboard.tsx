@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { PlusCircle, Github, Clock, Zap, AlertTriangle } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
+  const [searchParams] = useSearchParams();
+  const githubConflict = searchParams.get('github_conflict') === 'true';
   const navigate = useNavigate();
 
   const getGreeting = () => {
