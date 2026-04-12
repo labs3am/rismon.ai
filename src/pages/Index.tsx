@@ -435,6 +435,7 @@ In plain English. Every time.`}
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 }
