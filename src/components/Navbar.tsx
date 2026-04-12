@@ -19,6 +19,7 @@ export default function Navbar() {
           <button onClick={() => scrollTo('how-it-works')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>How it works</button>
           <button onClick={() => scrollTo('what-we-check')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>What we check</button>
           <button onClick={() => scrollTo('pricing')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Pricing</button>
+          <button onClick={() => scrollTo('security-privacy')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Security</button>
         </div>
         <div className="hidden md:flex items-center gap-3">
           <Link to="/login" className="text-sm transition-colors" style={{ color: '#71717a' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = '#71717a')}>Log in</Link>
@@ -33,6 +34,7 @@ export default function Navbar() {
           <button onClick={() => scrollTo('how-it-works')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>How it works</button>
           <button onClick={() => scrollTo('what-we-check')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>What we check</button>
           <button onClick={() => scrollTo('pricing')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>Pricing</button>
+          <button onClick={() => scrollTo('security-privacy')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>Security</button>
           <Link to="/login" className="text-foreground text-sm py-2" onClick={() => setOpen(false)}>Log in</Link>
           <Link to="/signup" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium text-center" onClick={() => setOpen(false)}>Get Started</Link>
         </div>
