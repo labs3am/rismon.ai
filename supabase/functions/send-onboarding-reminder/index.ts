@@ -7,20 +7,35 @@ const corsHeaders = {
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
-function buildReminderEmailHtml(userName: string): string {
+function buildAnalysisReminderHtml(userName: string): string {
   const name = userName || "Founder";
 
-  const step = (num: string, title: string, desc: string) => `
+  const issueRow = (emoji: string, title: string, desc: string) => `
     <tr>
-      <td style="padding:16px 0;border-bottom:1px solid #1a1a1a;">
+      <td style="padding:18px 0;border-bottom:1px solid #1e1e1e;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td width="48" valign="top">
-              <div style="width:40px;height:40px;border-radius:10px;background-color:#1a1a1a;color:#f97316;font-size:14px;font-weight:700;text-align:center;line-height:40px;">${num}</div>
-            </td>
-            <td style="padding-left:14px;" valign="top">
+            <td width="44" valign="top" style="font-size:22px;line-height:1;">${emoji}</td>
+            <td style="padding-left:10px;" valign="top">
               <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#f5f5f5;">${title}</p>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">${desc}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`;
+
+  const stepRow = (num: string, title: string, desc: string) => `
+    <tr>
+      <td style="padding:14px 0;${num !== "4" ? "border-bottom:1px solid #1e1e1e;" : ""}">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="40" valign="top">
+              <div style="width:32px;height:32px;border-radius:8px;background-color:#6366f1;color:#ffffff;font-size:13px;font-weight:700;text-align:center;line-height:32px;">${num}</div>
+            </td>
+            <td style="padding-left:12px;" valign="top">
+              <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#f5f5f5;">${title}</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">${desc}</p>
             </td>
           </tr>
         </table>
@@ -30,68 +45,85 @@ function buildReminderEmailHtml(userName: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#080808;font-family:-apple-system,Inter,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#080808;padding:40px 0;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border-radius:12px;overflow:hidden;border:1px solid #1a1a1a;">
+      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#111111;border-radius:14px;overflow:hidden;border:1px solid #1e1e1e;">
 
         <!-- Header -->
-        <tr><td style="padding:32px 40px;text-align:center;border-bottom:1px solid #1a1a1a;">
-          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f97316;">Rismon.ai</h1>
-          <p style="margin:6px 0 0;font-size:12px;color:#a1a1aa;letter-spacing:0.5px;">Your AI App Auditor</p>
+        <tr><td style="padding:28px 40px;text-align:center;border-bottom:1px solid #1e1e1e;">
+          <h1 style="margin:0;font-size:20px;font-weight:700;color:#6366f1;">Rismon.ai</h1>
         </td></tr>
 
         <!-- Body -->
         <tr><td style="padding:36px 40px;">
-          <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#f5f5f5;">Dear ${name} 👋</p>
 
-          <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            We noticed you haven't completed the setup process yet — and you're so close!
+          <h2 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#f5f5f5;line-height:1.3;">
+            Your app is waiting<br/>to be analyzed.
+          </h2>
+
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#71717a;">
+            You signed up for Rismon.ai but have not run your first analysis yet.
           </p>
 
-          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            It's really easy. Here are the <strong style="color:#f97316;">five steps</strong> to know your app completely:
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#71717a;">
+            We analyzed hundreds of AI-built apps. Here is what we find most often:
           </p>
 
-          <!-- Steps -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-            ${step("01", "Create your account", "Sign up with your email. Takes 30 seconds. No credit card needed.")}
-            ${step("02", "Connect your app", "Connect your GitHub repo. Read-only access. We never store your code.")}
-            ${step("03", "We study your app", "Rismon.ai reads your entire codebase and understands what was actually built.")}
-            ${step("04", "Tell us your business", "Describe what your app is supposed to do. Plain English only.")}
-            ${step("05", "Get your report", "Plain English report showing every gap plus exact prompts to fix each issue.")}
+          <!-- Issues -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            ${issueRow("💸", "Paid features with no payment gate.", "Free users access everything. Founder has no idea.")}
+            ${issueRow("🔓", "User data publicly readable.", "No database protection. Anyone can read your users' info.")}
+            ${issueRow("🚪", "Admin pages open to everyone.", "Any user can reach your admin panel right now.")}
+            ${issueRow("🤖", "Features nobody asked for.", "The AI built extra things. Most founders never knew.")}
           </table>
 
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            You've already completed step 1 — now just connect your app and let Rismon do the rest.
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#71717a;">
+            Your app might have none of these. Or it might have all of them. The only way to know is to check.
           </p>
+
+          <!-- Steps Card -->
+          <div style="background-color:#0a0a0a;border:1px solid #1e1e1e;border-radius:12px;padding:24px 28px;margin:0 0 28px;">
+            <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#f5f5f5;">How to run your first analysis</p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              ${stepRow("1", "Go to your dashboard", "Click Connect an app")}
+              ${stepRow("2", "Enter your app name", "Choose Lovable, Bolt, Cursor or whichever platform you used")}
+              ${stepRow("3", "Connect your GitHub", "Read only. We cannot edit or delete anything. Code is discarded after scan.")}
+              ${stepRow("4", "Get your plain English report", "Takes about 60 seconds. No code knowledge needed.")}
+            </table>
+          </div>
 
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:4px 0 32px;">
-              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
-                Connect my app →
+            <tr><td align="center" style="padding:4px 0 28px;">
+              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#6366f1;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
+                Analyze my app now
               </a>
             </td></tr>
           </table>
 
-          <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
-            <p style="margin:0;font-size:14px;line-height:1.6;color:#a1a1aa;">
-              💬 Facing any issues or have questions? Just <strong style="color:#f5f5f5;">hit reply</strong> — we're here to help you every step of the way.
+          <!-- Support box -->
+          <div style="background-color:#0a0a0a;border-radius:10px;padding:20px 24px;border:1px solid #1e1e1e;">
+            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#f5f5f5;">Hit any issues? Just reply.</p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#71717a;">
+              We read every message personally. If something is broken or confusing, tell us and we will fix it right away. No bots. No support tickets. Just us.
             </p>
           </div>
 
-          <p style="margin:28px 0 0;font-size:14px;color:#a1a1aa;">
-            Best,<br/>
-            <strong style="color:#f5f5f5;">The Rismon.ai Team</strong>
-          </p>
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="padding:20px 40px;text-align:center;border-top:1px solid #1a1a1a;">
-          <p style="margin:0;font-size:11px;color:#52525b;">
-            You're receiving this because you signed up on Rismon.ai.<br/>
-            © 2026 Rismon.ai — Built for non-technical founders.
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1e1e1e;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#f5f5f5;">Rismon.ai</p>
+          <p style="margin:0 0 8px;font-size:12px;color:#52525b;">
+            <a href="https://rismonai.lovable.app/privacy" style="color:#52525b;text-decoration:underline;">Privacy</a>
+            &nbsp;·&nbsp;
+            <a href="https://rismonai.lovable.app/terms" style="color:#52525b;text-decoration:underline;">Terms</a>
+            &nbsp;·&nbsp;
+            <a href="https://github.com/labs3am/rismon.ai" style="color:#52525b;text-decoration:underline;">Source code</a>
+          </p>
+          <p style="margin:0;font-size:11px;color:#3f3f46;">
+            Proudly built in India. From the house of Labs3am.
           </p>
         </td></tr>
 
@@ -118,17 +150,11 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find users who signed up 24-48 hours ago
-    const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-
-    // Get users from profiles who signed up in the 24-48h window
+    // Get ALL profiles with emails
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, full_name, email")
-      .gte("created_at", fortyEightHoursAgo.toISOString())
-      .lte("created_at", twentyFourHoursAgo.toISOString());
+      .not("email", "is", null);
 
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);
@@ -136,27 +162,27 @@ Deno.serve(async (req) => {
     }
 
     if (!profiles || profiles.length === 0) {
-      return new Response(JSON.stringify({ message: "No users to remind", sent: 0 }), {
+      return new Response(JSON.stringify({ message: "No users found", sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Get users who HAVE connected an app
+    // Get users who HAVE run at least one analysis
     const userIds = profiles.map((p) => p.id);
-    const { data: apps } = await supabase
-      .from("apps")
+    const { data: analyses } = await supabase
+      .from("analyses")
       .select("user_id")
       .in("user_id", userIds);
 
-    const usersWithApps = new Set((apps || []).map((a) => a.user_id));
+    const usersWithAnalyses = new Set((analyses || []).map((a) => a.user_id));
 
-    // Filter to users WITHOUT apps
+    // Filter to users WITHOUT any analyses
     const usersToRemind = profiles.filter(
-      (p) => !usersWithApps.has(p.id) && p.email
+      (p) => !usersWithAnalyses.has(p.id) && p.email
     );
 
     if (usersToRemind.length === 0) {
-      return new Response(JSON.stringify({ message: "All users have connected apps", sent: 0 }), {
+      return new Response(JSON.stringify({ message: "All users have run analyses", sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -166,7 +192,6 @@ Deno.serve(async (req) => {
     const isPreview = url.searchParams.get("preview") === "true";
 
     if (isPreview) {
-      // Return preview data without sending
       return new Response(
         JSON.stringify({
           preview: true,
@@ -175,7 +200,7 @@ Deno.serve(async (req) => {
             email: u.email,
           })),
           total: usersToRemind.length,
-          sample_html: buildReminderEmailHtml(usersToRemind[0]?.full_name || "Founder"),
+          sample_html: buildAnalysisReminderHtml(usersToRemind[0]?.full_name || "Founder"),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -197,8 +222,8 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "Rismon.ai <hello@rismon.ai>",
             to: [user.email],
-            subject: "You're one step away from auditing your app 🔍",
-            html: buildReminderEmailHtml(user.full_name || ""),
+            subject: "Your app is waiting to be analyzed",
+            html: buildAnalysisReminderHtml(user.full_name || ""),
             reply_to: "hello@rismon.ai",
           }),
         });
