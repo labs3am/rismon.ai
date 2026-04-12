@@ -220,7 +220,9 @@ Deno.serve(async (req) => {
     let sent = 0;
     const errors: string[] = [];
 
-    for (const user of usersToRemind) {
+    for (const user of finalList) {
+      // Rate limit: wait 600ms between sends
+      await new Promise((r) => setTimeout(r, 600));
       try {
         const res = await fetch(`${GATEWAY_URL}/emails`, {
           method: "POST",
