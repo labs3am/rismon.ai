@@ -31,7 +31,7 @@ export default function Signup() {
     <div className="min-h-screen relative flex items-center justify-center px-4">
       <ParticleBackground />
       <div className="relative z-10 auth-glass-card">
-        <p className="text-primary font-bold text-[22px] text-center mb-8">Rismon.ai</p>
+        <p className="text-foreground font-bold text-[22px] text-center mb-8">Rismon.ai</p>
         <h1 className="text-foreground text-2xl font-semibold">Create your account</h1>
         <p className="text-muted-foreground text-sm mt-1 mb-8">Free to start. No credit card.</p>
         <form onSubmit={handleSubmit} className="space-y-5">
