@@ -262,7 +262,7 @@ export default function Index() {
             ))}
           </div>
           <div className="text-center mt-10">
-            <a href="https://github.com/ArismonAI/rismon" target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium hover:underline">
+            <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium hover:underline">
               View our source code on GitHub →
             </a>
           </div>

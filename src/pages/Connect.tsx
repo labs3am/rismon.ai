@@ -247,7 +247,7 @@ export default function Connect() {
             <div className="flex items-start gap-2.5 mt-4 p-3 rounded-lg" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.12)' }}>
               <ShieldCheck size={16} className="text-primary shrink-0 mt-0.5" />
               <p className="text-muted-foreground text-[13px] leading-relaxed">
-                Read-only access. Your code is never stored. Rismon.ai is <a href="https://github.com/ArismonAI/rismon" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">fully open source</a> — verify our claims yourself.
+                Read-only access. Your code is never stored. Rismon.ai is <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">fully open source</a> — verify our claims yourself.
               </p>
             </div>
 

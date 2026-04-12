@@ -25,7 +25,7 @@ export default function Privacy() {
               <li>The edge function forwards the code to Anthropic (Claude) for analysis.</li>
               <li>The analysis results are saved. The code is immediately discarded.</li>
             </ol>
-            <p className="mt-3">No source code is ever written to our database. You can verify this in our <a href="https://github.com/ArismonAI/rismon" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">open source repository</a>.</p>
+            <p className="mt-3">No source code is ever written to our database. You can verify this in our <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">open source repository</a>.</p>
           </section>
 
           <section>
@@ -57,7 +57,7 @@ export default function Privacy() {
 
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">Open source transparency</h2>
-            <p>Rismon.ai is fully open source. You can read every line of code that touches your data on our <a href="https://github.com/ArismonAI/rismon" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub repository</a>. Nothing is hidden.</p>
+            <p>Rismon.ai is fully open source. You can read every line of code that touches your data on our <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub repository</a>. Nothing is hidden.</p>
           </section>
 
           <section>
