@@ -152,8 +152,8 @@ export default function Index() {
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3.5 rounded-lg text-base font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
-            <a href="#how-it-works" className="border border-hover-border text-foreground px-8 py-3.5 rounded-lg text-base font-medium hover:border-muted-foreground/30 transition-colors">See how it works</a>
+            <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3 rounded-lg text-[15px] font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
+            <a href="#how-it-works" className="border border-border text-foreground px-8 py-3 rounded-lg text-[15px] font-medium hover:bg-secondary transition-all duration-200">See how it works</a>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
         </div>
@@ -198,7 +198,7 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-muted-foreground">If any of these made you pause,</p>
             <p className="text-foreground text-xl font-semibold mt-2">Rismon.ai was built for you.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check your app free</Link>
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check your app free</Link>
           </div>
         </div>
       </section>
@@ -280,7 +280,7 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-foreground text-[20px] font-semibold">Rismon.ai checks all of these. In 60 seconds.</p>
             <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>For free. No card needed.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Check my app now</Link>
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check my app now</Link>
           </div>
         </div>
       </section>
@@ -363,7 +363,7 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders understanding their first AI-built app</p>
-              <Link to="/signup" className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Get started free</Link>
+              <Link to="/signup" className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200">Get started free</Link>
             </div>
 
             {/* Pro */}
@@ -382,7 +382,7 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders with real users who need continuous protection</p>
-              <button onClick={() => setWaitlistOpen(true)} className="block w-full text-center bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">Join founding member waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Join founding member waitlist</button>
             </div>
           </div>
         </div>
@@ -426,7 +426,7 @@ In plain English. Every time.`}
             ))}
           </Accordion>
           <div className="text-center mt-10">
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Get started free</Link>
+            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
           </div>
         </div>
       </section>
