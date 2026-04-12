@@ -67,26 +67,28 @@
   100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
 }
 
+/* Section wrappers */
 .cyber-section {
-  background: rgba(10, 10, 10, 0.75);
+  background: rgba(10, 10, 10, 0.60);
   backdrop-filter: blur(0px);
-  border-top: 1px solid rgba(249, 115, 22, 0.08);
+  border-top: 1px solid rgba(249, 115, 22, 0.10);
 }
 
-.cyber-heading {
-  text-shadow: 0 0 30px rgba(249,115,22,0.3);
-}
-
+/* Glass cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(249, 115, 22, 0.12);
-  backdrop-filter: blur(8px);
-  transition: border-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 .glass-card:hover {
+  background: rgba(255, 255, 255, 0.07);
   border-color: rgba(249, 115, 22, 0.35);
 }
 
+/* Cyber buttons */
 .btn-cyber-primary {
   background: transparent;
   border: 1.5px solid #f97316;
@@ -129,3 +131,52 @@
   color: #f97316;
 }
 
+/* Auth glass card */
+.auth-glass-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 40px;
+}
+
+.auth-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 6px;
+  color: white;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+.auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.30);
+}
+.auth-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  gap: 12px;
+  animation: marquee 30s linear infinite;
+  width: max-content;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  overflow: hidden;
+}
