@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
+import GlobalBackground from '@/components/GlobalBackground';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -139,7 +140,9 @@ export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <GlobalBackground />
+      <div className="relative z-10">
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
@@ -432,6 +435,7 @@ In plain English. Every time.`}
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 }
