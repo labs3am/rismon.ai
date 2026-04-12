@@ -17,16 +17,16 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: 'Do you store my code?', a: 'No. We read your code during the analysis and discard it immediately after. We never store your source code on our servers.' },
-  { q: 'Is my code safe?', a: 'Yes. We use read-only access to your GitHub repository. We cannot modify, delete, or push anything to your code. Your code never leaves the analysis pipeline.' },
-  { q: 'Do you log my IP address?', a: 'No. We do not log, store, or track IP addresses. Our hosting provides only aggregated country-level visitor counts with no personally identifiable information.' },
-  { q: 'Can I verify your privacy claims?', a: 'Yes. Rismon.ai is fully open source. You can read every line of code that touches your data on our GitHub repository. Nothing is hidden.' },
-  { q: 'Do I need to know how to code?', a: 'Not at all. Rismon.ai was built specifically for non-technical founders. Everything is explained in plain English. No jargon, no code snippets, no confusion.' },
-  { q: 'How long does an analysis take?', a: 'About 60 seconds. We read your codebase, ask you a few plain English questions about your app, and deliver your full report with a match score.' },
-  { q: 'What AI platforms do you support?', a: 'We support every AI coding platform including Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If it produces code on GitHub, we can analyze it.' },
-  { q: 'What is the intent match score?', a: 'It is a percentage showing how closely what was actually built matches what you described. A score of 100% means your app does exactly what you intended. Lower scores highlight gaps and missing features.' },
-  { q: 'Can I use Rismon.ai for free?', a: 'Yes. The free plan includes 1 app, 3 scans per week, full reports, and fix prompts. No credit card required.' },
-  { q: 'What kind of issues do you find?', a: 'We find business logic gaps (paid features not locked, wrong user permissions), security issues (exposed API keys, missing auth checks, unprotected database), and unexpected features the AI built without you asking.' },
+  { q: 'I built an app with AI — how do I know it actually works correctly?', a: 'That is exactly what Rismon.ai does. Connect your GitHub repo, tell us what your app should do in plain English, and we compare your intent against what was actually built. You get a clear report showing what matches, what is missing, and what needs fixing.' },
+  { q: 'Can anyone access my paid features without paying?', a: 'This is one of the most common issues we find. AI tools often forget to lock premium features behind payment checks. Rismon.ai detects these gaps and gives you a ready-to-paste fix prompt for your AI tool.' },
+  { q: 'Is my users\' data actually protected?', a: 'We check if your database tables have proper access controls, if sensitive routes require authentication, and if one user can see another user\'s data. These are critical issues that AI tools frequently miss.' },
+  { q: 'Do I need to know how to code to use this?', a: 'Not at all. Rismon.ai was built for non-technical founders. Everything is explained in plain English — no jargon, no code snippets. You describe your app like you would to a friend, and we handle the rest.' },
+  { q: 'What AI coding tools does this work with?', a: 'All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it.' },
+  { q: 'How long does an analysis take?', a: 'About 60 seconds. Connect your repo, answer a few plain English questions, and get your full report with an intent match score, security audit, and fix prompts.' },
+  { q: 'Is it free?', a: 'Yes. The free plan includes 1 app, 3 scans per week, full reports, and fix prompts. No credit card required.' },
+  { q: 'Is my source code safe with you?', a: 'Yes. We use read-only GitHub access — we cannot modify your code. Your source code is processed in memory during analysis and immediately discarded. Nothing is stored. Rismon.ai is fully open source so you can verify this yourself.' },
+  { q: 'Do you log my IP address?', a: 'No. We do not log, store, or track IP addresses. Our hosting provides only aggregated country-level analytics with no personally identifiable information.' },
+  { q: 'Can I verify your privacy claims?', a: 'Yes. Our entire codebase is public on GitHub. You can read every line of code that touches your data. Nothing is hidden.' },
 ];
 
 const personas = [
