@@ -324,19 +324,9 @@ export default function Index() {
         <div className="max-w-[720px] mx-auto text-center">
           <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
           <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
-          <div className="text-muted-foreground text-base leading-[1.9] mt-6 text-left md:text-center whitespace-pre-line">
-{`AI tools have made building software accessible to everyone.
-
-Anyone can now describe an idea and have a working app in hours.
-
-But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.
-
-Rismon.ai exists to change that.
-
-We read your app. We explain it to you. We tell you what is wrong. We give you the fix.
-
-In plain English. Every time.`}
-          </div>
+          <p className="text-muted-foreground text-base leading-[1.8] mt-6 text-left">
+            AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours. But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe. Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix. In plain English. Every time.
+          </p>
         </div>
       </section>
 
