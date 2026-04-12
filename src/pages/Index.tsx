@@ -147,9 +147,11 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="pt-40 pb-28 px-6 text-center">
-        <div className="max-w-[800px] mx-auto">
-          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
+      <section className="pt-40 pb-28 px-6 text-center relative">
+        {/* Hero radial glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)' }} />
+        <div className="max-w-[800px] mx-auto relative">
+          <h1 className="cyber-heading text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
