@@ -185,6 +185,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Parse request body for optional filters
+    let onlyEmails: string[] | null = null;
+    try {
+      const body = await req.json();
+      if (body?.only_emails && Array.isArray(body.only_emails)) {
+        onlyEmails = body.only_emails;
+      }
+    } catch { /* no body or invalid JSON, that's fine */ }
+
+    // Filter further if only_emails is specified
+    const finalList = onlyEmails
+      ? usersToRemind.filter((u) => onlyEmails!.includes(u.email))
+      : usersToRemind;
+
     const url = new URL(req.url);
     const isPreview = url.searchParams.get("preview") === "true";
 
@@ -206,7 +220,9 @@ Deno.serve(async (req) => {
     let sent = 0;
     const errors: string[] = [];
 
-    for (const user of usersToRemind) {
+    for (const user of finalList) {
+      // Rate limit: wait 600ms between sends
+      await new Promise((r) => setTimeout(r, 600));
       try {
         const res = await fetch(`${GATEWAY_URL}/emails`, {
           method: "POST",
