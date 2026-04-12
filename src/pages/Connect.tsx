@@ -52,6 +52,23 @@ export default function Connect() {
   useEffect(() => {
     if (searchParams.get('step') === '2') setStep(2);
     const checkGithub = async () => {
+      // Check for session conflict after OAuth redirect
+      const preId = sessionStorage.getItem('rismon_pre_oauth_id');
+      const preEmail = sessionStorage.getItem('rismon_pre_oauth_email');
+
+      if (preId) {
+        sessionStorage.removeItem('rismon_pre_oauth_id');
+        sessionStorage.removeItem('rismon_pre_oauth_email');
+
+        const { data: { user: current } } = await supabase.auth.getUser();
+        if (current && current.id !== preId) {
+          // Session switched to a different account — sign out and redirect
+          await supabase.auth.signOut();
+          navigate('/dashboard?github_conflict=true');
+          return;
+        }
+      }
+
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s?.provider_token) {
         setGithubToken(s.provider_token);
@@ -63,7 +80,7 @@ export default function Connect() {
       }
     };
     checkGithub();
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   const fetchRepos = async (token: string) => {
     setLoadingRepos(true);
@@ -77,6 +94,12 @@ export default function Connect() {
   };
 
   const connectGithub = async () => {
+    // Store current user identity before OAuth redirect
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      sessionStorage.setItem('rismon_pre_oauth_id', currentUser.id);
+      sessionStorage.setItem('rismon_pre_oauth_email', currentUser.email || '');
+    }
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {

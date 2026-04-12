@@ -122,11 +122,25 @@ export default function Analyze() {
         if (!treeRes.ok) { toast.error('Failed to read repository'); navigate('/dashboard'); return; }
         const tree = await treeRes.json();
 
-        const keywords = ['auth', 'login', 'payment', 'pay', 'stripe', 'razorpay', 'subscription', 'user', 'admin', 'role', 'route', 'api', 'middleware', 'supabase', 'database', 'schema', 'policy', 'hook', 'guard', 'protect', 'permission'];
+        const keywords = [
+          'auth', 'login', 'signup', 'register',
+          'payment', 'pay', 'stripe', 'razorpay', 'subscription', 'billing', 'checkout',
+          'user', 'profile', 'account', 'member',
+          'admin', 'dashboard', 'settings',
+          'route', 'router', 'navigate', 'page',
+          'api', 'endpoint', 'handler', 'server',
+          'middleware', 'guard', 'protect', 'private',
+          'supabase', 'database', 'schema', 'table',
+          'hook', 'context', 'provider', 'store',
+          'connect', 'github', 'repo', 'analyze',
+          'report', 'scan', 'limit', 'plan', 'free', 'pro',
+          'email', 'waitlist', 'notify',
+          'component', 'layout'
+        ];
         const exts = ['.ts', '.tsx', '.js', '.jsx', '.json'];
         const files = (tree.tree || [])
           .filter((f: any) => f.type === 'blob' && exts.some(e => f.path.endsWith(e)) && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
-          .slice(0, 20);
+          .slice(0, 40);
 
         setTotalFiles(files.length);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { PlusCircle, Github, Clock, Zap, AlertTriangle } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
+  const [searchParams] = useSearchParams();
+  const githubConflict = searchParams.get('github_conflict') === 'true';
   const navigate = useNavigate();
 
   const getGreeting = () => {
@@ -165,6 +167,13 @@ export default function Dashboard() {
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
         <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
         <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+
+        {githubConflict && (
+          <div className="flex items-start gap-3 mt-4 rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
+            <p className="text-foreground text-sm">GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
+          </div>
+        )}
 
         {/* Free Plan Status Card */}
         <div className="rounded-xl p-4 mt-6 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
