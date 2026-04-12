@@ -1,35 +1,20 @@
 export default function GlobalBackground() {
-  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Gradient orbs */}
-      <div className="absolute w-[600px] h-[600px] rounded-full top-[-100px] left-[-100px] bg-orb-orange animate-float-slow" />
-      <div className="absolute w-[500px] h-[500px] rounded-full bottom-[-80px] right-[-80px] bg-orb-red animate-float-slow-reverse" />
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" style={{ background: '#0a0a0a' }}>
+      {/* Grid with dot intersections via SVG */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='50' height='50' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='50' height='50' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Ccircle cx='0' cy='0' r='1' fill='rgba(249,115,22,0.10)'/%3E%3Ccircle cx='50' cy='0' r='1' fill='rgba(249,115,22,0.10)'/%3E%3Ccircle cx='0' cy='50' r='1' fill='rgba(249,115,22,0.10)'/%3E%3Ccircle cx='50' cy='50' r='1' fill='rgba(249,115,22,0.10)'/%3E%3C/svg%3E")`,
+        backgroundSize: '50px 50px',
+      }} />
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-grid-pattern" />
+      {/* Left edge orange gradient bleed */}
+      <div className="absolute inset-y-0 left-0 w-[200px]" style={{
+        background: 'linear-gradient(to right, rgba(249,115,22,0.06), transparent)',
+      }} />
 
-      {/* Noise texture */}
-      <div className="absolute inset-0 bg-noise opacity-[0.03]" />
-
-      {/* Left vertical text */}
-      <div
-        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 z-10"
-        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-      >
-        <span className="text-[11px] font-semibold tracking-[0.3em] text-primary/20 select-none">
-          RISMON.AI
-        </span>
-      </div>
-
-      {/* Right floating badge */}
-      <div className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 z-10 flex-col items-center gap-1">
-        <div className="bg-card/60 border border-border/50 backdrop-blur-sm rounded-lg px-2.5 py-2 text-center">
-          <p className="text-[9px] font-medium text-muted-foreground/60 uppercase tracking-wider">{today}</p>
-          <p className="text-[10px] font-semibold text-primary/30 mt-0.5">v1.0</p>
-        </div>
-      </div>
+      {/* Faint vertical edge lines */}
+      <div className="absolute inset-y-0 left-0 w-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="absolute inset-y-0 right-0 w-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
     </div>
   );
 }
