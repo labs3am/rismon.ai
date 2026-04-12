@@ -168,6 +168,13 @@ export default function Dashboard() {
         <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
         <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
+        {githubConflict && (
+          <div className="flex items-start gap-3 mt-4 rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
+            <p className="text-foreground text-sm">GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
+          </div>
+        )}
+
         {/* Free Plan Status Card */}
         <div className="rounded-xl p-4 mt-6 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
           <div className="flex items-center justify-between">
