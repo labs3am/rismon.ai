@@ -12,3 +12,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /connect
+Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+
+Sitemap: https://rismonai.lovable.app/sitemap.xml
