@@ -12,30 +12,30 @@ function buildAnalysisReminderHtml(userName: string): string {
 
   const issueRow = (emoji: string, title: string, desc: string) => `
     <tr>
-      <td style="padding:18px 0;border-bottom:1px solid #1e1e1e;">
+      <td style="padding:18px 0;border-bottom:1px solid #1a1a1a;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td width="44" valign="top" style="font-size:22px;line-height:1;">${emoji}</td>
             <td style="padding-left:10px;" valign="top">
               <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#f5f5f5;">${title}</p>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">${desc}</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
             </td>
           </tr>
         </table>
       </td>
     </tr>`;
 
-  const stepRow = (num: string, title: string, desc: string) => `
+  const stepRow = (num: string, title: string, desc: string, isLast: boolean) => `
     <tr>
-      <td style="padding:14px 0;${num !== "4" ? "border-bottom:1px solid #1e1e1e;" : ""}">
+      <td style="padding:14px 0;${!isLast ? "border-bottom:1px solid #1a1a1a;" : ""}">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td width="40" valign="top">
-              <div style="width:32px;height:32px;border-radius:8px;background-color:#6366f1;color:#ffffff;font-size:13px;font-weight:700;text-align:center;line-height:32px;">${num}</div>
+              <div style="width:32px;height:32px;border-radius:8px;background-color:#f97316;color:#ffffff;font-size:13px;font-weight:700;text-align:center;line-height:32px;">${num}</div>
             </td>
             <td style="padding-left:12px;" valign="top">
               <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#f5f5f5;">${title}</p>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">${desc}</p>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
             </td>
           </tr>
         </table>
@@ -45,14 +45,15 @@ function buildAnalysisReminderHtml(userName: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#080808;font-family:-apple-system,Inter,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#080808;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:#000000;font-family:-apple-system,Inter,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 0;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#111111;border-radius:14px;overflow:hidden;border:1px solid #1e1e1e;">
+      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border-radius:14px;overflow:hidden;border:1px solid #1a1a1a;">
 
         <!-- Header -->
-        <tr><td style="padding:28px 40px;text-align:center;border-bottom:1px solid #1e1e1e;">
-          <h1 style="margin:0;font-size:20px;font-weight:700;color:#6366f1;">Rismon.ai</h1>
+        <tr><td style="padding:28px 40px;text-align:center;border-bottom:1px solid #1a1a1a;">
+          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f97316;">Rismon.ai</h1>
+          <p style="margin:6px 0 0;font-size:12px;color:#a1a1aa;letter-spacing:0.5px;">Your AI App Auditor</p>
         </td></tr>
 
         <!-- Body -->
@@ -62,11 +63,11 @@ function buildAnalysisReminderHtml(userName: string): string {
             Your app is waiting<br/>to be analyzed.
           </h2>
 
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#71717a;">
+          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#d4d4d8;">
             You signed up for Rismon.ai but have not run your first analysis yet.
           </p>
 
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#71717a;">
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#d4d4d8;">
             We analyzed hundreds of AI-built apps. Here is what we find most often:
           </p>
 
@@ -78,34 +79,34 @@ function buildAnalysisReminderHtml(userName: string): string {
             ${issueRow("🤖", "Features nobody asked for.", "The AI built extra things. Most founders never knew.")}
           </table>
 
-          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#71717a;">
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#d4d4d8;">
             Your app might have none of these. Or it might have all of them. The only way to know is to check.
           </p>
 
           <!-- Steps Card -->
-          <div style="background-color:#0a0a0a;border:1px solid #1e1e1e;border-radius:12px;padding:24px 28px;margin:0 0 28px;">
+          <div style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px 28px;margin:0 0 28px;">
             <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#f5f5f5;">How to run your first analysis</p>
             <table width="100%" cellpadding="0" cellspacing="0">
-              ${stepRow("1", "Go to your dashboard", "Click Connect an app")}
-              ${stepRow("2", "Enter your app name", "Choose Lovable, Bolt, Cursor or whichever platform you used")}
-              ${stepRow("3", "Connect your GitHub", "Read only. We cannot edit or delete anything. Code is discarded after scan.")}
-              ${stepRow("4", "Get your plain English report", "Takes about 60 seconds. No code knowledge needed.")}
+              ${stepRow("1", "Go to your dashboard", "Click Connect an app", false)}
+              ${stepRow("2", "Enter your app name", "Choose Lovable, Bolt, Cursor or whichever platform you used", false)}
+              ${stepRow("3", "Connect your GitHub", "Read only. We cannot edit or delete anything. Code is discarded after scan.", false)}
+              ${stepRow("4", "Get your plain English report", "Takes about 60 seconds. No code knowledge needed.", true)}
             </table>
           </div>
 
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center" style="padding:4px 0 28px;">
-              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#6366f1;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
-                Analyze my app now
+              <a href="https://rismonai.lovable.app/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
+                Analyze my app now →
               </a>
             </td></tr>
           </table>
 
           <!-- Support box -->
-          <div style="background-color:#0a0a0a;border-radius:10px;padding:20px 24px;border:1px solid #1e1e1e;">
-            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#f5f5f5;">Hit any issues? Just reply.</p>
-            <p style="margin:0;font-size:13px;line-height:1.6;color:#71717a;">
+          <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
+            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#f5f5f5;">💬 Hit any issues? Just reply.</p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#a1a1aa;">
               We read every message personally. If something is broken or confusing, tell us and we will fix it right away. No bots. No support tickets. Just us.
             </p>
           </div>
@@ -113,7 +114,7 @@ function buildAnalysisReminderHtml(userName: string): string {
         </td></tr>
 
         <!-- Footer -->
-        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1e1e1e;">
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
           <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#f5f5f5;">Rismon.ai</p>
           <p style="margin:0 0 8px;font-size:12px;color:#52525b;">
             <a href="https://rismonai.lovable.app/privacy" style="color:#52525b;text-decoration:underline;">Privacy</a>
@@ -150,7 +151,6 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get ALL profiles with emails
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, full_name, email")
@@ -167,7 +167,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get users who HAVE run at least one analysis
     const userIds = profiles.map((p) => p.id);
     const { data: analyses } = await supabase
       .from("analyses")
@@ -176,7 +175,6 @@ Deno.serve(async (req) => {
 
     const usersWithAnalyses = new Set((analyses || []).map((a) => a.user_id));
 
-    // Filter to users WITHOUT any analyses
     const usersToRemind = profiles.filter(
       (p) => !usersWithAnalyses.has(p.id) && p.email
     );
@@ -187,7 +185,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check preview mode
     const url = new URL(req.url);
     const isPreview = url.searchParams.get("preview") === "true";
 
@@ -206,7 +203,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send emails via Resend through connector gateway
     let sent = 0;
     const errors: string[] = [];
 
