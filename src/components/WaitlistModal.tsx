@@ -43,7 +43,7 @@ export default function WaitlistModal({ isOpen, onClose }: Props) {
           <>
             <h3 className="text-foreground text-[22px] font-semibold">Join founding member waitlist</h3>
             <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
-              Rismon.ai Pro is launching soon. The first 50 founders get ₹999/month locked in forever. Regular price will be ₹1,499/month. Join now to secure your founding price.
+              Rismon.ai Pro is launching soon. The first 50 founders get $12/month locked in forever. Regular price will be $18/month. Join now to secure your founding price.
             </p>
             <form onSubmit={handleSubmit} className="mt-6">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required
