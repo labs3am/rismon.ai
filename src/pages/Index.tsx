@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
-import GlobalBackground from '@/components/GlobalBackground';
+import ParticleBackground from '@/components/ParticleBackground';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -141,7 +141,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <GlobalBackground />
+      <ParticleBackground />
       <div className="relative z-10">
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
