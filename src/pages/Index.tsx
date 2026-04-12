@@ -17,48 +17,121 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: 'I built an app with AI — how do I know it actually works correctly?', a: 'That is exactly what Rismon.ai does. Connect your GitHub repo, tell us what your app should do in plain English, and we compare your intent against what was actually built. You get a clear report showing what matches, what is missing, and what needs fixing.' },
-  { q: 'Can anyone access my paid features without paying?', a: 'This is one of the most common issues we find. AI tools often forget to lock premium features behind payment checks. Rismon.ai detects these gaps and gives you a ready-to-paste fix prompt for your AI tool.' },
-  { q: 'Is my users\' data actually protected?', a: 'We check if your database tables have proper access controls, if sensitive routes require authentication, and if one user can see another user\'s data. These are critical issues that AI tools frequently miss.' },
-  { q: 'Do I need to know how to code to use this?', a: 'Not at all. Rismon.ai was built for non-technical founders. Everything is explained in plain English — no jargon, no code snippets. You describe your app like you would to a friend, and we handle the rest.' },
-  { q: 'What AI coding tools does this work with?', a: 'All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it.' },
-  { q: 'How long does an analysis take?', a: 'About 60 seconds. Connect your repo, answer a few plain English questions, and get your full report with an intent match score, security audit, and fix prompts.' },
-  { q: 'Is it free?', a: 'Yes. The free plan includes 1 app, 3 scans per week, full reports, and fix prompts. No credit card required.' },
-  { q: 'Is my source code safe with you?', a: 'Yes. We use read-only GitHub access — we cannot modify your code. Your source code is processed in memory during analysis and immediately discarded. Nothing is stored. Rismon.ai is fully open source so you can verify this yourself.' },
-  { q: 'Do you log my IP address?', a: 'No. We do not log, store, or track IP addresses. Our hosting provides only aggregated country-level analytics with no personally identifiable information.' },
-  { q: 'Can I verify your privacy claims?', a: 'Yes. Our entire codebase is public on GitHub. You can read every line of code that touches your data. Nothing is hidden.' },
+  {
+    q: "I built an app with AI — how do I know it actually works?",
+    a: "That’s exactly what Rismon.ai is built for. Connect your GitHub repo, describe what your app should do in plain English, and we compare your intent with what was actually built. You get a clear report showing what works, what’s missing, and what needs fixing."
+  },
+  {
+    q: "Can users access paid features without paying?",
+    a: "This is one of the most common issues we find. AI tools often forget to properly lock premium features. Rismon.ai detects these gaps and gives you ready-to-use prompts to fix them."
+  },
+  {
+    q: "Is my users’ data actually protected?",
+    a: "We check if your database has proper access controls, if sensitive routes require authentication, and whether users can access each other’s data. These are critical issues that AI tools often miss."
+  },
+  {
+    q: "Do I need to know how to code?",
+    a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend."
+  },
+  {
+    q: "What AI coding tools does this support?",
+    a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it."
+  },
+  {
+    q: "How long does the analysis take?",
+    a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions."
+  },
+  {
+    q: "Is it free?",
+    a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required."
+  },
+  {
+    q: "Is my source code safe?",
+    a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored."
+  },
+  {
+    q: "Do you track my IP address?",
+    a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics."
+  },
+  {
+    q: "Can I verify your privacy claims?",
+    a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled."
+  }
 ];
 
 const personas = [
-  { icon: Rocket, title: 'Startup founders', q: 'You built a paid app.\nAre your premium features\nactually locked for users\nwho have not paid?\nOr can anyone access them free?' },
-  { icon: Store, title: 'Small business owners', q: "You built a booking system.\nCan your customers see each\nother's personal details?\nOr is their data protected?" },
-  { icon: ShoppingBag, title: 'Ecommerce builders', q: "You built an online store.\nCan your customers see other\npeople's orders and payments?\nOr is each order private?" },
-  { icon: Briefcase, title: 'Freelancers and agencies', q: 'You build apps for clients.\nCan you verify your work is\ncorrect before you deliver it?\nOr are you guessing?' },
-  { icon: Heart, title: 'Healthcare professionals', q: "You built a patient system.\nWho can actually access your\npatients' private records?\nOnly doctors or everyone?" },
-  { icon: GraduationCap, title: 'Educators and creators', q: 'You built a course platform.\nCan students access your paid\ncontent without actually paying?\nOr is it properly locked?' },
+  {
+    icon: Rocket,
+    title: "Startup founders",
+    q: "You built a paid app.\nAre your premium features actually locked for unpaid users?\nOr can anyone access them for free?"
+  },
+  {
+    icon: Store,
+    title: "Small business owners",
+    q: "You built a booking system.\nCan your customers see each other's personal details?\nOr is their data protected?"
+  },
+  {
+    icon: ShoppingBag,
+    title: "Ecommerce builders",
+    q: "You built an online store.\nCan your customers see other people's orders and payments?\nOr is each order private?"
+  },
+  {
+    icon: Briefcase,
+    title: "Freelancers and agencies",
+    q: "You build apps for clients.\nCan you verify your work is correct before delivery?\nOr are you just guessing?"
+  },
+  {
+    icon: Heart,
+    title: "Healthcare professionals",
+    q: "You built a patient system.\nWho can access your patients' private records?\nOnly doctors, or everyone?"
+  },
+  {
+    icon: GraduationCap,
+    title: "Educators and creators",
+    q: "You built a course platform.\nCan students access paid content without paying?\nOr is it properly secured?"
+  }
 ];
 
 const steps = [
-  { n: '01', title: 'Create your account', text: 'Sign up with your email.\nTakes 30 seconds.\nNo credit card needed.' },
-  { n: '02', title: 'Connect your app', text: 'Connect your GitHub repo.\nRead only access.\nWe never store your code.' },
-  { n: '03', title: 'We study your app', text: 'Rismon.ai reads your entire\ncodebase and understands what\nwas actually built.' },
-  { n: '04', title: 'Tell us your business', text: 'Describe what your app\nis supposed to do.\nPlain English only.' },
-  { n: '05', title: 'Get your report', text: 'Plain English report showing\nevery gap plus exact prompts\nto fix each issue.' },
+  {
+    n: "01",
+    title: "Create your account",
+    text: "Sign up with your email.\nTakes about 30 seconds.\nNo credit card required."
+  },
+  {
+    n: "02",
+    title: "Connect your app",
+    text: "Connect your GitHub repository.\nRead-only access.\nWe never store your code."
+  },
+  {
+    n: "03",
+    title: "We analyze your app",
+    text: "Rismon.ai scans your entire codebase\nand understands what was actually built."
+  },
+  {
+    n: "04",
+    title: "Tell us your business",
+    text: "Describe what your app is supposed to do.\nJust use plain English."
+  },
+  {
+    n: "05",
+    title: "Get your report",
+    text: "Receive a clear report showing every gap,\nplus exact prompts to fix each issue."
+  }
 ];
 
 const platforms = [
-  { name: 'Lovable', logo: lovableLogo },
-  { name: 'Bolt', logo: boltLogo },
-  { name: 'Cursor', logo: cursorLogo },
-  { name: 'Emergent', logo: emergentLogo },
-  { name: 'Replit', logo: replitLogo },
-  { name: 'v0', logo: v0Logo },
-  { name: 'Windsurf', logo: windsurfLogo },
-  { name: 'Copilot', logo: copilotLogo },
-  { name: 'Claude Code', logo: claudeLogo },
-  { name: 'Gemini', logo: geminiLogo },
+  { name: "Lovable", logo: lovableLogo },
+  { name: "Bolt.new", logo: boltLogo },
+  { name: "Cursor", logo: cursorLogo },
+  { name: "Emergent", logo: emergentLogo },
+  { name: "Replit", logo: replitLogo },
+  { name: "v0 by Vercel", logo: v0Logo },
+  { name: "Windsurf", logo: windsurfLogo },
+  { name: "GitHub Copilot", logo: copilotLogo },
+  { name: "Claude Code", logo: claudeLogo },
+  { name: "Google Gemini", logo: geminiLogo }
 ];
-
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
 const proFeatures = ['Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
 
