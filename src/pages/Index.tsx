@@ -236,7 +236,7 @@ export default function Index() {
       </section>
 
       {/* SECURITY & PRIVACY */}
-      <section className="py-24 px-6" style={{ background: '#0a0a0a' }}>
+      <section id="security-privacy" className="py-24 px-6" style={{ background: '#0a0a0a' }}>
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">SECURITY & PRIVACY</p>
