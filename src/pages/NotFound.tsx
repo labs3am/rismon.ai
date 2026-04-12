@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import ParticleBackground from "@/components/ParticleBackground";
 
 const funnyMessages = [
   "Even our AI could not find it.",
@@ -32,120 +33,44 @@ const NotFound = () => {
   }, []);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      backgroundColor: "#080808",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "flex-start",
-      fontFamily: "-apple-system, Inter, sans-serif",
-    }}>
-      <div style={{
-        maxWidth: 560,
-        width: "100%",
-        paddingTop: 120,
-        paddingLeft: 24,
-        paddingRight: 24,
-        paddingBottom: 60,
-        textAlign: "center",
-      }}>
-        {/* Big 404 */}
-        <div style={{
-          fontSize: 120,
-          fontWeight: 700,
-          color: "rgba(99,102,241,0.15)",
-          lineHeight: 1,
-          margin: 0,
-        }}>
+    <div className="min-h-screen bg-background relative flex justify-center items-start font-sans">
+      <ParticleBackground />
+      <div className="relative z-10 max-w-[560px] w-full pt-[120px] px-6 pb-[60px] text-center">
+        <div className="text-[120px] font-bold leading-none text-primary/15">
           404
         </div>
 
-        {/* Shrug */}
-        <div style={{
-          fontFamily: "monospace",
-          fontSize: 32,
-          color: "#3f3f46",
-          marginTop: 8,
-        }}>
+        <div className="font-mono text-[32px] text-muted-foreground mt-2">
           ¯\_(ツ)_/¯
         </div>
 
-        {/* Heading */}
-        <h1 style={{
-          color: "#ffffff",
-          fontSize: 26,
-          fontWeight: 600,
-          marginTop: 24,
-          marginBottom: 0,
-        }}>
+        <h1 className="text-foreground text-[26px] font-semibold mt-6">
           This page does not exist.
         </h1>
 
-        {/* Rotating message */}
-        <p style={{
-          color: "#71717a",
-          fontSize: 16,
-          marginTop: 12,
-          minHeight: 48,
-          transition: "opacity 0.4s ease",
-          opacity: fade ? 1 : 0,
-        }}>
+        <p
+          className="text-muted-foreground text-base mt-3 min-h-[48px] transition-opacity duration-400"
+          style={{ opacity: fade ? 1 : 0 }}
+        >
           {funnyMessages[msgIndex]}
         </p>
 
-        {/* Links card */}
-        <div style={{
-          display: "inline-block",
-          backgroundColor: "#111111",
-          border: "1px solid #1e1e1e",
-          borderRadius: 12,
-          padding: "20px 24px",
-          marginTop: 32,
-          textAlign: "left",
-        }}>
-          <p style={{
-            color: "#52525b",
-            fontSize: 13,
-            marginTop: 0,
-            marginBottom: 12,
-          }}>
+        <div className="inline-block glass-card p-5 mt-8 text-left">
+          <p className="text-muted-foreground text-[13px] mb-3">
             Lost? Here are some real pages:
           </p>
-          <Link to="/" style={{
-            color: "#6366f1",
-            fontSize: 14,
-            display: "block",
-            marginBottom: 8,
-            textDecoration: "none",
-          }}>
+          <Link to="/" className="text-primary text-sm block mb-2 hover:underline">
             → Go home
           </Link>
-          <Link to="/dashboard" style={{
-            color: "#6366f1",
-            fontSize: 14,
-            display: "block",
-            marginBottom: 8,
-            textDecoration: "none",
-          }}>
+          <Link to="/dashboard" className="text-primary text-sm block mb-2 hover:underline">
             → Dashboard
           </Link>
-          <Link to="/connect" style={{
-            color: "#6366f1",
-            fontSize: 14,
-            display: "block",
-            textDecoration: "none",
-          }}>
+          <Link to="/connect" className="text-primary text-sm block hover:underline">
             → Connect an app
           </Link>
         </div>
 
-        {/* Bottom text */}
-        <p style={{
-          color: "#3f3f46",
-          fontSize: 12,
-          marginTop: 24,
-          lineHeight: 1.5,
-        }}>
+        <p className="text-muted-foreground/60 text-xs mt-6 leading-relaxed">
           If you got here from a real link<br />
           please reply to hello@rismon.ai<br />
           and tell us what broke.
