@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
+import ParticleBackground from '@/components/ParticleBackground';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -17,112 +18,38 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  {
-    q: "I built an app with AI — how do I know it actually works?",
-    a: "That’s exactly what Rismon.ai is built for. Connect your GitHub repo, describe what your app should do in plain English, and we compare your intent with what was actually built. You get a clear report showing what works, what’s missing, and what needs fixing."
-  },
-  {
-    q: "Can users access paid features without paying?",
-    a: "This is one of the most common issues we find. AI tools often forget to properly lock premium features. Rismon.ai detects these gaps and gives you ready-to-use prompts to fix them."
-  },
-  {
-    q: "Is my users’ data actually protected?",
-    a: "We check if your database has proper access controls, if sensitive routes require authentication, and whether users can access each other’s data. These are critical issues that AI tools often miss."
-  },
-  {
-    q: "Do I need to know how to code?",
-    a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend."
-  },
-  {
-    q: "What AI coding tools does this support?",
-    a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it."
-  },
-  {
-    q: "How long does the analysis take?",
-    a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions."
-  },
-  {
-    q: "Is it free?",
-    a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required."
-  },
-  {
-    q: "Is my source code safe?",
-    a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored."
-  },
-  {
-    q: "Do you track my IP address?",
-    a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics."
-  },
-  {
-    q: "Can I verify your privacy claims?",
-    a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled."
-  }
+  { q: "I built an app with AI — how do I know it actually works?", a: "That's exactly what Rismon.ai is built for. Connect your GitHub repo, describe what your app should do in plain English, and we compare your intent with what was actually built. You get a clear report showing what works, what's missing, and what needs fixing." },
+  { q: "Can users access paid features without paying?", a: "This is one of the most common issues we find. AI tools often forget to properly lock premium features. Rismon.ai detects these gaps and gives you ready-to-use prompts to fix them." },
+  { q: "Is my users' data actually protected?", a: "We check if your database has proper access controls, if sensitive routes require authentication, and whether users can access each other's data. These are critical issues that AI tools often miss." },
+  { q: "Do I need to know how to code?", a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend." },
+  { q: "What AI coding tools does this support?", a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it." },
+  { q: "How long does the analysis take?", a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions." },
+  { q: "Is it free?", a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required." },
+  { q: "Is my source code safe?", a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored." },
+  { q: "Do you track my IP address?", a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics." },
+  { q: "Can I verify your privacy claims?", a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled." }
 ];
 
 const personas = [
-  {
-    icon: Rocket,
-    title: "Startup founders",
-    q: "You built a paid app.\nAre your premium features actually locked for unpaid users?\nOr can anyone access them for free?"
-  },
-  {
-    icon: Store,
-    title: "Small business owners",
-    q: "You built a booking system.\nCan your customers see each other's personal details?\nOr is their data protected?"
-  },
-  {
-    icon: ShoppingBag,
-    title: "Ecommerce builders",
-    q: "You built an online store.\nCan your customers see other people's orders and payments?\nOr is each order private?"
-  },
-  {
-    icon: Briefcase,
-    title: "Freelancers and agencies",
-    q: "You build apps for clients.\nCan you verify your work is correct before delivery?\nOr are you just guessing?"
-  },
-  {
-    icon: Heart,
-    title: "Healthcare professionals",
-    q: "You built a patient system.\nWho can access your patients' private records?\nOnly doctors, or everyone?"
-  },
-  {
-    icon: GraduationCap,
-    title: "Educators and creators",
-    q: "You built a course platform.\nCan students access paid content without paying?\nOr is it properly secured?"
-  }
+  { icon: Rocket, title: "Startup founders", q: "You built a paid app.\nAre your premium features actually locked for unpaid users?\nOr can anyone access them for free?" },
+  { icon: Store, title: "Small business owners", q: "You built a booking system.\nCan your customers see each other's personal details?\nOr is their data protected?" },
+  { icon: ShoppingBag, title: "Ecommerce builders", q: "You built an online store.\nCan your customers see other people's orders and payments?\nOr is each order private?" },
+  { icon: Briefcase, title: "Freelancers and agencies", q: "You build apps for clients.\nCan you verify your work is correct before delivery?\nOr are you just guessing?" },
+  { icon: Heart, title: "Healthcare professionals", q: "You built a patient system.\nWho can access your patients' private records?\nOnly doctors, or everyone?" },
+  { icon: GraduationCap, title: "Educators and creators", q: "You built a course platform.\nCan students access paid content without paying?\nOr is it properly secured?" }
 ];
 
 const steps = [
-  {
-    n: "01",
-    title: "Create your account",
-    text: "Sign up with your email.\nTakes about 30 seconds.\nNo credit card required."
-  },
-  {
-    n: "02",
-    title: "Connect your app",
-    text: "Connect your GitHub repository.\nRead-only access.\nWe never store your code."
-  },
-  {
-    n: "03",
-    title: "We analyze your app",
-    text: "Rismon.ai scans your entire codebase\nand understands what was actually built."
-  },
-  {
-    n: "04",
-    title: "Tell us your business",
-    text: "Describe what your app is supposed to do.\nJust use plain English."
-  },
-  {
-    n: "05",
-    title: "Get your report",
-    text: "Receive a clear report showing every gap,\nplus exact prompts to fix each issue."
-  }
+  { n: "01", title: "Create your account", text: "Sign up with your email.\nTakes about 30 seconds.\nNo credit card required." },
+  { n: "02", title: "Connect your app", text: "Connect your GitHub repository.\nRead-only access.\nWe never store your code." },
+  { n: "03", title: "We analyze your app", text: "Rismon.ai scans your entire codebase\nand understands what was actually built." },
+  { n: "04", title: "Tell us your business", text: "Describe what your app is supposed to do.\nJust use plain English." },
+  { n: "05", title: "Get your report", text: "Receive a clear report showing every gap,\nplus exact prompts to fix each issue." }
 ];
 
-const platforms = [
+const marquePlatforms = [
   { name: "Lovable", logo: lovableLogo },
-  { name: "Bolt.new", logo: boltLogo },
+  { name: "Bolt", logo: boltLogo },
   { name: "Cursor", logo: cursorLogo },
   { name: "Emergent", logo: emergentLogo },
   { name: "Replit", logo: replitLogo },
@@ -130,55 +57,63 @@ const platforms = [
   { name: "Windsurf", logo: windsurfLogo },
   { name: "GitHub Copilot", logo: copilotLogo },
   { name: "Claude Code", logo: claudeLogo },
-  { name: "Google Gemini", logo: geminiLogo }
+  { name: "Google Gemini", logo: geminiLogo },
+  { name: "Devin", logo: null },
+  { name: "Codeium", logo: null },
 ];
+
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
 const proFeatures = ['Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
 
+  const doubled = [...marquePlatforms, ...marquePlatforms];
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      <ParticleBackground />
+      <div className="relative z-10">
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="pt-40 pb-28 px-6 text-center">
-        <div className="max-w-[800px] mx-auto">
+      <section className="pt-40 pb-16 px-6 text-center relative">
+        <div className="max-w-[800px] mx-auto relative">
           <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3 rounded-lg text-[15px] font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
-            <a href="#how-it-works" className="border border-border text-foreground px-8 py-3 rounded-lg text-[15px] font-medium hover:bg-secondary transition-all duration-200">See how it works</a>
+            <Link to="/signup" className="btn-cyber-primary btn-cyber-primary-pulse">Get started free</Link>
+            <a href="#how-it-works" className="btn-cyber-secondary">See how it works</a>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
         </div>
+      </section>
 
-        {/* Platform pills */}
-        <div className="mt-12 max-w-[800px] mx-auto">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.08em]" style={{ color: '#3f3f46' }}>Works with every AI coding platform</p>
-          <div className="flex flex-wrap justify-center gap-2.5 mt-5">
-            {platforms.map((p, i) => (
-              <div key={i} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 transition-colors" style={{ background: '#111111', border: '1px solid #1e1e1e' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#2e2e2e'; e.currentTarget.style.background = '#161616'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.background = '#111111'; }}>
-                <img src={p.logo} alt={p.name} className="w-5 h-5 rounded object-contain" loading="lazy" width={20} height={20} />
-                <span className="text-[13px] font-medium text-white">{p.name}</span>
+      {/* PLATFORM MARQUEE */}
+      <section className="pb-28 px-6">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-center mb-5" style={{ color: '#3f3f46' }}>Works with every AI coding platform</p>
+        <div className="marquee-mask max-w-[900px] mx-auto">
+          <div className="marquee-track">
+            {doubled.map((p, i) => (
+              <div key={i} className="inline-flex items-center gap-2 rounded-full px-4 py-2 shrink-0" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(249,115,22,0.20)' }}>
+                {p.logo ? (
+                  <img src={p.logo} alt={p.name} className="w-5 h-5 rounded object-contain" loading="lazy" width={20} height={20} />
+                ) : (
+                  <div className="w-5 h-5 rounded" style={{ background: 'rgba(249,115,22,0.2)' }} />
+                )}
+                <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.name}</span>
               </div>
             ))}
-            <div className="inline-flex items-center rounded-lg px-4 py-2 italic text-[13px]" style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#52525b' }}>
-              + more platforms
-            </div>
           </div>
         </div>
       </section>
 
       {/* NOT SURE */}
-      <section className="px-6 pb-28">
+      <section className="cyber-section px-6 pb-28 pt-28">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Not sure? Ask yourself:</h2>
@@ -188,7 +123,7 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
             {personas.map((p, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-7 hover:border-hover-border transition-colors">
+              <div key={i} className="glass-card p-7">
                 <p.icon size={24} className="text-primary" />
                 <p className="text-foreground text-[17px] font-semibold mt-4">{p.title}</p>
                 <p className="text-muted-foreground text-[15px] mt-2 whitespace-pre-line">{p.q}</p>
@@ -198,13 +133,13 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-muted-foreground">If any of these made you pause,</p>
             <p className="text-foreground text-xl font-semibold mt-2">Rismon.ai was built for you.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check your app free</Link>
+            <Link to="/signup" className="btn-cyber-primary mt-6 inline-block">Check your app free</Link>
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="bg-input-bg py-24 px-6">
+      <section id="how-it-works" className="cyber-section py-24 px-6">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">HOW IT WORKS</p>
@@ -212,7 +147,7 @@ export default function Index() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-14">
             {steps.map((s, i) => (
-              <div key={i}>
+              <div key={i} className="glass-card p-5">
                 <p className="text-4xl font-bold" style={{ color: 'rgba(249,115,22,0.3)' }}>{s.n}</p>
                 <p className="text-foreground text-[17px] font-semibold mt-3">{s.title}</p>
                 <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{s.text}</p>
@@ -223,7 +158,7 @@ export default function Index() {
       </section>
 
       {/* WHAT WE FIND */}
-      <section id="what-we-check" className="py-[100px] px-6 md:px-10" style={{ background: '#0a0a0a' }}>
+      <section id="what-we-check" className="cyber-section py-[100px] px-6 md:px-10">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#f97316' }}>WHAT WE FIND</p>
@@ -232,7 +167,6 @@ export default function Index() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mt-[60px]">
-            {/* Business problems */}
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#f59e0b' }}>BUSINESS PROBLEMS</p>
               <div className="space-y-3">
@@ -243,7 +177,7 @@ export default function Index() {
                   { icon: Search, title: 'Features you never asked for', text: 'Your AI built extra things. Do you know what they are?' },
                   { icon: GitBranch, title: 'Code that does not match your vision', text: 'You described one thing. The AI built something slightly different.' },
                 ].map((c, i) => (
-                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #f59e0b', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#f59e0b' }}>
+                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #f59e0b', borderRadius: '0 12px 12px 0' }}>
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#f59e0b' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -254,7 +188,6 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Security problems */}
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#ef4444' }}>SECURITY PROBLEMS</p>
               <div className="space-y-3">
@@ -265,7 +198,7 @@ export default function Index() {
                   { icon: AlertTriangle, title: 'Secrets hardcoded in code', text: 'Passwords and keys written directly in your files.' },
                   { icon: Globe, title: 'API routes anyone can call', text: 'Your backend has no protection from direct requests.' },
                 ].map((c, i) => (
-                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #ef4444', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}>
+                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #ef4444', borderRadius: '0 12px 12px 0' }}>
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#ef4444' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -280,13 +213,13 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-foreground text-[20px] font-semibold">Rismon.ai checks all of these. In 60 seconds.</p>
             <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>For free. No card needed.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check my app now</Link>
+            <Link to="/signup" className="btn-cyber-primary mt-6 inline-block">Check my app now</Link>
           </div>
         </div>
       </section>
 
       {/* PLAIN ENGLISH */}
-      <section className="bg-input-bg py-24 px-6">
+      <section className="cyber-section py-24 px-6">
         <div className="max-w-[800px] mx-auto text-center">
           <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Everything in plain English</h2>
           <p className="text-muted-foreground text-lg max-w-[480px] mx-auto mt-4 leading-[1.7]">
@@ -298,7 +231,7 @@ export default function Index() {
               { icon: AlertCircle, title: 'We show what is wrong', text: 'Every gap explained with real examples of what could happen.' },
               { icon: Wrench, title: 'We tell you how to fix it', text: 'Copy paste prompts for Lovable, Cursor, or Supabase.' },
             ].map((item, i) => (
-              <div key={i} className="text-center">
+              <div key={i} className="glass-card p-6 text-center">
                 <item.icon size={32} className="text-primary mx-auto" />
                 <p className="text-foreground font-semibold mt-4">{item.title}</p>
                 <p className="text-muted-foreground text-sm mt-2">{item.text}</p>
@@ -309,7 +242,7 @@ export default function Index() {
       </section>
 
       {/* SECURITY & PRIVACY */}
-      <section id="security-privacy" className="py-24 px-6" style={{ background: '#0a0a0a' }}>
+      <section id="security-privacy" className="cyber-section py-24 px-6">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">SECURITY & PRIVACY</p>
@@ -327,7 +260,7 @@ export default function Index() {
               { icon: Timer, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens in our database.' },
               { icon: Lock, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data with anyone.' },
             ].map((item, i) => (
-              <div key={i} className="p-5 rounded-xl" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
+              <div key={i} className="glass-card p-5">
                 <item.icon size={22} className="text-primary" />
                 <p className="text-foreground text-[15px] font-semibold mt-3">{item.title}</p>
                 <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: '#71717a' }}>{item.text}</p>
@@ -343,15 +276,14 @@ export default function Index() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-28 px-6">
+      <section id="pricing" className="cyber-section py-28 px-6">
         <div className="max-w-[960px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-            {/* Free */}
-            <div className="bg-card border border-border rounded-2xl p-8">
+            <div className="glass-card p-8">
               <p className="text-foreground text-[28px] font-bold">Free</p>
               <p className="text-muted-foreground mt-1">$0 / forever</p>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
@@ -363,11 +295,10 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders understanding their first AI-built app</p>
-              <Link to="/signup" className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200">Get started free</Link>
+              <Link to="/signup" className="btn-cyber-primary block w-full mt-6">Get started free</Link>
             </div>
 
-            {/* Pro */}
-            <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
+            <div className="glass-card p-8" style={{ borderColor: 'rgba(249,115,22,0.5)' }}>
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
               <p className="text-foreground text-[28px] font-bold">Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
@@ -382,36 +313,25 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders with real users who need continuous protection</p>
-              <button onClick={() => setWaitlistOpen(true)} className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Join founding member waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join founding member waitlist</button>
             </div>
           </div>
         </div>
       </section>
 
       {/* WHY WE BUILT THIS */}
-      <section className="py-28 px-6">
+      <section className="cyber-section py-28 px-6">
         <div className="max-w-[720px] mx-auto text-center">
           <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
           <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
-          <div className="text-muted-foreground text-base leading-[1.9] mt-6 text-left md:text-center whitespace-pre-line">
-{`AI tools have made building software accessible to everyone.
-
-Anyone can now describe an idea and have a working app in hours.
-
-But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.
-
-Rismon.ai exists to change that.
-
-We read your app. We explain it to you. We tell you what is wrong. We give you the fix.
-
-In plain English. Every time.`}
-          </div>
+          <p className="text-muted-foreground text-base leading-[1.8] mt-6 text-left">
+            AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours. But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe. Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix. In plain English. Every time.
+          </p>
         </div>
       </section>
 
-
       {/* FAQ */}
-      <section id="faq" className="py-28 px-6">
+      <section id="faq" className="cyber-section py-28 px-6">
         <div className="max-w-[720px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">FAQ</p>
@@ -426,12 +346,13 @@ In plain English. Every time.`}
             ))}
           </Accordion>
           <div className="text-center mt-10">
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
+            <Link to="/signup" className="btn-cyber-primary mt-6 inline-block">Get started free</Link>
           </div>
         </div>
       </section>
 
       <Footer />
+      </div>
     </div>
   );
 }

@@ -60,3 +60,117 @@
 .animate-spin-slow {
   animation: spin 1.2s linear infinite;
 }
+
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
+  100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+}
+
+/* Section wrappers */
+.cyber-section {
+  background: rgba(10, 10, 10, 0.60);
+  backdrop-filter: blur(0px);
+  border-top: 1px solid rgba(249, 115, 22, 0.10);
+}
+
+/* Glass cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+/* Cyber buttons */
+.btn-cyber-primary {
+  background: hsl(var(--primary));
+  border: none;
+  color: hsl(var(--primary-foreground));
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+  display: inline-block;
+  text-align: center;
+}
+.btn-cyber-primary:hover {
+  opacity: 0.88;
+}
+.btn-cyber-primary-pulse {
+  /* kept class for markup compat, no animation */
+}
+
+.btn-cyber-secondary {
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-block;
+  text-align: center;
+}
+.btn-cyber-secondary:hover {
+  border-color: hsl(var(--muted-foreground));
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Auth glass card */
+.auth-glass-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 40px;
+}
+
+.auth-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 6px;
+  color: white;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+.auth-input::placeholder {
+  color: rgba(255, 255, 255, 0.30);
+}
+.auth-input:focus {
+  outline: none;
+  border-color: #f97316;
+}
+
+/* Marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  gap: 12px;
+  animation: marquee 30s linear infinite;
+  width: max-content;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  overflow: hidden;
+}
