@@ -19,4 +19,4 @@ Disallow: /report
 Disallow: /settings
 Disallow: /admin
 
-Sitemap: https://rismonai.lovable.app/sitemap.xml
+Sitemap: https://rismon.ai/sitemap.xml
