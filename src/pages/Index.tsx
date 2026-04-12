@@ -147,16 +147,18 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="pt-40 pb-28 px-6 text-center">
-        <div className="max-w-[800px] mx-auto">
-          <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
+      <section className="pt-40 pb-28 px-6 text-center relative">
+        {/* Hero radial glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)' }} />
+        <div className="max-w-[800px] mx-auto relative">
+          <h1 className="cyber-heading text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="bg-primary text-primary-foreground px-8 py-3 rounded-lg text-[15px] font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
-            <a href="#how-it-works" className="border border-border text-foreground px-8 py-3 rounded-lg text-[15px] font-medium hover:bg-secondary transition-all duration-200">See how it works</a>
+            <Link to="/signup" className="btn-cyber-primary btn-cyber-primary-pulse">Get started free</Link>
+            <a href="#how-it-works" className="btn-cyber-secondary">See how it works</a>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
         </div>
@@ -181,17 +183,17 @@ export default function Index() {
       </section>
 
       {/* NOT SURE */}
-      <section className="px-6 pb-28">
+      <section className="cyber-section px-6 pb-28 pt-28">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Not sure? Ask yourself:</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold">Not sure? Ask yourself:</h2>
             <p className="text-muted-foreground text-lg max-w-[560px] mx-auto mt-4 leading-[1.7]">
               If you built with AI, do you actually know what it built? Not what you asked for. What was actually built.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-14">
             {personas.map((p, i) => (
-              <div key={i} className="bg-card border border-border rounded-2xl p-7 hover:border-hover-border transition-colors">
+              <div key={i} className="glass-card rounded-2xl p-7 transition-colors">
                 <p.icon size={24} className="text-primary" />
                 <p className="text-foreground text-[17px] font-semibold mt-4">{p.title}</p>
                 <p className="text-muted-foreground text-[15px] mt-2 whitespace-pre-line">{p.q}</p>
@@ -201,17 +203,17 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-muted-foreground">If any of these made you pause,</p>
             <p className="text-foreground text-xl font-semibold mt-2">Rismon.ai was built for you.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check your app free</Link>
+            <Link to="/signup" className="btn-cyber-primary">Check your app free</Link>
           </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="bg-input-bg py-24 px-6">
+      <section id="how-it-works" className="cyber-section py-24 px-6">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">HOW IT WORKS</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Five steps to know your app completely</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3">Five steps to know your app completely</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-14">
             {steps.map((s, i) => (
@@ -226,11 +228,11 @@ export default function Index() {
       </section>
 
       {/* WHAT WE FIND */}
-      <section id="what-we-check" className="py-[100px] px-6 md:px-10" style={{ background: '#0a0a0a' }}>
+      <section id="what-we-check" className="cyber-section py-[100px] px-6 md:px-10">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#f97316' }}>WHAT WE FIND</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3 max-w-[600px] mx-auto">Most AI-built apps have at least one of these problems</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3 max-w-[600px] mx-auto">Most AI-built apps have at least one of these problems</h2>
             <p className="text-[16px] mt-3" style={{ color: '#71717a' }}>We check for all of them. You might be surprised what we find.</p>
           </div>
 
@@ -246,7 +248,7 @@ export default function Index() {
                   { icon: Search, title: 'Features you never asked for', text: 'Your AI built extra things. Do you know what they are?' },
                   { icon: GitBranch, title: 'Code that does not match your vision', text: 'You described one thing. The AI built something slightly different.' },
                 ].map((c, i) => (
-                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #f59e0b', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#f59e0b' }}>
+                  <div key={i} className="glass-card p-4 rounded-r-xl" style={{ borderLeft: '3px solid #f59e0b', borderLeftWidth: '3px', borderLeftColor: '#f59e0b' }}>
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#f59e0b' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -268,7 +270,7 @@ export default function Index() {
                   { icon: AlertTriangle, title: 'Secrets hardcoded in code', text: 'Passwords and keys written directly in your files.' },
                   { icon: Globe, title: 'API routes anyone can call', text: 'Your backend has no protection from direct requests.' },
                 ].map((c, i) => (
-                  <div key={i} className="p-4 rounded-r-xl" style={{ background: '#111111', borderLeft: '3px solid #ef4444', border: '1px solid #1e1e1e', borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}>
+                  <div key={i} className="glass-card p-4 rounded-r-xl" style={{ borderLeft: '3px solid #ef4444', borderLeftWidth: '3px', borderLeftColor: '#ef4444' }}>
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#ef4444' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -283,15 +285,15 @@ export default function Index() {
           <div className="text-center mt-12">
             <p className="text-foreground text-[20px] font-semibold">Rismon.ai checks all of these. In 60 seconds.</p>
             <p className="text-[15px] mt-2" style={{ color: '#71717a' }}>For free. No card needed.</p>
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Check my app now</Link>
+            <Link to="/signup" className="btn-cyber-primary mt-6 inline-block">Check my app now</Link>
           </div>
         </div>
       </section>
 
       {/* PLAIN ENGLISH */}
-      <section className="bg-input-bg py-24 px-6">
+      <section className="cyber-section py-24 px-6">
         <div className="max-w-[800px] mx-auto text-center">
-          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Everything in plain English</h2>
+          <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold">Everything in plain English</h2>
           <p className="text-muted-foreground text-lg max-w-[480px] mx-auto mt-4 leading-[1.7]">
             No code. No jargon. No confusion. We explain your app like you are smart but not a developer. Because you are.
           </p>
@@ -312,11 +314,11 @@ export default function Index() {
       </section>
 
       {/* SECURITY & PRIVACY */}
-      <section id="security-privacy" className="py-24 px-6" style={{ background: '#0a0a0a' }}>
+      <section id="security-privacy" className="cyber-section py-24 px-6">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">SECURITY & PRIVACY</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Your code is yours. We just read it once.</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3">Your code is yours. We just read it once.</h2>
             <p className="text-muted-foreground text-lg max-w-[560px] mx-auto mt-4 leading-[1.7]">
               We built Rismon.ai with privacy as the foundation. Here is exactly how your data is handled.
             </p>
@@ -330,7 +332,7 @@ export default function Index() {
               { icon: Timer, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens in our database.' },
               { icon: Lock, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data with anyone.' },
             ].map((item, i) => (
-              <div key={i} className="p-5 rounded-xl" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
+              <div key={i} className="glass-card p-5 rounded-xl">
                 <item.icon size={22} className="text-primary" />
                 <p className="text-foreground text-[15px] font-semibold mt-3">{item.title}</p>
                 <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: '#71717a' }}>{item.text}</p>
@@ -346,15 +348,15 @@ export default function Index() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-28 px-6">
+      <section id="pricing" className="cyber-section py-28 px-6">
         <div className="max-w-[960px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
             {/* Free */}
-            <div className="bg-card border border-border rounded-2xl p-8">
+            <div className="glass-card rounded-2xl p-8">
               <p className="text-foreground text-[28px] font-bold">Free</p>
               <p className="text-muted-foreground mt-1">$0 / forever</p>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
@@ -366,11 +368,11 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders understanding their first AI-built app</p>
-              <Link to="/signup" className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200">Get started free</Link>
+              <Link to="/signup" className="btn-cyber-primary block w-full mt-6">Get started free</Link>
             </div>
 
             {/* Pro */}
-            <div className="bg-card border border-primary rounded-2xl p-8" style={{ boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
+            <div className="glass-card rounded-2xl p-8" style={{ borderColor: 'rgba(249,115,22,0.5)', boxShadow: '0 0 40px rgba(249,115,22,0.12)' }}>
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
               <p className="text-foreground text-[28px] font-bold">Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
@@ -385,17 +387,17 @@ export default function Index() {
               <div className="border-t border-border my-6" />
               <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
               <p className="text-muted-foreground text-sm mt-1">Founders with real users who need continuous protection</p>
-              <button onClick={() => setWaitlistOpen(true)} className="block w-full text-center bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold mt-6 hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Join founding member waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join founding member waitlist</button>
             </div>
           </div>
         </div>
       </section>
 
       {/* WHY WE BUILT THIS */}
-      <section className="py-28 px-6">
+      <section className="cyber-section py-28 px-6">
         <div className="max-w-[720px] mx-auto text-center">
           <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
-          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
+          <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
           <div className="text-muted-foreground text-base leading-[1.9] mt-6 text-left md:text-center whitespace-pre-line">
 {`AI tools have made building software accessible to everyone.
 
@@ -414,11 +416,11 @@ In plain English. Every time.`}
 
 
       {/* FAQ */}
-      <section id="faq" className="py-28 px-6">
+      <section id="faq" className="cyber-section py-28 px-6">
         <div className="max-w-[720px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">FAQ</p>
-            <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Frequently asked questions</h2>
+            <h2 className="cyber-heading text-foreground text-[28px] md:text-4xl font-semibold mt-3">Frequently asked questions</h2>
           </div>
           <Accordion type="single" collapsible className="mt-12">
             {faqs.map((faq, i) => (
@@ -429,7 +431,7 @@ In plain English. Every time.`}
             ))}
           </Accordion>
           <div className="text-center mt-10">
-            <Link to="/signup" className="inline-block bg-primary text-primary-foreground px-7 py-2.5 rounded-lg text-sm font-semibold hover:brightness-110 transition-all duration-200 shadow-[0_2px_12px_rgba(249,115,22,0.25)] hover:shadow-[0_4px_20px_rgba(249,115,22,0.35)]">Get started free</Link>
+            <Link to="/signup" className="btn-cyber-primary mt-6 inline-block">Get started free</Link>
           </div>
         </div>
       </section>
