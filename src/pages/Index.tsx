@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
-import GlobalBackground from '@/components/GlobalBackground';
+import ParticleBackground from '@/components/ParticleBackground';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -141,16 +141,14 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background relative">
-      <GlobalBackground />
+      <ParticleBackground />
       <div className="relative z-10">
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="pt-40 pb-28 px-6 text-center relative">
-        {/* Hero radial glow */}
-        <div className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%)' }} />
-        <div className="max-w-[800px] mx-auto relative">
+      <section className="pt-40 pb-28 px-6 text-center">
+        <div className="max-w-[800px] mx-auto">
           <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
