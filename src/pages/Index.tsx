@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -287,7 +287,7 @@ export default function Index() {
               <p className="text-foreground text-[28px] font-bold">Free</p>
               <p className="text-muted-foreground mt-1">$0 / forever</p>
               <div className="mt-6">
-                <span className="inline-block text-[11px] px-3 py-1 rounded-full font-semibold" style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}>⚡ Quick Scan</span>
+                <span className="inline-flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.70)' }}><Zap size={14} color="rgba(255,255,255,0.70)" />Quick Scan</span>
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Analyzes your most critical files and catches the issues that matter most.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
@@ -313,7 +313,7 @@ export default function Index() {
               <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
               <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
               <div className="mt-6">
-                <span className="inline-block text-[11px] px-3 py-1 rounded-full font-semibold" style={{ background: '#f97316', color: '#fff' }}>🔍 Deep Scan</span>
+                <span className="inline-flex items-center gap-1.5" style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' as const, color: '#f97316' }}><ScanSearch size={14} color="#f97316" />Deep Scan</span>
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full codebase. Every file. Every route. Every business logic gap. Nothing missed.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
