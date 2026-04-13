@@ -287,7 +287,7 @@ export default function Index() {
               <p className="text-foreground text-[28px] font-bold">Free</p>
               <p className="text-muted-foreground mt-1">$0 / forever</p>
               <div className="mt-6">
-                <span className="inline-flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.70)' }}><Zap size={14} color="rgba(255,255,255,0.70)" />Quick Scan</span>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.50)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>QUICK SCAN</span>
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Analyzes your most critical files and catches the issues that matter most.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
