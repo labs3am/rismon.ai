@@ -313,7 +313,7 @@ export default function Index() {
               <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
               <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
               <div className="mt-6">
-                <span className="inline-flex items-center gap-1.5" style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.25)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' as const, color: '#f97316' }}><ScanSearch size={14} color="#f97316" />Deep Scan</span>
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN</span>
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full codebase. Every file. Every route. Every business logic gap. Nothing missed.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
