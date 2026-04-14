@@ -90,6 +90,31 @@ export default function Index() {
             <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
+
+          {/* Social proof */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-10">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {[
+                  'bg-gradient-to-br from-orange-400 to-orange-600',
+                  'bg-gradient-to-br from-blue-400 to-blue-600',
+                  'bg-gradient-to-br from-emerald-400 to-emerald-600',
+                  'bg-gradient-to-br from-purple-400 to-purple-600',
+                  'bg-gradient-to-br from-rose-400 to-rose-600',
+                ].map((bg, i) => (
+                  <div key={i} className={`w-7 h-7 rounded-full ${bg} border-2 border-background flex items-center justify-center`}>
+                    <span className="text-[10px] font-bold text-white">{['S', 'A', 'R', 'M', 'K'][i]}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-muted-foreground text-[13px]">Trusted by <span className="text-foreground font-medium">50+ founders</span></p>
+            </div>
+            <div className="h-4 w-px bg-border hidden sm:block" />
+            <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
+              <span><span className="text-foreground font-medium">120+</span> apps analyzed</span>
+              <span><span className="text-foreground font-medium">400+</span> gaps found</span>
+            </div>
+          </div>
         </div>
       </section>
 
