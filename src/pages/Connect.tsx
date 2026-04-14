@@ -188,6 +188,10 @@ export default function Connect() {
         <BackButton to="/dashboard" label="Dashboard" />
         <h1 className="text-foreground text-[28px] font-semibold">Connect an app</h1>
 
+        <div className="mt-4">
+          <RisGuide pageKey="connect" message={"Built with Lovable or Bolt?\nYou already have a GitHub repo — you just need to find it.\nOpen Lovable → click the GitHub icon top right → your repo is there.\nCome back and connect it here."} />
+        </div>
+
         {/* Progress */}
         <div className="flex items-center gap-2 mt-6">
           {[1, 2, 3].map(s => (

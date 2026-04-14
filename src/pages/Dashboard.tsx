@@ -5,6 +5,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import RisGuide from '@/components/RisGuide';
 
 interface App {
   id: string;

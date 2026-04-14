@@ -289,6 +289,9 @@ export default function Analyze() {
           <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
           <h2 className="text-foreground text-2xl font-semibold">Tell us about your app</h2>
           <p className="text-muted-foreground mt-2">We have read your code. Now tell us what your app is supposed to do.</p>
+          <div className="mt-4">
+            <RisGuide pageKey="analyze" message={"Be specific with these questions.\nThe more detail you give about your business, the more gaps we find.\nDescribe your app like you're explaining it to a friend."} />
+          </div>
           {codeUnderstanding && (
             <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
               <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>What we found in your code:</p>

@@ -97,6 +97,13 @@ export default function Report() {
       <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
 
+        <div className="mt-4">
+          {gapsList.some((g: any) => g.severity === 'critical') || secList.some((s: any) => s.severity === 'critical')
+            ? <RisGuide pageKey="report_critical" message={"Start with the red issues first.\nCopy the fix prompt → paste into Lovable → come back and rescan.\nTakes less than 5 minutes per fix."} />
+            : <RisGuide pageKey="report_ok" message={"Great news — no critical issues found.\nCheck the medium issues next and consider a Deep Scan for a full business logic analysis."} />
+          }
+        </div>
+
         {/* SECTION 1: Score and summary */}
         <div className="text-center mt-4">
           <div className="w-[130px] h-[130px] rounded-full flex items-center justify-center mx-auto" style={{ border: `3px solid ${scoreColor}` }}>
