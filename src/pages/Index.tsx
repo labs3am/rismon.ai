@@ -87,7 +87,7 @@ export default function Index() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
             <Link to="/signup" className="btn-cyber-primary btn-cyber-primary-pulse">Get started free</Link>
-            <a href="#how-it-works" className="btn-cyber-secondary">See how it works</a>
+            <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
         </div>
