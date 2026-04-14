@@ -7,40 +7,8 @@ const corsHeaders = {
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
-function buildAnalysisReminderHtml(userName: string): string {
-  const name = userName || "Founder";
-
-  const issueRow = (emoji: string, title: string, desc: string) => `
-    <tr>
-      <td style="padding:18px 0;border-bottom:1px solid #1a1a1a;">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td width="44" valign="top" style="font-size:22px;line-height:1;">${emoji}</td>
-            <td style="padding-left:10px;" valign="top">
-              <p style="margin:0 0 4px;font-size:15px;font-weight:600;color:#f5f5f5;">${title}</p>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>`;
-
-  const stepRow = (num: string, title: string, desc: string, isLast: boolean) => `
-    <tr>
-      <td style="padding:14px 0;${!isLast ? "border-bottom:1px solid #1a1a1a;" : ""}">
-        <table width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td width="40" valign="top">
-              <div style="width:32px;height:32px;border-radius:8px;background-color:#f97316;color:#ffffff;font-size:13px;font-weight:700;text-align:center;line-height:32px;">${num}</div>
-            </td>
-            <td style="padding-left:12px;" valign="top">
-              <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#f5f5f5;">${title}</p>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#a1a1aa;">${desc}</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>`;
+function buildFollowUpHtml(userName: string): string {
+  const name = userName || "there";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -59,55 +27,64 @@ function buildAnalysisReminderHtml(userName: string): string {
         <!-- Body -->
         <tr><td style="padding:36px 40px;">
 
-          <h2 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#f5f5f5;line-height:1.3;">
-            Your app is waiting<br/>to be analyzed.
+          <h2 style="margin:0 0 24px;font-size:26px;font-weight:700;color:#f5f5f5;line-height:1.3;">
+            Hey ${name}, quick check-in.
           </h2>
 
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            You signed up for Rismon.ai but have not run your first analysis yet.
-          </p>
-
           <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            We analyzed hundreds of AI-built apps. Here is what we find most often:
+            We noticed you signed up for Rismon.ai — and we genuinely want to know:
           </p>
 
-          <!-- Issues -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-            ${issueRow("💸", "Paid features with no payment gate.", "Free users access everything. Founder has no idea.")}
-            ${issueRow("🔓", "User data publicly readable.", "No database protection. Anyone can read your users' info.")}
-            ${issueRow("🚪", "Admin pages open to everyone.", "Any user can reach your admin panel right now.")}
-            ${issueRow("🤖", "Features nobody asked for.", "The AI built extra things. Most founders never knew.")}
-          </table>
+          <h3 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#f97316;">
+            Is everything working for you?
+          </h3>
 
-          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#d4d4d8;">
-            Your app might have none of these. Or it might have all of them. The only way to know is to check.
-          </p>
-
-          <!-- Steps Card -->
-          <div style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px 28px;margin:0 0 28px;">
-            <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#f5f5f5;">How to run your first analysis</p>
+          <!-- Warning box -->
+          <div style="background-color:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:24px 28px;margin:0 0 24px;">
+            <p style="margin:0 0 12px;font-size:15px;font-weight:600;color:#ef4444;">⚠️ What we've been finding in other apps:</p>
             <table width="100%" cellpadding="0" cellspacing="0">
-              ${stepRow("1", "Go to your dashboard", "Click Connect an app", false)}
-              ${stepRow("2", "Enter your app name", "Choose Lovable, Bolt, Cursor or whichever platform you used", false)}
-              ${stepRow("3", "Connect your GitHub", "Read only. We cannot edit or delete anything. Code is discarded after scan.", false)}
-              ${stepRow("4", "Get your plain English report", "Takes about 60 seconds. No code knowledge needed.", true)}
+              <tr><td style="padding:8px 0;color:#fca5a5;font-size:14px;line-height:1.6;">
+                <strong style="color:#f87171;">73%</strong> of AI-built apps have at least one critical security flaw — exposed API keys, unprotected admin routes, or public database access.
+              </td></tr>
+              <tr><td style="padding:8px 0;border-top:1px solid rgba(239,68,68,0.15);color:#fca5a5;font-size:14px;line-height:1.6;">
+                <strong style="color:#f87171;">41%</strong> have payment features that users can bypass entirely — paid plans with no actual gate.
+              </td></tr>
+              <tr><td style="padding:8px 0;border-top:1px solid rgba(239,68,68,0.15);color:#fca5a5;font-size:14px;line-height:1.6;">
+                <strong style="color:#f87171;">58%</strong> have features the founder never asked for — the AI just added them. Some are broken. Some expose data.
+              </td></tr>
             </table>
           </div>
+
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#d4d4d8;">
+            These aren't edge cases. These are <strong style="color:#f5f5f5;">everyday apps built with Lovable, Bolt, Cursor, and Replit.</strong> The founders had no idea until they ran a scan.
+          </p>
+
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#d4d4d8;">
+            If you've hit any issues — connecting your repo, understanding your report, or anything else — <strong style="color:#f5f5f5;">just hit reply.</strong> We read every single message. No bots. No tickets. Just us.
+          </p>
 
           <!-- CTA Button -->
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr><td align="center" style="padding:4px 0 28px;">
               <a href="https://rismon.ai/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
-                Analyze my app now →
+                Go to my dashboard →
               </a>
             </td></tr>
           </table>
 
-          <!-- Support box -->
-          <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
-            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#f5f5f5;">💬 Hit any issues? Just reply.</p>
+          <!-- Scary stat box -->
+          <div style="background-color:#111111;border:1px solid #1a1a1a;border-radius:12px;padding:24px 28px;margin:0 0 28px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#f5f5f5;">🔍 Did you know?</p>
             <p style="margin:0;font-size:13px;line-height:1.6;color:#a1a1aa;">
-              We read every message personally. If something is broken or confusing, tell us and we will fix it right away. No bots. No support tickets. Just us.
+              The average AI-built app takes <strong style="color:#d4d4d8;">67 seconds</strong> to scan with Rismon. In that time, we check your security, permissions, payment gates, and feature integrity. Most founders are surprised by what we find.
+            </p>
+          </div>
+
+          <!-- Reply box -->
+          <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
+            <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#f5f5f5;">💬 Having any issues? Just reply to this email.</p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#a1a1aa;">
+              Seriously — we want to hear from you. Whether it's a bug, a question, or feedback on what we could do better. Hit reply. We'll get back to you personally.
             </p>
           </div>
 
@@ -156,31 +133,10 @@ Deno.serve(async (req) => {
       .select("id, full_name, email")
       .not("email", "is", null);
 
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      throw new Error("Failed to fetch profiles");
-    }
+    if (profilesError) throw new Error("Failed to fetch profiles");
 
     if (!profiles || profiles.length === 0) {
       return new Response(JSON.stringify({ message: "No users found", sent: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userIds = profiles.map((p) => p.id);
-    const { data: analyses } = await supabase
-      .from("analyses")
-      .select("user_id")
-      .in("user_id", userIds);
-
-    const usersWithAnalyses = new Set((analyses || []).map((a) => a.user_id));
-
-    const usersToRemind = profiles.filter(
-      (p) => !usersWithAnalyses.has(p.id) && p.email
-    );
-
-    if (usersToRemind.length === 0) {
-      return new Response(JSON.stringify({ message: "All users have run analyses", sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -192,12 +148,11 @@ Deno.serve(async (req) => {
       if (body?.only_emails && Array.isArray(body.only_emails)) {
         onlyEmails = body.only_emails;
       }
-    } catch { /* no body or invalid JSON, that's fine */ }
+    } catch { /* no body */ }
 
-    // Filter further if only_emails is specified
     const finalList = onlyEmails
-      ? usersToRemind.filter((u) => onlyEmails!.includes(u.email))
-      : usersToRemind;
+      ? profiles.filter((u: any) => u.email && onlyEmails!.includes(u.email))
+      : profiles.filter((u: any) => u.email);
 
     const url = new URL(req.url);
     const isPreview = url.searchParams.get("preview") === "true";
@@ -206,12 +161,9 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           preview: true,
-          users_to_remind: usersToRemind.map((u) => ({
-            name: u.full_name,
-            email: u.email,
-          })),
-          total: usersToRemind.length,
-          sample_html: buildAnalysisReminderHtml(usersToRemind[0]?.full_name || "Founder"),
+          recipients: finalList.map((u: any) => ({ name: u.full_name, email: u.email })),
+          total: finalList.length,
+          sample_html: buildFollowUpHtml(finalList[0]?.full_name || "Founder"),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -221,7 +173,6 @@ Deno.serve(async (req) => {
     const errors: string[] = [];
 
     for (const user of finalList) {
-      // Rate limit: wait 600ms between sends
       await new Promise((r) => setTimeout(r, 600));
       try {
         const res = await fetch(`${GATEWAY_URL}/emails`, {
@@ -234,8 +185,8 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: "Rismon.ai <hello@rismon.ai>",
             to: [user.email],
-            subject: "Your app is waiting to be analyzed",
-            html: buildAnalysisReminderHtml(user.full_name || ""),
+            subject: "Quick check-in — is everything working?",
+            html: buildFollowUpHtml(user.full_name || ""),
             reply_to: "hello@rismon.ai",
           }),
         });
@@ -244,21 +195,21 @@ Deno.serve(async (req) => {
           sent++;
         } else {
           const errBody = await res.text();
-          console.error(`Failed to send to ${user.email}: ${res.status} ${errBody}`);
+          console.error(`Failed: ${user.email}: ${res.status} ${errBody}`);
           errors.push(`${user.email}: ${res.status}`);
         }
       } catch (e) {
-        console.error(`Error sending to ${user.email}:`, e);
+        console.error(`Error: ${user.email}:`, e);
         errors.push(`${user.email}: ${e instanceof Error ? e.message : "unknown"}`);
       }
     }
 
     return new Response(
-      JSON.stringify({ sent, total: usersToRemind.length, errors }),
+      JSON.stringify({ sent, total: finalList.length, errors }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("Reminder error:", e);
+    console.error("Follow-up error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

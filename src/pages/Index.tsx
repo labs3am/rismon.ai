@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -63,7 +63,7 @@ const marquePlatforms = [
 ];
 
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const proFeatures = ['Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
+const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -286,6 +286,10 @@ export default function Index() {
             <div className="glass-card p-8">
               <p className="text-foreground text-[28px] font-bold">Free</p>
               <p className="text-muted-foreground mt-1">$0 / forever</p>
+              <div className="mt-6">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.50)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>QUICK SCAN</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Analyzes your most critical files and catches the issues that matter most.</p>
+              </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
               <div className="mt-4 space-y-2.5">
                 {freeFeatures.map((f, i) => (
@@ -293,9 +297,13 @@ export default function Index() {
                 ))}
               </div>
               <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
-              <p className="text-muted-foreground text-sm mt-1">Founders understanding their first AI-built app</p>
+              <p className="text-muted-foreground text-sm">Perfect for founders verifying their first AI-built app</p>
               <Link to="/signup" className="btn-cyber-primary block w-full mt-6">Get started free</Link>
+            </div>
+
+            {/* Centered tagline between cards - visible on mobile between, on desktop as absolute overlay */}
+            <div className="md:hidden text-center py-2">
+              <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
             </div>
 
             <div className="glass-card p-8" style={{ borderColor: 'rgba(249,115,22,0.5)' }}>
@@ -304,6 +312,10 @@ export default function Index() {
               <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
               <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
               <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
+              <div className="mt-6">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full codebase. Every file. Every route. Every business logic gap. Nothing missed.</p>
+              </div>
               <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
               <div className="mt-4 space-y-2.5">
                 {proFeatures.map((f, i) => (
@@ -311,10 +323,13 @@ export default function Index() {
                 ))}
               </div>
               <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-[13px] font-semibold">Perfect for:</p>
-              <p className="text-muted-foreground text-sm mt-1">Founders with real users who need continuous protection</p>
+              <p className="text-muted-foreground text-sm">Perfect for founders with real users who can't afford to miss anything</p>
               <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join founding member waitlist</button>
             </div>
+          </div>
+          {/* Centered tagline - desktop only */}
+          <div className="hidden md:block text-center mt-6">
+            <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
           </div>
         </div>
       </section>
