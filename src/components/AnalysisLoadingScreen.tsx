@@ -311,6 +311,10 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
         }
+        @keyframes indeterminateBar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(333%); }
+        }
       `}</style>
     </div>
   );
