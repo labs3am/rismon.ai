@@ -68,6 +68,13 @@ const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily au
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [stats, setStats] = useState<{ users: number; apps: number; scans: number } | null>(null);
+
+  useEffect(() => {
+    supabase.functions.invoke('public-stats').then(({ data }) => {
+      if (data) setStats(data);
+    });
+  }, []);
 
   const doubled = [...marquePlatforms, ...marquePlatforms];
 
