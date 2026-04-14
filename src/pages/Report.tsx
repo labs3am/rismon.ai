@@ -6,6 +6,7 @@ import BackButton from '@/components/BackButton';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import RisGuide from '@/components/RisGuide';
 
 export default function Report() {
   const { analysisId } = useParams();
@@ -96,6 +97,13 @@ export default function Report() {
       <DashboardNavbar />
       <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
+
+        <div className="mt-4">
+          {gapsList.some((g: any) => g.severity === 'critical') || secList.some((s: any) => s.severity === 'critical')
+            ? <RisGuide pageKey="report_critical" message={"Start with the red issues first.\nCopy the fix prompt → paste into Lovable → come back and rescan.\nTakes less than 5 minutes per fix."} />
+            : <RisGuide pageKey="report_ok" message={"Great news — no critical issues found.\nCheck the medium issues next and consider a Deep Scan for a full business logic analysis."} />
+          }
+        </div>
 
         {/* SECTION 1: Score and summary */}
         <div className="text-center mt-4">

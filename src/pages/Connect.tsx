@@ -7,6 +7,7 @@ import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import RisGuide from '@/components/RisGuide';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
 
@@ -187,6 +188,10 @@ export default function Connect() {
       <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
         <h1 className="text-foreground text-[28px] font-semibold">Connect an app</h1>
+
+        <div className="mt-4">
+          <RisGuide pageKey="connect" message={"Built with Lovable or Bolt?\nYou already have a GitHub repo — you just need to find it.\nOpen Lovable → click the GitHub icon top right → your repo is there.\nCome back and connect it here."} />
+        </div>
 
         {/* Progress */}
         <div className="flex items-center gap-2 mt-6">

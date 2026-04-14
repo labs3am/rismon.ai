@@ -5,6 +5,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import RisGuide from '@/components/RisGuide';
 
 interface App {
   id: string;
@@ -167,6 +168,12 @@ export default function Dashboard() {
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
         <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
         <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+
+        {apps.length === 0 && (
+          <div className="mt-4">
+            <RisGuide pageKey="dashboard_empty" message={"You haven't analyzed anything yet.\nConnect your first app and find out if it does what you actually meant to build."} />
+          </div>
+        )}
 
         {githubConflict && (
           <div className="flex items-start gap-3 mt-4 rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
