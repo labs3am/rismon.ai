@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import ParticleBackground from '@/components/ParticleBackground';
+import BackButton from '@/components/BackButton';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
