@@ -31,6 +31,9 @@ export default function Signup() {
   return (
     <div className="min-h-screen relative flex items-center justify-center px-4">
       <ParticleBackground />
+      <div className="absolute top-6 left-6 z-20">
+        <BackButton to="/" label="Home" />
+      </div>
       <div className="relative z-10 auth-glass-card">
         <p className="text-foreground font-bold text-[22px] text-center mb-8">Rismon.ai</p>
         <h1 className="text-foreground text-2xl font-semibold">Create your account</h1>
