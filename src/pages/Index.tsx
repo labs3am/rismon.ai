@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -6,7 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
 import ParticleBackground from '@/components/ParticleBackground';
-import { supabase } from '@/integrations/supabase/client';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -68,13 +67,6 @@ const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily au
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [stats, setStats] = useState<{ users: number; apps: number; scans: number } | null>(null);
-
-  useEffect(() => {
-    supabase.functions.invoke('public-stats').then(({ data }) => {
-      if (data) setStats(data);
-    });
-  }, []);
 
   const doubled = [...marquePlatforms, ...marquePlatforms];
 
@@ -98,30 +90,6 @@ export default function Index() {
             <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
-
-          {/* Live stats */}
-          {stats && (stats.users > 0 || stats.apps > 0 || stats.scans > 0) && (
-            <div className="flex items-center justify-center gap-8 mt-10">
-              {stats.users > 0 && (
-                <div className="text-center">
-                  <p className="text-foreground text-xl font-bold">{stats.users}</p>
-                  <p className="text-muted-foreground text-[11px] uppercase tracking-[0.1em] mt-0.5">Founders</p>
-                </div>
-              )}
-              {stats.apps > 0 && (
-                <div className="text-center">
-                  <p className="text-foreground text-xl font-bold">{stats.apps}</p>
-                  <p className="text-muted-foreground text-[11px] uppercase tracking-[0.1em] mt-0.5">Apps connected</p>
-                </div>
-              )}
-              {stats.scans > 0 && (
-                <div className="text-center">
-                  <p className="text-foreground text-xl font-bold">{stats.scans}</p>
-                  <p className="text-muted-foreground text-[11px] uppercase tracking-[0.1em] mt-0.5">Scans run</p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </section>
 
