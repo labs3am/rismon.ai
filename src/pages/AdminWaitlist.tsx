@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
-const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
+
 
 export default function AdminWaitlist() {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function AdminWaitlist() {
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
+      if (!user) {
         navigate('/');
         return;
       }
