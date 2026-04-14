@@ -145,16 +145,55 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top status bar */}
-      <div className="w-full border-b px-6 md:px-10 py-3 flex items-center justify-between" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-        <span className="text-[13px]" style={{ color: '#71717a' }}>
-          {stage === 'reading' && 'Rismon.ai is reading your app'}
-          {stage === 'analyzing' && 'Rismon.ai is analyzing your app'}
-          {stage === 'generating' && 'Rismon.ai is writing your fix prompts'}
-        </span>
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
-          <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
-        </span>
+      <div className="w-full" style={{ background: '#111111', borderBottom: '1px solid #1e1e1e' }}>
+        <div className="px-6 md:px-10 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] font-medium" style={{ color: '#a1a1aa' }}>
+              {stage === 'reading' && 'Ris is reading your code'}
+              {stage === 'analyzing' && 'Ris is analyzing your app'}
+              {stage === 'generating' && 'Ris is writing your fix prompts'}
+            </span>
+            {stage === 'reading' && currentFile && (
+              <span className="text-[12px] font-mono truncate max-w-[280px]" style={{ color: '#52525b' }}>
+                {currentFile}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {totalFiles > 0 && stage === 'reading' && (
+              <span className="text-[12px] tabular-nums" style={{ color: '#71717a' }}>
+                {fileCount}/{totalFiles}
+              </span>
+            )}
+            {stage === 'generating' && (totalPrompts > 0) && (
+              <span className="text-[12px] tabular-nums" style={{ color: '#71717a' }}>
+                {promptCount}/{totalPrompts}
+              </span>
+            )}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
+            </span>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="w-full" style={{ height: 2, background: '#1e1e1e' }}>
+          <div
+            style={{
+              height: '100%',
+              background: '#f97316',
+              transition: 'width 0.4s ease',
+              width: stage === 'reading' && totalFiles > 0
+                ? `${Math.max(2, (fileCount / totalFiles) * 100)}%`
+                : stage === 'generating' && totalPrompts > 0
+                  ? `${Math.max(2, (promptCount / totalPrompts) * 100)}%`
+                  : undefined,
+              ...(((stage === 'reading' && totalFiles === 0) || stage === 'analyzing' || (stage === 'generating' && totalPrompts === 0))
+                ? { animation: 'indeterminateBar 2s ease-in-out infinite', width: '30%' }
+                : {}),
+            }}
+          />
+        </div>
       </div>
 
       {/* Main content */}
@@ -271,6 +310,10 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
+        }
+        @keyframes indeterminateBar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(333%); }
         }
       `}</style>
     </div>
