@@ -77,6 +77,28 @@ serve(async (req) => {
     }
 
     const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey, app_id, github_owner, github_repo_name } = await req.json();
+
+    // Server-side scan limit enforcement (3 scans per week)
+    if (action === "read_code") {
+      const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const { data: limits } = await serviceClient
+        .from("scan_limits")
+        .select("scan_count")
+        .eq("user_id", user.id)
+        .gte("scan_date", weekStart.toISOString().split("T")[0]);
+      const total = (limits || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
+      if (total >= 3) {
+        return new Response(JSON.stringify({ error: "Weekly scan limit reached", code: "LIMIT_REACHED" }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
     if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_KEY not configured");
 
