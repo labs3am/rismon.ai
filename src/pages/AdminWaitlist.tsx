@@ -13,7 +13,7 @@ export default function AdminWaitlist() {
   useEffect(() => {
     const check = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !ADMIN_EMAILS.includes(user.email || '')) {
+      if (!user) {
         navigate('/');
         return;
       }
