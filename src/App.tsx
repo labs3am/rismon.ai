@@ -18,7 +18,6 @@ import Terms from "./pages/Terms";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import NotFound from "./pages/NotFound";
 import SampleReport from "./pages/SampleReport";
-import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
