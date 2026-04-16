@@ -259,6 +259,17 @@ export default function Analyze() {
     if (analysisStarted.current) return;
     analysisStarted.current = true;
     setStage('analyzing');
+
+    // Update scan_session with intent data
+    if (scanSessionId) {
+      await supabase.from('scan_sessions').update({
+        project_type: intentMeta.projectType,
+        payment_type: intentMeta.monetization,
+        concern_text: concern,
+        status: 'analyzing',
+      }).eq('id', scanSessionId);
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
         body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
@@ -271,6 +282,14 @@ export default function Analyze() {
         intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
       }).eq('id', analysisId);
 
+      // Update scan_session to complete
+      if (scanSessionId) {
+        await supabase.from('scan_sessions').update({
+          status: 'complete',
+          report_id: analysisId,
+        }).eq('id', scanSessionId);
+      }
+
       // Update scan_usage (Monday-based week)
       const now2 = new Date();
       const day2 = now2.getDay();
@@ -280,7 +299,6 @@ export default function Analyze() {
       const monStr = mon.toISOString().split('T')[0];
       const { data: existingUsage } = await supabase.from('scan_usage').select('*').eq('user_id', user!.id).eq('week_start', monStr).maybeSingle();
       if (existingUsage) {
-        // scan_usage has no UPDATE RLS, use scan_limits as fallback tracker
         await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: now2.toISOString().split('T')[0], scan_count: 1 });
       } else {
         await supabase.from('scan_usage').insert({ user_id: user!.id, week_start: monStr, scan_count: 1 });
@@ -288,14 +306,13 @@ export default function Analyze() {
 
       setAnalysisResult(data);
       setStage('review');
-      // Clean up localStorage on completion of review stage
       localStorage.removeItem('rismon_active_analysis');
       localStorage.removeItem('rismon_analysis_stage');
     } catch {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
