@@ -203,8 +203,8 @@ export default function Dashboard() {
             <span className="text-[13px]" style={{ color: stats.apps >= 1 ? '#f59e0b' : '#71717a' }}>
               {stats.apps} of 1 app used
             </span>
-            <span className="text-[13px]" style={{ color: weeklyScans >= 3 ? '#ef4444' : '#71717a' }}>
-              {weeklyScans} of 3 scans used this week
+            <span className="text-[13px]" style={{ color: weeklyScans >= 1 ? '#ef4444' : '#71717a' }}>
+              {weeklyScans} of 1 scan used this week
             </span>
             <span className="text-[13px]" style={{ color: '#71717a' }}>
               Resets {getResetDay()}
