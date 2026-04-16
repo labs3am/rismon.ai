@@ -196,8 +196,20 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         </div>
       </div>
 
+      {/* Free plan notice */}
+      <div className="w-full px-4 pt-4">
+        <div className="max-w-[600px] mx-auto rounded-lg px-4 py-2.5 flex items-center justify-center gap-2" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }}>
+          <span className="text-[13px] text-center" style={{ color: '#b45309' }}>
+            Free plan scans 40% of your code.
+          </span>
+          <span className="text-[13px]" style={{ color: '#71717a' }}>
+            Upgrade to Premium for a full deep scan.
+          </span>
+        </div>
+      </div>
+
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-12 md:pt-16 px-4">
+      <div className="flex-1 flex flex-col items-center justify-start pt-8 md:pt-12 px-4">
         {stage === 'reading' && (
           <div className="w-full max-w-[480px] mx-auto rounded-2xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
             <div className="flex items-center px-5 py-3 border-b" style={{ borderColor: '#1e1e1e' }}>
