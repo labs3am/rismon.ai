@@ -13,6 +13,13 @@ export default function ForgotPasswordModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const handleClose = () => {
+    setEmail('');
+    setSent(false);
+    setLoading(false);
+    onClose();
+  };
+
   if (!open) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,14 +39,14 @@ export default function ForgotPasswordModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
       <div className="auth-glass-card relative max-w-md w-full">
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+        <button onClick={handleClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X size={18} />
         </button>
         {sent ? (
           <div className="text-center py-4">
             <h2 className="text-foreground text-xl font-semibold mb-2">Check your email</h2>
             <p className="text-muted-foreground text-sm">We sent a password reset link to <span className="text-foreground">{email}</span>. Click the link to set a new password.</p>
-            <button onClick={onClose} className="btn-cyber-primary mt-6 px-6">Got it</button>
+            <button onClick={handleClose} className="btn-cyber-primary mt-6 px-6">Got it</button>
           </div>
         ) : (
           <>
