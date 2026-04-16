@@ -15,6 +15,15 @@ const TEMPLATES: Record<string, string> = {
   'Course Platform': 'I am building an online course platform about [topic]. Free users can preview [X] lessons only. Paid users at $[price] get full access.',
 };
 
+const PAYMENT_TEMPLATES: Record<string, string> = {
+  'Free Only': 'This app is completely free. No payments required. All features available to everyone.',
+  'Free + Paid Tiers': 'Free users have limited access. Paid users at $[price]/month get full access to all features. Free users must NOT access paid features without upgrading.',
+  'One-time Payment': 'Users pay once at $[price] to get lifetime access. No recurring charges.',
+  'Subscription': 'Users pay $[price]/month for continued access. Cancelling subscription should remove access immediately.',
+  'Pay Per Use': 'Users pay for each action they take. $[price] per [action]. Usage tracked per user.',
+  'No Payments': 'No payment system needed. This is an internal or private tool.',
+};
+
 interface IntentTagsProps {
   value: string;
   onChange: (value: string) => void;
@@ -60,6 +69,21 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
   const [showReplaceWarning, setShowReplaceWarning] = useState(false);
   const pendingType = useRef<string | null>(null);
 
+  // Separator used to split project-type text from payment text
+  const SEPARATOR = '\n\n';
+
+  const getProjectPart = (text: string) => {
+    const parts = text.split(SEPARATOR);
+    // If there's a known payment template at the end, the project part is everything before it
+    for (const key of Object.keys(PAYMENT_TEMPLATES)) {
+      const pt = PAYMENT_TEMPLATES[key];
+      if (text.endsWith(pt)) {
+        return text.slice(0, text.length - pt.length).replace(/\n+$/, '');
+      }
+    }
+    return text;
+  };
+
   const handleProjectType = (type: string) => {
     if (type === projectType) return;
     if (userEdited && value.length > 0) {
@@ -75,7 +99,10 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
     setUserEdited(false);
     setShowReplaceWarning(false);
     pendingType.current = null;
-    onChange(TEMPLATES[type] || '');
+    const projectText = TEMPLATES[type] || '';
+    const paymentText = monetization ? PAYMENT_TEMPLATES[monetization] : '';
+    const combined = paymentText ? `${projectText}${SEPARATOR}${paymentText}` : projectText;
+    onChange(combined.slice(0, 300));
     onMetaChange?.({ projectType: type, monetization });
   };
 
@@ -83,6 +110,19 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
     const newVal = monetization === m ? null : m;
     setMonetization(newVal);
     onMetaChange?.({ projectType, monetization: newVal });
+
+    // Get the project-type portion of current text
+    const projectPart = getProjectPart(value);
+
+    if (newVal === null) {
+      // Deselected — keep only project part
+      onChange(projectPart);
+    } else {
+      const paymentText = PAYMENT_TEMPLATES[newVal] || '';
+      const combined = projectPart ? `${projectPart}${SEPARATOR}${paymentText}` : paymentText;
+      onChange(combined.slice(0, 300));
+    }
+    setUserEdited(false);
   };
 
   return (
