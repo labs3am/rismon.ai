@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Connect from "./pages/Connect";
 import Analyze from "./pages/Analyze";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/sample-report" element={<SampleReport />} />
