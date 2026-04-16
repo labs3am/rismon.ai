@@ -117,7 +117,7 @@ function parseJSON(text: string): any {
 // ============================================================
 const PLAN_LIMITS = {
   free: {
-    weeklyScans: 3,
+    weeklyScans: 1,
     monthlyScans: Infinity,
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
@@ -187,7 +187,7 @@ async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free"
       .eq("week_start", mondayStr);
     const total = (usage || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
     if (total >= limits.weeklyScans) {
-      return { ok: false, code: "WEEKLY_LIMIT", message: "You've used all 3 free scans this week. Upgrade to Pro for unlimited." };
+      return { ok: false, code: "WEEKLY_LIMIT", message: "You've used your free scan this week. Try Pro for $14.99 to run a Deep Scan now, or wait until Monday." };
     }
   }
 
