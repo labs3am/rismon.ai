@@ -289,6 +289,16 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         )}
       </div>
 
+      {/* Free plan scan depth notice */}
+      <div className="fixed bottom-12 left-0 right-0 w-full" style={{ background: 'rgba(245,158,11,0.06)', borderTop: '1px solid rgba(245,158,11,0.15)', borderBottom: '1px solid rgba(245,158,11,0.15)', padding: '10px 40px' }}>
+        <div className="max-w-[600px] mx-auto flex items-center justify-center gap-2">
+          <span className="text-[13px] text-center" style={{ color: '#f59e0b' }}>
+            Free plan scans 40% of your code.{' '}
+            <span style={{ color: '#71717a' }}>Upgrade to Premium for a full deep scan.</span>
+          </span>
+        </div>
+      </div>
+
       {/* Bottom tips - fixed and centered */}
       <div className="fixed bottom-0 left-0 right-0 w-full" style={{ background: '#080808', borderTop: '1px solid #1e1e1e', padding: '16px 40px' }}>
         <div className="max-w-[600px] mx-auto flex items-center justify-center gap-2">
