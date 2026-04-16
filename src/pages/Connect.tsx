@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock } from 'lucide-react';
+import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock, KeyRound } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
