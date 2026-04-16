@@ -15,6 +15,15 @@ const TEMPLATES: Record<string, string> = {
   'Course Platform': 'I am building an online course platform about [topic]. Free users can preview [X] lessons only. Paid users at $[price] get full access.',
 };
 
+const PAYMENT_TEMPLATES: Record<string, string> = {
+  'Free Only': 'This app is completely free. No payments required. All features available to everyone.',
+  'Free + Paid Tiers': 'Free users have limited access. Paid users at $[price]/month get full access to all features. Free users must NOT access paid features without upgrading.',
+  'One-time Payment': 'Users pay once at $[price] to get lifetime access. No recurring charges.',
+  'Subscription': 'Users pay $[price]/month for continued access. Cancelling subscription should remove access immediately.',
+  'Pay Per Use': 'Users pay for each action they take. $[price] per [action]. Usage tracked per user.',
+  'No Payments': 'No payment system needed. This is an internal or private tool.',
+};
+
 interface IntentTagsProps {
   value: string;
   onChange: (value: string) => void;
