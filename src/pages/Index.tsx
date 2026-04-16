@@ -63,7 +63,9 @@ const marquePlatforms = [
 ];
 
 const freeFeatures = ['1 app included', '1 scan per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Priority support during your scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const freeNotIncluded = ['Deep Scan (backend + edge functions)', 'Cross-model verification (Claude + Gemini)', 'Continuous monitoring on every commit', 'Investor-ready PDF report'];
+const tryProFeatures = ['Everything in Free', 'One Deep Scan — every file, every route, every edge function', 'Cross-model verification (Claude + Gemini agree before flagging)', 'Investor-ready PDF report you can hand to anyone', 'Priority queue — your scan jumps the line', 'Priority support during your scan', 'Use it before launch, an investor demo, or after any big AI rebuild'];
+const tryProNotIncluded = ['Continuous monitoring (Pro only)', 'Unlimited apps and unlimited monthly scans'];
 const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF reports', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Priority queue', 'Priority support'];
 
 export default function Index() {
