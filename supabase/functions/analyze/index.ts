@@ -82,15 +82,17 @@ serve(async (req) => {
     if (action === "read_code") {
       const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const now = new Date();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const { data: limits } = await serviceClient
-        .from("scan_limits")
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((day + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split("T")[0];
+      const { data: usageRows } = await serviceClient
+        .from("scan_usage")
         .select("scan_count")
         .eq("user_id", user.id)
-        .gte("scan_date", weekStart.toISOString().split("T")[0]);
-      const total = (limits || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
+        .eq("week_start", mondayStr);
+      const total = (usageRows || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
       if (total >= 3) {
         return new Response(JSON.stringify({ error: "Weekly scan limit reached", code: "LIMIT_REACHED" }), {
           status: 429,

@@ -163,6 +163,30 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          scan_count: number | null
+          user_id: string | null
+          week_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          scan_count?: number | null
+          user_id?: string | null
+          week_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          scan_count?: number | null
+          user_id?: string | null
+          week_start?: string | null
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string | null
