@@ -125,16 +125,7 @@ export default function Analyze() {
         }
       }
 
-      // Check weekly limit using scan_usage (Monday-based weeks)
-      const now = new Date();
-      const day = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((day + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
-      const total = (usageRows || []).reduce((s, l) => s + (l.scan_count || 0), 0);
-      if (total >= 3) { setBlocked(true); setStage('checking'); return; }
+      // Server enforces all limits — client just proceeds. Server will return code: WEEKLY_LIMIT etc if blocked.
       setStage('reading');
     };
     load();
@@ -192,16 +183,25 @@ export default function Analyze() {
           'component', 'layout'
         ];
         const exts = ['.ts', '.tsx', '.js', '.jsx', '.json'];
-        const files = (tree.tree || [])
-          .filter((f: any) => f.type === 'blob' && exts.some(e => f.path.endsWith(e)) && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
+        const allBlobs = (tree.tree || []).filter((f: any) => f.type === 'blob');
+
+        // Frontend files (keyword-matched)
+        const frontendFiles = allBlobs
+          .filter((f: any) => exts.some(e => f.path.endsWith(e)) && !f.path.startsWith('supabase/functions/') && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
           .slice(0, 40);
 
-        setTotalFiles(files.length);
+        // Edge function files (everything in supabase/functions/)
+        const edgeFiles = allBlobs
+          .filter((f: any) => f.path.startsWith('supabase/functions/') && (f.path.endsWith('.ts') || f.path.endsWith('.js')) && (f.size || 0) < 80000)
+          .slice(0, 30);
 
-        // Fetch file contents
+        const totalFilesToFetch = frontendFiles.length + edgeFiles.length;
+        setTotalFiles(totalFilesToFetch);
+
+        // Fetch frontend
         let codeBundle = '';
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
+        for (let i = 0; i < frontendFiles.length; i++) {
+          const f = frontendFiles[i];
           setFileCount(i + 1);
           setCurrentFile(f.path);
           try {
@@ -217,7 +217,28 @@ export default function Analyze() {
             }
           } catch {}
         }
-        codeBundle = codeBundle.slice(0, 15000);
+
+        // Fetch edge functions
+        let edgeFunctionBundle = '';
+        for (let i = 0; i < edgeFiles.length; i++) {
+          const f = edgeFiles[i];
+          setFileCount(frontendFiles.length + i + 1);
+          setCurrentFile(f.path);
+          try {
+            const res = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`, {
+              headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+            });
+            const d = await res.json();
+            if (d.content) {
+              let content = atob(d.content.replace(/\n/g, ''));
+              content = content.split('\n').slice(0, 200).join('\n');
+              content = content.replace(/sk-[a-zA-Z0-9\-]{20,}/g, '[KEY_REMOVED]').replace(/service_role[^\s"']*/g, '[REMOVED]').replace(/ghp_[a-zA-Z0-9]{30,}/g, '[TOKEN_REMOVED]');
+              edgeFunctionBundle += `=== ${f.path} ===\n${content}\n\n`;
+            }
+          } catch {}
+        }
+        codeBundle = codeBundle.slice(0, 60000);
+        edgeFunctionBundle = edgeFunctionBundle.slice(0, 60000);
 
         let tableNames = '';
         if (app.supabase_url && app.supabase_anon_key) {
@@ -227,11 +248,47 @@ export default function Analyze() {
           } catch {}
         }
 
+        // Update scan_session with repo size
+        const repoSize = new Blob([codeBundle + edgeFunctionBundle]).size;
+        if (newSession) {
+          await supabase.from('scan_sessions').update({ repo_size_bytes: repoSize }).eq('id', newSession.id);
+        }
+
         // Call edge function
         const { data, error } = await supabase.functions.invoke('analyze', {
-          body: { action: 'read_code', codeBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name }
+          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key }
         });
         if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
+
+        // Handle limit/abuse responses from server
+        if (data.code === 'WEEKLY_LIMIT' || data.code === 'MONTHLY_LIMIT') {
+          setBlocked(true);
+          setStage('checking');
+          if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
+          return;
+        }
+        if (data.code === 'DUPLICATE_SCAN' && data.existingReportId) {
+          toast.info('You already scanned this repo recently. Showing your existing report.');
+          if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
+          navigate(`/report/${data.existingReportId}`);
+          return;
+        }
+        if (data.code === 'REPO_TOO_LARGE') {
+          toast.error(data.error);
+          if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
+          navigate('/dashboard');
+          return;
+        }
+        if (data.code === 'SCAN_IN_PROGRESS') {
+          toast.error(data.error);
+          navigate('/dashboard');
+          return;
+        }
+        if (data.error) {
+          toast.error(data.error);
+          navigate('/dashboard');
+          return;
+        }
 
         // Update analysis record
         if (analysis) {
