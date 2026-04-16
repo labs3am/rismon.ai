@@ -284,7 +284,7 @@ export default function Index() {
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
-            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Start free forever. Try Pro on a single app for $14.99. Or go full Pro when you ship serious products.</p>
+            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Free forever. Try Pro on one app for $14.99. Go full Pro when you ship serious products.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 items-stretch">
@@ -356,7 +356,7 @@ export default function Index() {
           </div>
 
           <div className="text-center mt-8">
-            <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
+            <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything.</p>
           </div>
         </div>
       </section>
