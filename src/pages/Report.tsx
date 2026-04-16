@@ -302,7 +302,7 @@ export default function Report() {
             AI-assisted code review, not a guaranteed security audit.
             {analysis.code_understanding ? ' Two AI models reviewed your code.' : ''}
             {' '}Verify findings before deploying to production.
-            {' '}<Link to="/pricing" className="hover:underline" style={{ color: '#71717a' }}>See what Pro adds →</Link>
+            {' '}<Link to="/#pricing" className="hover:underline" style={{ color: '#71717a' }}>See what Pro adds →</Link>
           </p>
         </div>
       </div>

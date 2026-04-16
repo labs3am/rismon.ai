@@ -18,7 +18,6 @@ import Terms from "./pages/Terms";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import NotFound from "./pages/NotFound";
 import SampleReport from "./pages/SampleReport";
-import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +35,6 @@ const App = () => (
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/sample-report" element={<SampleReport />} />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="/admin/waitlist" element={<AdminWaitlist />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />

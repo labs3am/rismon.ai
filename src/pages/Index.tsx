@@ -63,7 +63,8 @@ const marquePlatforms = [
 ];
 
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
+const tryProFeatures = ['Full Pro access on 1 app', 'One Deep Scan (frontend + backend)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF report', 'Email delivery when ready', 'Priority support during scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Investor-ready PDF reports', 'Priority queue', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -277,58 +278,70 @@ export default function Index() {
 
       {/* PRICING */}
       <section id="pricing" className="cyber-section py-28 px-6">
-        <div className="max-w-[960px] mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
+            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Start free forever. Try Pro on a single app for $14.99. Or go full Pro when you ship serious products.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-            <div className="glass-card p-8">
-              <p className="text-foreground text-[28px] font-bold">Free</p>
-              <p className="text-muted-foreground mt-1">$0 / forever</p>
-              <div className="mt-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 items-stretch">
+            {/* FREE */}
+            <div className="glass-card p-7 flex flex-col">
+              <p className="text-foreground text-[26px] font-bold">Free</p>
+              <p className="text-muted-foreground mt-1">$0 <span className="text-sm">/ forever</span></p>
+              <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.50)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>QUICK SCAN</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Analyzes your most critical files and catches the issues that matter most.</p>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Everything a solo founder needs to verify their first AI-built app.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
-              <div className="mt-4 space-y-2.5">
+              <div className="mt-4 space-y-2.5 flex-1">
                 {freeFeatures.map((f, i) => (
                   <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-success shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
                 ))}
               </div>
-              <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-sm">Perfect for founders verifying their first AI-built app</p>
-              <Link to="/signup" className="btn-cyber-primary block w-full mt-6">Get started free</Link>
+              <Link to="/signup" className="btn-cyber-secondary block w-full mt-6 text-center">Get started free</Link>
             </div>
 
-            {/* Centered tagline between cards - visible on mobile between, on desktop as absolute overlay */}
-            <div className="md:hidden text-center py-2">
-              <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
-            </div>
-
-            <div className="glass-card p-8" style={{ borderColor: 'rgba(249,115,22,0.5)' }}>
-              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
-              <p className="text-foreground text-[28px] font-bold">Pro</p>
-              <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
-              <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
-              <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
-              <div className="mt-6">
-                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full codebase. Every file. Every route. Every business logic gap. Nothing missed.</p>
+            {/* TRY PRO — ONE TIME */}
+            <div className="glass-card p-7 flex flex-col" style={{ borderColor: 'rgba(249,115,22,0.5)', boxShadow: '0 0 40px rgba(249,115,22,0.10)' }}>
+              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4 self-start" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>MOST POPULAR</span>
+              <p className="text-foreground text-[26px] font-bold">Try Pro</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$14.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
+              <p className="text-subtle text-xs mt-1">No subscription. Pay once, scan once.</p>
+              <div className="mt-5">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full Pro access on one app for one deep scan. Then your account resets to Free. Perfect before launch, an investor demo, or after a big AI rebuild.</p>
               </div>
-              <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
-              <div className="mt-4 space-y-2.5">
+              <p className="text-foreground text-sm font-semibold mt-6">You unlock:</p>
+              <div className="mt-4 space-y-2.5 flex-1">
+                {tryProFeatures.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join Try Pro waitlist</button>
+            </div>
+
+            {/* PRO MONTHLY */}
+            <div className="glass-card p-7 flex flex-col">
+              <p className="text-foreground text-[26px] font-bold">Pro</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$49 <span className="text-muted-foreground text-sm font-normal">/ month</span></p>
+              <p className="text-subtle text-xs mt-1">Cancel anytime. Coming soon.</p>
+              <div className="mt-5">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>CONTINUOUS MONITORING</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">For founders shipping serious products. Unlimited apps, 25 deep scans a month, scan on every commit.</p>
+              </div>
+              <p className="text-foreground text-sm font-semibold mt-6">Everything in Try Pro plus:</p>
+              <div className="mt-4 space-y-2.5 flex-1">
                 {proFeatures.map((f, i) => (
                   <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
                 ))}
               </div>
-              <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-sm">Perfect for founders with real users who can't afford to miss anything</p>
-              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join founding member waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-secondary block w-full mt-6">Join Pro waitlist</button>
             </div>
           </div>
-          {/* Centered tagline - desktop only */}
-          <div className="hidden md:block text-center mt-6">
+
+          <div className="text-center mt-8">
             <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
           </div>
         </div>
