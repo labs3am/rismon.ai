@@ -18,7 +18,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <button onClick={() => scrollTo('how-it-works')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>How it works</button>
           <button onClick={() => scrollTo('what-we-check')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>What we check</button>
-          <button onClick={() => scrollTo('pricing')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Pricing</button>
+          <Link to="/pricing" className="text-sm transition-colors cursor-pointer" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Pricing</Link>
           <button onClick={() => scrollTo('security-privacy')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Security</button>
         </div>
         <div className="hidden md:flex items-center gap-3">

@@ -347,19 +347,17 @@ export default function Analyze() {
         }).eq('id', scanSessionId);
       }
 
-      // Update scan_usage (Monday-based week)
-      const now2 = new Date();
-      const day2 = now2.getDay();
-      const mon = new Date(now2);
-      mon.setDate(now2.getDate() - ((day2 + 6) % 7));
-      mon.setHours(0, 0, 0, 0);
-      const monStr = mon.toISOString().split('T')[0];
-      const { data: existingUsage } = await supabase.from('scan_usage').select('*').eq('user_id', user!.id).eq('week_start', monStr).maybeSingle();
-      if (existingUsage) {
-        await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: now2.toISOString().split('T')[0], scan_count: 1 });
-      } else {
-        await supabase.from('scan_usage').insert({ user_id: user!.id, week_start: monStr, scan_count: 1 });
-      }
+      // Server-side usage increment (handles weekly + monthly atomically)
+      try {
+        await supabase.functions.invoke('analyze', { body: { action: 'increment_usage' } });
+      } catch {}
+
+      // Email notification (server checks plan internally; safe to call always)
+      try {
+        await supabase.functions.invoke('send-scan-ready-email', {
+          body: { report_id: analysisId, app_name: app?.app_name, score: data.intent_match_score }
+        });
+      } catch {}
 
       setAnalysisResult(data);
       setStage('review');
