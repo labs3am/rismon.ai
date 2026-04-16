@@ -45,7 +45,7 @@ export default function Dashboard() {
     const dayOfWeek = now.getDay(); // 0=Sun
     if (dayOfWeek === 6) return 'tomorrow';
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[0]; // resets on Sunday
+    return days[1]; // resets on Monday
   };
 
   useEffect(() => {
@@ -74,8 +74,14 @@ export default function Dashboard() {
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
 
-      const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
-      const ws = (limits || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
+      // Use Monday-based week for scan_usage
+      const dayOfW = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((dayOfW + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
+      const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
       setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });

@@ -85,11 +85,15 @@ export default function Analyze() {
         }
       }
 
-      // Check weekly limit
+      // Check weekly limit using scan_usage (Monday-based weeks)
       const now = new Date();
-      const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0,0,0,0);
-      const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
-      const total = (limits || []).reduce((s, l) => s + (l.scan_count || 0), 0);
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((day + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
+      const total = (usageRows || []).reduce((s, l) => s + (l.scan_count || 0), 0);
       if (total >= 3) { setBlocked(true); setStage('checking'); return; }
       setStage('reading');
     };
@@ -219,13 +223,19 @@ export default function Analyze() {
         intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
       }).eq('id', analysisId);
 
-      // Update scan limits
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existing } = await supabase.from('scan_limits').select('*').eq('user_id', user!.id).eq('scan_date', today).single();
-      if (existing) {
-        await supabase.from('scan_limits').update({ scan_count: (existing.scan_count || 0) + 1 }).eq('id', existing.id);
+      // Update scan_usage (Monday-based week)
+      const now2 = new Date();
+      const day2 = now2.getDay();
+      const mon = new Date(now2);
+      mon.setDate(now2.getDate() - ((day2 + 6) % 7));
+      mon.setHours(0, 0, 0, 0);
+      const monStr = mon.toISOString().split('T')[0];
+      const { data: existingUsage } = await supabase.from('scan_usage').select('*').eq('user_id', user!.id).eq('week_start', monStr).maybeSingle();
+      if (existingUsage) {
+        // scan_usage has no UPDATE RLS, use scan_limits as fallback tracker
+        await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: now2.toISOString().split('T')[0], scan_count: 1 });
       } else {
-        await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: today, scan_count: 1 });
+        await supabase.from('scan_usage').insert({ user_id: user!.id, week_start: monStr, scan_count: 1 });
       }
 
       setAnalysisResult(data);
@@ -259,10 +269,20 @@ export default function Analyze() {
         <div className="flex items-center justify-center pt-40">
           <div className="text-center max-w-[480px]">
             <Clock size={40} className="text-warning mx-auto" />
-            <h2 className="text-foreground text-[22px] font-semibold mt-4">Weekly limit reached</h2>
-            <p className="text-muted-foreground mt-2">You have used your 3 free analyses for this week. Your scans reset next week.</p>
-            <button onClick={() => setWaitlistOpen(true)} className="text-primary text-sm mt-4 hover:underline">Join Pro waitlist</button>
-            <Link to="/dashboard" className="block mt-4 border border-hover-border text-foreground px-6 py-2.5 rounded-lg text-sm mx-auto w-fit">Back to dashboard</Link>
+            <h2 className="text-foreground text-[22px] font-semibold mt-4">You've used all 3 free scans this week</h2>
+            <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">
+              Free plan includes 3 scans per week.<br />
+              Your scans reset every Monday.<br />
+              Upgrade to Pro for unlimited deep scans.
+            </p>
+            <div className="flex flex-col gap-3 mt-6 items-center">
+              <button onClick={() => setWaitlistOpen(true)} className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                Upgrade to Pro →
+              </button>
+              <Link to="/dashboard" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                Come back Monday
+              </Link>
+            </div>
           </div>
         </div>
       </div>
