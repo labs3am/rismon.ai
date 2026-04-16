@@ -5,12 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import ParticleBackground from '@/components/ParticleBackground';
 import BackButton from '@/components/BackButton';
+import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -49,7 +51,7 @@ export default function Login() {
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <p className="text-muted-foreground text-[13px] text-right mt-1.5 cursor-pointer hover:text-foreground transition-colors">Forgot password?</p>
+            <p onClick={() => setForgotOpen(true)} className="text-muted-foreground text-[13px] text-right mt-1.5 cursor-pointer hover:text-foreground transition-colors">Forgot password?</p>
           </div>
           <button type="submit" disabled={loading} className="btn-cyber-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
             {loading && <Loader2 size={16} className="animate-spin" />} Log in
@@ -59,6 +61,7 @@ export default function Login() {
           Don't have an account? <Link to="/signup" className="text-primary hover:underline">Sign up →</Link>
         </p>
       </div>
+      <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </div>
   );
 }
