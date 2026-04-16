@@ -118,6 +118,81 @@ export type Database = {
         }
         Relationships: []
       }
+      monitored_repos: {
+        Row: {
+          app_id: string
+          branch: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_scan_at: string | null
+          user_id: string
+          webhook_secret: string
+        }
+        Insert: {
+          app_id: string
+          branch?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_scan_at?: string | null
+          user_id: string
+          webhook_secret: string
+        }
+        Update: {
+          app_id?: string
+          branch?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_scan_at?: string | null
+          user_id?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          payment_type: string
+          status: string
+          stripe_payment_intent: string | null
+          stripe_session_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_type: string
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_type?: string
+          status?: string
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
@@ -126,6 +201,9 @@ export type Database = {
           full_name: string | null
           id: string
           plan: string | null
+          pro_credits: number
+          pro_until: string | null
+          stripe_customer_id: string | null
         }
         Insert: {
           company_name?: string | null
@@ -134,6 +212,9 @@ export type Database = {
           full_name?: string | null
           id: string
           plan?: string | null
+          pro_credits?: number
+          pro_until?: string | null
+          stripe_customer_id?: string | null
         }
         Update: {
           company_name?: string | null
@@ -142,6 +223,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           plan?: string | null
+          pro_credits?: number
+          pro_until?: string | null
+          stripe_customer_id?: string | null
         }
         Relationships: []
       }
@@ -163,6 +247,30 @@ export type Database = {
           scan_count?: number | null
           scan_date?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      scan_reminders: {
+        Row: {
+          id: string
+          reminder_type: string
+          sent_at: string
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+          user_id: string
+          week_start?: string
+        }
+        Update: {
+          id?: string
+          reminder_type?: string
+          sent_at?: string
+          user_id?: string
+          week_start?: string
         }
         Relationships: []
       }
@@ -282,8 +390,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_pro_credit: { Args: { _user_id: string }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
+      has_pro_access: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
