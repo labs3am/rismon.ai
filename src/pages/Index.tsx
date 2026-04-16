@@ -305,7 +305,7 @@ export default function Index() {
               <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
               <div className="mt-3 space-y-2 flex-1">
                 {freeNotIncluded.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm line-through" style={{ color: '#52525b' }}>{f}</span></div>
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm" style={{ color: '#71717a' }}>{f}</span></div>
                 ))}
               </div>
               <Link to="/signup" className="btn-cyber-secondary block w-full mt-6 text-center">Get started free</Link>
@@ -319,18 +319,18 @@ export default function Index() {
               <p className="text-subtle text-xs mt-1">No subscription. Pay once, scan once.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">One full Deep Scan on a single app — the same enterprise-grade analysis Pro users get. Built for the moments that matter most: launch day, an investor demo, or right after a big AI rebuild.</p>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">One full Deep Scan on a single app. The same analysis Pro users get. Use it before launch or an investor demo.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">You unlock:</p>
               <div className="mt-4 space-y-2.5">
                 {tryProFeatures.map((f, i) => (
-                  <div key={i} className="flex items-start gap-2"><CheckCircle size={15} className="text-primary shrink-0 mt-0.5" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
                 ))}
               </div>
               <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
               <div className="mt-3 space-y-2 flex-1">
                 {tryProNotIncluded.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm line-through" style={{ color: '#52525b' }}>{f}</span></div>
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm" style={{ color: '#71717a' }}>{f}</span></div>
                 ))}
               </div>
               <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join Try Pro waitlist</button>
@@ -343,7 +343,7 @@ export default function Index() {
               <p className="text-subtle text-xs mt-1">Cancel anytime. Coming soon.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>CONTINUOUS MONITORING</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">For founders shipping serious products. Unlimited apps, 25 deep scans a month, scan on every commit.</p>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">For founders shipping serious products. Unlimited apps and a fresh scan every time you push code.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">Everything in Try Pro plus:</p>
               <div className="mt-4 space-y-2.5 flex-1">
