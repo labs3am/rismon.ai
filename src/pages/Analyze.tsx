@@ -356,6 +356,20 @@ export default function Analyze() {
 
   // Loading screens with animated visuals
   if (stage === 'checking' || stage === 'reading' || stage === 'analyzing') {
+    if (resumingSession) {
+      return (
+        <div className="min-h-screen bg-background">
+          <DashboardNavbar />
+          <div className="flex items-center justify-center pt-40">
+            <div className="text-center max-w-[480px]">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <h2 className="text-foreground text-[22px] font-semibold mt-6">Your scan is still running.</h2>
+              <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">Please wait...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <AnalysisLoadingScreen
         stage={stage === 'checking' ? 'reading' : stage}
