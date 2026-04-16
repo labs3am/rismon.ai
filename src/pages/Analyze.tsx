@@ -39,6 +39,10 @@ export default function Analyze() {
   const readingStarted = useRef(false);
   const analysisStarted = useRef(false);
 
+  const [scanSessionId, setScanSessionId] = useState<string | null>(null);
+  const [resumingSession, setResumingSession] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Persist stage to localStorage
   useEffect(() => {
     if (stage === 'reading' || stage === 'analyzing') {
@@ -52,6 +56,11 @@ export default function Analyze() {
     }
   }, [analysisId]);
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
   // Load app and check limits, resume from saved state
   useEffect(() => {
     if (!user || !appId) return;
@@ -60,9 +69,38 @@ export default function Analyze() {
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
 
+      // Check for active scan_session in Supabase
+      const { data: activeSession } = await supabase
+        .from('scan_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'analyzing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeSession) {
+        setScanSessionId(activeSession.id);
+        setResumingSession(true);
+        setStage('analyzing');
+        // Poll for completion every 3 seconds
+        pollRef.current = setInterval(async () => {
+          const { data: updated } = await supabase
+            .from('scan_sessions')
+            .select('*')
+            .eq('id', activeSession.id)
+            .single();
+          if (updated && updated.status === 'complete' && updated.report_id) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setResumingSession(false);
+            navigate(`/report/${updated.report_id}`);
+          }
+        }, 3000);
+        return;
+      }
+
       // Check for existing in-progress analysis
       const savedId = localStorage.getItem('rismon_active_analysis');
-      const savedStage = localStorage.getItem('rismon_analysis_stage');
 
       if (savedId) {
         const { data: existing } = await supabase.from('analyses').select('*').eq('id', savedId).eq('app_id', appId).single();
