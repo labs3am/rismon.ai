@@ -166,6 +166,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_sessions: {
+        Row: {
+          concern_text: string | null
+          created_at: string
+          id: string
+          payment_type: string | null
+          project_type: string | null
+          repo_name: string | null
+          report_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          concern_text?: string | null
+          created_at?: string
+          id?: string
+          payment_type?: string | null
+          project_type?: string | null
+          repo_name?: string | null
+          report_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          concern_text?: string | null
+          created_at?: string
+          id?: string
+          payment_type?: string | null
+          project_type?: string | null
+          repo_name?: string | null
+          report_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scan_usage: {
         Row: {
           created_at: string | null

@@ -39,6 +39,10 @@ export default function Analyze() {
   const readingStarted = useRef(false);
   const analysisStarted = useRef(false);
 
+  const [scanSessionId, setScanSessionId] = useState<string | null>(null);
+  const [resumingSession, setResumingSession] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Persist stage to localStorage
   useEffect(() => {
     if (stage === 'reading' || stage === 'analyzing') {
@@ -52,6 +56,11 @@ export default function Analyze() {
     }
   }, [analysisId]);
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
   // Load app and check limits, resume from saved state
   useEffect(() => {
     if (!user || !appId) return;
@@ -60,9 +69,38 @@ export default function Analyze() {
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
 
+      // Check for active scan_session in Supabase
+      const { data: activeSession } = await supabase
+        .from('scan_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'analyzing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activeSession) {
+        setScanSessionId(activeSession.id);
+        setResumingSession(true);
+        setStage('analyzing');
+        // Poll for completion every 3 seconds
+        pollRef.current = setInterval(async () => {
+          const { data: updated } = await supabase
+            .from('scan_sessions')
+            .select('*')
+            .eq('id', activeSession.id)
+            .single();
+          if (updated && updated.status === 'complete' && updated.report_id) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setResumingSession(false);
+            navigate(`/report/${updated.report_id}`);
+          }
+        }, 3000);
+        return;
+      }
+
       // Check for existing in-progress analysis
       const savedId = localStorage.getItem('rismon_active_analysis');
-      const savedStage = localStorage.getItem('rismon_analysis_stage');
 
       if (savedId) {
         const { data: existing } = await supabase.from('analyses').select('*').eq('id', savedId).eq('app_id', appId).single();
@@ -122,6 +160,14 @@ export default function Analyze() {
           setAnalysisId(analysis.id);
           localStorage.setItem('rismon_active_analysis', analysis.id);
         }
+
+        // Create scan_session record
+        const { data: newSession } = await supabase.from('scan_sessions').insert({
+          user_id: user.id,
+          repo_name: `${app.github_owner}/${app.github_repo_name}`,
+          status: 'analyzing',
+        }).select().single();
+        if (newSession) setScanSessionId(newSession.id);
 
         // Fetch file tree
         const treeRes = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/git/trees/HEAD?recursive=1`, {
@@ -213,6 +259,17 @@ export default function Analyze() {
     if (analysisStarted.current) return;
     analysisStarted.current = true;
     setStage('analyzing');
+
+    // Update scan_session with intent data
+    if (scanSessionId) {
+      await supabase.from('scan_sessions').update({
+        project_type: intentMeta.projectType,
+        payment_type: intentMeta.monetization,
+        concern_text: concern,
+        status: 'analyzing',
+      }).eq('id', scanSessionId);
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
         body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
@@ -225,6 +282,14 @@ export default function Analyze() {
         intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
       }).eq('id', analysisId);
 
+      // Update scan_session to complete
+      if (scanSessionId) {
+        await supabase.from('scan_sessions').update({
+          status: 'complete',
+          report_id: analysisId,
+        }).eq('id', scanSessionId);
+      }
+
       // Update scan_usage (Monday-based week)
       const now2 = new Date();
       const day2 = now2.getDay();
@@ -234,7 +299,6 @@ export default function Analyze() {
       const monStr = mon.toISOString().split('T')[0];
       const { data: existingUsage } = await supabase.from('scan_usage').select('*').eq('user_id', user!.id).eq('week_start', monStr).maybeSingle();
       if (existingUsage) {
-        // scan_usage has no UPDATE RLS, use scan_limits as fallback tracker
         await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: now2.toISOString().split('T')[0], scan_count: 1 });
       } else {
         await supabase.from('scan_usage').insert({ user_id: user!.id, week_start: monStr, scan_count: 1 });
@@ -242,14 +306,13 @@ export default function Analyze() {
 
       setAnalysisResult(data);
       setStage('review');
-      // Clean up localStorage on completion of review stage
       localStorage.removeItem('rismon_active_analysis');
       localStorage.removeItem('rismon_analysis_stage');
     } catch {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
@@ -293,6 +356,20 @@ export default function Analyze() {
 
   // Loading screens with animated visuals
   if (stage === 'checking' || stage === 'reading' || stage === 'analyzing') {
+    if (resumingSession) {
+      return (
+        <div className="min-h-screen bg-background">
+          <DashboardNavbar />
+          <div className="flex items-center justify-center pt-40">
+            <div className="text-center max-w-[480px]">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              <h2 className="text-foreground text-[22px] font-semibold mt-6">Your scan is still running.</h2>
+              <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">Please wait...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <AnalysisLoadingScreen
         stage={stage === 'checking' ? 'reading' : stage}
