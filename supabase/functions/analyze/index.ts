@@ -159,25 +159,34 @@ serve(async (req) => {
       systemPrompt = `You are the Rismon.ai agent. Read this code carefully and understand the app completely BEFORE asking the founder anything. Extract: what features exist, what user roles exist, whether payments exist, what routes exist, what tables are used, what is protected vs public, what coding patterns are used, any features that seem unintentional or extra that the founder may not have asked for. Form your own complete understanding of what was built. Then generate targeted questions to verify the founder's intent. Questions must be based ONLY on what you found in the code, specific to this app, plain English, maximum 8 questions, each showing what you found before asking.${preCheckContext} Return ONLY valid JSON: { app_understanding: { features_found: [], user_roles_found: [], has_payments_code: boolean, has_admin: boolean, has_messaging: boolean, database_tables: [], protected_routes: [], public_routes: [], unknown_features: [], code_style: string, platform_detected: string, business_type_guess: string }, questions: [{ id: string, question: string, context: string, answer_type: "yes_no" or "text" or "select", options: [] }] }`;
       userContent = `Code:\n${codeBundle}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
     } else if (action === "analyze") {
-      systemPrompt = `You are the Rismon.ai agent. You have already studied this app's code and formed your own understanding. Now compare that understanding with what the founder told you their app should do. Find ALL gaps between their intent and what was actually built. Think like a smart business advisor who can read code. Never use technical jargon. Plain English always. Maximum 5 gaps — only report what you are certain about.
+      systemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
 
-IMPORTANT: You must ALWAYS include a security_issues section in your response. Even if the app looks secure, check these areas and report on each one:
-1. API key exposure in frontend code
-2. Database table protection (RLS)
-3. Authentication on sensitive routes
-4. Environment variable usage
-5. Rate limiting on login
-6. Public vs private route separation
+CRITICAL CONTEXT:
+These apps have a specific architecture:
+1. GitHub contains React/TypeScript frontend code only.
+2. Database lives in Supabase PostgreSQL. Tables are NOT stored in GitHub. If you see supabase.from() calls in the code — the database EXISTS. NEVER say database is missing just because SQL files are not in GitHub.
+3. Authentication is Supabase Auth. If you see supabase.auth calls — real authentication EXISTS. NEVER say auth is fake if supabase.auth is used.
+4. Backend logic lives in Supabase Edge Functions. If you see supabase.functions.invoke() — a real backend EXISTS.
+5. Payments are usually Stripe. If you see loadStripe() or stripe imports — Stripe EXISTS. Check if it's test mode or live mode.
 
-For each area, if no issue found, include it with status "passed":
-{ id: string, severity: "info", title: "Area name looks good", explanation: "What we checked and found", business_impact: "None", status: "passed" }
+YOUR ONLY JOB: Find gaps between what the founder described and what the code does. You are NOT a general security scanner. You are NOT a code quality reviewer. You are a business logic gap finder.
 
-If an issue IS found:
-{ id: string, severity: "critical" or "high" or "medium" or "low", title: string, explanation: "plain English", business_impact: string, status: "issue" }
+WHAT TO LOOK FOR:
+1. PAYMENT GAPS - Does code enforce what founder described? Free tier limits: server-side or only hidden in React components? Paid features: is payment checked before granting access? Subscription: verified on every request or only at login?
+2. DATA SEPARATION GAPS - Can User A see User B's data? Check Supabase query patterns. Look for .eq('user_id', user.id). Missing user filter = data leak.
+3. ROLE AND PERMISSION GAPS - Admin routes: protected server-side? Role checks: backend or frontend only?
+4. BUSINESS RULE GAPS - Usage limits enforced? Trial expiry implemented? Feature flags server-side?
+5. FLOW GAPS - Can payment step be skipped? Can required steps be bypassed?
 
-Never return an empty security_issues array. Always show what was checked even if it passed.
+ACCURACY RULES:
+- Only report something MISSING if you have strong evidence it does not exist anywhere in the codebase
+- Supabase client usage proves database and auth exist
+- Frontend-only checks are a gap — but the feature itself exists
+- Do not penalize for keeping backend in Supabase
 
-Return ONLY valid JSON: { intent_match_score: 0-100, summary: "string 2-3 sentences plain English", gaps: [{ id: string, severity: "critical" or "high" or "medium" or "low", title: "max 8 words plain English", you_said: "what founder described", what_was_built: "what code does", business_impact: "real consequence plain English" }], unknown_features: [{ id: string, feature_name: string, description: "what it does plain English", found_where: "file or table name", risk_if_kept: string, risk_if_removed: string }], security_issues: [{ id: string, severity: string, title: string, explanation: "plain English", business_impact: string, status: "issue" or "passed" }], what_works: ["string"] }`;
+RESPONSE FORMAT: Return ONLY valid JSON. No other text.
+{ "score": 0-100, "grade": "A|B|C|D|F", "summary": "2 sentences. What app does well and biggest gap.", "business_logic_gaps": [{ "severity": "critical|high|medium", "title": "Plain English. Max 8 words.", "you_described": "What founder said", "what_was_built": "What code actually does", "business_impact": "Real world consequence", "fix_prompt": "Exact prompt to paste into Lovable or Cursor" }], "security_findings": [{ "severity": "critical|high|medium|low", "title": "Plain English title", "description": "What the issue is", "business_impact": "Why it matters", "fix_prompt": "Exact fix prompt" }], "what_app_does_right": ["One sentence per positive finding"] }
+Maximum 5 business logic gaps. Maximum 5 security findings. Always find at least 2 positives.`;
       userContent = `App understanding: ${JSON.stringify(code_understanding)}\n\nFounder described: ${founder_description}\n\nFounder answers: ${JSON.stringify(user_answers)}`;
     } else if (action === "generate_fixes") {
       systemPrompt = `You are the Rismon.ai agent. Generate specific fix prompts for this app. Each prompt must: match the app's exact code style and patterns, use their actual variable and table names where known, be specific to their platform, be written in plain English with clear step by step instructions, be ready to copy and paste with no modification needed. Return ONLY valid JSON: { fix_prompts: [{ fix_id: string, title: string, platform: "lovable" or "cursor" or "supabase" or "general", prompt: string, where_to_paste: string, expected_result: string }] }`;
