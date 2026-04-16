@@ -62,9 +62,9 @@ const marquePlatforms = [
   { name: "Codeium", logo: null },
 ];
 
-const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const tryProFeatures = ['Full Pro access on 1 app', 'One Deep Scan (frontend + backend)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF report', 'Email delivery when ready', 'Priority support during scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
-const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Investor-ready PDF reports', 'Priority queue', 'Priority support'];
+const freeFeatures = ['1 app included', '1 scan per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
+const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Priority support during your scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF reports', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Priority queue', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
