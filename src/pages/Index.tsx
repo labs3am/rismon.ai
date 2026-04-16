@@ -18,16 +18,16 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: "I built an app with AI — how do I know it actually works?", a: "That's exactly what Rismon.ai is built for. Connect your GitHub repo, describe what your app should do in plain English, and we compare your intent with what was actually built. You get a clear report showing what works, what's missing, and what needs fixing." },
-  { q: "Can users access paid features without paying?", a: "This is one of the most common issues we find. AI tools often forget to properly lock premium features. Rismon.ai detects these gaps and gives you ready-to-use prompts to fix them." },
-  { q: "Is my users' data actually protected?", a: "We check if your database has proper access controls, if sensitive routes require authentication, and whether users can access each other's data. These are critical issues that AI tools often miss." },
-  { q: "Do I need to know how to code?", a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend." },
-  { q: "What AI coding tools does this support?", a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it." },
-  { q: "How long does the analysis take?", a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions." },
-  { q: "Is it free?", a: "Yes. The free plan includes one app, one scan per week, full reports, and fix prompts. No credit card required." },
-  { q: "Is my source code safe?", a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored." },
-  { q: "Do you track my IP address?", a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics." },
-  { q: "Can I verify your privacy claims?", a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled." }
+  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you in plain English what was built, what works, and what is broken. You also get copy-paste prompts to fix every issue." },
+  { q: "Do I need to know how to code?", a: "No. Everything is in plain English. If you can read this sentence, you can use Rismon.ai." },
+  { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
+  { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
+  { q: "What does the free plan include?", a: "One app, one scan per week, the full plain English report, and fix prompts. No credit card needed." },
+  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($14.99 one time) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
+  { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything. You stay in full control." },
+  { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Nothing is saved to our database. Only your report is kept in your account." },
+  { q: "What if I do not understand my report?", a: "Every finding is written for non-technical founders, with a real-world example of what could go wrong and a ready-to-use fix prompt. If you are still stuck, email us." },
+  { q: "Can I cancel anytime?", a: "Yes. Try Pro is a one-time payment, no subscription. Pro Monthly can be cancelled anytime from your settings." },
 ];
 
 const personas = [
