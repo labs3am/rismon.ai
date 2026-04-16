@@ -249,7 +249,7 @@ export default function Analyze() {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
