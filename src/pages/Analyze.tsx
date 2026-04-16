@@ -161,6 +161,14 @@ export default function Analyze() {
           localStorage.setItem('rismon_active_analysis', analysis.id);
         }
 
+        // Create scan_session record
+        const { data: newSession } = await supabase.from('scan_sessions').insert({
+          user_id: user.id,
+          repo_name: `${app.github_owner}/${app.github_repo_name}`,
+          status: 'analyzing',
+        }).select().single();
+        if (newSession) setScanSessionId(newSession.id);
+
         // Fetch file tree
         const treeRes = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/git/trees/HEAD?recursive=1`, {
           headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
