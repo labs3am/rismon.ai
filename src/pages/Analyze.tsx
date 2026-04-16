@@ -8,6 +8,8 @@ import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import RisGuide from '@/components/RisGuide';
+import IntentTags from '@/components/IntentTags';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -19,6 +21,8 @@ export default function Analyze() {
   const [codeUnderstanding, setCodeUnderstanding] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [description, setDescription] = useState('');
+  const [concern, setConcern] = useState('');
+  const [intentMeta, setIntentMeta] = useState<{ projectType: string | null; monetization: string | null }>({ projectType: null, monetization: null });
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showQuestions, setShowQuestions] = useState(false);
@@ -83,11 +87,15 @@ export default function Analyze() {
         }
       }
 
-      // Check weekly limit
+      // Check weekly limit using scan_usage (Monday-based weeks)
       const now = new Date();
-      const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0,0,0,0);
-      const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
-      const total = (limits || []).reduce((s, l) => s + (l.scan_count || 0), 0);
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((day + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
+      const total = (usageRows || []).reduce((s, l) => s + (l.scan_count || 0), 0);
       if (total >= 3) { setBlocked(true); setStage('checking'); return; }
       setStage('reading');
     };
@@ -207,7 +215,7 @@ export default function Analyze() {
     setStage('analyzing');
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
-        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers }
+        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
 
@@ -217,13 +225,19 @@ export default function Analyze() {
         intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
       }).eq('id', analysisId);
 
-      // Update scan limits
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existing } = await supabase.from('scan_limits').select('*').eq('user_id', user!.id).eq('scan_date', today).single();
-      if (existing) {
-        await supabase.from('scan_limits').update({ scan_count: (existing.scan_count || 0) + 1 }).eq('id', existing.id);
+      // Update scan_usage (Monday-based week)
+      const now2 = new Date();
+      const day2 = now2.getDay();
+      const mon = new Date(now2);
+      mon.setDate(now2.getDate() - ((day2 + 6) % 7));
+      mon.setHours(0, 0, 0, 0);
+      const monStr = mon.toISOString().split('T')[0];
+      const { data: existingUsage } = await supabase.from('scan_usage').select('*').eq('user_id', user!.id).eq('week_start', monStr).maybeSingle();
+      if (existingUsage) {
+        // scan_usage has no UPDATE RLS, use scan_limits as fallback tracker
+        await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: now2.toISOString().split('T')[0], scan_count: 1 });
       } else {
-        await supabase.from('scan_limits').insert({ user_id: user!.id, scan_date: today, scan_count: 1 });
+        await supabase.from('scan_usage').insert({ user_id: user!.id, week_start: monStr, scan_count: 1 });
       }
 
       setAnalysisResult(data);
@@ -235,7 +249,7 @@ export default function Analyze() {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
@@ -257,10 +271,20 @@ export default function Analyze() {
         <div className="flex items-center justify-center pt-40">
           <div className="text-center max-w-[480px]">
             <Clock size={40} className="text-warning mx-auto" />
-            <h2 className="text-foreground text-[22px] font-semibold mt-4">Weekly limit reached</h2>
-            <p className="text-muted-foreground mt-2">You have used your 3 free analyses for this week. Your scans reset next week.</p>
-            <button onClick={() => setWaitlistOpen(true)} className="text-primary text-sm mt-4 hover:underline">Join Pro waitlist</button>
-            <Link to="/dashboard" className="block mt-4 border border-hover-border text-foreground px-6 py-2.5 rounded-lg text-sm mx-auto w-fit">Back to dashboard</Link>
+            <h2 className="text-foreground text-[22px] font-semibold mt-4">You've used all 3 free scans this week</h2>
+            <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">
+              Free plan includes 3 scans per week.<br />
+              Your scans reset every Monday.<br />
+              Upgrade to Pro for unlimited deep scans.
+            </p>
+            <div className="flex flex-col gap-3 mt-6 items-center">
+              <button onClick={() => setWaitlistOpen(true)} className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                Upgrade to Pro →
+              </button>
+              <Link to="/dashboard" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                Come back Monday
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -287,10 +311,9 @@ export default function Analyze() {
         <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
           <BackButton to="/dashboard" label="Dashboard" />
           <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
-          <h2 className="text-foreground text-2xl font-semibold">Tell us about your app</h2>
-          <p className="text-muted-foreground mt-2">We have read your code. Now tell us what your app is supposed to do.</p>
+
           {codeUnderstanding && (
-            <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="rounded-xl p-4 mt-4 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
               <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>What we found in your code:</p>
               <p className="text-muted-foreground text-sm mt-2">{codeUnderstanding.business_type_guess}</p>
               {codeUnderstanding.features_found?.slice(0, 5).map((f: string, i: number) => (
@@ -298,9 +321,8 @@ export default function Analyze() {
               ))}
             </div>
           )}
-          <label className="text-foreground text-[15px] font-semibold block mt-6">What is your app supposed to do?</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Describe in plain English. Example: A marketplace where verified tutors post lessons and students book paid sessions."
-            className="w-full bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors mt-2 resize-none" />
+
+          <IntentTags value={description} onChange={setDescription} concern={concern} onConcernChange={setConcern} onMetaChange={setIntentMeta} />
           <button onClick={() => setShowQuestions(true)} disabled={description.length < 30}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 disabled:opacity-50">Continue →</button>
         </div>

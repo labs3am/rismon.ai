@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock } from 'lucide-react';
+import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock, KeyRound } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import RisGuide from '@/components/RisGuide';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
 
@@ -31,6 +32,8 @@ export default function Connect() {
   const [serviceRoleWarning, setServiceRoleWarning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [usePatMode, setUsePatMode] = useState(false);
+  const [patInput, setPatInput] = useState('');
   const [appLimitReached, setAppLimitReached] = useState(false);
   const [existingAppName, setExistingAppName] = useState('');
   const [checkingLimit, setCheckingLimit] = useState(true);
@@ -103,7 +106,7 @@ export default function Connect() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        scopes: 'repo read:user',
+        scopes: 'repo read:user user:email',
         redirectTo: `${window.location.origin}/connect?step=2`,
         skipBrowserRedirect: false
       }
@@ -188,6 +191,10 @@ export default function Connect() {
         <BackButton to="/dashboard" label="Dashboard" />
         <h1 className="text-foreground text-[28px] font-semibold">Connect an app</h1>
 
+        <div className="mt-4">
+          <RisGuide pageKey="connect" message={"Built with Lovable or Bolt?\nYou already have a GitHub repo — you just need to find it.\nOpen Lovable → click the GitHub icon top right → your repo is there.\nCome back and connect it here."} />
+        </div>
+
         {/* Progress */}
         <div className="flex items-center gap-2 mt-6">
           {[1, 2, 3].map(s => (
@@ -252,11 +259,49 @@ export default function Connect() {
             </div>
 
             {!githubConnected || !githubToken ? (
-              <div className="text-center mt-6">
-                <Github size={40} className="text-muted-foreground mx-auto" />
-                <button onClick={connectGithub} className="mt-4 border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto hover:border-muted-foreground/30 transition-colors">
-                  <Github size={16} /> Connect GitHub
-                </button>
+              <div className="mt-6">
+                {!usePatMode ? (
+                  <div className="text-center">
+                    <Github size={40} className="text-muted-foreground mx-auto" />
+                    <button onClick={connectGithub} className="mt-4 border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto hover:border-muted-foreground/30 transition-colors">
+                      <Github size={16} /> Connect GitHub
+                    </button>
+                    <button onClick={() => setUsePatMode(true)} className="mt-3 text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center gap-1.5 mx-auto">
+                      <KeyRound size={12} /> Don't want to grant org access? Use a personal token
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <button onClick={() => setUsePatMode(false)} className="text-muted-foreground text-xs hover:text-foreground transition-colors mb-4">← Back to OAuth</button>
+                    <label className="text-foreground text-sm font-medium block mb-1.5">GitHub Personal Access Token</label>
+                    <input
+                      type="password"
+                      value={patInput}
+                      onChange={e => setPatInput(e.target.value)}
+                      placeholder="ghp_xxxxxxxxxxxx"
+                      className={inputClass}
+                    />
+                    <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
+                      Create a token at{' '}
+                      <a href="https://github.com/settings/tokens/new?scopes=repo&description=Rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        github.com/settings/tokens
+                      </a>
+                      {' '}with <strong className="text-foreground">repo</strong> scope. No org access needed.
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (!patInput.trim()) return;
+                        setGithubToken(patInput.trim());
+                        setGithubConnected(true);
+                        fetchRepos(patInput.trim());
+                      }}
+                      disabled={!patInput.trim()}
+                      className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <KeyRound size={16} /> Connect with token
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="mt-6">

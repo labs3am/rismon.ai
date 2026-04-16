@@ -5,6 +5,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import RisGuide from '@/components/RisGuide';
 
 interface App {
   id: string;
@@ -44,7 +45,7 @@ export default function Dashboard() {
     const dayOfWeek = now.getDay(); // 0=Sun
     if (dayOfWeek === 6) return 'tomorrow';
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[0]; // resets on Sunday
+    return days[1]; // resets on Monday
   };
 
   useEffect(() => {
@@ -73,8 +74,14 @@ export default function Dashboard() {
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
 
-      const { data: limits } = await supabase.from('scan_limits').select('scan_count').eq('user_id', user.id).gte('scan_date', weekStart.toISOString().split('T')[0]);
-      const ws = (limits || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
+      // Use Monday-based week for scan_usage
+      const dayOfW = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((dayOfW + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split('T')[0];
+      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
+      const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
       setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });
@@ -168,6 +175,12 @@ export default function Dashboard() {
         <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
         <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
+        {apps.length === 0 && (
+          <div className="mt-4">
+            <RisGuide pageKey="dashboard_empty" message={"You haven't analyzed anything yet.\nConnect your first app and find out if it does what you actually meant to build."} />
+          </div>
+        )}
+
         {githubConflict && (
           <div className="flex items-start gap-3 mt-4 rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
@@ -186,7 +199,7 @@ export default function Dashboard() {
               Upgrade to Pro →
             </button>
           </div>
-          <div className="flex gap-6 mt-3">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
             <span className="text-[13px]" style={{ color: stats.apps >= 1 ? '#f59e0b' : '#71717a' }}>
               {stats.apps} of 1 app used
             </span>
@@ -196,6 +209,11 @@ export default function Dashboard() {
             <span className="text-[13px]" style={{ color: '#71717a' }}>
               Resets {getResetDay()}
             </span>
+          </div>
+          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+            <span className="text-[13px]" style={{ color: '#f59e0b' }}>40% code coverage</span>
+            <span className="text-[13px]" style={{ color: '#52525b' }}>·</span>
+            <span className="text-[13px]" style={{ color: '#71717a' }}>Upgrade to Premium for a full deep scan of your entire codebase</span>
           </div>
         </div>
 

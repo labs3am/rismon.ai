@@ -145,20 +145,71 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top status bar */}
-      <div className="w-full border-b px-6 md:px-10 py-3 flex items-center justify-between" style={{ background: '#111111', borderColor: '#1e1e1e' }}>
-        <span className="text-[13px]" style={{ color: '#71717a' }}>
-          {stage === 'reading' && 'Rismon.ai is reading your app'}
-          {stage === 'analyzing' && 'Rismon.ai is analyzing your app'}
-          {stage === 'generating' && 'Rismon.ai is writing your fix prompts'}
-        </span>
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
-          <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
-        </span>
+      <div className="w-full" style={{ background: '#111111', borderBottom: '1px solid #1e1e1e' }}>
+        <div className="px-6 md:px-10 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] font-medium" style={{ color: '#a1a1aa' }}>
+              {stage === 'reading' && 'Ris is reading your code'}
+              {stage === 'analyzing' && 'Ris is analyzing your app'}
+              {stage === 'generating' && 'Ris is writing your fix prompts'}
+            </span>
+            {stage === 'reading' && currentFile && (
+              <span className="text-[12px] font-mono truncate max-w-[280px]" style={{ color: '#52525b' }}>
+                {currentFile}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {totalFiles > 0 && stage === 'reading' && (
+              <span className="text-[12px] tabular-nums" style={{ color: '#71717a' }}>
+                {fileCount}/{totalFiles}
+              </span>
+            )}
+            {stage === 'generating' && (totalPrompts > 0) && (
+              <span className="text-[12px] tabular-nums" style={{ color: '#71717a' }}>
+                {promptCount}/{totalPrompts}
+              </span>
+            )}
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
+            </span>
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="w-full" style={{ height: 2, background: '#1e1e1e' }}>
+          <div
+            style={{
+              height: '100%',
+              background: '#f97316',
+              transition: 'width 0.4s ease',
+              width: stage === 'reading' && totalFiles > 0
+                ? `${Math.max(2, (fileCount / totalFiles) * 100)}%`
+                : stage === 'generating' && totalPrompts > 0
+                  ? `${Math.max(2, (promptCount / totalPrompts) * 100)}%`
+                  : undefined,
+              ...(((stage === 'reading' && totalFiles === 0) || stage === 'analyzing' || (stage === 'generating' && totalPrompts === 0))
+                ? { animation: 'indeterminateBar 2s ease-in-out infinite', width: '30%' }
+                : {}),
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Free plan notice */}
+      <div className="w-full px-4 pt-4">
+        <div className="max-w-[600px] mx-auto rounded-lg px-4 py-2.5 flex items-center justify-center gap-2" style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)' }}>
+          <span className="text-[13px] text-center" style={{ color: '#b45309' }}>
+            Free plan scans 40% of your code.
+          </span>
+          <span className="text-[13px]" style={{ color: '#71717a' }}>
+            Upgrade to Premium for a full deep scan.
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-start pt-12 md:pt-16 px-4">
+      <div className="flex-1 flex flex-col items-center justify-start pt-8 md:pt-12 px-4">
         {stage === 'reading' && (
           <div className="w-full max-w-[480px] mx-auto rounded-2xl overflow-hidden" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
             <div className="flex items-center px-5 py-3 border-b" style={{ borderColor: '#1e1e1e' }}>
@@ -250,6 +301,7 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         )}
       </div>
 
+
       {/* Bottom tips - fixed and centered */}
       <div className="fixed bottom-0 left-0 right-0 w-full" style={{ background: '#080808', borderTop: '1px solid #1e1e1e', padding: '16px 40px' }}>
         <div className="max-w-[600px] mx-auto flex items-center justify-center gap-2">
@@ -271,6 +323,10 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0; }
+        }
+        @keyframes indeterminateBar {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(333%); }
         }
       `}</style>
     </div>

@@ -1,0 +1,1 @@
+UPDATE public.profiles SET plan = 'free' WHERE email = 'info@labs3am.com';

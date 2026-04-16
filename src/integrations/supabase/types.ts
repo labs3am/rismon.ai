@@ -125,6 +125,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          plan: string | null
         }
         Insert: {
           company_name?: string | null
@@ -132,6 +133,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          plan?: string | null
         }
         Update: {
           company_name?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          plan?: string | null
         }
         Relationships: []
       }
@@ -160,6 +163,30 @@ export type Database = {
           scan_count?: number | null
           scan_date?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      scan_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          scan_count: number | null
+          user_id: string | null
+          week_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          scan_count?: number | null
+          user_id?: string | null
+          week_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          scan_count?: number | null
+          user_id?: string | null
+          week_start?: string | null
         }
         Relationships: []
       }
