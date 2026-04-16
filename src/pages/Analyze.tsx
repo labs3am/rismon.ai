@@ -21,6 +21,8 @@ export default function Analyze() {
   const [codeUnderstanding, setCodeUnderstanding] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [description, setDescription] = useState('');
+  const [concern, setConcern] = useState('');
+  const [intentMeta, setIntentMeta] = useState<{ projectType: string | null; monetization: string | null }>({ projectType: null, monetization: null });
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showQuestions, setShowQuestions] = useState(false);
@@ -213,7 +215,7 @@ export default function Analyze() {
     setStage('analyzing');
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
-        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers }
+        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
 
@@ -247,7 +249,7 @@ export default function Analyze() {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
@@ -320,7 +322,7 @@ export default function Analyze() {
             </div>
           )}
 
-          <IntentTags value={description} onChange={setDescription} />
+          <IntentTags value={description} onChange={setDescription} concern={concern} onConcernChange={setConcern} onMetaChange={setIntentMeta} />
           <button onClick={() => setShowQuestions(true)} disabled={description.length < 30}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 disabled:opacity-50">Continue →</button>
         </div>

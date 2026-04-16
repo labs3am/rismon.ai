@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 
 const PROJECT_TYPES = ['SaaS', 'E-commerce', 'Marketplace', 'Portfolio', 'Internal Tool', 'Directory', 'Community', 'Booking App', 'Course Platform'];
 const MONETIZATION = ['Free Only', 'Free + Paid Tiers', 'One-time Payment', 'Subscription', 'Pay Per Use', 'No Payments'];
-const USER_TYPES = ['Solo Users', 'Teams', 'B2B Clients', 'Public Anyone', 'Invite Only'];
 
 const TEMPLATES: Record<string, string> = {
   'SaaS': 'I am building a SaaS tool that helps [describe your target user] to [describe the main benefit]. Free plan includes [list free features]. Paid plan at $[price]/month unlocks [list paid features].',
@@ -19,6 +18,9 @@ const TEMPLATES: Record<string, string> = {
 interface IntentTagsProps {
   value: string;
   onChange: (value: string) => void;
+  concern: string;
+  onConcernChange: (value: string) => void;
+  onMetaChange?: (meta: { projectType: string | null; monetization: string | null }) => void;
 }
 
 function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
@@ -51,10 +53,9 @@ function RowLabel({ text }: { text: string }) {
   );
 }
 
-export default function IntentTags({ value, onChange }: IntentTagsProps) {
+export default function IntentTags({ value, onChange, concern, onConcernChange, onMetaChange }: IntentTagsProps) {
   const [projectType, setProjectType] = useState<string | null>(null);
   const [monetization, setMonetization] = useState<string | null>(null);
-  const [userType, setUserType] = useState<string | null>(null);
   const [userEdited, setUserEdited] = useState(false);
   const [showReplaceWarning, setShowReplaceWarning] = useState(false);
   const pendingType = useRef<string | null>(null);
@@ -75,15 +76,13 @@ export default function IntentTags({ value, onChange }: IntentTagsProps) {
     setShowReplaceWarning(false);
     pendingType.current = null;
     onChange(TEMPLATES[type] || '');
+    onMetaChange?.({ projectType: type, monetization });
   };
 
-  const confirmReplace = () => {
-    if (pendingType.current) applyTemplate(pendingType.current);
-  };
-
-  const dismissWarning = () => {
-    setShowReplaceWarning(false);
-    pendingType.current = null;
+  const handleMonetization = (m: string) => {
+    const newVal = monetization === m ? null : m;
+    setMonetization(newVal);
+    onMetaChange?.({ projectType, monetization: newVal });
   };
 
   return (
@@ -106,17 +105,7 @@ export default function IntentTags({ value, onChange }: IntentTagsProps) {
         <RowLabel text="HOW DO USERS PAY?" />
         <div className="flex flex-wrap gap-2">
           {MONETIZATION.map(t => (
-            <Chip key={t} label={t} selected={monetization === t} onClick={() => setMonetization(monetization === t ? null : t)} />
-          ))}
-        </div>
-      </div>
-
-      {/* Row 3 - User Type */}
-      <div className="mt-5">
-        <RowLabel text="WHO ARE YOUR USERS?" />
-        <div className="flex flex-wrap gap-2">
-          {USER_TYPES.map(t => (
-            <Chip key={t} label={t} selected={userType === t} onClick={() => setUserType(userType === t ? null : t)} />
+            <Chip key={t} label={t} selected={monetization === t} onClick={() => handleMonetization(t)} />
           ))}
         </div>
       </div>
@@ -135,9 +124,15 @@ export default function IntentTags({ value, onChange }: IntentTagsProps) {
 
         <textarea
           value={value}
-          onChange={e => { setUserEdited(true); onChange(e.target.value); }}
-          rows={5}
-          placeholder="Select a project type above or describe your app here..."
+          onChange={e => {
+            if (e.target.value.length <= 300) {
+              setUserEdited(true);
+              onChange(e.target.value);
+            }
+          }}
+          rows={3}
+          maxLength={300}
+          placeholder="Edit the template above or describe what worries you most about your app"
           style={{
             width: '100%',
             background: 'rgba(255,255,255,0.04)',
@@ -146,12 +141,62 @@ export default function IntentTags({ value, onChange }: IntentTagsProps) {
             padding: 16,
             fontSize: 14,
             color: 'white',
-            minHeight: 120,
-            resize: 'vertical',
+            maxHeight: 100,
+            resize: 'none',
             outline: 'none',
           }}
         />
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', textAlign: 'right', marginTop: 4 }}>
+          {value.length}/300
+        </p>
+      </div>
+
+      {/* Concern input */}
+      <div className="mt-5">
+        <RowLabel text="YOUR BIGGEST CONCERN (OPTIONAL)" />
+        <textarea
+          value={concern}
+          onChange={e => {
+            if (e.target.value.length <= 200) {
+              onConcernChange(e.target.value);
+            }
+          }}
+          rows={1}
+          maxLength={200}
+          placeholder="Example: I'm not sure if my paywall actually stops free users from accessing paid features"
+          style={{
+            width: '100%',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(249,115,22,0.20)',
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 14,
+            color: 'rgba(255,255,255,0.80)',
+            resize: 'none',
+            outline: 'none',
+            transition: 'border-color 0.15s ease',
+          }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(249,115,22,0.50)'; }}
+          onBlur={e => { e.target.style.borderColor = 'rgba(249,115,22,0.20)'; }}
+        />
+        <div className="flex justify-between mt-1">
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+            This helps us focus the scan on what matters most to you
+          </p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+            {concern.length}/200
+          </p>
+        </div>
       </div>
     </div>
   );
+
+  function confirmReplace() {
+    if (pendingType.current) applyTemplate(pendingType.current);
+  }
+
+  function dismissWarning() {
+    setShowReplaceWarning(false);
+    pendingType.current = null;
+  }
 }
