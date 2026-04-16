@@ -24,7 +24,7 @@ const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend." },
   { q: "What AI coding tools does this support?", a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it." },
   { q: "How long does the analysis take?", a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions." },
-  { q: "Is it free?", a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required." },
+  { q: "Is it free?", a: "Yes. The free plan includes one app, one scan per week, full reports, and fix prompts. No credit card required." },
   { q: "Is my source code safe?", a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored." },
   { q: "Do you track my IP address?", a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics." },
   { q: "Can I verify your privacy claims?", a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled." }
