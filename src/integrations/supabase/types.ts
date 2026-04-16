@@ -170,10 +170,13 @@ export type Database = {
         Row: {
           concern_text: string | null
           created_at: string
+          duplicate_of: string | null
           id: string
           payment_type: string | null
+          plan_at_scan: string | null
           project_type: string | null
           repo_name: string | null
+          repo_size_bytes: number | null
           report_id: string | null
           status: string
           user_id: string
@@ -181,10 +184,13 @@ export type Database = {
         Insert: {
           concern_text?: string | null
           created_at?: string
+          duplicate_of?: string | null
           id?: string
           payment_type?: string | null
+          plan_at_scan?: string | null
           project_type?: string | null
           repo_name?: string | null
+          repo_size_bytes?: number | null
           report_id?: string | null
           status?: string
           user_id: string
@@ -192,10 +198,13 @@ export type Database = {
         Update: {
           concern_text?: string | null
           created_at?: string
+          duplicate_of?: string | null
           id?: string
           payment_type?: string | null
+          plan_at_scan?: string | null
           project_type?: string | null
           repo_name?: string | null
+          repo_size_bytes?: number | null
           report_id?: string | null
           status?: string
           user_id?: string
@@ -226,6 +235,30 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_usage_monthly: {
+        Row: {
+          created_at: string | null
+          id: string
+          month_start: string
+          scan_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          month_start?: string
+          scan_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          month_start?: string
+          scan_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string | null
@@ -250,6 +283,7 @@ export type Database = {
     }
     Functions: {
       delete_my_account: { Args: never; Returns: undefined }
+      get_user_plan: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

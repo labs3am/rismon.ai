@@ -6,11 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Pre-analysis security checks on code bundle
-function runSecurityPreChecks(codeBundle: string, supabaseUrl?: string, supabaseAnonKey?: string) {
+// ============================================================
+// SECTION 1: Pre-scan deterministic security checks (regex)
+// ============================================================
+function runSecurityPreChecks(codeBundle: string) {
   const findings: any[] = [];
-
-  // Check 1: Exposed secrets in code
   const secretPatterns = [
     { pattern: /sk-[a-zA-Z0-9]{20,}/g, type: "OpenAI API key" },
     { pattern: /AIza[a-zA-Z0-9]{35}/g, type: "Google API key" },
@@ -19,43 +19,222 @@ function runSecurityPreChecks(codeBundle: string, supabaseUrl?: string, supabase
     { pattern: /sk_live[a-zA-Z0-9_]*/g, type: "Stripe secret key" },
     { pattern: /r_[a-zA-Z0-9]{30,}/g, type: "Razorpay key" },
   ];
-
   for (const sp of secretPatterns) {
     if (sp.pattern.test(codeBundle)) {
-      findings.push({
-        type: "exposed_secret",
-        key_type: sp.type,
-        severity: "critical",
-        found: true,
-      });
+      findings.push({ type: "exposed_secret", key_type: sp.type, severity: "critical", found: true });
     }
   }
-
-  // Check for Supabase service role key in code
   if (/eyJhbGciOiJIUzI1NiJ9/.test(codeBundle) && /service_role/.test(codeBundle)) {
-    findings.push({
-      type: "exposed_secret",
-      key_type: "Supabase service role key",
-      severity: "critical",
-      found: true,
-    });
+    findings.push({ type: "exposed_secret", key_type: "Supabase service role key", severity: "critical", found: true });
   }
-
-  // Check 3: Environment variable usage
-  const usesEnvVars = /process\.env|import\.meta\.env/.test(codeBundle);
-  const hasHardcodedKeys = secretPatterns.some(sp => sp.pattern.test(codeBundle));
-  if (hasHardcodedKeys && !usesEnvVars) {
-    findings.push({
-      type: "env_vars_not_used",
-      severity: "high",
-      found: true,
-      detail: "Secrets found in code but no environment variable usage detected",
-    });
-  }
-
   return findings;
 }
 
+// ============================================================
+// SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
+// ============================================================
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+// Strict house style for all Gemini calls — short, plain, no fluff
+const HOUSE_STYLE = `Strict response rules:
+- Plain English. No markdown unless explicitly requested.
+- No phrases like "It's important to note", "Additionally", "In conclusion", "Furthermore".
+- No preamble. No closing summary. Get to the point.
+- Titles maximum 8 words.
+- Match a non-technical founder's vocabulary, not engineering jargon.
+- Return ONLY valid JSON when asked. No surrounding text. No code fences.`;
+
+async function callGemini(systemPrompt: string, userContent: string, model = "google/gemini-2.5-flash") {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const res = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: `${systemPrompt}\n\n${HOUSE_STYLE}` },
+        { role: "user", content: userContent },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const status = res.status;
+    const body = await res.text();
+    console.error(`Gemini error [${status}]:`, body.slice(0, 500));
+    if (status === 429) throw new Error("RATE_LIMITED");
+    if (status === 402) throw new Error("CREDITS_EXHAUSTED");
+    throw new Error("AI_ERROR");
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
+async function callClaude(systemPrompt: string, userContent: string) {
+  const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
+  if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_KEY not configured");
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_KEY,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userContent }],
+    }),
+  });
+
+  if (!res.ok) {
+    console.error("Claude error:", res.status);
+    throw new Error("AI_ERROR");
+  }
+
+  const data = await res.json();
+  return data.content?.[0]?.text || "";
+}
+
+function parseJSON(text: string): any {
+  let jsonStr = text.trim();
+  const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (match) jsonStr = match[1].trim();
+  // Find first { and last } to be safe
+  const first = jsonStr.indexOf("{");
+  const last = jsonStr.lastIndexOf("}");
+  if (first !== -1 && last !== -1) jsonStr = jsonStr.slice(first, last + 1);
+  return JSON.parse(jsonStr);
+}
+
+// ============================================================
+// SECTION 3: Plan + abuse limits (server-enforced)
+// ============================================================
+const PLAN_LIMITS = {
+  free: {
+    weeklyScans: 3,
+    monthlyScans: Infinity,
+    maxRepoBytes: 2 * 1024 * 1024, // 2MB
+    duplicateBlockHours: 24,
+    edgeFunctionScan: false,
+    verificationPass: false,
+    emailDelivery: false,
+  },
+  pro: {
+    weeklyScans: Infinity,
+    monthlyScans: 100,
+    maxRepoBytes: 10 * 1024 * 1024, // 10MB
+    duplicateBlockHours: 0,
+    edgeFunctionScan: true,
+    verificationPass: true,
+    emailDelivery: true,
+  },
+};
+
+async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number) {
+  const limits = PLAN_LIMITS[plan];
+
+  // 1. Repo size cap
+  if (repoSizeBytes > limits.maxRepoBytes) {
+    return { ok: false, code: "REPO_TOO_LARGE", message: `Repository code exceeds ${plan === "free" ? "2MB" : "10MB"} limit. ${plan === "free" ? "Upgrade to Pro for 10MB scans." : "Contact support for larger repos."}` };
+  }
+
+  // 2. Concurrent scan lock
+  const { data: active } = await serviceClient
+    .from("scan_sessions")
+    .select("id")
+    .eq("user_id", userId)
+    .in("status", ["pending", "analyzing"])
+    .limit(1);
+  if (active && active.length > 0) {
+    return { ok: false, code: "SCAN_IN_PROGRESS", message: "You already have a scan running. Please wait for it to finish." };
+  }
+
+  // 3. Duplicate scan block (free only)
+  if (limits.duplicateBlockHours > 0 && repoName) {
+    const cutoff = new Date(Date.now() - limits.duplicateBlockHours * 60 * 60 * 1000).toISOString();
+    const { data: recent } = await serviceClient
+      .from("scan_sessions")
+      .select("id, report_id")
+      .eq("user_id", userId)
+      .eq("repo_name", repoName)
+      .eq("status", "complete")
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (recent && recent.length > 0) {
+      return { ok: false, code: "DUPLICATE_SCAN", message: "You already scanned this repo in the last 24 hours. Upgrade to Pro for unlimited re-scans.", existingReportId: recent[0].report_id };
+    }
+  }
+
+  // 4. Weekly scan limit (free)
+  if (limits.weeklyScans !== Infinity) {
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    monday.setHours(0, 0, 0, 0);
+    const mondayStr = monday.toISOString().split("T")[0];
+    const { data: usage } = await serviceClient
+      .from("scan_usage")
+      .select("scan_count")
+      .eq("user_id", userId)
+      .eq("week_start", mondayStr);
+    const total = (usage || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
+    if (total >= limits.weeklyScans) {
+      return { ok: false, code: "WEEKLY_LIMIT", message: "You've used all 3 free scans this week. Upgrade to Pro for unlimited." };
+    }
+  }
+
+  // 5. Monthly scan limit (pro)
+  if (limits.monthlyScans !== Infinity) {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const monthStr = monthStart.toISOString().split("T")[0];
+    const { data: monthly } = await serviceClient
+      .from("scan_usage_monthly")
+      .select("scan_count")
+      .eq("user_id", userId)
+      .eq("month_start", monthStr)
+      .maybeSingle();
+    if ((monthly?.scan_count || 0) >= limits.monthlyScans) {
+      return { ok: false, code: "MONTHLY_LIMIT", message: "You've reached your 100-scan monthly limit. Resets on the 1st." };
+    }
+  }
+
+  return { ok: true };
+}
+
+// ============================================================
+// SECTION 4: Chunking — split large code bundles
+// ============================================================
+function chunkCodeBundle(codeBundle: string, maxChunkSize = 60000): string[] {
+  if (codeBundle.length <= maxChunkSize) return [codeBundle];
+  // Split on file boundaries (=== filepath ===)
+  const fileBlocks = codeBundle.split(/(?=^=== )/m);
+  const chunks: string[] = [];
+  let current = "";
+  for (const block of fileBlocks) {
+    if ((current + block).length > maxChunkSize && current) {
+      chunks.push(current);
+      current = block;
+    } else {
+      current += block;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+// ============================================================
+// SECTION 5: Main handler
+// ============================================================
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -70,45 +249,46 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { action, codeBundle, tableNames, platform, code_understanding, founder_description, user_answers, gaps, security_issues, unknown_features, supabase_url: appSupabaseUrl, supabase_anon_key: appSupabaseAnonKey, app_id, github_owner, github_repo_name } = await req.json();
+    const body = await req.json();
+    const {
+      action,
+      codeBundle,
+      edgeFunctionBundle,
+      tableNames,
+      platform,
+      code_understanding,
+      founder_description,
+      user_answers,
+      gaps,
+      security_issues,
+      unknown_features,
+      supabase_url: appSupabaseUrl,
+      supabase_anon_key: appSupabaseAnonKey,
+      app_id,
+      github_owner,
+      github_repo_name,
+      concern,
+      project_type,
+      monetization,
+    } = body;
 
-    // Server-side scan limit enforcement (3 scans per week)
+    // Get user plan
+    const { data: planData } = await serviceClient.rpc("get_user_plan", { _user_id: user.id });
+    const userPlan: "free" | "pro" = (planData === "pro") ? "pro" : "free";
+    const limits = PLAN_LIMITS[userPlan];
+
+    // ============================================================
+    // ACTION: read_code (stage 1 — extract facts via Gemini)
+    // ============================================================
     if (action === "read_code") {
-      const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const now = new Date();
-      const day = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((day + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-      const mondayStr = monday.toISOString().split("T")[0];
-      const { data: usageRows } = await serviceClient
-        .from("scan_usage")
-        .select("scan_count")
-        .eq("user_id", user.id)
-        .eq("week_start", mondayStr);
-      const total = (usageRows || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
-      if (total >= 3) {
-        return new Response(JSON.stringify({ error: "Weekly scan limit reached", code: "LIMIT_REACHED" }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
-    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
-    if (!ANTHROPIC_KEY) throw new Error("ANTHROPIC_KEY not configured");
-
-    let systemPrompt = "";
-    let userContent = "";
-
-    if (action === "read_code") {
-      // Validate repo matches saved app if app_id provided
+      // Validate repo matches saved app
       if (app_id && github_owner && github_repo_name) {
         const { data: appRecord, error: appErr } = await supabase
           .from("apps")
@@ -116,121 +296,288 @@ serve(async (req) => {
           .eq("id", app_id)
           .eq("user_id", user.id)
           .single();
-
         if (appErr || !appRecord) {
           return new Response(JSON.stringify({ error: "unauthorized", message: "App not found or not owned by you" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-
         if (appRecord.github_owner !== github_owner || appRecord.github_repo_name !== github_repo_name) {
           return new Response(JSON.stringify({ error: "unauthorized", message: "Repository does not match the connected app" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
 
-      // Run pre-checks before sending to Claude
-      const securityPreFound = runSecurityPreChecks(codeBundle || "", appSupabaseUrl, appSupabaseAnonKey);
+      const repoName = `${github_owner}/${github_repo_name}`;
+      const totalBundle = (codeBundle || "") + (edgeFunctionBundle || "");
+      const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
 
-      // Check RLS if Supabase connected
-      let rlsFindings: any[] = [];
+      // Enforce all abuse limits BEFORE any AI call
+      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes);
+      if (!limitCheck.ok) {
+        return new Response(JSON.stringify({ error: limitCheck.message, code: limitCheck.code, existingReportId: limitCheck.existingReportId }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Pre-scan deterministic checks
+      const securityPreFound = runSecurityPreChecks(totalBundle);
+
+      // Probe Supabase tables
+      const rlsFindings: any[] = [];
       if (appSupabaseUrl && appSupabaseAnonKey) {
         try {
           const res = await fetch(`${appSupabaseUrl}/rest/v1/`, {
-            headers: { apikey: appSupabaseAnonKey, Authorization: `Bearer ${appSupabaseAnonKey}` }
+            headers: { apikey: appSupabaseAnonKey, Authorization: `Bearer ${appSupabaseAnonKey}` },
           });
           if (res.ok) {
             const tables = await res.json();
-            const tableList = typeof tables === 'object' ? Object.keys(tables) : [];
-            // Note: We can detect tables but can't check RLS from anon key alone
-            // We flag this for Claude to investigate in code
+            const tableList = typeof tables === "object" ? Object.keys(tables) : [];
             if (tableList.length > 0) {
-              rlsFindings.push({
-                type: "tables_detected",
-                tables: tableList,
-                note: "Check if these tables have RLS enabled",
-              });
+              rlsFindings.push({ type: "tables_detected", tables: tableList, note: "Check if these tables have RLS enabled" });
             }
           }
-        } catch { /* ignore fetch errors */ }
+        } catch { /* ignore */ }
       }
 
-      const preCheckContext = securityPreFound.length > 0 || rlsFindings.length > 0
-        ? `\n\nIMPORTANT PRE-SCAN FINDINGS: We already detected these security issues before your analysis:\n${JSON.stringify([...securityPreFound, ...rlsFindings])}\nInclude these in your response and add any additional issues you find.`
+      const preCheckContext = (securityPreFound.length > 0 || rlsFindings.length > 0)
+        ? `\n\nPre-scan findings already detected: ${JSON.stringify([...securityPreFound, ...rlsFindings])}\nInclude these in your response and add anything else you find.`
         : "";
 
-      systemPrompt = `You are the Rismon.ai agent. Read this code carefully and understand the app completely BEFORE asking the founder anything. Extract: what features exist, what user roles exist, whether payments exist, what routes exist, what tables are used, what is protected vs public, what coding patterns are used, any features that seem unintentional or extra that the founder may not have asked for. Form your own complete understanding of what was built. Then generate targeted questions to verify the founder's intent. Questions must be based ONLY on what you found in the code, specific to this app, plain English, maximum 8 questions, each showing what you found before asking.${preCheckContext} Return ONLY valid JSON: { app_understanding: { features_found: [], user_roles_found: [], has_payments_code: boolean, has_admin: boolean, has_messaging: boolean, database_tables: [], protected_routes: [], public_routes: [], unknown_features: [], code_style: string, platform_detected: string, business_type_guess: string }, questions: [{ id: string, question: string, context: string, answer_type: "yes_no" or "text" or "select", options: [] }] }`;
-      userContent = `Code:\n${codeBundle}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
-    } else if (action === "analyze") {
-      systemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
+      // Stage 1: extract facts via Gemini Flash (cheap, structured)
+      const includeEdge = userPlan === "pro" && edgeFunctionBundle;
+      const systemPrompt = `You are a code reader. Extract facts from this codebase. Look at: features, user roles, payment code, routes (protected vs public), database tables used, coding patterns, anything that looks unintentional. ${includeEdge ? "Backend logic is included in supabase/functions/* — judge auth, payment, and data-access enforcement based on this code, not just the frontend." : "Note: only frontend code was scanned. Flag features whose backend enforcement cannot be verified."} Then generate up to 8 plain-English questions for the founder, each citing what you found.${preCheckContext}
+
+Return ONLY this JSON:
+{
+  "app_understanding": {
+    "features_found": [],
+    "user_roles_found": [],
+    "has_payments_code": boolean,
+    "has_admin": boolean,
+    "has_messaging": boolean,
+    "database_tables": [],
+    "protected_routes": [],
+    "public_routes": [],
+    "edge_functions_found": [],
+    "unknown_features": [],
+    "code_style": "",
+    "platform_detected": "",
+    "business_type_guess": ""
+  },
+  "questions": [{ "id": "", "question": "", "context": "", "answer_type": "yes_no|text|select", "options": [] }]
+}`;
+
+      // Chunk if needed
+      const chunks = chunkCodeBundle(totalBundle);
+      let mergedFacts: any = null;
+
+      if (chunks.length === 1) {
+        const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
+        const text = await callGemini(systemPrompt, userContent);
+        mergedFacts = parseJSON(text);
+      } else {
+        // Per-chunk extraction then merge
+        const partials: any[] = [];
+        for (let i = 0; i < chunks.length; i++) {
+          const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
+          const text = await callGemini(systemPrompt, userContent);
+          try { partials.push(parseJSON(text)); } catch { /* skip bad chunk */ }
+        }
+        // Merge into one
+        const merged = {
+          features_found: [], user_roles_found: [], has_payments_code: false, has_admin: false, has_messaging: false,
+          database_tables: [], protected_routes: [], public_routes: [], edge_functions_found: [], unknown_features: [],
+          code_style: "", platform_detected: "", business_type_guess: "",
+        };
+        const allQuestions: any[] = [];
+        for (const p of partials) {
+          const u = p.app_understanding || {};
+          (["features_found", "user_roles_found", "database_tables", "protected_routes", "public_routes", "edge_functions_found", "unknown_features"] as const).forEach(k => {
+            if (Array.isArray(u[k])) merged[k] = Array.from(new Set([...merged[k], ...u[k]]));
+          });
+          merged.has_payments_code = merged.has_payments_code || !!u.has_payments_code;
+          merged.has_admin = merged.has_admin || !!u.has_admin;
+          merged.has_messaging = merged.has_messaging || !!u.has_messaging;
+          if (u.code_style && !merged.code_style) merged.code_style = u.code_style;
+          if (u.platform_detected && !merged.platform_detected) merged.platform_detected = u.platform_detected;
+          if (u.business_type_guess && !merged.business_type_guess) merged.business_type_guess = u.business_type_guess;
+          if (Array.isArray(p.questions)) allQuestions.push(...p.questions);
+        }
+        // Dedupe questions by question text, keep first 8
+        const seen = new Set<string>();
+        const uniqueQs = allQuestions.filter(q => { if (seen.has(q.question)) return false; seen.add(q.question); return true; }).slice(0, 8);
+        mergedFacts = { app_understanding: merged, questions: uniqueQs };
+      }
+
+      return new Response(JSON.stringify(mergedFacts), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ============================================================
+    // ACTION: analyze (stage 2 — Claude deep, then Gemini verifies)
+    // ============================================================
+    if (action === "analyze") {
+      const claudeSystemPrompt = `You are Rismon, an expert at finding business logic gaps in apps built with AI coding platforms (Lovable, Bolt, Cursor, Replit).
 
 CRITICAL CONTEXT:
-These apps have a specific architecture:
-1. GitHub contains React/TypeScript frontend code only.
-2. Database lives in Supabase PostgreSQL. Tables are NOT stored in GitHub. If you see supabase.from() calls in the code — the database EXISTS. NEVER say database is missing just because SQL files are not in GitHub.
-3. Authentication is Supabase Auth. If you see supabase.auth calls — real authentication EXISTS. NEVER say auth is fake if supabase.auth is used.
-4. Backend logic lives in Supabase Edge Functions. If you see supabase.functions.invoke() — a real backend EXISTS.
-5. Payments are usually Stripe. If you see loadStripe() or stripe imports — Stripe EXISTS. Check if it's test mode or live mode.
+1. GitHub contains React/TypeScript frontend code.
+2. Database lives in Supabase. Tables are NOT in GitHub. supabase.from() proves the database exists.
+3. Auth is Supabase Auth. supabase.auth proves real auth exists.
+4. Backend logic in Supabase Edge Functions. supabase.functions.invoke() proves a backend exists.
+5. Payments usually Stripe. loadStripe() / stripe imports prove Stripe exists.
 
-YOUR ONLY JOB: Find gaps between what the founder described and what the code does. You are NOT a general security scanner. You are NOT a code quality reviewer. You are a business logic gap finder.
+YOUR JOB: Find gaps between what the founder described and what the code does. Not a security scanner. Not a code reviewer. A business logic gap finder.
 
 WHAT TO LOOK FOR:
-1. PAYMENT GAPS - Does code enforce what founder described? Free tier limits: server-side or only hidden in React components? Paid features: is payment checked before granting access? Subscription: verified on every request or only at login?
-2. DATA SEPARATION GAPS - Can User A see User B's data? Check Supabase query patterns. Look for .eq('user_id', user.id). Missing user filter = data leak.
-3. ROLE AND PERMISSION GAPS - Admin routes: protected server-side? Role checks: backend or frontend only?
-4. BUSINESS RULE GAPS - Usage limits enforced? Trial expiry implemented? Feature flags server-side?
-5. FLOW GAPS - Can payment step be skipped? Can required steps be bypassed?
+1. PAYMENT GAPS — free tier limits server-side or only hidden in React? Paid features payment-gated server-side?
+2. DATA SEPARATION — can User A see User B's data? Look for .eq('user_id', user.id).
+3. ROLE GAPS — admin routes protected server-side or only hidden in UI?
+4. BUSINESS RULE GAPS — usage limits, trial expiry, feature flags enforced server-side?
+5. FLOW GAPS — can payment step be skipped? Required steps bypassed?
 
 ACCURACY RULES:
-- Only report something MISSING if you have strong evidence it does not exist anywhere in the codebase
-- Supabase client usage proves database and auth exist
-- Frontend-only checks are a gap — but the feature itself exists
-- Do not penalize for keeping backend in Supabase
+- Only report MISSING if you have strong evidence it does not exist anywhere
+- supabase.from() proves database exists
+- supabase.auth proves auth exists
+- Frontend-only enforcement is a gap, but the feature itself exists
 
-RESPONSE FORMAT: Return ONLY valid JSON. No other text.
-{ "score": 0-100, "grade": "A|B|C|D|F", "summary": "2 sentences. What app does well and biggest gap.", "business_logic_gaps": [{ "severity": "critical|high|medium", "title": "Plain English. Max 8 words.", "you_described": "What founder said", "what_was_built": "What code actually does", "business_impact": "Real world consequence", "fix_prompt": "Exact prompt to paste into Lovable or Cursor" }], "security_findings": [{ "severity": "critical|high|medium|low", "title": "Plain English title", "description": "What the issue is", "business_impact": "Why it matters", "fix_prompt": "Exact fix prompt" }], "what_app_does_right": ["One sentence per positive finding"] }
-Maximum 5 business logic gaps. Maximum 5 security findings. Always find at least 2 positives.`;
-      userContent = `App understanding: ${JSON.stringify(code_understanding)}\n\nFounder described: ${founder_description}\n\nFounder answers: ${JSON.stringify(user_answers)}`;
-    } else if (action === "generate_fixes") {
-      systemPrompt = `You are the Rismon.ai agent. Generate specific fix prompts for this app. Each prompt must: match the app's exact code style and patterns, use their actual variable and table names where known, be specific to their platform, be written in plain English with clear step by step instructions, be ready to copy and paste with no modification needed. Return ONLY valid JSON: { fix_prompts: [{ fix_id: string, title: string, platform: "lovable" or "cursor" or "supabase" or "general", prompt: string, where_to_paste: string, expected_result: string }] }`;
-      userContent = `Platform: ${platform || "unknown"}\nGaps: ${JSON.stringify(gaps)}\nSecurity issues: ${JSON.stringify(security_issues)}\nUnknown features: ${JSON.stringify(unknown_features)}\nApp understanding: ${JSON.stringify(code_understanding)}`;
-    } else {
-      return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+RESPONSE FORMAT: ONLY valid JSON. No other text.
+{
+  "intent_match_score": 0-100,
+  "summary": "2 sentences. What works well + biggest gap.",
+  "gaps": [{ "id": "g1", "severity": "critical|high|medium", "title": "max 8 words", "you_said": "what founder said", "what_was_built": "what code does", "business_impact": "real consequence" }],
+  "security_issues": [{ "id": "s1", "severity": "critical|high|medium|low", "title": "", "explanation": "", "business_impact": "" }],
+  "unknown_features": [{ "id": "u1", "feature_name": "", "description": "", "found_where": "", "risk_if_kept": "", "risk_if_removed": "" }],
+  "what_works": ["one sentence per positive"]
+}
+Max 5 gaps. Max 5 security findings. At least 2 positives.`;
+
+      const claudeUserContent = `App understanding: ${JSON.stringify(code_understanding)}
+
+Founder described: ${founder_description}
+
+Founder concern (most worried about): ${concern || "(none specified)"}
+
+Project type: ${project_type || "unknown"}
+Monetization: ${monetization || "unknown"}
+
+Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
+
+      const claudeText = await callClaude(claudeSystemPrompt, claudeUserContent);
+      let claudeResult: any;
+      try {
+        claudeResult = parseJSON(claudeText);
+      } catch {
+        return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
+      if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
+        try {
+          const verifySystem = `You verify whether each claimed gap is actually supported by the evidence. For each gap, decide: is the claim "what was built" actually true given the code understanding? Mark each gap "confirmed" or "rejected" with one short reason.
+
+Return ONLY:
+{ "verified": [{ "id": "g1", "verdict": "confirmed|rejected", "reason": "one short sentence" }] }`;
+          const verifyUser = `Code understanding: ${JSON.stringify(code_understanding)}
+
+Founder description: ${founder_description}
+
+Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
+          const verifyText = await callGemini(verifySystem, verifyUser, "google/gemini-2.5-pro");
+          const verified = parseJSON(verifyText);
+          if (Array.isArray(verified?.verified)) {
+            const rejectedIds = new Set(verified.verified.filter((v: any) => v.verdict === "rejected").map((v: any) => v.id));
+            claudeResult.gaps = claudeResult.gaps.filter((g: any) => !rejectedIds.has(g.id));
+            claudeResult.verification_applied = true;
+            claudeResult.verification_dropped = rejectedIds.size;
+          }
+        } catch (e) {
+          console.error("Verification pass failed (non-fatal):", e);
+        }
+      }
+
+      claudeResult.plan_at_scan = userPlan;
+      claudeResult.edge_functions_scanned = limits.edgeFunctionScan;
+
+      return new Response(JSON.stringify(claudeResult), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": ANTHROPIC_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userContent }],
-      }),
-    });
+    // ============================================================
+    // ACTION: generate_fixes (stage 5 — Gemini Flash, cheap & templated)
+    // ============================================================
+    if (action === "generate_fixes") {
+      const systemPrompt = `Generate copy-paste fix prompts for the founder's app. Each prompt must:
+- Match the app's exact code style and table names where known
+- Be specific to their platform (${platform || "Lovable"})
+- Be plain English with step-by-step instructions
+- Be ready to paste with no modification
 
-    if (!response.ok) {
-      console.error("Anthropic error:", response.status);
-      return new Response(JSON.stringify({ error: "AI analysis failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+Return ONLY:
+{ "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;
+
+      const userContent = `Platform: ${platform || "unknown"}
+Gaps: ${JSON.stringify(gaps)}
+Security issues: ${JSON.stringify(security_issues)}
+Unknown features: ${JSON.stringify(unknown_features)}
+App understanding: ${JSON.stringify(code_understanding)}`;
+
+      const text = await callGemini(systemPrompt, userContent);
+      try {
+        const parsed = parseJSON(text);
+        return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch {
+        return new Response(JSON.stringify({ error: "Failed to parse fix prompts" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
-    const claudeData = await response.json();
-    const text = claudeData.content?.[0]?.text || "";
-
-    let jsonStr = text;
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) jsonStr = jsonMatch[1];
-
-    try {
-      const parsed = JSON.parse(jsonStr.trim());
-      return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    } catch {
-      console.error("Failed to parse Claude response");
-      return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // ============================================================
+    // ACTION: increment_usage (called after successful scan completion)
+    // ============================================================
+    if (action === "increment_usage") {
+      const now = new Date();
+      // Weekly counter (free)
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((day + 6) % 7));
+      monday.setHours(0, 0, 0, 0);
+      const mondayStr = monday.toISOString().split("T")[0];
+      const { data: existingWeek } = await serviceClient
+        .from("scan_usage")
+        .select("id, scan_count")
+        .eq("user_id", user.id)
+        .eq("week_start", mondayStr)
+        .maybeSingle();
+      if (existingWeek) {
+        await serviceClient.from("scan_usage").update({ scan_count: (existingWeek.scan_count || 0) + 1 }).eq("id", existingWeek.id);
+      } else {
+        await serviceClient.from("scan_usage").insert({ user_id: user.id, week_start: mondayStr, scan_count: 1 });
+      }
+      // Monthly counter (pro)
+      if (userPlan === "pro") {
+        const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+        const monthStr = monthStart.toISOString().split("T")[0];
+        const { data: existingMonth } = await serviceClient
+          .from("scan_usage_monthly")
+          .select("id, scan_count")
+          .eq("user_id", user.id)
+          .eq("month_start", monthStr)
+          .maybeSingle();
+        if (existingMonth) {
+          await serviceClient.from("scan_usage_monthly").update({ scan_count: (existingMonth.scan_count || 0) + 1 }).eq("id", existingMonth.id);
+        } else {
+          await serviceClient.from("scan_usage_monthly").insert({ user_id: user.id, month_start: monthStr, scan_count: 1 });
+        }
+      }
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-  } catch (e) {
-    console.error("analyze error:", e instanceof Error ? e.message : "Unknown error");
+
+    return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (e: any) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
+    console.error("analyze error:", msg);
+    if (msg === "RATE_LIMITED") {
+      return new Response(JSON.stringify({ error: "AI rate limit hit. Please try again in a minute.", code: "RATE_LIMITED" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (msg === "CREDITS_EXHAUSTED") {
+      return new Response(JSON.stringify({ error: "AI credits exhausted. Contact support.", code: "CREDITS_EXHAUSTED" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     return new Response(JSON.stringify({ error: "Analysis failed. Please try again." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

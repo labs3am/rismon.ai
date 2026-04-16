@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.send-followup-email]
 verify_jwt = false
+
+[functions.send-scan-ready-email]
+verify_jwt = false
