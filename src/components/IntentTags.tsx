@@ -69,6 +69,21 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
   const [showReplaceWarning, setShowReplaceWarning] = useState(false);
   const pendingType = useRef<string | null>(null);
 
+  // Separator used to split project-type text from payment text
+  const SEPARATOR = '\n\n';
+
+  const getProjectPart = (text: string) => {
+    const parts = text.split(SEPARATOR);
+    // If there's a known payment template at the end, the project part is everything before it
+    for (const key of Object.keys(PAYMENT_TEMPLATES)) {
+      const pt = PAYMENT_TEMPLATES[key];
+      if (text.endsWith(pt)) {
+        return text.slice(0, text.length - pt.length).replace(/\n+$/, '');
+      }
+    }
+    return text;
+  };
+
   const handleProjectType = (type: string) => {
     if (type === projectType) return;
     if (userEdited && value.length > 0) {
@@ -84,7 +99,10 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
     setUserEdited(false);
     setShowReplaceWarning(false);
     pendingType.current = null;
-    onChange(TEMPLATES[type] || '');
+    const projectText = TEMPLATES[type] || '';
+    const paymentText = monetization ? PAYMENT_TEMPLATES[monetization] : '';
+    const combined = paymentText ? `${projectText}${SEPARATOR}${paymentText}` : projectText;
+    onChange(combined.slice(0, 300));
     onMetaChange?.({ projectType: type, monetization });
   };
 
@@ -92,6 +110,19 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
     const newVal = monetization === m ? null : m;
     setMonetization(newVal);
     onMetaChange?.({ projectType, monetization: newVal });
+
+    // Get the project-type portion of current text
+    const projectPart = getProjectPart(value);
+
+    if (newVal === null) {
+      // Deselected — keep only project part
+      onChange(projectPart);
+    } else {
+      const paymentText = PAYMENT_TEMPLATES[newVal] || '';
+      const combined = projectPart ? `${projectPart}${SEPARATOR}${paymentText}` : paymentText;
+      onChange(combined.slice(0, 300));
+    }
+    setUserEdited(false);
   };
 
   return (
