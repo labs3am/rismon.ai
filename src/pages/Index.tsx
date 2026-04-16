@@ -63,7 +63,8 @@ const marquePlatforms = [
 ];
 
 const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
+const tryProFeatures = ['Full Pro access on 1 app', 'One Deep Scan (frontend + backend)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF report', 'Email delivery when ready', 'Priority support during scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Investor-ready PDF reports', 'Priority queue', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
