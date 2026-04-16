@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
+import IntentTags from '@/components/IntentTags';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -288,13 +289,9 @@ export default function Analyze() {
         <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
           <BackButton to="/dashboard" label="Dashboard" />
           <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
-          <h2 className="text-foreground text-2xl font-semibold">Tell us about your app</h2>
-          <p className="text-muted-foreground mt-2">We have read your code. Now tell us what your app is supposed to do.</p>
-          <div className="mt-4">
-            <RisGuide pageKey="analyze" message={"Be specific with these questions.\nThe more detail you give about your business, the more gaps we find.\nDescribe your app like you're explaining it to a friend."} />
-          </div>
+
           {codeUnderstanding && (
-            <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
+            <div className="rounded-xl p-4 mt-4 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
               <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>What we found in your code:</p>
               <p className="text-muted-foreground text-sm mt-2">{codeUnderstanding.business_type_guess}</p>
               {codeUnderstanding.features_found?.slice(0, 5).map((f: string, i: number) => (
@@ -302,9 +299,8 @@ export default function Analyze() {
               ))}
             </div>
           )}
-          <label className="text-foreground text-[15px] font-semibold block mt-6">What is your app supposed to do?</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Describe in plain English. Example: A marketplace where verified tutors post lessons and students book paid sessions."
-            className="w-full bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors mt-2 resize-none" />
+
+          <IntentTags value={description} onChange={setDescription} />
           <button onClick={() => setShowQuestions(true)} disabled={description.length < 30}
             className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 disabled:opacity-50">Continue →</button>
         </div>
