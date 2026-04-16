@@ -193,7 +193,7 @@ export default function Dashboard() {
               Upgrade to Pro →
             </button>
           </div>
-          <div className="flex gap-6 mt-3">
+          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
             <span className="text-[13px]" style={{ color: stats.apps >= 1 ? '#f59e0b' : '#71717a' }}>
               {stats.apps} of 1 app used
             </span>
@@ -203,6 +203,11 @@ export default function Dashboard() {
             <span className="text-[13px]" style={{ color: '#71717a' }}>
               Resets {getResetDay()}
             </span>
+          </div>
+          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+            <span className="text-[13px]" style={{ color: '#f59e0b' }}>40% code coverage</span>
+            <span className="text-[13px]" style={{ color: '#52525b' }}>·</span>
+            <span className="text-[13px]" style={{ color: '#71717a' }}>Upgrade to Premium for a full deep scan of your entire codebase</span>
           </div>
         </div>
 
