@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, XCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -63,7 +63,9 @@ const marquePlatforms = [
 ];
 
 const freeFeatures = ['1 app included', '1 scan per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Priority support during your scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const freeNotIncluded = ['Deep Scan (backend + edge functions)', 'Cross-model verification (Claude + Gemini)', 'Continuous monitoring on every commit', 'Investor-ready PDF report'];
+const tryProFeatures = ['Everything in Free', 'One Deep Scan — every file, every route, every edge function', 'Cross-model verification (Claude + Gemini agree before flagging)', 'Investor-ready PDF report you can hand to anyone', 'Priority queue — your scan jumps the line', 'Priority support during your scan', 'Use it before launch, an investor demo, or after any big AI rebuild'];
+const tryProNotIncluded = ['Continuous monitoring (Pro only)', 'Unlimited apps and unlimited monthly scans'];
 const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF reports', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Priority queue', 'Priority support'];
 
 export default function Index() {
@@ -295,9 +297,15 @@ export default function Index() {
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Everything a solo founder needs to verify their first AI-built app.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
-              <div className="mt-4 space-y-2.5 flex-1">
+              <div className="mt-4 space-y-2.5">
                 {freeFeatures.map((f, i) => (
                   <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-success shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
+              <div className="mt-3 space-y-2 flex-1">
+                {freeNotIncluded.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm line-through" style={{ color: '#52525b' }}>{f}</span></div>
                 ))}
               </div>
               <Link to="/signup" className="btn-cyber-secondary block w-full mt-6 text-center">Get started free</Link>
@@ -311,12 +319,18 @@ export default function Index() {
               <p className="text-subtle text-xs mt-1">No subscription. Pay once, scan once.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full Pro access on one app for one deep scan. Then your account resets to Free. Perfect before launch, an investor demo, or after a big AI rebuild.</p>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">One full Deep Scan on a single app — the same enterprise-grade analysis Pro users get. Built for the moments that matter most: launch day, an investor demo, or right after a big AI rebuild.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">You unlock:</p>
-              <div className="mt-4 space-y-2.5 flex-1">
+              <div className="mt-4 space-y-2.5">
                 {tryProFeatures.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                  <div key={i} className="flex items-start gap-2"><CheckCircle size={15} className="text-primary shrink-0 mt-0.5" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
+              <div className="mt-3 space-y-2 flex-1">
+                {tryProNotIncluded.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm line-through" style={{ color: '#52525b' }}>{f}</span></div>
                 ))}
               </div>
               <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join Try Pro waitlist</button>
