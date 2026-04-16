@@ -32,6 +32,8 @@ export default function Connect() {
   const [serviceRoleWarning, setServiceRoleWarning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [usePatMode, setUsePatMode] = useState(false);
+  const [patInput, setPatInput] = useState('');
   const [appLimitReached, setAppLimitReached] = useState(false);
   const [existingAppName, setExistingAppName] = useState('');
   const [checkingLimit, setCheckingLimit] = useState(true);
