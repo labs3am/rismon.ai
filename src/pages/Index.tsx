@@ -24,7 +24,7 @@ const faqs = [
   { q: "Do I need to know how to code?", a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend." },
   { q: "What AI coding tools does this support?", a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it." },
   { q: "How long does the analysis take?", a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions." },
-  { q: "Is it free?", a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required." },
+  { q: "Is it free?", a: "Yes. The free plan includes one app, one scan per week, full reports, and fix prompts. No credit card required." },
   { q: "Is my source code safe?", a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored." },
   { q: "Do you track my IP address?", a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics." },
   { q: "Can I verify your privacy claims?", a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled." }
@@ -62,9 +62,9 @@ const marquePlatforms = [
   { name: "Codeium", logo: null },
 ];
 
-const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const tryProFeatures = ['Full Pro access on 1 app', 'One Deep Scan (frontend + backend)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF report', 'Email delivery when ready', 'Priority support during scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
-const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Investor-ready PDF reports', 'Priority queue', 'Priority support'];
+const freeFeatures = ['1 app included', '1 scan per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
+const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Priority support during your scan', 'Resets to Free after the scan', 'Run it again anytime for $14.99'];
+const proFeatures = ['Everything in Free, supercharged', 'Unlimited apps', '25 deep scans per month', 'Continuous monitoring (scan on every commit)', 'Cross-model verification (Claude + Gemini)', 'Investor-ready PDF reports', 'CVE vulnerability alerts', 'Email + WhatsApp alerts', 'Score history and trends', 'Priority queue', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
