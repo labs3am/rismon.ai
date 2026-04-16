@@ -3,16 +3,18 @@ import { useState, useRef } from 'react';
 const PROJECT_TYPES = ['SaaS', 'E-commerce', 'Marketplace', 'Portfolio', 'Internal Tool', 'Directory', 'Community', 'Booking App', 'Course Platform'];
 const MONETIZATION = ['Free Only', 'Free + Paid Tiers', 'One-time Payment', 'Subscription', 'Pay Per Use', 'No Payments'];
 
+// Short, neutral project descriptions WITHOUT payment language.
+// Payment details are appended separately based on the monetization chip.
 const TEMPLATES: Record<string, string> = {
-  'SaaS': 'I am building a SaaS tool that helps [describe your target user] to [describe the main benefit]. Free plan includes [list free features]. Paid plan at $[price]/month unlocks [list paid features].',
-  'E-commerce': 'I am building a shop to sell [type of product]. Customers pay with Stripe. Each customer sees only their own orders and personal data.',
-  'Marketplace': 'I am building a marketplace where [sellers] list [products or services] and [buyers] purchase them. I take [X]% commission per transaction. Sellers see only their own listings.',
-  'Portfolio': 'I am building a portfolio to showcase my [work type]. No login needed. Visitors can contact me via a form.',
-  'Internal Tool': 'I am building an internal tool for [team name] to manage [process]. Only team members can access it. Admin sees all data. Each staff member sees only their own.',
-  'Directory': 'I am building a directory of [category]. Anyone can browse for free. Businesses pay $[price] to get listed.',
-  'Community': 'I am building a community where members can [describe activity]. Free members can [free actions]. Premium members at $[price] can [premium actions].',
-  'Booking App': 'I am building a booking system for [type of service]. Customers schedule and pay online. Each booking is private per customer.',
-  'Course Platform': 'I am building an online course platform about [topic]. Free users can preview [X] lessons only. Paid users at $[price] get full access.',
+  'SaaS': 'I am building a SaaS tool that helps [who it is for, e.g. freelance designers] to [main benefit, e.g. send invoices in 30 seconds]. Key features: [feature 1, feature 2, feature 3].',
+  'E-commerce': 'I am building an online shop selling [type of product, e.g. handmade candles]. Each customer sees only their own orders and address.',
+  'Marketplace': 'I am building a marketplace where [sellers, e.g. local bakers] list [items, e.g. cakes] and [buyers, e.g. customers] buy them. I take [X]% commission. Sellers only see their own listings.',
+  'Portfolio': 'I am building a portfolio to showcase my [work type, e.g. photography]. Visitors can browse my work and contact me via a form.',
+  'Internal Tool': 'I am building an internal tool for [team, e.g. our sales team] to manage [process, e.g. client follow-ups]. Only invited team members can log in. Admins see everything; staff see only their own data.',
+  'Directory': 'I am building a directory of [category, e.g. dog-friendly cafes in Berlin]. Anyone can browse. Businesses can claim and edit their own listing.',
+  'Community': 'I am building a community where members can [activity, e.g. share running routes and comment]. Members only edit their own posts.',
+  'Booking App': 'I am building a booking system for [service, e.g. yoga classes]. Customers pick a time slot and book. Each booking is private to that customer.',
+  'Course Platform': 'I am building an online course platform about [topic, e.g. learning Spanish]. Students track their own progress through lessons.',
 };
 
 const PAYMENT_TEMPLATES: Record<string, string> = {
@@ -73,8 +75,7 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
   const SEPARATOR = '\n\n';
 
   const getProjectPart = (text: string) => {
-    const parts = text.split(SEPARATOR);
-    // If there's a known payment template at the end, the project part is everything before it
+    // Strip any known payment template from the end
     for (const key of Object.keys(PAYMENT_TEMPLATES)) {
       const pt = PAYMENT_TEMPLATES[key];
       if (text.endsWith(pt)) {
