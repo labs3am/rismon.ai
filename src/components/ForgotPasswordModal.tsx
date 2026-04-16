@@ -13,6 +13,13 @@ export default function ForgotPasswordModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const handleClose = () => {
+    setEmail('');
+    setSent(false);
+    setLoading(false);
+    onClose();
+  };
+
   if (!open) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
