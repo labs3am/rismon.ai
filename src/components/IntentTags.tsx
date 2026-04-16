@@ -8,12 +8,12 @@ const TEMPLATES: Record<string, string> = {
   'SaaS': 'I am building a SaaS tool that helps [describe your target user] to [describe the main benefit]. Free plan includes [list free features]. Paid plan at $[price]/month unlocks [list paid features].',
   'E-commerce': 'I am building a shop to sell [type of product]. Customers pay with Stripe. Each customer sees only their own orders and personal data.',
   'Marketplace': 'I am building a marketplace where [sellers] list [products or services] and [buyers] purchase them. I take [X]% commission per transaction. Sellers see only their own listings.',
-  'Booking App': 'I am building a booking system for [type of service]. Customers schedule and pay online. Each booking is private per customer.',
-  'Course Platform': 'I am building an online course platform about [topic]. Free users preview [X] lessons only. Paid users at $[price] get full access.',
+  'Portfolio': 'I am building a portfolio to showcase my [work type]. No login needed. Visitors can contact me via a form.',
   'Internal Tool': 'I am building an internal tool for [team name] to manage [process]. Only team members can access it. Admin sees all data. Each staff member sees only their own.',
   'Directory': 'I am building a directory of [category]. Anyone can browse for free. Businesses pay $[price] to get listed.',
-  'Portfolio': 'I am building a portfolio to showcase my [work type]. No login needed. Visitors can contact me via a form.',
   'Community': 'I am building a community where members can [describe activity]. Free members can [free actions]. Premium members at $[price] can [premium actions].',
+  'Booking App': 'I am building a booking system for [type of service]. Customers schedule and pay online. Each booking is private per customer.',
+  'Course Platform': 'I am building an online course platform about [topic]. Free users can preview [X] lessons only. Paid users at $[price] get full access.',
 };
 
 interface IntentTagsProps {
