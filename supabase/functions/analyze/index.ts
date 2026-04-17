@@ -382,9 +382,9 @@ Return ONLY this JSON:
           try { partials.push(parseJSON(text)); } catch { /* skip bad chunk */ }
         }
         // Merge into one
-        const merged = {
-          features_found: [], user_roles_found: [], has_payments_code: false, has_admin: false, has_messaging: false,
-          database_tables: [], protected_routes: [], public_routes: [], edge_functions_found: [], unknown_features: [],
+        const merged: Record<string, any> = {
+          features_found: [] as any[], user_roles_found: [] as any[], has_payments_code: false, has_admin: false, has_messaging: false,
+          database_tables: [] as any[], protected_routes: [] as any[], public_routes: [] as any[], edge_functions_found: [] as any[], unknown_features: [] as any[],
           code_style: "", platform_detected: "", business_type_guess: "",
         };
         const allQuestions: any[] = [];
