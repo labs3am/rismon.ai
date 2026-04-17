@@ -22,8 +22,8 @@ const faqs = [
   { q: "Do I need to know how to code?", a: "No. Everything is in plain English. If you can read this sentence, you can use Rismon.ai." },
   { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
   { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
-  { q: "What does the free plan include?", a: "One app, one scan per week, the full plain English report, and fix prompts. No credit card needed." },
-  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($14.99 one time) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
+  { q: "What does the free plan include?", a: "One app, three scans per week, the full plain English report, and fix prompts. No credit card needed." },
+  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
   { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything. You stay in full control." },
   { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Nothing is saved to our database. Only your report is kept in your account." },
   { q: "What if I do not understand my report?", a: "Every finding is written for non-technical founders, with a real-world example of what could go wrong and a ready-to-use fix prompt. If you are still stuck, email us." },
@@ -62,7 +62,7 @@ const marquePlatforms = [
   { name: "Codeium", logo: null },
 ];
 
-const freeFeatures = ['1 app', '1 scan per week', 'Plain English report', 'Business logic check', 'Security issue check', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI tools'];
+const freeFeatures = ['1 app', '3 scans per week', 'Plain English report', 'Business logic check', 'Security issue check', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI tools'];
 const freeNotIncluded = ['Backend deep scan', 'Continuous monitoring'];
 const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Two AI models verify findings', 'Investor-ready PDF report', 'Priority queue', 'Priority support'];
 const tryProNotIncluded = ['Continuous monitoring', 'Unlimited apps and scans'];
@@ -284,7 +284,7 @@ export default function Index() {
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
-            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Free forever. Try Pro on one app for $14.99. Go full Pro when you ship serious products.</p>
+            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Free forever. Try Pro on one app for $8.99. Go full Pro when you ship serious products.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 items-stretch">
@@ -315,7 +315,7 @@ export default function Index() {
             <div className="glass-card p-7 flex flex-col" style={{ borderColor: 'rgba(249,115,22,0.5)', boxShadow: '0 0 40px rgba(249,115,22,0.10)' }}>
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4 self-start" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>MOST POPULAR</span>
               <p className="text-foreground text-[26px] font-bold">Try Pro</p>
-              <p className="text-foreground text-2xl font-semibold mt-1">$14.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$8.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
               <p className="text-subtle text-xs mt-1">No subscription. Pay once, scan once.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
@@ -339,7 +339,7 @@ export default function Index() {
             {/* PRO MONTHLY */}
             <div className="glass-card p-7 flex flex-col">
               <p className="text-foreground text-[26px] font-bold">Pro</p>
-              <p className="text-foreground text-2xl font-semibold mt-1">$49 <span className="text-muted-foreground text-sm font-normal">/ month</span></p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$19.90 <span className="text-muted-foreground text-sm font-normal">/ month</span></p>
               <p className="text-subtle text-xs mt-1">Cancel anytime. Coming soon.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>CONTINUOUS MONITORING</span>
