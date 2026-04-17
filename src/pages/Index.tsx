@@ -23,7 +23,7 @@ const faqs = [
   { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
   { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
   { q: "What does the free plan include?", a: "One app, three scans per week, the full plain English report, and fix prompts. No credit card needed." },
-  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
+  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time, launching soon) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding. Join the waitlist to get early access." },
   { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything. You stay in full control." },
   { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Nothing is saved to our database. Only your report is kept in your account." },
   { q: "What if I do not understand my report?", a: "Every finding is written for non-technical founders, with a real-world example of what could go wrong and a ready-to-use fix prompt. If you are still stuck, email us." },
@@ -316,7 +316,7 @@ export default function Index() {
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4 self-start" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>MOST POPULAR</span>
               <p className="text-foreground text-[26px] font-bold">Try Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">$8.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
-              <p className="text-subtle text-xs mt-1">No subscription. Pay once, scan once.</p>
+              <p className="text-subtle text-xs mt-1">Launching soon. Join the waitlist to be first.</p>
               <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
                 <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">One full Deep Scan on a single app. The same analysis Pro users get. Use it before launch or an investor demo.</p>

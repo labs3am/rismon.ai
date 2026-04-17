@@ -42,10 +42,13 @@ export default function Dashboard() {
 
   const getResetDay = () => {
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun
-    if (dayOfWeek === 6) return 'tomorrow';
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days[1]; // resets on Monday
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
+    if (daysUntilMonday === 1) return 'tomorrow';
+    if (daysUntilMonday === 7) return 'next Monday';
+    const next = new Date(now);
+    next.setDate(now.getDate() + daysUntilMonday);
+    return next.toLocaleDateString('en-US', { weekday: 'long' });
   };
 
   useEffect(() => {
@@ -219,7 +222,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[{ v: stats.apps, l: 'Apps connected' }, { v: stats.thisWeek, l: 'Analyses this week' }, { v: stats.totalGaps, l: 'Total gaps found' }].map((s, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-5">
               <p className="text-foreground text-[32px] font-bold">{s.v}</p>
