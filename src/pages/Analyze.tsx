@@ -435,6 +435,21 @@ export default function Analyze() {
     );
   }
 
+  // Guard: app failed to load outside of loading stages
+  if (!app) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNavbar />
+        <div className="flex items-center justify-center pt-40">
+          <div className="text-center">
+            <p className="text-foreground text-lg font-medium">Please select an app first</p>
+            <Link to="/dashboard" className="text-primary text-sm mt-3 inline-block hover:underline">Go to Dashboard</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Describe stage
   if (stage === 'describe' && !showQuestions) {
     return (
