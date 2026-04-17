@@ -389,10 +389,10 @@ export default function Analyze() {
         <div className="flex items-center justify-center pt-40">
           <div className="text-center max-w-[480px]">
             <Clock size={40} className="text-warning mx-auto" />
-            <h2 className="text-foreground text-[22px] font-semibold mt-4">You've used your free scan this week</h2>
+            <h2 className="text-foreground text-[22px] font-semibold mt-4">You've used your free scans this week</h2>
             <p className="text-muted-foreground mt-3 text-[15px] leading-relaxed">
-              Free plan includes 1 scan per week.<br />
-              Your scan resets every Monday.<br />
+              Free plan includes 3 scans per week.<br />
+              Your scans reset every Monday.<br />
               Upgrade to Pro for unlimited deep scans.
             </p>
             <div className="flex flex-col gap-3 mt-6 items-center">
