@@ -283,13 +283,9 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            {apps.length >= 1 ? (
-              <button onClick={() => setWaitlistOpen(true)} className="text-sm mt-4 inline-block hover:underline" style={{ color: '#6366f1' }}>
-                Unlock unlimited apps →
-              </button>
-            ) : (
-              <Link to="/connect" className="text-primary text-sm mt-4 inline-block hover:underline">+ Connect another app</Link>
-            )}
+            <button onClick={() => setWaitlistOpen(true)} className="text-sm mt-4 inline-block hover:underline" style={{ color: '#6366f1' }}>
+              Unlock unlimited apps →
+            </button>
           </div>
         )}
       </div>

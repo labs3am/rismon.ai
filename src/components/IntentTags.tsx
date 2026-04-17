@@ -171,7 +171,7 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
               onChange(e.target.value);
             }
           }}
-          rows={3}
+          rows={6}
           maxLength={300}
           placeholder="Edit the template above or describe what worries you most about your app"
           style={{
@@ -182,7 +182,6 @@ export default function IntentTags({ value, onChange, concern, onConcernChange, 
             padding: 16,
             fontSize: 14,
             color: 'white',
-            maxHeight: 100,
             resize: 'none',
             outline: 'none',
           }}

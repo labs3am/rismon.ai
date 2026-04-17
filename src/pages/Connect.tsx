@@ -91,7 +91,8 @@ export default function Connect() {
       const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
       });
-      if (res.ok) setRepos(await res.json());
+      if (!res.ok) { toast.error('GitHub token expired or invalid. Please reconnect.'); setLoadingRepos(false); return; }
+      setRepos(await res.json());
     } catch { toast.error('Failed to fetch repos'); }
     setLoadingRepos(false);
   };
