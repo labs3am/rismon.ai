@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
+import { Rocket, Store, ShoppingBag, Briefcase, Heart, GraduationCap, CheckCircle, XCircle, CreditCard, Users, Key, Search, GitBranch, AlertTriangle, Database, Lock, Shield, Globe, RefreshCw, MessageSquare, AlertCircle, Wrench, ShieldCheck, Eye, EyeOff, Code2, Timer, Zap, ScanSearch } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -18,16 +18,16 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: "I built an app with AI — how do I know it actually works?", a: "That's exactly what Rismon.ai is built for. Connect your GitHub repo, describe what your app should do in plain English, and we compare your intent with what was actually built. You get a clear report showing what works, what's missing, and what needs fixing." },
-  { q: "Can users access paid features without paying?", a: "This is one of the most common issues we find. AI tools often forget to properly lock premium features. Rismon.ai detects these gaps and gives you ready-to-use prompts to fix them." },
-  { q: "Is my users' data actually protected?", a: "We check if your database has proper access controls, if sensitive routes require authentication, and whether users can access each other's data. These are critical issues that AI tools often miss." },
-  { q: "Do I need to know how to code?", a: "Not at all. Rismon.ai is designed for non-technical founders. Everything is explained in plain English — no jargon, no code. Just describe your app like you would to a friend." },
-  { q: "What AI coding tools does this support?", a: "All major tools. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can analyze it." },
-  { q: "How long does the analysis take?", a: "Around 60 seconds. Connect your repo, answer a few simple questions, and get a full report with an intent match score, security audit, and fix suggestions." },
-  { q: "Is it free?", a: "Yes. The free plan includes one app, three scans per week, full reports, and fix prompts. No credit card required." },
-  { q: "Is my source code safe?", a: "Yes. We use read-only GitHub access, so we cannot modify your code. Your code is analyzed in memory and immediately discarded. Nothing is stored." },
-  { q: "Do you track my IP address?", a: "No. We do not log or store IP addresses. We only use aggregated, non-identifiable analytics." },
-  { q: "Can I verify your privacy claims?", a: "Yes. Our entire codebase is open source on GitHub. You can review exactly how your data is handled." }
+  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you in plain English what was built, what works, and what is broken. You also get copy-paste prompts to fix every issue." },
+  { q: "Do I need to know how to code?", a: "No. Everything is in plain English. If you can read this sentence, you can use Rismon.ai." },
+  { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
+  { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
+  { q: "What does the free plan include?", a: "One app, three scans per week, the full plain English report, and fix prompts. No credit card needed." },
+  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time, launching soon) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding. Join the waitlist to get early access." },
+  { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything. You stay in full control." },
+  { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Nothing is saved to our database. Only your report is kept in your account." },
+  { q: "What if I do not understand my report?", a: "Every finding is written for non-technical founders, with a real-world example of what could go wrong and a ready-to-use fix prompt. If you are still stuck, email us." },
+  { q: "Can I cancel anytime?", a: "Yes. Try Pro is a one-time payment, no subscription. Pro Monthly can be cancelled anytime from your settings." },
 ];
 
 const personas = [
@@ -62,8 +62,11 @@ const marquePlatforms = [
   { name: "Codeium", logo: null },
 ];
 
-const freeFeatures = ['1 app included', '3 scans per week', 'Full plain English report', 'Business logic verification', 'Security issue detection', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI platforms'];
-const proFeatures = ['Deep Scan', 'Unlimited apps', 'Unlimited scans', 'Daily automatic scan', 'New commit scan', 'CVE vulnerability alerts', 'WhatsApp and email alerts', 'Score history and trends', 'Investor ready PDF report', 'Business type deep scan', 'Automatic security updates', 'Priority support'];
+const freeFeatures = ['1 app', '3 scans per week', 'Plain English report', 'Business logic check', 'Security issue check', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI tools'];
+const freeNotIncluded = ['Backend deep scan', 'Continuous monitoring'];
+const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Two AI models verify findings', 'Investor-ready PDF report', 'Priority queue', 'Priority support'];
+const tryProNotIncluded = ['Continuous monitoring', 'Unlimited apps and scans'];
+const proFeatures = ['Everything in Try Pro', 'Unlimited apps', '25 deep scans per month', 'Scan on every new commit', 'CVE alerts', 'Email + WhatsApp alerts', 'Score history', 'Priority support'];
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -277,18 +280,21 @@ export default function Index() {
 
       {/* PRICING */}
       <section id="pricing" className="cyber-section py-28 px-6">
-        <div className="max-w-[960px] mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           <div className="text-center">
             <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">PRICING</p>
             <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Simple and honest pricing</h2>
+            <p className="text-muted-foreground text-[15px] mt-3 max-w-[560px] mx-auto">Free forever. Try Pro on one app for $8.99. Go full Pro when you ship serious products.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-            <div className="glass-card p-8">
-              <p className="text-foreground text-[28px] font-bold">Free</p>
-              <p className="text-muted-foreground mt-1">$0 / forever</p>
-              <div className="mt-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 items-stretch">
+            {/* FREE */}
+            <div className="glass-card p-7 flex flex-col">
+              <p className="text-foreground text-[26px] font-bold">Free</p>
+              <p className="text-muted-foreground mt-1">$0 <span className="text-sm">/ forever</span></p>
+              <div className="mt-5">
                 <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: 'rgba(255,255,255,0.50)', background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>QUICK SCAN</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Analyzes your most critical files and catches the issues that matter most.</p>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Everything a solo founder needs to verify their first AI-built app.</p>
               </div>
               <p className="text-foreground text-sm font-semibold mt-6">What you get:</p>
               <div className="mt-4 space-y-2.5">
@@ -296,40 +302,61 @@ export default function Index() {
                   <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-success shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
                 ))}
               </div>
-              <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-sm">Perfect for founders verifying their first AI-built app</p>
-              <Link to="/signup" className="btn-cyber-primary block w-full mt-6">Get started free</Link>
-            </div>
-
-            {/* Centered tagline between cards - visible on mobile between, on desktop as absolute overlay */}
-            <div className="md:hidden text-center py-2">
-              <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
-            </div>
-
-            <div className="glass-card p-8" style={{ borderColor: 'rgba(249,115,22,0.5)' }}>
-              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>FOUNDING MEMBER. FIRST 50 ONLY</span>
-              <p className="text-foreground text-[28px] font-bold">Pro</p>
-              <p className="text-foreground text-2xl font-semibold mt-1">$12/month</p>
-              <p className="text-muted-foreground text-sm mt-1">or $10/month billed quarterly</p>
-              <p className="text-subtle text-xs mt-1">Regular price $18 after first 50</p>
-              <div className="mt-6">
-                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN</span>
-                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">Full codebase. Every file. Every route. Every business logic gap. Nothing missed.</p>
+              <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
+              <div className="mt-3 space-y-2 flex-1">
+                {freeNotIncluded.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm" style={{ color: '#71717a' }}>{f}</span></div>
+                ))}
               </div>
-              <p className="text-foreground text-sm font-semibold mt-6">Everything in free plus:</p>
+              <Link to="/signup" className="btn-cyber-secondary block w-full mt-6 text-center">Get started free</Link>
+            </div>
+
+            {/* TRY PRO — ONE TIME */}
+            <div className="glass-card p-7 flex flex-col" style={{ borderColor: 'rgba(249,115,22,0.5)', boxShadow: '0 0 40px rgba(249,115,22,0.10)' }}>
+              <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4 self-start" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>MOST POPULAR</span>
+              <p className="text-foreground text-[26px] font-bold">Try Pro</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$8.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
+              <p className="text-subtle text-xs mt-1">Launching soon. Join the waitlist to be first.</p>
+              <div className="mt-5">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>DEEP SCAN · 1 APP</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">One full Deep Scan on a single app. The same analysis Pro users get. Use it before launch or an investor demo.</p>
+              </div>
+              <p className="text-foreground text-sm font-semibold mt-6">You unlock:</p>
               <div className="mt-4 space-y-2.5">
+                {tryProFeatures.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
+                ))}
+              </div>
+              <p className="text-subtle text-xs font-semibold uppercase tracking-wider mt-6">Not included</p>
+              <div className="mt-3 space-y-2 flex-1">
+                {tryProNotIncluded.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm" style={{ color: '#71717a' }}>{f}</span></div>
+                ))}
+              </div>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join Try Pro waitlist</button>
+            </div>
+
+            {/* PRO MONTHLY */}
+            <div className="glass-card p-7 flex flex-col">
+              <p className="text-foreground text-[26px] font-bold">Pro</p>
+              <p className="text-foreground text-2xl font-semibold mt-1">$19.90 <span className="text-muted-foreground text-sm font-normal">/ month</span></p>
+              <p className="text-subtle text-xs mt-1">Cancel anytime. Coming soon.</p>
+              <div className="mt-5">
+                <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: '#f97316', background: 'transparent', border: '1px solid rgba(249,115,22,0.30)', borderRadius: '4px', padding: '4px 10px', display: 'inline-block' }}>CONTINUOUS MONITORING</span>
+                <p className="text-muted-foreground text-[13px] mt-2 leading-relaxed">For founders shipping serious products. Unlimited apps and a fresh scan every time you push code.</p>
+              </div>
+              <p className="text-foreground text-sm font-semibold mt-6">Everything in Try Pro plus:</p>
+              <div className="mt-4 space-y-2.5 flex-1">
                 {proFeatures.map((f, i) => (
                   <div key={i} className="flex items-center gap-2"><CheckCircle size={15} className="text-primary shrink-0" /><span className="text-muted-foreground text-sm">{f}</span></div>
                 ))}
               </div>
-              <div className="border-t border-border my-6" />
-              <p className="text-muted-foreground text-sm">Perfect for founders with real users who can't afford to miss anything</p>
-              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join founding member waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-secondary block w-full mt-6">Join Pro waitlist</button>
             </div>
           </div>
-          {/* Centered tagline - desktop only */}
-          <div className="hidden md:block text-center mt-6">
-            <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything else.</p>
+
+          <div className="text-center mt-8">
+            <p className="text-[13px] italic" style={{ color: '#71717a' }}>Quick Scan finds the obvious gaps. Deep Scan finds everything.</p>
           </div>
         </div>
       </section>

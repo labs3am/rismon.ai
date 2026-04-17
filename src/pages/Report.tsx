@@ -295,6 +295,16 @@ export default function Report() {
           <Link to="/dashboard" className="border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-muted-foreground/30">Back to dashboard</Link>
           <button onClick={shareScore} className="border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-muted-foreground/30">Share my score</button>
         </div>
+
+        {/* Honesty footer */}
+        <div className="mt-10 pt-6 border-t border-border">
+          <p className="text-[12px] leading-relaxed" style={{ color: '#52525b' }}>
+            AI-assisted code review, not a guaranteed security audit.
+            {analysis.code_understanding ? ' Two AI models reviewed your code.' : ''}
+            {' '}Verify findings before deploying to production.
+            {' '}<Link to="/#pricing" className="hover:underline" style={{ color: '#71717a' }}>See what Pro adds →</Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -37,8 +37,10 @@ export default function Settings() {
   };
 
   const removeApp = async (id: string) => {
-    await supabase.from('analyses').delete().eq('app_id', id);
-    await supabase.from('apps').delete().eq('id', id);
+    const { error: analysesError } = await supabase.from('analyses').delete().eq('app_id', id);
+    if (analysesError) { toast.error('Failed to remove app. Please try again.'); return; }
+    const { error: appError } = await supabase.from('apps').delete().eq('id', id);
+    if (appError) { toast.error('Failed to remove app. Please try again.'); return; }
     setApps(apps.filter(a => a.id !== id));
     setConfirmApp(null);
     toast.success('App removed');

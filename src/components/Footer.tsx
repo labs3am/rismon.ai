@@ -6,8 +6,7 @@ export default function Footer() {
       <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <p className="text-foreground font-bold text-lg">Rismon.ai</p>
-          <p className="text-muted-foreground text-[13px] mt-2">Proudly made in India 🇮🇳</p>
-          <p className="text-muted-foreground text-[13px] mt-1">
+          <p className="text-muted-foreground text-[13px] mt-2">
             From the house of{' '}
             <a href="https://labs3am.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Labs3am</a>
           </p>
