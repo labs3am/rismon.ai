@@ -1,10 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
+Disallow: /admin
+Disallow: /report
 Disallow: /connect
 Disallow: /analyze
-Disallow: /report
-Disallow: /settings
-Disallow: /admin
 
 Sitemap: https://rismon.ai/sitemap.xml
