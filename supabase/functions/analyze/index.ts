@@ -592,6 +592,61 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
         return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
+      // ----------------------------------------------------------
+      // Normalize new Rismon prompt shape -> legacy shape expected
+      // by the rest of the app (DB columns, Analyze.tsx, Report.tsx)
+      // New keys: score, score_label, verdict, business_logic_gaps,
+      //          security_findings, what_works, summary
+      // Legacy keys: intent_match_score, gaps, security_issues,
+      //              unknown_features, what_works, summary
+      // ----------------------------------------------------------
+      const mapFinding = (f: any, idx: number, prefix: string) => {
+        const id = f?.id || `${prefix}-${idx + 1}`;
+        const severity = (f?.severity || "medium").toLowerCase();
+        const title = f?.title || "Issue";
+        const what_we_found = f?.what_we_found || f?.you_said || "";
+        const what_this_means = f?.what_this_means || f?.business_impact || "";
+        const how_to_fix = f?.how_to_fix || "";
+        return {
+          id,
+          severity,
+          title,
+          // legacy gap fields used by Report.tsx
+          you_said: what_we_found,
+          what_was_built: what_we_found,
+          business_impact: what_this_means,
+          // legacy security fields used by Report.tsx
+          explanation: what_we_found || what_this_means,
+          status: "failed",
+          // keep new fields for fix-prompt generation downstream
+          what_we_found,
+          what_this_means,
+          how_to_fix,
+          fix_prompt: f?.fix_prompt || "",
+          technical_reference: f?.technical_reference || "",
+          google_query: f?.google_query || "",
+        };
+      };
+
+      if (claudeResult && (claudeResult.business_logic_gaps || claudeResult.security_findings || typeof claudeResult.score === "number")) {
+        const gapsArr = Array.isArray(claudeResult.business_logic_gaps) ? claudeResult.business_logic_gaps : [];
+        const secArr = Array.isArray(claudeResult.security_findings) ? claudeResult.security_findings : [];
+        const works = Array.isArray(claudeResult.what_works) ? claudeResult.what_works : [];
+
+        const score = typeof claudeResult.score === "number" ? claudeResult.score : null;
+        const summary = [claudeResult.summary, claudeResult.verdict].filter(Boolean).join(" ");
+
+        claudeResult = {
+          ...claudeResult,
+          intent_match_score: score,
+          gaps: gapsArr.map((g: any, i: number) => mapFinding(g, i, "g")),
+          security_issues: secArr.map((s: any, i: number) => mapFinding(s, i, "s")),
+          what_works: works,
+          unknown_features: Array.isArray(claudeResult.unknown_features) ? claudeResult.unknown_features : [],
+          summary: summary || claudeResult.summary || "",
+        };
+      }
+
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
       if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
         try {
