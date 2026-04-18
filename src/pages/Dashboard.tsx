@@ -22,7 +22,7 @@ interface App {
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
-  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0 });
+  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0, totalSecurity: 0 });
   const [weeklyScans, setWeeklyScans] = useState(0);
   const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
