@@ -148,7 +148,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      <hr className="section-divider" />
       <section id="how-it-works" className="cyber-section py-24 px-6">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
@@ -158,16 +158,16 @@ export default function Index() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-14">
             {steps.map((s, i) => (
               <div key={i} className="glass-card p-5">
-                <p className="text-4xl font-bold" style={{ color: 'rgba(249,115,22,0.3)' }}>{s.n}</p>
-                <p className="text-foreground text-[17px] font-semibold mt-3">{s.title}</p>
-                <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{s.text}</p>
+                <p style={{ color: '#f97316', fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em' }}>{s.n}</p>
+                <p className="text-[17px] mt-3" style={{ color: '#f5f5f5', fontWeight: 600 }}>{s.title}</p>
+                <p className="text-sm mt-2 whitespace-pre-line" style={{ color: '#888888' }}>{s.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* WHAT WE FIND */}
+      <hr className="section-divider" />
       <section id="what-we-check" className="cyber-section py-[100px] px-6 md:px-10">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
@@ -187,7 +187,7 @@ export default function Index() {
                   { icon: Search, title: 'Features you never asked for', text: 'Your AI built extra things. Do you know what they are?' },
                   { icon: GitBranch, title: 'Code that does not match your vision', text: 'You described one thing. The AI built something slightly different.' },
                 ].map((c, i) => (
-                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #f59e0b', borderRadius: '0 12px 12px 0' }}>
+                  <div key={i} className="finding-item py-2">
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#f59e0b' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -208,7 +208,7 @@ export default function Index() {
                   { icon: AlertTriangle, title: 'Secrets hardcoded in code', text: 'Passwords and keys written directly in your files.' },
                   { icon: Globe, title: 'API routes anyone can call', text: 'Your backend has no protection from direct requests.' },
                 ].map((c, i) => (
-                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #ef4444', borderRadius: '0 12px 12px 0' }}>
+                  <div key={i} className="finding-item py-2">
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#ef4444' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -228,7 +228,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* PLAIN ENGLISH */}
+      <hr className="section-divider" />
       <section className="cyber-section py-24 px-6">
         <div className="max-w-[800px] mx-auto text-center">
           <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Everything in plain English</h2>
@@ -251,7 +251,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECURITY & PRIVACY */}
+      <hr className="section-divider" />
       <section id="security-privacy" className="cyber-section py-24 px-6">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center">
@@ -270,7 +270,7 @@ export default function Index() {
               { icon: Timer, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens in our database.' },
               { icon: Lock, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data with anyone.' },
             ].map((item, i) => (
-              <div key={i} className="glass-card p-5">
+              <div key={i} className="trust-card">
                 <item.icon size={22} className="text-primary" />
                 <p className="text-foreground text-[15px] font-semibold mt-3">{item.title}</p>
                 <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: '#71717a' }}>{item.text}</p>
