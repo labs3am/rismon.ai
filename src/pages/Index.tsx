@@ -83,22 +83,27 @@ export default function Index() {
       {/* HERO */}
       <section className="pt-40 pb-16 px-6 text-center relative">
         <div className="max-w-[800px] mx-auto relative">
+          <span className="block mb-4" style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#f97316' }}>
+            Intent Verification for AI-Built Apps
+          </span>
           <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="btn-cyber-primary">Get started free</Link>
-            <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
+            <Link to="/signup" className="btn-hero-primary">Get started free</Link>
+            <Link to="/sample-report" className="btn-hero-secondary">See a sample report</Link>
           </div>
-          <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
+          <p style={{ fontSize: '13px', color: '#444444', marginTop: '12px' }}>Free forever. No credit card required.</p>
         </div>
       </section>
 
+      <hr className="section-divider" />
+
       {/* PLATFORM MARQUEE */}
       <section className="pb-28 px-6">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-center mb-5" style={{ color: '#3f3f46' }}>Works with every AI coding platform</p>
+        <p className="text-center mb-5" style={{ fontSize: '12px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Works with every AI coding platform</p>
         <div className="marquee-mask max-w-[900px] mx-auto">
           <div className="marquee-track">
             {doubled.map((p, i) => (
@@ -114,6 +119,8 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      <hr className="section-divider" />
 
       {/* NOT SURE */}
       <section className="cyber-section px-6 pb-28 pt-28">
@@ -141,7 +148,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      <hr className="section-divider" />
       <section id="how-it-works" className="cyber-section py-24 px-6">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
@@ -151,16 +158,16 @@ export default function Index() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-14">
             {steps.map((s, i) => (
               <div key={i} className="glass-card p-5">
-                <p className="text-4xl font-bold" style={{ color: 'rgba(249,115,22,0.3)' }}>{s.n}</p>
-                <p className="text-foreground text-[17px] font-semibold mt-3">{s.title}</p>
-                <p className="text-muted-foreground text-sm mt-2 whitespace-pre-line">{s.text}</p>
+                <p style={{ color: '#f97316', fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em' }}>{s.n}</p>
+                <p className="text-[17px] mt-3" style={{ color: '#f5f5f5', fontWeight: 600 }}>{s.title}</p>
+                <p className="text-sm mt-2 whitespace-pre-line" style={{ color: '#888888' }}>{s.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* WHAT WE FIND */}
+      <hr className="section-divider" />
       <section id="what-we-check" className="cyber-section py-[100px] px-6 md:px-10">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center">
@@ -180,7 +187,7 @@ export default function Index() {
                   { icon: Search, title: 'Features you never asked for', text: 'Your AI built extra things. Do you know what they are?' },
                   { icon: GitBranch, title: 'Code that does not match your vision', text: 'You described one thing. The AI built something slightly different.' },
                 ].map((c, i) => (
-                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #f59e0b', borderRadius: '0 12px 12px 0' }}>
+                  <div key={i} className="finding-item py-2">
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#f59e0b' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -201,7 +208,7 @@ export default function Index() {
                   { icon: AlertTriangle, title: 'Secrets hardcoded in code', text: 'Passwords and keys written directly in your files.' },
                   { icon: Globe, title: 'API routes anyone can call', text: 'Your backend has no protection from direct requests.' },
                 ].map((c, i) => (
-                  <div key={i} className="glass-card p-4" style={{ borderLeft: '3px solid #ef4444', borderRadius: '0 12px 12px 0' }}>
+                  <div key={i} className="finding-item py-2">
                     <div className="flex items-center gap-2">
                       <c.icon size={16} style={{ color: '#ef4444' }} />
                       <p className="text-foreground text-[15px] font-semibold">{c.title}</p>
@@ -221,7 +228,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* PLAIN ENGLISH */}
+      <hr className="section-divider" />
       <section className="cyber-section py-24 px-6">
         <div className="max-w-[800px] mx-auto text-center">
           <h2 className="text-foreground text-[28px] md:text-4xl font-semibold">Everything in plain English</h2>
@@ -244,7 +251,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECURITY & PRIVACY */}
+      <hr className="section-divider" />
       <section id="security-privacy" className="cyber-section py-24 px-6">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center">
@@ -263,7 +270,7 @@ export default function Index() {
               { icon: Timer, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens in our database.' },
               { icon: Lock, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data with anyone.' },
             ].map((item, i) => (
-              <div key={i} className="glass-card p-5">
+              <div key={i} className="trust-card">
                 <item.icon size={22} className="text-primary" />
                 <p className="text-foreground text-[15px] font-semibold mt-3">{item.title}</p>
                 <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: '#71717a' }}>{item.text}</p>
@@ -278,7 +285,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* PRICING */}
+      <hr className="section-divider" />
       <section id="pricing" className="cyber-section py-28 px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center">
@@ -361,16 +368,29 @@ export default function Index() {
         </div>
       </section>
 
+      <hr className="section-divider" />
+
       {/* WHY WE BUILT THIS */}
       <section className="cyber-section py-28 px-6">
-        <div className="max-w-[720px] mx-auto text-center">
-          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
-          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
-          <p className="text-muted-foreground text-base leading-[1.8] mt-6 text-left">
-            AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours. But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe. Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix. In plain English. Every time.
-          </p>
+        <div className="max-w-[1100px] mx-auto">
+          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase text-center md:text-left">WHY WE BUILT THIS</p>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mt-6">
+            <div className="md:col-span-2">
+              <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#f5f5f5', lineHeight: 1.3 }}>
+                Every founder deserves to understand what they built.
+              </h2>
+            </div>
+            <div className="md:col-span-3 space-y-4" style={{ fontSize: '15px', color: '#888888', lineHeight: 1.7 }}>
+              <p>AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours.</p>
+              <p>But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
+              <p>Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix.</p>
+              <p>In plain English. Every time.</p>
+            </div>
+          </div>
         </div>
       </section>
+
+      <hr className="section-divider" />
 
       {/* FAQ */}
       <section id="faq" className="cyber-section py-28 px-6">
@@ -381,9 +401,9 @@ export default function Index() {
           </div>
           <Accordion type="single" collapsible className="mt-12">
             {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+              <AccordionItem key={i} value={`faq-${i}`} className="faq-item border-0">
                 <AccordionTrigger className="text-foreground text-[16px] font-medium hover:no-underline hover:text-primary py-5">{faq.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-[15px] leading-[1.7]">{faq.a}</AccordionContent>
+                <AccordionContent className="text-muted-foreground text-[15px] leading-[1.7] pb-4">{faq.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
