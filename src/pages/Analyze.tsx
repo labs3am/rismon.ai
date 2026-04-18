@@ -87,6 +87,8 @@ export default function Analyze() {
       if (activeSession) {
         setScanSessionId(activeSession.id);
         setResumingSession(true);
+        const startedAtMs = activeSession.created_at ? new Date(activeSession.created_at).getTime() : Date.now();
+        setResumeStartedAt(startedAtMs);
         setStage('analyzing');
         // Poll for completion every 3 seconds
         pollRef.current = setInterval(async () => {
