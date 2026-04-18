@@ -41,6 +41,9 @@ export default function Analyze() {
 
   const [scanSessionId, setScanSessionId] = useState<string | null>(null);
   const [resumingSession, setResumingSession] = useState(false);
+  const [scanType, setScanType] = useState<'quick' | 'deep'>('quick');
+  const [filesScanned, setFilesScanned] = useState(0);
+  const scanStartedAtRef = useRef<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Persist stage to localStorage
