@@ -107,9 +107,9 @@ export default function Dashboard() {
   };
 
   const scoreColor = (s: number) => {
-    if (s <= 40) return { bg: 'rgba(239,68,68,0.15)', text: '#ef4444' };
-    if (s <= 70) return { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b' };
-    return { bg: 'rgba(34,197,94,0.15)', text: '#22c55e' };
+    if (s <= 40) return '#ef4444';
+    if (s <= 70) return '#f59e0b';
+    return '#22c55e';
   };
 
   const handleAnalyzeNow = async (app: App) => {
