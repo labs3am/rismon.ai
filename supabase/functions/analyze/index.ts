@@ -632,7 +632,7 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaude(claudeSystemPrompt, claudeUserContent);
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
