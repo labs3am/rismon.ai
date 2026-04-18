@@ -22,7 +22,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[1000] h-16" style={{ background: 'rgba(8,8,8,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e1e1e' }}>
+    <nav className="fixed top-0 left-0 right-0 z-[1000] h-16" style={{ background: '#080808', borderBottom: '1px solid #1e1e1e' }}>
       <div className="flex h-full items-center justify-between px-6 md:px-10 max-w-[1200px] mx-auto">
         <Link to="/" className="text-[20px] font-bold text-foreground">Rismon.ai</Link>
         <div className="hidden md:flex items-center gap-8">

@@ -89,7 +89,7 @@ export default function Index() {
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="btn-cyber-primary btn-cyber-primary-pulse">Get started free</Link>
+            <Link to="/signup" className="btn-cyber-primary">Get started free</Link>
             <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
           </div>
           <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
@@ -312,7 +312,7 @@ export default function Index() {
             </div>
 
             {/* TRY PRO — ONE TIME */}
-            <div className="glass-card p-7 flex flex-col" style={{ borderColor: 'rgba(249,115,22,0.5)', boxShadow: '0 0 40px rgba(249,115,22,0.10)' }}>
+            <div className="glass-card p-7 flex flex-col" style={{ borderColor: 'rgba(249,115,22,0.5)' }}>
               <span className="inline-block text-[11px] px-3 py-1 rounded-full mb-4 self-start" style={{ background: 'rgba(249,115,22,0.1)', color: '#fb923c' }}>MOST POPULAR</span>
               <p className="text-foreground text-[26px] font-bold">Try Pro</p>
               <p className="text-foreground text-2xl font-semibold mt-1">$8.99 <span className="text-muted-foreground text-sm font-normal">/ one-time</span></p>
@@ -333,7 +333,7 @@ export default function Index() {
                   <div key={i} className="flex items-center gap-2"><XCircle size={14} className="shrink-0" style={{ color: '#52525b' }} /><span className="text-sm" style={{ color: '#71717a' }}>{f}</span></div>
                 ))}
               </div>
-              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary btn-cyber-primary-pulse block w-full mt-6">Join Try Pro waitlist</button>
+              <button onClick={() => setWaitlistOpen(true)} className="btn-cyber-primary block w-full mt-6">Join Try Pro waitlist</button>
             </div>
 
             {/* PRO MONTHLY */}

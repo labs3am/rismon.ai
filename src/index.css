@@ -52,6 +52,11 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
+  h1, h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
 }
 
 @keyframes spin {
@@ -61,34 +66,25 @@
   animation: spin 1.2s linear infinite;
 }
 
-@keyframes pulse-orange {
-  0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
-  100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
-}
-
-/* Section wrappers */
+/* Section wrappers — solid background, no blur */
 .cyber-section {
-  background: rgba(10, 10, 10, 0.60);
-  backdrop-filter: blur(0px);
+  background: #0a0a0a;
   border-top: 1px solid rgba(249, 115, 22, 0.10);
 }
 
-/* Glass cards */
+/* Cards — solid background, no blur, no glow */
 .glass-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: hsl(var(--card));
   border: 1px solid rgba(249, 115, 22, 0.15);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-radius: 12px;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: hsl(var(--secondary));
   border-color: rgba(249, 115, 22, 0.35);
 }
 
-/* Cyber buttons */
+/* Cyber buttons — no glow */
 .btn-cyber-primary {
   background: hsl(var(--primary));
   border: none;
@@ -105,7 +101,7 @@
   opacity: 0.88;
 }
 .btn-cyber-primary-pulse {
-  /* kept class for markup compat, no animation */
+  /* deprecated — no animation, kept for markup compat */
 }
 
 .btn-cyber-secondary {
@@ -122,24 +118,22 @@
 }
 .btn-cyber-secondary:hover {
   border-color: hsl(var(--muted-foreground));
-  background: rgba(255, 255, 255, 0.04);
+  background: hsl(var(--secondary));
 }
 
-/* Auth glass card */
+/* Auth card — solid, no blur */
 .auth-glass-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.05);
+  background: hsl(var(--card));
   border: 1px solid rgba(249, 115, 22, 0.25);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border-radius: 16px;
   padding: 40px;
 }
 
 .auth-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.06);
+  background: hsl(var(--input-bg));
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 6px;
   color: white;

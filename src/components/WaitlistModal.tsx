@@ -26,7 +26,7 @@ export default function WaitlistModal({ isOpen, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-2xl p-10 max-w-[440px] w-full relative" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X size={20} /></button>
         {submitted ? (
