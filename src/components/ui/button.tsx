@@ -5,19 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium font-sans transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        // Primary: white bg, black text
+        default: "bg-white text-black hover:bg-[#f0f0f0]",
+        // Danger outline
+        destructive: "bg-transparent border border-[#ef4444] text-[#ef4444] hover:bg-[rgba(239,68,68,0.08)]",
+        // Secondary outline
+        outline: "bg-transparent border border-[#333333] text-foreground hover:border-[#555555]",
+        secondary: "bg-transparent border border-[#333333] text-foreground hover:border-[#555555]",
+        // Ghost
+        ghost: "bg-transparent text-foreground hover:bg-[#1a1a1a]",
+        // Accent (use sparingly): orange outline
+        link: "text-[#f97316] underline-offset-4 hover:underline",
+        accent: "bg-transparent border border-[#f97316] text-[#f97316] hover:bg-[rgba(249,115,22,0.08)]",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        default: "h-10 px-[22px] py-[11px] rounded-md",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
