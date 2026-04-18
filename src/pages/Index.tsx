@@ -102,14 +102,15 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-center" style={{ padding: '160px 24px 120px', background: '#000000' }}>
+      <section className="text-center" style={{ padding: '80px 24px 120px', background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
             Rismon reads your AI-built app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for non-technical founders</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
           </div>
