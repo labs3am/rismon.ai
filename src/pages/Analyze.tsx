@@ -97,8 +97,8 @@ export default function Analyze() {
         const startedAtMs = activeSession.created_at ? new Date(activeSession.created_at).getTime() : Date.now();
         const ageSec = Math.floor((Date.now() - startedAtMs) / 1000);
 
-        // Auto-cancel sessions older than 5 minutes (edge function dies at ~2.5min anyway)
-        if (ageSec > 300) {
+        // Auto-cancel sessions older than 3 minutes (edge function dies at ~2.5min anyway)
+        if (ageSec > 180) {
           await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', activeSession.id);
           localStorage.removeItem('rismon_active_analysis');
           localStorage.removeItem('rismon_analysis_stage');
@@ -132,9 +132,9 @@ export default function Analyze() {
               navigate('/dashboard');
               return;
             }
-            // Auto-fail sessions that exceed 5 minutes during polling
+            // Auto-fail sessions that exceed 3 minutes during polling
             const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-            if (elapsed > 300) {
+            if (elapsed > 180) {
               if (pollRef.current) clearInterval(pollRef.current);
               await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', activeSession.id);
               setResumingSession(false);
@@ -154,23 +154,44 @@ export default function Analyze() {
       if (savedId) {
         const { data: existing } = await supabase.from('analyses').select('*').eq('id', savedId).eq('app_id', appId).single();
         if (existing) {
-          setAnalysisId(existing.id);
-          if (existing.status === 'questions_ready' && existing.code_understanding) {
-            setCodeUnderstanding(existing.code_understanding);
-            setQuestions((existing.smart_questions as any[]) || []);
-            setStage('describe');
-            return;
+          // Auto-fail stale 'reading' analyses with no progress (older than 5 min, no files scanned)
+          const ageMs = Date.now() - new Date(existing.created_at || Date.now()).getTime();
+          const isStaleReading = existing.status === 'reading'
+            && !existing.code_understanding
+            && !existing.files_scanned
+            && ageMs > 5 * 60 * 1000;
+          if (isStaleReading) {
+            await supabase.from('analyses').update({ status: 'failed' }).eq('id', existing.id);
+            localStorage.removeItem('rismon_active_analysis');
+            localStorage.removeItem('rismon_analysis_stage');
+            // Continue to start a fresh scan below
+          } else {
+            setAnalysisId(existing.id);
+            if (existing.status === 'questions_ready' && existing.code_understanding) {
+              setCodeUnderstanding(existing.code_understanding);
+              setQuestions((existing.smart_questions as any[]) || []);
+              setStage('describe');
+              return;
+            }
+            if (existing.status === 'review_pending' || existing.status === 'complete') {
+              navigate(`/report/${existing.id}`);
+              return;
+            }
+            if (existing.code_understanding) {
+              setCodeUnderstanding(existing.code_understanding);
+              setQuestions((existing.smart_questions as any[]) || []);
+              setStage('describe');
+              return;
+            }
+            // status 'reading' but recent and no progress → let user wait OR start fresh
+            // Clear localStorage so a fresh scan can begin
+            localStorage.removeItem('rismon_active_analysis');
+            localStorage.removeItem('rismon_analysis_stage');
           }
-          if (existing.status === 'review_pending' || existing.status === 'complete') {
-            navigate(`/report/${existing.id}`);
-            return;
-          }
-          if (existing.code_understanding) {
-            setCodeUnderstanding(existing.code_understanding);
-            setQuestions((existing.smart_questions as any[]) || []);
-            setStage('describe');
-            return;
-          }
+        } else {
+          // Saved id no longer exists in DB — clear it
+          localStorage.removeItem('rismon_active_analysis');
+          localStorage.removeItem('rismon_analysis_stage');
         }
       }
 
