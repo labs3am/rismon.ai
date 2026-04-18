@@ -20,7 +20,7 @@ export default function DashboardNavbar() {
   const initial = profile?.full_name?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64, background: '#000000', borderBottom: '1px solid #ffffff10' }}>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64, background: '#000000', borderBottom: '1px solid #1a1a1a' }}>
       <div className="flex h-full items-center justify-between max-w-[1400px] mx-auto" style={{ padding: '0 24px' }}>
         <Link to="/dashboard" style={{ fontSize: 16, fontWeight: 600, color: '#ffffff' }}>Rismon.ai</Link>
         <div className="relative" ref={ref}>
