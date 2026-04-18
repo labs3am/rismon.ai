@@ -141,7 +141,7 @@ export default function Analyze() {
     readingStarted.current = true;
 
     const run = async () => {
-      const scanStartedAt = Date.now();
+      scanStartedAtRef.current = Date.now();
       try {
         const { data: { session: s } } = await supabase.auth.getSession();
         const token = s?.provider_token;
@@ -165,11 +165,12 @@ export default function Analyze() {
         }
 
         const isDeepScan = planName === 'try_pro' || planName === 'pro';
-        const scanType: 'quick' | 'deep' = isDeepScan ? 'deep' : 'quick';
+        const localScanType: 'quick' | 'deep' = isDeepScan ? 'deep' : 'quick';
+        setScanType(localScanType);
 
         // Create analysis record first
         const { data: analysis } = await supabase.from('analyses').insert({
-          app_id: appId, user_id: user.id, status: 'reading', scan_type: scanType
+          app_id: appId, user_id: user.id, status: 'reading', scan_type: localScanType
         }).select().single();
         if (analysis) {
           setAnalysisId(analysis.id);
