@@ -496,7 +496,9 @@ RESPONSE FORMAT: ONLY valid JSON. No other text.
 }
 Max 5 gaps. Max 5 security findings. At least 2 positives.`;
 
-      const claudeUserContent = `App understanding: ${JSON.stringify(code_understanding)}
+      const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
+
+App understanding: ${JSON.stringify(code_understanding)}
 
 Founder described: ${founder_description}
 
