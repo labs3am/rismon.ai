@@ -41,6 +41,8 @@ export default function Analyze() {
 
   const [scanSessionId, setScanSessionId] = useState<string | null>(null);
   const [resumingSession, setResumingSession] = useState(false);
+  const [resumeStartedAt, setResumeStartedAt] = useState<number | null>(null);
+  const [resumeElapsed, setResumeElapsed] = useState(0);
   const [scanType, setScanType] = useState<'quick' | 'deep'>('quick');
   const [filesScanned, setFilesScanned] = useState(0);
   const scanStartedAtRef = useRef<number | null>(null);
