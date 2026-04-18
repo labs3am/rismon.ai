@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter } from 'lucide-react';
+import { Github, Mail } from 'lucide-react';
+
+const XLogo = ({ size = 18 }: { size?: number }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 export default function Footer() {
   const linkStyle = { color: '#888888', fontSize: 14, transition: 'color 0.15s ease' } as const;
@@ -19,8 +25,11 @@ export default function Footer() {
             <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" aria-label="GitHub" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
               <Github size={18} />
             </a>
-            <a href="https://twitter.com/rismonai" target="_blank" rel="noopener noreferrer" aria-label="Twitter" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
-              <Twitter size={18} />
+            <a href="https://x.com/rismonai" target="_blank" rel="noopener noreferrer" aria-label="X" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+              <XLogo size={16} />
+            </a>
+            <a href="mailto:hello@rismon.ai" aria-label="Email" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+              <Mail size={18} />
             </a>
           </div>
           <p style={{ color: '#444444', fontSize: 13, marginTop: 16 }}>© 2026 Rismon.ai</p>
@@ -28,7 +37,7 @@ export default function Footer() {
         <div className="flex flex-col gap-2">
           <Link to="/privacy" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Privacy Policy</Link>
           <Link to="/terms" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Terms of Service</Link>
-          <a href="mailto:hello@rismon.ai" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Contact</a>
+          <a href="mailto:hello@rismon.ai" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>hello@rismon.ai</a>
         </div>
       </div>
     </footer>
