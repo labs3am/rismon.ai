@@ -2,70 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
-  Design system tokens.
-  HSL values map to the new flat dark palette:
-    --background:     #0d0d0d
-    --surface:        #141414  (card / popover)
-    --surface-hover:  #1a1a1a
-    --border:         #242424
-    --border-hover:   #333333
-    --text-primary:   #f5f5f5
-    --text-secondary: #888888
-    --text-muted:     #444444
-    --accent:         #f97316
-    --success:        #22c55e
-    --warning:        #f59e0b
-    --danger:         #ef4444
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 5.1%;            /* #0d0d0d */
-    --foreground: 0 0% 96.1%;           /* #f5f5f5 */
-
-    --card: 0 0% 7.8%;                  /* #141414 */
+    --background: 0 0% 3.1%;
+    --foreground: 0 0% 96.1%;
+    --card: 0 0% 6.7%;
     --card-foreground: 0 0% 96.1%;
-
-    --popover: 0 0% 7.8%;
+    --popover: 0 0% 6.7%;
     --popover-foreground: 0 0% 96.1%;
-
-    --primary: 0 0% 100%;               /* #ffffff (primary button = white) */
-    --primary-foreground: 0 0% 0%;      /* black text */
-
-    --secondary: 0 0% 10.2%;            /* #1a1a1a */
+    --primary: 24 94% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 10.2%;
     --secondary-foreground: 0 0% 96.1%;
-
-    --muted: 0 0% 14.1%;                /* #242424 */
-    --muted-foreground: 0 0% 53.3%;     /* #888888 */
-
-    --accent: 24 94% 53%;               /* #f97316 */
+    --muted: 0 0% 11.8%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 24 94% 53%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;           /* #ef4444 */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 14.1%;               /* #242424 */
-    --input: 0 0% 20%;                  /* #333333 input border */
-    --ring: 0 0% 33.3%;                 /* #555 focus ring */
-
-    --radius: 0.5rem;
-
-    --success: 142 71% 45%;             /* #22c55e */
-    --warning: 38 92% 50%;              /* #f59e0b */
-    --dimmed: 0 0% 26.7%;               /* #444 */
-    --subtle: 0 0% 53.3%;               /* #888 */
-    --input-bg: 0 0% 5.1%;              /* #0d0d0d */
-    --hover-border: 0 0% 20%;           /* #333 */
-
-    --sidebar-background: 0 0% 5.1%;
+    --border: 0 0% 11.8%;
+    --input: 0 0% 16.5%;
+    --ring: 24 94% 53%;
+    --radius: 0.625rem;
+    --success: 142.1 70.6% 45.3%;
+    --warning: 37.7 92.1% 50.2%;
+    --dimmed: 240 5.3% 26.1%;
+    --subtle: 240 3.7% 33.9%;
+    --input-bg: 0 0% 5.1%;
+    --hover-border: 0 0% 18%;
+    --sidebar-background: 0 0% 3.1%;
     --sidebar-foreground: 0 0% 96.1%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 10.2%;
+    --sidebar-primary: 24 94% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 11.8%;
     --sidebar-accent-foreground: 0 0% 96.1%;
-    --sidebar-border: 0 0% 14.1%;
-    --sidebar-ring: 0 0% 33.3%;
+    --sidebar-border: 0 0% 11.8%;
+    --sidebar-ring: 24 94% 53%;
   }
 }
 
@@ -78,24 +50,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* Headings → Instrument Serif */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
-
-  /* Code / technical references → Geist Mono */
-  code, pre, kbd, samp, .font-mono {
-    font-family: 'Geist Mono', monospace;
+    font-family: 'Inter', sans-serif;
   }
 }
 
-/* ---------- Utility animations (kept) ---------- */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -103,129 +61,101 @@
   animation: spin 1.2s linear infinite;
 }
 
-/* ---------- Sections ---------- */
-.cyber-section {
-  background: #0d0d0d;
-  border-top: 1px solid #242424;
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
+  100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
 }
 
-/* ---------- Cards (flat) ---------- */
+/* Section wrappers */
+.cyber-section {
+  background: rgba(10, 10, 10, 0.60);
+  backdrop-filter: blur(0px);
+  border-top: 1px solid rgba(249, 115, 22, 0.10);
+}
+
+/* Glass cards */
 .glass-card {
-  background: #141414;
-  border: 1px solid #242424;
-  border-radius: 8px;
-  transition: border-color 0.2s ease;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(249, 115, 22, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 .glass-card:hover {
-  border-color: #333333;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(249, 115, 22, 0.35);
 }
 
-/* ---------- Buttons ---------- */
+/* Cyber buttons */
 .btn-cyber-primary {
-  background: #ffffff;
+  background: hsl(var(--primary));
   border: none;
-  color: #000000;
-  border-radius: 6px;
-  padding: 11px 22px;
-  font-family: 'DM Sans', sans-serif;
+  color: hsl(var(--primary-foreground));
+  border-radius: 8px;
+  padding: 12px 28px;
   font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
   display: inline-block;
   text-align: center;
-  cursor: pointer;
 }
 .btn-cyber-primary:hover {
-  background: #f0f0f0;
+  opacity: 0.88;
 }
-/* legacy class kept for markup compat */
-.btn-cyber-primary-pulse { /* no animation */ }
+.btn-cyber-primary-pulse {
+  /* kept class for markup compat, no animation */
+}
 
 .btn-cyber-secondary {
   background: transparent;
-  border: 1px solid #333333;
-  color: #f5f5f5;
-  border-radius: 6px;
-  padding: 11px 22px;
-  font-family: 'DM Sans', sans-serif;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  border-radius: 8px;
+  padding: 12px 28px;
   font-size: 14px;
   font-weight: 500;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
   display: inline-block;
   text-align: center;
-  cursor: pointer;
 }
 .btn-cyber-secondary:hover {
-  border-color: #555555;
-  background: transparent;
+  border-color: hsl(var(--muted-foreground));
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.btn-cyber-accent {
-  background: transparent;
-  border: 1px solid #f97316;
-  color: #f97316;
-  border-radius: 6px;
-  padding: 11px 22px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-  display: inline-block;
-  text-align: center;
-  cursor: pointer;
-}
-.btn-cyber-accent:hover {
-  background: rgba(249, 115, 22, 0.08);
-}
-
-.btn-cyber-danger {
-  background: transparent;
-  border: 1px solid #ef4444;
-  color: #ef4444;
-  border-radius: 6px;
-  padding: 11px 22px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-  display: inline-block;
-  text-align: center;
-  cursor: pointer;
-}
-.btn-cyber-danger:hover {
-  background: rgba(239, 68, 68, 0.08);
-}
-
-/* ---------- Auth card (flat, no glass) ---------- */
+/* Auth glass card */
 .auth-glass-card {
   width: 100%;
   max-width: 420px;
-  background: #141414;
-  border: 1px solid #242424;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
   padding: 40px;
 }
 
 .auth-input {
   width: 100%;
-  background: #0d0d0d;
-  border: 1px solid #333333;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 6px;
-  color: #f5f5f5;
-  padding: 11px 14px;
-  font-family: 'DM Sans', sans-serif;
+  color: white;
+  padding: 12px 16px;
   font-size: 14px;
   transition: border-color 0.2s ease;
 }
 .auth-input::placeholder {
-  color: #444444;
+  color: rgba(255, 255, 255, 0.30);
 }
 .auth-input:focus {
   outline: none;
-  border-color: #555555;
+  border-color: #f97316;
 }
 
-/* ---------- Marquee (kept) ---------- */
+/* Marquee */
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

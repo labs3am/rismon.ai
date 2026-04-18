@@ -12,10 +12,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"DM Sans"', 'sans-serif'],
-        serif: ['"Instrument Serif"', 'serif'],
-        mono: ['"Geist Mono"', 'monospace'],
-        display: ['"Instrument Serif"', 'serif'],
+        sans: ['Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
