@@ -434,7 +434,7 @@ export default function Analyze() {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId, scanType, filesScanned, app]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
