@@ -608,8 +608,32 @@ export default function Analyze() {
               Most scans finish in 2–3 minutes. We'll redirect you automatically.
             </p>
 
-            <div className="flex justify-center mt-6">
-              <Link to="/dashboard" className="text-[13px] hover:text-foreground transition-colors" style={{ color: '#71717a' }}>
+            <div className="flex flex-col items-center gap-3 mt-6">
+              <button
+                onClick={async () => {
+                  if (!confirm('Cancel this scan? You can start a new one right after.')) return;
+                  try {
+                    if (pollRef.current) clearInterval(pollRef.current);
+                    if (scanSessionId) {
+                      await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', scanSessionId);
+                    }
+                    if (analysisId) {
+                      await supabase.from('analyses').update({ status: 'cancelled' }).eq('id', analysisId);
+                    }
+                    localStorage.removeItem('rismon_active_analysis');
+                    localStorage.removeItem('rismon_analysis_stage');
+                    toast.success('Scan cancelled. You can start a new one.');
+                    navigate('/dashboard');
+                  } catch {
+                    toast.error('Could not cancel. Please try again.');
+                  }
+                }}
+                className="text-[13px] px-4 py-2 rounded-lg transition-colors"
+                style={{ background: 'transparent', border: '1px solid #333', color: '#a1a1aa' }}
+              >
+                Cancel scan and start over
+              </button>
+              <Link to="/dashboard" className="text-[13px] hover:text-foreground transition-colors" style={{ color: '#52525b' }}>
                 ← Back to dashboard
               </Link>
             </div>
