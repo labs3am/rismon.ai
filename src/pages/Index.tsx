@@ -155,12 +155,20 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>HOW IT WORKS</p>
           <h2 className={HEADLINE}>Five steps to know your app completely</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-12">
+          <div className="mt-12 relative">
             {steps.map((s, i) => (
-              <div key={i}>
-                <p style={{ fontSize: '12px', color: '#f97316', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '8px' }}>{s.n}</p>
-                <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{s.title}</p>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{s.text}</p>
+              <div key={i} className="flex gap-6 relative pb-10 last:pb-0">
+                <div className="relative flex-shrink-0" style={{ width: '24px' }}>
+                  <div style={{ width: '10px', height: '10px', background: '#f97316', borderRadius: '50%', marginTop: '6px', marginLeft: '7px', position: 'relative', zIndex: 2 }} />
+                  {i < steps.length - 1 && (
+                    <div style={{ position: 'absolute', top: '20px', bottom: '-16px', left: '11px', width: '1px', background: '#f97316' }} />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p style={{ fontSize: '12px', color: '#f97316', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '8px' }}>{s.n}</p>
+                  <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{s.title}</p>
+                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{s.text}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -172,16 +180,33 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>WHAT WE FIND</p>
           <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
-          <div className="mt-12 max-w-[800px] mx-auto">
-            {findings.map((f, i) => (
-              <div key={i} className="vercel-finding">
-                <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
-                <p style={{ color: '#888888', fontSize: '14px' }}>{f.text}</p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-12">
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>BUSINESS PROBLEMS</p>
+              {businessProblems.map((f, i) => (
+                <div key={i} className="vercel-find-item">
+                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
+                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>SECURITY PROBLEMS</p>
+              {securityProblems.map((f, i) => (
+                <div key={i} className="vercel-find-item">
+                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
+                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="text-center" style={{ marginTop: '48px' }}>
+            <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>Rismon.ai checks all of these. In 60 seconds.</p>
+            <p style={{ fontSize: '14px', color: '#555555' }}>For free. No card needed.</p>
           </div>
         </div>
       </section>
+
 
       {/* SECURITY */}
       <section id="security-privacy" className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
