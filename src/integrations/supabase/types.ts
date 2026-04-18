@@ -19,10 +19,13 @@ export type Database = {
           app_id: string | null
           code_understanding: Json | null
           created_at: string | null
+          files_scanned: number | null
           fix_prompts: Json | null
           gaps: Json | null
           id: string
           intent_match_score: number | null
+          scan_duration_seconds: number | null
+          scan_type: string | null
           security_issues: Json | null
           smart_questions: Json | null
           status: string | null
@@ -36,10 +39,13 @@ export type Database = {
           app_id?: string | null
           code_understanding?: Json | null
           created_at?: string | null
+          files_scanned?: number | null
           fix_prompts?: Json | null
           gaps?: Json | null
           id?: string
           intent_match_score?: number | null
+          scan_duration_seconds?: number | null
+          scan_type?: string | null
           security_issues?: Json | null
           smart_questions?: Json | null
           status?: string | null
@@ -53,10 +59,13 @@ export type Database = {
           app_id?: string | null
           code_understanding?: Json | null
           created_at?: string | null
+          files_scanned?: number | null
           fix_prompts?: Json | null
           gaps?: Json | null
           id?: string
           intent_match_score?: number | null
+          scan_duration_seconds?: number | null
+          scan_type?: string | null
           security_issues?: Json | null
           smart_questions?: Json | null
           status?: string | null

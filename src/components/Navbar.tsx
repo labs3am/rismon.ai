@@ -37,7 +37,7 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-3">
           <Link to="/login" style={{ color: '#888888', fontSize: 14, transition: 'color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Log in</Link>
-          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, transition: 'background 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.background = '#e5e5e5')} onMouseLeave={e => (e.currentTarget.style.background = '#ffffff')}>Get Started</Link>
+          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '8px 18px', borderRadius: 6, fontSize: 14, fontWeight: 500, transition: 'background 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.background = '#e5e5e5')} onMouseLeave={e => (e.currentTarget.style.background = '#ffffff')}>Get Started</Link>
         </div>
 
         <button className="md:hidden" style={{ color: '#ffffff', background: 'transparent', border: 'none' }} onClick={() => setOpen(!open)}>

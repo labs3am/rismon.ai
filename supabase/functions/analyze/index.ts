@@ -31,6 +31,50 @@ function runSecurityPreChecks(codeBundle: string) {
 }
 
 // ============================================================
+// SECTION 1b: Pre-analysis — deterministic feature detection
+// ============================================================
+function runPreAnalysis(codeBundle: string) {
+  const code = codeBundle.toLowerCase();
+
+  const paymentKeywords = /stripe|lemonsqueezy|lemon\s*squeezy|paddle|razorpay|loadstripe|paymentintent|checkout\.session/i;
+  const hasPayments = paymentKeywords.test(codeBundle);
+
+  let paymentProvider: string | null = null;
+  if (hasPayments) {
+    if (/stripe|loadstripe/i.test(codeBundle)) paymentProvider = "Stripe";
+    else if (/lemonsqueezy|lemon\s*squeezy/i.test(codeBundle)) paymentProvider = "Lemon Squeezy";
+    else if (/paddle/i.test(codeBundle)) paymentProvider = "Paddle";
+    else if (/razorpay/i.test(codeBundle)) paymentProvider = "Razorpay";
+    else paymentProvider = "Other";
+  }
+
+  const hasUserAccounts = /supabase\.auth|signin|signup|signIn|signUp|user\.id|auth\.users/i.test(codeBundle);
+
+  const hasAdminRoutes = /\/admin|isadmin|admin_role|role\s*===?\s*['"]admin['"]/i.test(codeBundle);
+
+  const hasFreePaidTiers = /\bplan\b|\bsubscription\b|\bispro\b|\bisfree\b|\btier\b|\bpremium\b/i.test(codeBundle);
+
+  let detectedAppType = "unknown";
+  if (hasPayments && hasFreePaidTiers) detectedAppType = "SaaS";
+  else if (hasPayments) detectedAppType = "E-commerce/Marketplace";
+  else if (hasUserAccounts) detectedAppType = "User App";
+
+  let detectedPlatform = "unknown";
+  if (/from ['"]@supabase\/supabase-js['"]/i.test(codeBundle)) detectedPlatform = "Supabase";
+  if (/from ['"]react['"]/i.test(codeBundle)) detectedPlatform = detectedPlatform === "Supabase" ? "React + Supabase" : "React";
+
+  return {
+    hasPayments,
+    paymentProvider,
+    hasUserAccounts,
+    hasAdminRoutes,
+    hasFreePaidTiers,
+    detectedAppType,
+    detectedPlatform,
+  };
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -277,7 +321,9 @@ serve(async (req) => {
       concern,
       project_type,
       monetization,
+      scan_type,
     } = body;
+    const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
     // Get user plan
     const { data: planData } = await serviceClient.rpc("get_user_plan", { _user_id: user.id });
@@ -319,6 +365,7 @@ serve(async (req) => {
 
       // Pre-scan deterministic checks
       const securityPreFound = runSecurityPreChecks(totalBundle);
+      const preAnalysis = runPreAnalysis(totalBundle);
 
       // Probe Supabase tables
       const rlsFindings: any[] = [];
@@ -407,49 +454,126 @@ Return ONLY this JSON:
         mergedFacts = { app_understanding: merged, questions: uniqueQs };
       }
 
-      return new Response(JSON.stringify(mergedFacts), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ ...mergedFacts, pre_analysis: preAnalysis }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ============================================================
     // ACTION: analyze (stage 2 — Claude deep, then Gemini verifies)
     // ============================================================
     if (action === "analyze") {
-      const claudeSystemPrompt = `You are Rismon, an expert at finding business logic gaps in apps built with AI coding platforms (Lovable, Bolt, Cursor, Replit).
+      const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit. You analyze code for non-technical founders who have never written code.
 
 CRITICAL CONTEXT:
-1. GitHub contains React/TypeScript frontend code.
-2. Database lives in Supabase. Tables are NOT in GitHub. supabase.from() proves the database exists.
-3. Auth is Supabase Auth. supabase.auth proves real auth exists.
-4. Backend logic in Supabase Edge Functions. supabase.functions.invoke() proves a backend exists.
-5. Payments usually Stripe. loadStripe() / stripe imports prove Stripe exists.
+These apps have a specific architecture:
+1. GitHub contains React/TypeScript frontend code only.
+2. Database lives in Supabase. Tables are NOT stored in GitHub. If you see supabase.from() calls the database EXISTS. NEVER say database is missing just because SQL files are not in GitHub.
+3. Authentication is Supabase Auth. If you see supabase.auth calls real authentication EXISTS. NEVER say auth is fake if supabase.auth is used in code.
+4. Backend logic lives in Supabase Edge Functions. If you see supabase.functions.invoke() a real backend EXISTS.
+5. Payments: detect from imports. loadStripe = Stripe. Never assume payment doesn't work just because you see test keys.
 
-YOUR JOB: Find gaps between what the founder described and what the code does. Not a security scanner. Not a code reviewer. A business logic gap finder.
+PRE-ANALYSIS CONTEXT:
+You will receive this data detected from the code automatically:
+- hasPayments: true/false
+- paymentProvider: which one
+- hasUserAccounts: true/false
+- hasAdminRoutes: true/false
+- hasFreePaidTiers: true/false
+- detectedAppType: app type
+- detectedPlatform: tech stack
+- founderConcern: what worries them
+- paidFeatures: what paid users get
+- dataPrivacy: data sharing preference
+Use this context to make findings specific to their actual app.
 
-WHAT TO LOOK FOR:
-1. PAYMENT GAPS — free tier limits server-side or only hidden in React? Paid features payment-gated server-side?
-2. DATA SEPARATION — can User A see User B's data? Look for .eq('user_id', user.id).
-3. ROLE GAPS — admin routes protected server-side or only hidden in UI?
-4. BUSINESS RULE GAPS — usage limits, trial expiry, feature flags enforced server-side?
-5. FLOW GAPS — can payment step be skipped? Required steps bypassed?
+SCAN TYPE:
+You will be told if this is "quick" (free plan, 20 files) or "deep" (pro plan / try pro, full codebase).
+For quick scan: Analyze what you have. Note at end of summary: "This was a Quick Scan covering your most critical files."
+For deep scan: Full analysis. No disclaimers needed.
 
-ACCURACY RULES:
-- Only report MISSING if you have strong evidence it does not exist anywhere
-- supabase.from() proves database exists
-- supabase.auth proves auth exists
-- Frontend-only enforcement is a gap, but the feature itself exists
+YOUR ONLY JOB:
+Find gaps between what the founder described and what the code does. Find security issues that could hurt their business.
 
-RESPONSE FORMAT: ONLY valid JSON. No other text.
+LANGUAGE RULES - CRITICAL:
+NEVER use these technical terms:
+- RLS / Row Level Security
+- JWT / Token / Bearer
+- CORS / CSP / XSS / CSRF
+- SQL injection
+- Authentication / Authorization (say "login check" instead)
+- Vulnerability / CVE / CVSS
+- Misconfiguration
+- Sanitization / Validation
+- Frontend / Backend / Server-side
+- Environment variable
+- Supabase / PostgreSQL
+- Any programming language names
+- Any technical acronyms
+
+ALWAYS use plain English:
+"login check" not "authentication"
+"your secret key" not "API key"
+"anyone can read your data" not "RLS misconfigured"
+"payment check missing" not "authorization bypass"
+
+TEST EVERY SENTENCE:
+"Would someone who runs a restaurant understand this without Googling it?"
+If no → rewrite completely.
+
+FINDINGS FORMAT:
+For each issue found return:
 {
-  "intent_match_score": 0-100,
-  "summary": "2 sentences. What works well + biggest gap.",
-  "gaps": [{ "id": "g1", "severity": "critical|high|medium", "title": "max 8 words", "you_said": "what founder said", "what_was_built": "what code does", "business_impact": "real consequence" }],
-  "security_issues": [{ "id": "s1", "severity": "critical|high|medium|low", "title": "", "explanation": "", "business_impact": "" }],
-  "unknown_features": [{ "id": "u1", "feature_name": "", "description": "", "found_where": "", "risk_if_kept": "", "risk_if_removed": "" }],
-  "what_works": ["one sentence per positive"]
+  "severity": "critical|high|medium|low",
+  "title": "Plain English max 8 words",
+  "what_we_found": "One sentence. What exists in the code. No technical terms.",
+  "what_this_means": "Real world consequence. Use dollar amounts if relevant. Use number of users if relevant. Max 2 sentences.",
+  "how_to_fix": "Plain English steps. What to do in Lovable or Cursor.",
+  "fix_prompt": "Exact prompt to paste into Lovable or Cursor. Ready to use. No editing needed.",
+  "technical_reference": "Short technical name for developers to Google. Max 5 words. Example: supabase-rls-not-enabled",
+  "google_query": "Exact search term. Example: supabase row level security"
 }
-Max 5 gaps. Max 5 security findings. At least 2 positives.`;
 
-      const claudeUserContent = `App understanding: ${JSON.stringify(code_understanding)}
+INTENT SCORE FORMULA:
+Start with 100 points.
+Deduct per finding:
+Critical: -20 points
+High: -10 points
+Medium: -5 points
+Low: -2 points
+Minimum score: 0
+Maximum score: 100
+
+SCORE LABELS:
+90-100: "Launch ready"
+70-89: "Almost ready"
+50-69: "Needs work"
+30-49: "Not ready"
+0-29: "Critical issues"
+
+REPORT STRUCTURE:
+Return ONLY valid JSON:
+{
+  "score": number,
+  "score_label": string,
+  "summary": "2-3 sentences. What the app does well. What the biggest concern is. Plain English. Personalized to their specific app type.",
+  "verdict": "One sentence. Clear launch recommendation. Example: Fix the paywall issue before your first user signs up.",
+  "business_logic_gaps": [findings],
+  "security_findings": [findings],
+  "what_works": ["One sentence per positive finding. Something they did right."],
+  "scan_type": "quick or deep"
+}
+
+Maximum 5 business logic gaps.
+Maximum 5 security findings.
+Always find at least 2 positives.
+Always personalize to their app type.
+Never use technical jargon anywhere.
+
+RESPOND WITH JSON ONLY.
+No text before or after the JSON.`;
+
+      const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
+
+App understanding: ${JSON.stringify(code_understanding)}
 
 Founder described: ${founder_description}
 
@@ -466,6 +590,61 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
         claudeResult = parseJSON(claudeText);
       } catch {
         return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ----------------------------------------------------------
+      // Normalize new Rismon prompt shape -> legacy shape expected
+      // by the rest of the app (DB columns, Analyze.tsx, Report.tsx)
+      // New keys: score, score_label, verdict, business_logic_gaps,
+      //          security_findings, what_works, summary
+      // Legacy keys: intent_match_score, gaps, security_issues,
+      //              unknown_features, what_works, summary
+      // ----------------------------------------------------------
+      const mapFinding = (f: any, idx: number, prefix: string) => {
+        const id = f?.id || `${prefix}-${idx + 1}`;
+        const severity = (f?.severity || "medium").toLowerCase();
+        const title = f?.title || "Issue";
+        const what_we_found = f?.what_we_found || f?.you_said || "";
+        const what_this_means = f?.what_this_means || f?.business_impact || "";
+        const how_to_fix = f?.how_to_fix || "";
+        return {
+          id,
+          severity,
+          title,
+          // legacy gap fields used by Report.tsx
+          you_said: what_we_found,
+          what_was_built: what_we_found,
+          business_impact: what_this_means,
+          // legacy security fields used by Report.tsx
+          explanation: what_we_found || what_this_means,
+          status: "failed",
+          // keep new fields for fix-prompt generation downstream
+          what_we_found,
+          what_this_means,
+          how_to_fix,
+          fix_prompt: f?.fix_prompt || "",
+          technical_reference: f?.technical_reference || "",
+          google_query: f?.google_query || "",
+        };
+      };
+
+      if (claudeResult && (claudeResult.business_logic_gaps || claudeResult.security_findings || typeof claudeResult.score === "number")) {
+        const gapsArr = Array.isArray(claudeResult.business_logic_gaps) ? claudeResult.business_logic_gaps : [];
+        const secArr = Array.isArray(claudeResult.security_findings) ? claudeResult.security_findings : [];
+        const works = Array.isArray(claudeResult.what_works) ? claudeResult.what_works : [];
+
+        const score = typeof claudeResult.score === "number" ? claudeResult.score : null;
+        const summary = [claudeResult.summary, claudeResult.verdict].filter(Boolean).join(" ");
+
+        claudeResult = {
+          ...claudeResult,
+          intent_match_score: score,
+          gaps: gapsArr.map((g: any, i: number) => mapFinding(g, i, "g")),
+          security_issues: secArr.map((s: any, i: number) => mapFinding(s, i, "s")),
+          what_works: works,
+          unknown_features: Array.isArray(claudeResult.unknown_features) ? claudeResult.unknown_features : [],
+          summary: summary || claudeResult.summary || "",
+        };
       }
 
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts

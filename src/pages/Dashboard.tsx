@@ -131,7 +131,7 @@ export default function Dashboard() {
     await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        scopes: 'repo read:user',
+        scopes: 'repo read:user user:email',
         redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
         skipBrowserRedirect: false
       }
@@ -174,7 +174,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
+      <div className="max-w-[1100px] mx-auto pt-24 pb-16" style={{ paddingLeft: 48, paddingRight: 48 }}>
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
@@ -191,28 +191,91 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Free Plan Status Card */}
-        <div className="mt-6 mb-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
-                <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
-                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
-                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+        {/* Plan Status Card */}
+        {(() => {
+          const plan = (profile?.plan || 'free').toLowerCase();
+          const proCredits = profile?.pro_credits ?? 0;
+          const cardBase: React.CSSProperties = { background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: '20px 24px' };
+
+          if (plan === 'pro') {
+            return (
+              <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #f97316' }}>
+                <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRO</p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                  <span style={{ fontSize: 13, color: '#555555' }}>Unlimited apps</span>
+                  <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                  <span style={{ fontSize: 13, color: '#555555' }}>Unlimited scans</span>
+                  <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                  <span style={{ fontSize: 13, color: '#555555' }}>Deep scan enabled</span>
+                </div>
               </div>
-              <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
+            );
+          }
+
+          if (plan === 'try_pro' || plan === 'trypro') {
+            const used = proCredits <= 0;
+            return (
+              <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #ffffff' }}>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TRY PRO</p>
+                    {used ? (
+                      <>
+                        <p style={{ color: '#ffffff', fontSize: 14, marginTop: 8 }}>Deep scan used</p>
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>Your app has been fully analyzed.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ color: '#ffffff', fontSize: 14, marginTop: 8 }}>1 Deep Scan available</p>
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>Use it on your connected app before it expires.</p>
+                      </>
+                    )}
+                  </div>
+                  {used ? (
+                    <button
+                      onClick={() => setWaitlistOpen(true)}
+                      style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '8px 16px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+                    >
+                      Buy another deep scan
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => apps[0] && handleAnalyzeNow(apps[0])}
+                      style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                    >
+                      Run Deep Scan
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          // FREE
+          return (
+            <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #f97316' }}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                    <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
+                    <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                    <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
+                    <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                    <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
+                </div>
+                <button
+                  onClick={() => setWaitlistOpen(true)}
+                  style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setWaitlistOpen(true)}
-              style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
-            >
-              Upgrade to Pro
-            </button>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -222,15 +285,15 @@ export default function Dashboard() {
             { v: stats.totalGaps, l: 'Total gaps found' },
             { v: stats.totalSecurity, l: 'Security issues found' },
           ].map((s, i) => (
-            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: 24 }}>
-              <p style={{ color: '#ffffff', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
-              <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>{s.l}</p>
+            <div key={i} style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: 24 }}>
+              <p style={{ color: '#ffffff', fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
+              <p style={{ color: '#555555', fontSize: 13, marginTop: 8 }}>{s.l}</p>
             </div>
           ))}
         </div>
 
         {/* Weekly limit */}
-        {weeklyLimitReached && (
+        {weeklyLimitReached && (profile?.plan || 'free').toLowerCase() === 'free' && (
           <div className="mt-6 p-4 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8 }}>
             <Clock size={20} className="shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div>
@@ -253,51 +316,96 @@ export default function Dashboard() {
           <div className="mt-12">
             <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
             <div className="mt-4 space-y-4">
-              {apps.map(app => (
-                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>{app.app_name}</p>
-                        {app.platform && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
+              {apps.map(app => {
+                const isPro = (profile?.plan || 'free').toLowerCase() === 'pro';
+                return (
+                  <div key={app.id} style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: '20px 24px' }}>
+                    <div className="flex items-start justify-between gap-6 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {app.github_repo_name && <Github size={15} style={{ color: '#ffffff' }} />}
+                          <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>
+                            {app.github_repo_name ? `${app.github_owner}/${app.github_repo_name}` : app.app_name}
+                          </p>
+                          {isPro && (
+                            <span style={{ background: 'transparent', border: '1px solid #333333', color: '#888888', fontSize: 10, padding: '2px 8px', borderRadius: 4, letterSpacing: '0.05em' }}>
+                              DEEP SCAN
+                            </span>
+                          )}
+                          {app.platform && (
+                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>
+                          )}
+                        </div>
+                        {app.has_analyses && app.latest_date ? (
+                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
+                        ) : (
+                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
+                        )}
                       </div>
-                      {app.github_repo_name && (
-                        <div className="flex items-center gap-1.5 mt-1.5"><Github size={13} style={{ color: '#555555' }} /><span style={{ color: '#555555', fontSize: 13 }}>{app.github_owner}/{app.github_repo_name}</span></div>
+
+                      {app.has_analyses && app.latest_score !== null && (
+                        <div className="text-right">
+                          <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
+                            {app.latest_score}
+                          </p>
+                          <p style={{ fontSize: 11, color: '#555555', marginTop: 4 }}>Intent Score</p>
+                        </div>
                       )}
-                      {app.has_analyses && app.latest_date ? (
-                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
-                      ) : (
-                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
-                      )}
+
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => handleAnalyzeNow(app)}
+                          style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                        >
+                          Analyze now
+                        </button>
+                        {app.has_analyses && app.latest_analysis_id && (
+                          <Link
+                            to={`/report/${app.latest_analysis_id}`}
+                            style={{ border: '1px solid #333333', color: '#ffffff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent', textAlign: 'center' }}
+                          >
+                            View report
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                    {app.has_analyses && app.latest_score !== null && (
-                      <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
-                        {app.latest_score}
-                      </div>
-                    )}
                   </div>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleAnalyzeNow(app)}
-                      style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
-                    >
-                      Analyze now
-                    </button>
-                    {app.has_analyses && app.latest_analysis_id && (
-                      <Link
-                        to={`/report/${app.latest_analysis_id}`}
-                        style={{ border: '1px solid #1a1a1a', color: '#ffffff', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent' }}
-                      >
-                        View report
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 14, marginTop: 16, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">
-              Unlock unlimited apps →
-            </button>
+
+            {/* Locked / Add-app cards by plan */}
+            {(() => {
+              const plan = (profile?.plan || 'free').toLowerCase();
+              if (plan === 'pro') {
+                return (
+                  <Link
+                    to="/connect"
+                    className="mt-4 block text-center transition-colors"
+                    style={{ background: 'transparent', border: '1px dashed #333333', borderRadius: 8, padding: '16px 24px', fontSize: 14, color: '#555555' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#555555')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#333333')}
+                  >
+                    + Connect another app
+                  </Link>
+                );
+              }
+              if (plan === 'try_pro' || plan === 'trypro') {
+                return null;
+              }
+              // FREE — locked card
+              return (
+                <div className="mt-4 text-center" style={{ background: '#0a0a0a', border: '1px dashed #222222', borderRadius: 8, padding: '20px 24px', opacity: 0.6 }}>
+                  <p style={{ fontSize: 14, color: '#555555' }}>Want to scan another app?</p>
+                  <button
+                    onClick={() => setWaitlistOpen(true)}
+                    style={{ background: 'transparent', border: '1px solid #f97316', color: '#f97316', padding: '8px 16px', borderRadius: 6, fontSize: 13, marginTop: 12, cursor: 'pointer' }}
+                  >
+                    Unlock unlimited apps
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>

@@ -263,10 +263,51 @@ export default function Connect() {
               <div className="mt-6">
                 {!usePatMode ? (
                   <div className="text-center">
+                    {/* Trust section */}
+                    <div
+                      className="text-left"
+                      style={{
+                        background: '#0a0a0a',
+                        border: '1px solid #1a1a1a',
+                        borderRadius: 8,
+                        padding: '16px 20px',
+                        marginBottom: 24,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', marginBottom: 12 }}>
+                        What Rismon accesses
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {['Read your code files', 'Cannot edit your code', 'Cannot delete anything', 'Cannot push or commit'].map((label) => (
+                          <div key={label} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#888888', alignItems: 'center' }}>
+                            <CheckCircle size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
+                            <span>{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#444444', marginTop: 12 }}>
+                        You can revoke access anytime in your GitHub settings.
+                      </div>
+                    </div>
+
                     <Github size={40} className="text-muted-foreground mx-auto" />
                     <button onClick={connectGithub} className="mt-4 border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto hover:border-muted-foreground/30 transition-colors">
                       <Github size={16} /> Connect GitHub
                     </button>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: '#444444',
+                        textAlign: 'center',
+                        marginTop: 12,
+                        maxWidth: 400,
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      GitHub will show an authorization screen. You may see your organizations listed. You do not need to grant organization access. Just click Authorize labs3am.
+                    </p>
                     <button onClick={() => setUsePatMode(true)} className="mt-3 text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center gap-1.5 mx-auto">
                       <KeyRound size={12} /> Don't want to grant org access? Use a personal token
                     </button>
