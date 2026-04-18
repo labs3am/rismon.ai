@@ -93,7 +93,7 @@ export default function Index() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
             <Link to="/signup" className="btn-cyber-primary">Get started free</Link>
-            <Link to="/sample-report" className="btn-cyber-primary">See a sample report</Link>
+            <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#444444', marginTop: '12px' }}>Free forever. No credit card required.</p>
         </div>
