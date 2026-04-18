@@ -313,6 +313,14 @@
   cursor: default;
 }
 
+.vercel-find-item {
+  padding: 16px 0 16px 16px;
+  border-bottom: 1px solid #ffffff08;
+  border-left: 2px solid #1a1a1a;
+  transition: border-color 0.2s ease;
+}
+.vercel-find-item:hover { border-left-color: #f97316; }
+
 .vercel-platform {
   border: 1px solid #ffffff0f;
   border-radius: 8px;
