@@ -285,7 +285,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* PRICING */}
+      <hr className="section-divider" />
       <section id="pricing" className="cyber-section py-28 px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="text-center">
@@ -368,16 +368,29 @@ export default function Index() {
         </div>
       </section>
 
+      <hr className="section-divider" />
+
       {/* WHY WE BUILT THIS */}
       <section className="cyber-section py-28 px-6">
-        <div className="max-w-[720px] mx-auto text-center">
-          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase">WHY WE BUILT THIS</p>
-          <h2 className="text-foreground text-[28px] md:text-4xl font-semibold mt-3">Every founder deserves to understand what they built</h2>
-          <p className="text-muted-foreground text-base leading-[1.8] mt-6 text-left">
-            AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours. But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe. Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix. In plain English. Every time.
-          </p>
+        <div className="max-w-[1100px] mx-auto">
+          <p className="text-primary text-xs font-semibold tracking-[0.1em] uppercase text-center md:text-left">WHY WE BUILT THIS</p>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mt-6">
+            <div className="md:col-span-2">
+              <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#f5f5f5', lineHeight: 1.3 }}>
+                Every founder deserves to understand what they built.
+              </h2>
+            </div>
+            <div className="md:col-span-3 space-y-4" style={{ fontSize: '15px', color: '#888888', lineHeight: 1.7 }}>
+              <p>AI tools have made building software accessible to everyone. Anyone can now describe an idea and have a working app in hours.</p>
+              <p>But most of these founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
+              <p>Rismon.ai exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix.</p>
+              <p>In plain English. Every time.</p>
+            </div>
+          </div>
         </div>
       </section>
+
+      <hr className="section-divider" />
 
       {/* FAQ */}
       <section id="faq" className="cyber-section py-28 px-6">
@@ -388,9 +401,9 @@ export default function Index() {
           </div>
           <Accordion type="single" collapsible className="mt-12">
             {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+              <AccordionItem key={i} value={`faq-${i}`} className="faq-item border-0">
                 <AccordionTrigger className="text-foreground text-[16px] font-medium hover:no-underline hover:text-primary py-5">{faq.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-[15px] leading-[1.7]">{faq.a}</AccordionContent>
+                <AccordionContent className="text-muted-foreground text-[15px] leading-[1.7] pb-4">{faq.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
