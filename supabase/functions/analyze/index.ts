@@ -321,7 +321,9 @@ serve(async (req) => {
       concern,
       project_type,
       monetization,
+      scan_type,
     } = body;
+    const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
     // Get user plan
     const { data: planData } = await serviceClient.rpc("get_user_plan", { _user_id: user.id });
@@ -494,7 +496,9 @@ RESPONSE FORMAT: ONLY valid JSON. No other text.
 }
 Max 5 gaps. Max 5 security findings. At least 2 positives.`;
 
-      const claudeUserContent = `App understanding: ${JSON.stringify(code_understanding)}
+      const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
+
+App understanding: ${JSON.stringify(code_understanding)}
 
 Founder described: ${founder_description}
 

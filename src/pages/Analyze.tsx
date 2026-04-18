@@ -41,6 +41,9 @@ export default function Analyze() {
 
   const [scanSessionId, setScanSessionId] = useState<string | null>(null);
   const [resumingSession, setResumingSession] = useState(false);
+  const [scanType, setScanType] = useState<'quick' | 'deep'>('quick');
+  const [filesScanned, setFilesScanned] = useState(0);
+  const scanStartedAtRef = useRef<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Persist stage to localStorage
@@ -138,14 +141,36 @@ export default function Analyze() {
     readingStarted.current = true;
 
     const run = async () => {
+      scanStartedAtRef.current = Date.now();
       try {
         const { data: { session: s } } = await supabase.auth.getSession();
         const token = s?.provider_token;
         if (!token) { toast.error('GitHub token expired. Please reconnect GitHub from the connect page.'); navigate('/dashboard'); return; }
 
+        // Plan check — determines scan depth
+        const { data: planRow } = await supabase
+          .from('profiles')
+          .select('plan, pro_credits')
+          .eq('id', user.id)
+          .single();
+        const planName = (planRow?.plan || 'free') as string;
+        const proCredits = planRow?.pro_credits ?? 0;
+
+        // Try Pro with no credits left → block scan and reset to free
+        if (planName === 'try_pro' && proCredits <= 0) {
+          await supabase.from('profiles').update({ plan: 'free' }).eq('id', user.id);
+          toast.error('You have used your deep scan credit. Your plan has been reset to free.');
+          navigate('/dashboard');
+          return;
+        }
+
+        const isDeepScan = planName === 'try_pro' || planName === 'pro';
+        const localScanType: 'quick' | 'deep' = isDeepScan ? 'deep' : 'quick';
+        setScanType(localScanType);
+
         // Create analysis record first
         const { data: analysis } = await supabase.from('analyses').insert({
-          app_id: appId, user_id: user.id, status: 'reading'
+          app_id: appId, user_id: user.id, status: 'reading', scan_type: localScanType
         }).select().single();
         if (analysis) {
           setAnalysisId(analysis.id);
@@ -167,36 +192,54 @@ export default function Analyze() {
         if (!treeRes.ok) { toast.error('Failed to read repository'); navigate('/dashboard'); return; }
         const tree = await treeRes.json();
 
-        const keywords = [
-          'auth', 'login', 'signup', 'register',
-          'payment', 'pay', 'stripe', 'razorpay', 'subscription', 'billing', 'checkout',
-          'user', 'profile', 'account', 'member',
-          'admin', 'dashboard', 'settings',
-          'route', 'router', 'navigate', 'page',
-          'api', 'endpoint', 'handler', 'server',
-          'middleware', 'guard', 'protect', 'private',
-          'supabase', 'database', 'schema', 'table',
-          'hook', 'context', 'provider', 'store',
-          'connect', 'github', 'repo', 'analyze',
-          'report', 'scan', 'limit', 'plan', 'free', 'pro',
-          'email', 'waitlist', 'notify',
-          'component', 'layout'
-        ];
         const exts = ['.ts', '.tsx', '.js', '.jsx', '.json'];
         const allBlobs = (tree.tree || []).filter((f: any) => f.type === 'blob');
 
-        // Frontend files (keyword-matched)
-        const frontendFiles = allBlobs
-          .filter((f: any) => exts.some(e => f.path.endsWith(e)) && !f.path.startsWith('supabase/functions/') && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
-          .slice(0, 40);
+        let frontendFiles: any[] = [];
+        let edgeFiles: any[] = [];
 
-        // Edge function files (everything in supabase/functions/)
-        const edgeFiles = allBlobs
-          .filter((f: any) => f.path.startsWith('supabase/functions/') && (f.path.endsWith('.ts') || f.path.endsWith('.js')) && (f.size || 0) < 80000)
-          .slice(0, 30);
+        if (localScanType === 'quick') {
+          // FREE PLAN: prioritized list, capped at 20 files total.
+          const candidate = allBlobs.filter((f: any) =>
+            exts.some(e => f.path.endsWith(e)) &&
+            !f.path.startsWith('supabase/functions/') &&
+            (f.size || 0) < 50000
+          );
+
+          const priority = (path: string): number => {
+            const p = path.toLowerCase();
+            if (p === 'package.json' || p.endsWith('/package.json')) return 1;
+            if (/(auth|login|signup|signin|register)/.test(p)) return 2;
+            if (/(payment|stripe|checkout|billing|subscription|razorpay)/.test(p)) return 3;
+            if (/(route|router|app\.tsx|app\.jsx|main\.tsx|main\.jsx)/.test(p)) return 4;
+            if (/(supabase|client\.ts|integrations\/supabase)/.test(p)) return 5;
+            if (/(pages\/|page\.tsx|page\.jsx)/.test(p)) return 6;
+            if (/(query|queries|database|schema|hook)/.test(p)) return 7;
+            return 99;
+          };
+
+          frontendFiles = candidate
+            .map((f: any) => ({ ...f, _prio: priority(f.path) }))
+            .sort((a: any, b: any) => a._prio - b._prio || a.path.localeCompare(b.path))
+            .slice(0, 20);
+          edgeFiles = []; // free plan: no edge function scan
+        } else {
+          // TRY PRO / PRO: fetch ALL files, no cap.
+          frontendFiles = allBlobs.filter((f: any) =>
+            exts.some(e => f.path.endsWith(e)) &&
+            !f.path.startsWith('supabase/functions/') &&
+            (f.size || 0) < 50000
+          );
+          edgeFiles = allBlobs.filter((f: any) =>
+            f.path.startsWith('supabase/functions/') &&
+            (f.path.endsWith('.ts') || f.path.endsWith('.js')) &&
+            (f.size || 0) < 80000
+          );
+        }
 
         const totalFilesToFetch = frontendFiles.length + edgeFiles.length;
         setTotalFiles(totalFilesToFetch);
+        setFilesScanned(totalFilesToFetch);
 
         // Fetch frontend
         let codeBundle = '';
@@ -256,7 +299,7 @@ export default function Analyze() {
 
         // Call edge function
         const { data, error } = await supabase.functions.invoke('analyze', {
-          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key }
+          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key, scan_type: localScanType }
         });
         if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
 
@@ -295,6 +338,7 @@ export default function Analyze() {
           await supabase.from('analyses').update({
             code_understanding: data.app_understanding,
             smart_questions: data.questions,
+            files_scanned: totalFilesToFetch,
             status: 'questions_ready'
           }).eq('id', analysis.id);
         }
@@ -329,15 +373,38 @@ export default function Analyze() {
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
-        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
+        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization, scan_type: scanType }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
+
+      const durationSeconds = scanStartedAtRef.current
+        ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)
+        : null;
 
       await supabase.from('analyses').update({
         user_answers: answers, gaps: data.gaps, unknown_features: data.unknown_features,
         security_issues: data.security_issues, what_works: data.what_works,
-        intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
+        intent_match_score: data.intent_match_score, summary: data.summary,
+        scan_type: scanType,
+        files_scanned: filesScanned,
+        scan_duration_seconds: durationSeconds,
+        status: 'review_pending'
       }).eq('id', analysisId);
+
+      // Try Pro: deduct 1 deep-scan credit (stored in profiles.pro_credits).
+      // If this drops to 0, reset plan back to free so the next visit shows the free state.
+      if (scanType === 'deep' && user) {
+        const { data: planRow } = await supabase
+          .from('profiles').select('plan, pro_credits').eq('id', user.id).single();
+        if (planRow?.plan === 'try_pro') {
+          const remaining = Math.max(0, (planRow.pro_credits ?? 0) - 1);
+          await supabase.from('profiles').update({
+            pro_credits: remaining,
+            ...(remaining === 0 ? { plan: 'free' } : {}),
+          }).eq('id', user.id);
+        }
+        // plan === 'pro' → never deduct, unlimited.
+      }
 
       // Update scan_session to complete
       if (scanSessionId) {
@@ -367,7 +434,7 @@ export default function Analyze() {
       toast.error('Analysis failed');
       analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId, scanType, filesScanned, app]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
