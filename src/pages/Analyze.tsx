@@ -338,6 +338,7 @@ export default function Analyze() {
           await supabase.from('analyses').update({
             code_understanding: data.app_understanding,
             smart_questions: data.questions,
+            files_scanned: totalFilesToFetch,
             status: 'questions_ready'
           }).eq('id', analysis.id);
         }
@@ -372,15 +373,38 @@ export default function Analyze() {
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
-        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization }
+        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization, scan_type: scanType }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
+
+      const durationSeconds = scanStartedAtRef.current
+        ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)
+        : null;
 
       await supabase.from('analyses').update({
         user_answers: answers, gaps: data.gaps, unknown_features: data.unknown_features,
         security_issues: data.security_issues, what_works: data.what_works,
-        intent_match_score: data.intent_match_score, summary: data.summary, status: 'review_pending'
+        intent_match_score: data.intent_match_score, summary: data.summary,
+        scan_type: scanType,
+        files_scanned: filesScanned,
+        scan_duration_seconds: durationSeconds,
+        status: 'review_pending'
       }).eq('id', analysisId);
+
+      // Try Pro: deduct 1 deep-scan credit (stored in profiles.pro_credits).
+      // If this drops to 0, reset plan back to free so the next visit shows the free state.
+      if (scanType === 'deep' && user) {
+        const { data: planRow } = await supabase
+          .from('profiles').select('plan, pro_credits').eq('id', user.id).single();
+        if (planRow?.plan === 'try_pro') {
+          const remaining = Math.max(0, (planRow.pro_credits ?? 0) - 1);
+          await supabase.from('profiles').update({
+            pro_credits: remaining,
+            ...(remaining === 0 ? { plan: 'free' } : {}),
+          }).eq('id', user.id);
+        }
+        // plan === 'pro' → never deduct, unlimited.
+      }
 
       // Update scan_session to complete
       if (scanSessionId) {
