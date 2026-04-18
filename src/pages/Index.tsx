@@ -83,22 +83,27 @@ export default function Index() {
       {/* HERO */}
       <section className="pt-40 pb-16 px-6 text-center relative">
         <div className="max-w-[800px] mx-auto relative">
+          <span className="block mb-4" style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#f97316' }}>
+            Intent Verification for AI-Built Apps
+          </span>
           <h1 className="text-[40px] md:text-[64px] font-bold text-foreground leading-[1.1]">Do you know what your<br />AI actually built?</h1>
           <p className="text-xs font-semibold uppercase tracking-[0.1em] mt-4 text-primary">Made for non-technical founders</p>
           <p className="text-muted-foreground text-lg leading-[1.7] max-w-[560px] mx-auto mt-5">
             Rismon.ai reads your app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
-            <Link to="/signup" className="btn-cyber-primary">Get started free</Link>
-            <Link to="/sample-report" className="btn-cyber-secondary">See a sample report</Link>
+            <Link to="/signup" className="btn-hero-primary">Get started free</Link>
+            <Link to="/sample-report" className="btn-hero-secondary">See a sample report</Link>
           </div>
-          <p className="text-subtle text-[13px] mt-5">Free to start. No credit card needed.</p>
+          <p style={{ fontSize: '13px', color: '#444444', marginTop: '12px' }}>Free forever. No credit card required.</p>
         </div>
       </section>
 
+      <hr className="section-divider" />
+
       {/* PLATFORM MARQUEE */}
       <section className="pb-28 px-6">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-center mb-5" style={{ color: '#3f3f46' }}>Works with every AI coding platform</p>
+        <p className="text-center mb-5" style={{ fontSize: '12px', color: '#888888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Works with every AI coding platform</p>
         <div className="marquee-mask max-w-[900px] mx-auto">
           <div className="marquee-track">
             {doubled.map((p, i) => (
@@ -114,6 +119,8 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      <hr className="section-divider" />
 
       {/* NOT SURE */}
       <section className="cyber-section px-6 pb-28 pt-28">
