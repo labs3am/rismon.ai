@@ -1,0 +1,2 @@
+UPDATE public.scan_sessions SET status='cancelled' WHERE id='fe58da2d-86eb-4384-bf1a-65bb5f65aaad';
+UPDATE public.analyses SET status='cancelled' WHERE id='855c6a85-20b8-482c-8d8c-23c8c27e9df4' AND (code_understanding IS NULL OR gaps IS NULL);
