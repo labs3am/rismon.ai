@@ -137,12 +137,60 @@ async function callClaude(systemPrompt: string, userContent: string) {
   });
 
   if (!res.ok) {
-    console.error("Claude error:", res.status);
+    const status = res.status;
+    const errBody = await res.text().catch(() => "");
+    console.error(`Claude error [${status}]:`, errBody.slice(0, 300));
+    // Tag retryable errors so the wrapper can fall back
+    if (status === 429 || status === 529 || status >= 500) {
+      const e: any = new Error("CLAUDE_RETRYABLE");
+      e.status = status;
+      throw e;
+    }
     throw new Error("AI_ERROR");
   }
 
   const data = await res.json();
   return data.content?.[0]?.text || "";
+}
+
+// Hybrid: try Claude first (preserves the original report voice/structure).
+// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the EXACT
+// same system prompt — Claude's prompt already enforces the report style and
+// JSON shape, so the output stays consistent.
+async function callClaudeWithFallback(systemPrompt: string, userContent: string) {
+  try {
+    return await callClaude(systemPrompt, userContent);
+  } catch (e: any) {
+    if (e?.message === "CLAUDE_RETRYABLE") {
+      console.warn(`Claude unavailable (${e.status}). Falling back to Gemini 2.5 Pro with Claude's prompt.`);
+      // Reuse Claude's system prompt verbatim so the report style matches.
+      // Do NOT append HOUSE_STYLE here — Claude's prompt already defines the voice.
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+      const res = await fetch(LOVABLE_AI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const status = res.status;
+        const body = await res.text().catch(() => "");
+        console.error(`Gemini fallback error [${status}]:`, body.slice(0, 300));
+        if (status === 429) throw new Error("RATE_LIMITED");
+        if (status === 402) throw new Error("CREDITS_EXHAUSTED");
+        throw new Error("AI_ERROR");
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    }
+    throw e;
+  }
 }
 
 function parseJSON(text: string): any {
@@ -584,7 +632,7 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaude(claudeSystemPrompt, claudeUserContent);
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
