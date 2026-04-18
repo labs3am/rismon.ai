@@ -32,8 +32,11 @@ export default function Login() {
       <Navbar />
       <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
         <div className="auth-glass-card">
-          <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Welcome back</h1>
-          <p style={{ color: '#888888', fontSize: 14, marginTop: 6, marginBottom: 32 }}>Good to see you again</p>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>Rismon.ai</span>
+          </div>
+          <h1 style={{ color: '#ffffff', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em' }}>Welcome back</h1>
+          <p style={{ color: '#888888', fontSize: 15, marginTop: 6, marginBottom: 32 }}>Good to see you again</p>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Email address</label>
