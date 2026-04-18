@@ -16,7 +16,7 @@ export default function Footer() {
             <a href="https://labs3am.com" target="_blank" rel="noopener noreferrer" style={{ color: '#888888' }} className="hover:underline">Labs3am</a>
           </p>
           <div className="flex items-center gap-3 mt-4">
-            <a href="https://github.com/rismonai" target="_blank" rel="noopener noreferrer" aria-label="GitHub" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+            <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" aria-label="GitHub" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
               <Github size={18} />
             </a>
             <a href="https://twitter.com/rismonai" target="_blank" rel="noopener noreferrer" aria-label="Twitter" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
