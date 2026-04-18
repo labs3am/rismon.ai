@@ -254,28 +254,42 @@ export default function Dashboard() {
             <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
             <div className="mt-4 space-y-4">
               {apps.map(app => (
-                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 24 }}>
-                  <div className="flex items-center justify-between">
-                    <p style={{ color: '#ffffff', fontSize: 18, fontWeight: 600 }}>{app.app_name}</p>
-                    {app.platform && <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
-                  </div>
-                  {app.github_repo_name && (
-                    <div className="flex items-center gap-1.5 mt-2"><Github size={14} style={{ color: '#888888' }} /><span style={{ color: '#888888', fontSize: 14 }}>{app.github_owner}/{app.github_repo_name}</span></div>
-                  )}
-                  <div className="mt-4">
-                    {app.has_analyses && app.latest_score !== null ? (
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full flex items-center justify-center" style={{ width: 44, height: 44, fontSize: 14, fontWeight: 600, background: scoreColor(app.latest_score).bg, color: scoreColor(app.latest_score).text }}>{app.latest_score}</div>
-                        <span style={{ color: '#888888', fontSize: 13 }}>Last analyzed {app.latest_date ? relativeDate(app.latest_date) : ''}</span>
+                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>{app.app_name}</p>
+                        {app.platform && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
                       </div>
-                    ) : (
-                      <p style={{ color: '#555555', fontSize: 13, fontStyle: 'italic' }}>Not analyzed yet</p>
+                      {app.github_repo_name && (
+                        <div className="flex items-center gap-1.5 mt-1.5"><Github size={13} style={{ color: '#555555' }} /><span style={{ color: '#555555', fontSize: 13 }}>{app.github_owner}/{app.github_repo_name}</span></div>
+                      )}
+                      {app.has_analyses && app.latest_date ? (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
+                      ) : (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
+                      )}
+                    </div>
+                    {app.has_analyses && app.latest_score !== null && (
+                      <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
+                        {app.latest_score}
+                      </div>
                     )}
                   </div>
-                  <div className="flex gap-3 mt-5">
-                    <button onClick={() => handleAnalyzeNow(app)} className="btn-cyber-primary">Analyze now</button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleAnalyzeNow(app)}
+                      style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                    >
+                      Analyze now
+                    </button>
                     {app.has_analyses && app.latest_analysis_id && (
-                      <Link to={`/report/${app.latest_analysis_id}`} className="btn-cyber-secondary">View last report</Link>
+                      <Link
+                        to={`/report/${app.latest_analysis_id}`}
+                        style={{ border: '1px solid #1a1a1a', color: '#ffffff', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent' }}
+                      >
+                        View report
+                      </Link>
                     )}
                   </div>
                 </div>
