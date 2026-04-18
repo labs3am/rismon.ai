@@ -237,17 +237,40 @@ export default function Analyze() {
             .slice(0, 20);
           edgeFiles = []; // free plan: no edge function scan
         } else {
-          // TRY PRO / PRO: fetch ALL files, no cap.
-          frontendFiles = allBlobs.filter((f: any) =>
+          // TRY PRO / PRO: priority-sorted, capped at 40 files total to stay under edge timeout.
+          const frontCandidates = allBlobs.filter((f: any) =>
             exts.some(e => f.path.endsWith(e)) &&
             !f.path.startsWith('supabase/functions/') &&
             (f.size || 0) < 50000
           );
-          edgeFiles = allBlobs.filter((f: any) =>
+          const edgeCandidates = allBlobs.filter((f: any) =>
             f.path.startsWith('supabase/functions/') &&
             (f.path.endsWith('.ts') || f.path.endsWith('.js')) &&
             (f.size || 0) < 80000
           );
+
+          const priority = (path: string): number => {
+            const p = path.toLowerCase();
+            if (p === 'package.json' || p.endsWith('/package.json')) return 1;
+            if (/(auth|login|signup|signin|register)/.test(p)) return 2;
+            if (/(payment|stripe|checkout|billing|subscription|razorpay)/.test(p)) return 3;
+            if (/(route|router|app\.tsx|app\.jsx|main\.tsx|main\.jsx)/.test(p)) return 4;
+            if (/(supabase|client\.ts|integrations\/supabase)/.test(p)) return 5;
+            if (/(pages\/|page\.tsx|page\.jsx)/.test(p)) return 6;
+            if (/(query|queries|database|schema|hook)/.test(p)) return 7;
+            return 99;
+          };
+
+          // Reserve up to 10 slots for edge functions, rest for frontend, total cap = 40.
+          edgeFiles = edgeCandidates
+            .map((f: any) => ({ ...f, _prio: priority(f.path) }))
+            .sort((a: any, b: any) => a._prio - b._prio || a.path.localeCompare(b.path))
+            .slice(0, 10);
+          const remaining = 40 - edgeFiles.length;
+          frontendFiles = frontCandidates
+            .map((f: any) => ({ ...f, _prio: priority(f.path) }))
+            .sort((a: any, b: any) => a._prio - b._prio || a.path.localeCompare(b.path))
+            .slice(0, remaining);
         }
 
         const totalFilesToFetch = frontendFiles.length + edgeFiles.length;
