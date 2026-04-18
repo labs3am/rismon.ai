@@ -22,7 +22,7 @@ interface App {
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
-  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0 });
+  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0, totalSecurity: 0 });
   const [weeklyScans, setWeeklyScans] = useState(0);
   const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,7 @@ export default function Dashboard() {
       weekStart.setHours(0, 0, 0, 0);
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
+      const totalSecurity = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.security_issues) ? a.security_issues.length : 0), 0);
 
       // Use Monday-based week for scan_usage
       const dayOfW = now.getDay();
@@ -87,7 +88,7 @@ export default function Dashboard() {
       const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
-      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });
+      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
 
@@ -106,9 +107,9 @@ export default function Dashboard() {
   };
 
   const scoreColor = (s: number) => {
-    if (s <= 40) return { bg: 'rgba(239,68,68,0.15)', text: '#ef4444' };
-    if (s <= 70) return { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b' };
-    return { bg: 'rgba(34,197,94,0.15)', text: '#22c55e' };
+    if (s <= 40) return '#ef4444';
+    if (s <= 70) return '#f59e0b';
+    return '#22c55e';
   };
 
   const handleAnalyzeNow = async (app: App) => {
@@ -153,22 +154,20 @@ export default function Dashboard() {
 
       {/* Reconnect GitHub Modal */}
       {reconnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}>
-          <div className="rounded-2xl p-8 max-w-[400px] w-full mx-4 text-center" style={{ background: '#111111', border: '1px solid #1e1e1e' }}>
-            <Github size={36} style={{ color: '#71717a' }} className="mx-auto" />
-            <h3 className="text-foreground text-[20px] font-semibold mt-4">Reconnect GitHub</h3>
-            <p className="mt-2 text-sm" style={{ color: '#71717a' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)' }}>
+          <div className="text-center" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 32, maxWidth: 400, width: '100%', margin: '0 16px' }}>
+            <Github size={36} style={{ color: '#888888' }} className="mx-auto" />
+            <h3 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, marginTop: 16, letterSpacing: '-0.02em' }}>Reconnect GitHub</h3>
+            <p style={{ color: '#888888', fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
               We need to reconnect to GitHub to read your {reconnectModal.github_repo_name} repository. We will use the same repository you connected before.
             </p>
-            <p className="mt-2 font-mono text-xs" style={{ color: '#52525b' }}>
+            <p className="font-mono" style={{ color: '#555555', fontSize: 12, marginTop: 8 }}>
               {reconnectModal.github_owner}/{reconnectModal.github_repo_name}
             </p>
-            <button onClick={handleReconnectGithub}
-              className="w-full bg-primary text-primary-foreground py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors">
+            <button onClick={handleReconnectGithub} className="btn-cyber-primary w-full mt-6">
               Reconnect GitHub
             </button>
-            <button onClick={() => setReconnectModal(null)}
-              className="w-full text-muted-foreground py-3 rounded-lg text-sm mt-2 hover:text-foreground transition-colors">
+            <button onClick={() => setReconnectModal(null)} className="w-full py-3 mt-2" style={{ color: '#888888', background: 'transparent', border: 'none', fontSize: 14, cursor: 'pointer' }}>
               Cancel
             </button>
           </div>
@@ -176,8 +175,8 @@ export default function Dashboard() {
       )}
 
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
-        <h1 className="text-foreground text-[28px] font-semibold">{getGreeting()}</h1>
-        <p className="text-muted-foreground mt-1">{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+        <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
+        <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {apps.length === 0 && (
           <div className="mt-4">
@@ -186,104 +185,117 @@ export default function Dashboard() {
         )}
 
         {githubConflict && (
-          <div className="flex items-start gap-3 mt-4 rounded-xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <AlertTriangle size={20} className="text-destructive shrink-0 mt-0.5" />
-            <p className="text-foreground text-sm">GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
+          <div className="flex items-start gap-3 mt-4 p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
+            <AlertTriangle size={20} className="shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+            <p style={{ color: '#ffffff', fontSize: 14 }}>GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
           </div>
         )}
 
         {/* Free Plan Status Card */}
-        <div className="rounded-xl p-4 mt-6 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap size={18} style={{ color: '#6366f1' }} />
-              <span className="text-foreground text-sm font-semibold">Free Plan</span>
+        <div className="mt-6 mb-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+              </div>
+              <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
             </div>
-            <button onClick={() => setWaitlistOpen(true)} className="text-[13px] hover:underline" style={{ color: '#6366f1' }}>
-              Upgrade to Pro →
+            <button
+              onClick={() => setWaitlistOpen(true)}
+              style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+            >
+              Upgrade to Pro
             </button>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
-            <span className="text-[13px]" style={{ color: stats.apps >= 1 ? '#f59e0b' : '#71717a' }}>
-              {stats.apps} of 1 app used
-            </span>
-            <span className="text-[13px]" style={{ color: weeklyScans >= 3 ? '#ef4444' : '#71717a' }}>
-              {weeklyScans} of 3 scans used this week
-            </span>
-            <span className="text-[13px]" style={{ color: '#71717a' }}>
-              Resets {getResetDay()}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}>
-            <span className="text-[13px]" style={{ color: '#f59e0b' }}>40% code coverage</span>
-            <span className="text-[13px]" style={{ color: '#52525b' }}>·</span>
-            <span className="text-[13px]" style={{ color: '#71717a' }}>Upgrade to Premium for a full deep scan of your entire codebase</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[{ v: stats.apps, l: 'Apps connected' }, { v: stats.thisWeek, l: 'Analyses this week' }, { v: stats.totalGaps, l: 'Total gaps found' }].map((s, i) => (
-            <div key={i} className="bg-card border border-border rounded-2xl p-5">
-              <p className="text-foreground text-[32px] font-bold">{s.v}</p>
-              <p className="text-muted-foreground text-sm mt-1">{s.l}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { v: stats.apps, l: 'Apps connected' },
+            { v: stats.thisWeek, l: 'Analyses this week' },
+            { v: stats.totalGaps, l: 'Total gaps found' },
+            { v: stats.totalSecurity, l: 'Security issues found' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: 24 }}>
+              <p style={{ color: '#ffffff', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
+              <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>{s.l}</p>
             </div>
           ))}
         </div>
 
         {/* Weekly limit */}
         {weeklyLimitReached && (
-          <div className="mt-6 rounded-xl p-4 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-            <Clock size={20} className="text-warning shrink-0 mt-0.5" />
+          <div className="mt-6 p-4 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8 }}>
+            <Clock size={20} className="shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div>
-              <p className="text-foreground text-[15px]">You have used your 3 free analyses for this week.</p>
-              <p className="text-muted-foreground text-[13px] mt-1">Your scans reset next week. Upgrade to Pro for unlimited access.</p>
-              <button onClick={() => setWaitlistOpen(true)} className="text-primary text-[13px] mt-1 hover:underline">Join Pro waitlist →</button>
+              <p style={{ color: '#ffffff', fontSize: 15 }}>You have used your 3 free analyses for this week.</p>
+              <p style={{ color: '#888888', fontSize: 13, marginTop: 4 }}>Your scans reset next week. Upgrade to Pro for unlimited access.</p>
+              <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 13, marginTop: 4, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">Join Pro waitlist →</button>
             </div>
           </div>
         )}
 
         {/* No apps */}
         {apps.length === 0 ? (
-          <div className="mt-16 border-2 border-dashed border-input rounded-2xl p-16 text-center">
-            <PlusCircle size={48} className="text-dimmed mx-auto" />
-            <p className="text-foreground text-xl font-semibold mt-5">Connect your first app</p>
-            <p className="text-muted-foreground text-[15px] max-w-[400px] mx-auto mt-3">Connect your GitHub repository to start your first analysis. Read only access. We never store or edit your code.</p>
-            <Link to="/connect" className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-lg text-sm font-medium mt-7 hover:bg-primary/90 transition-colors">Connect an app</Link>
+          <div className="mt-16 text-center" style={{ border: '2px dashed #1f1f1f', borderRadius: 12, padding: 64 }}>
+            <PlusCircle size={48} style={{ color: '#333333' }} className="mx-auto" />
+            <p style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, marginTop: 20, letterSpacing: '-0.02em' }}>Connect your first app</p>
+            <p className="max-w-[400px] mx-auto" style={{ color: '#888888', fontSize: 15, marginTop: 12, lineHeight: 1.6 }}>Connect your GitHub repository to start your first analysis. Read only access. We never store or edit your code.</p>
+            <Link to="/connect" className="btn-cyber-primary inline-block mt-7">Connect an app</Link>
           </div>
         ) : (
           <div className="mt-12">
-            <h2 className="text-foreground text-xl font-semibold">Your apps</h2>
+            <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
             <div className="mt-4 space-y-4">
               {apps.map(app => (
-                <div key={app.id} className="bg-card border border-border rounded-2xl p-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-foreground text-lg font-bold">{app.app_name}</p>
-                    {app.platform && <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(99,102,241,0.1)', color: '#818cf8' }}>{app.platform}</span>}
-                  </div>
-                  {app.github_repo_name && (
-                    <div className="flex items-center gap-1.5 mt-2"><Github size={14} className="text-muted-foreground" /><span className="text-muted-foreground text-sm">{app.github_owner}/{app.github_repo_name}</span></div>
-                  )}
-                  <div className="mt-4">
-                    {app.has_analyses && app.latest_score !== null ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold" style={{ background: scoreColor(app.latest_score).bg, color: scoreColor(app.latest_score).text }}>{app.latest_score}</div>
-                        <span className="text-muted-foreground text-[13px]">Last analyzed {app.latest_date ? relativeDate(app.latest_date) : ''}</span>
+                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>{app.app_name}</p>
+                        {app.platform && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
                       </div>
-                    ) : (
-                      <p className="text-subtle text-[13px] italic">Not analyzed yet</p>
+                      {app.github_repo_name && (
+                        <div className="flex items-center gap-1.5 mt-1.5"><Github size={13} style={{ color: '#555555' }} /><span style={{ color: '#555555', fontSize: 13 }}>{app.github_owner}/{app.github_repo_name}</span></div>
+                      )}
+                      {app.has_analyses && app.latest_date ? (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
+                      ) : (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
+                      )}
+                    </div>
+                    {app.has_analyses && app.latest_score !== null && (
+                      <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
+                        {app.latest_score}
+                      </div>
                     )}
                   </div>
-                  <div className="flex gap-3 mt-5">
-                    <button onClick={() => handleAnalyzeNow(app)} className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">Analyze now</button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleAnalyzeNow(app)}
+                      style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                    >
+                      Analyze now
+                    </button>
                     {app.has_analyses && app.latest_analysis_id && (
-                      <Link to={`/report/${app.latest_analysis_id}`} className="border border-hover-border text-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:border-muted-foreground/30 transition-colors">View last report</Link>
+                      <Link
+                        to={`/report/${app.latest_analysis_id}`}
+                        style={{ border: '1px solid #1a1a1a', color: '#ffffff', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent' }}
+                      >
+                        View report
+                      </Link>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-            <button onClick={() => setWaitlistOpen(true)} className="text-sm mt-4 inline-block hover:underline" style={{ color: '#6366f1' }}>
+            <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 14, marginTop: 16, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">
               Unlock unlimited apps →
             </button>
           </div>

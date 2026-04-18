@@ -21,32 +21,38 @@ export default function Navbar() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const linkStyle: React.CSSProperties = { color: '#888888', fontSize: 14, background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.15s ease' };
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[1000] h-16" style={{ background: 'rgba(8,8,8,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e1e1e' }}>
-      <div className="flex h-full items-center justify-between px-6 md:px-10 max-w-[1200px] mx-auto">
-        <Link to="/" className="text-[20px] font-bold text-foreground">Rismon.ai</Link>
+    <nav style={{ position: 'sticky', top: 0, zIndex: 100, height: 64, background: '#000000', borderBottom: '1px solid #ffffff10' }}>
+      <div className="flex h-full items-center justify-between max-w-[1200px] mx-auto" style={{ padding: '0 24px' }}>
+        <Link to="/" style={{ fontSize: 16, fontWeight: 600, color: '#ffffff' }}>Rismon.ai</Link>
+
         <div className="hidden md:flex items-center gap-8">
-          <button onClick={() => goToSection('how-it-works')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>How it works</button>
-          <button onClick={() => goToSection('what-we-check')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>What we check</button>
-          <button onClick={() => goToSection('pricing')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Pricing</button>
-          <button onClick={() => goToSection('security-privacy')} className="text-sm transition-colors cursor-pointer bg-transparent border-none" style={{ color: '#71717a' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#71717a'}>Security</button>
+          <button onClick={() => goToSection('how-it-works')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>How it works</button>
+          <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>What we check</button>
+          <button onClick={() => goToSection('pricing')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Pricing</button>
+          <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Security</button>
         </div>
+
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" className="text-sm transition-colors" style={{ color: '#71717a' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = '#71717a')}>Log in</Link>
-          <Link to="/signup" className="bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold hover:brightness-110 transition-all duration-200">Get Started</Link>
+          <Link to="/login" style={{ color: '#888888', fontSize: 14, transition: 'color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Log in</Link>
+          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, transition: 'background 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.background = '#e5e5e5')} onMouseLeave={e => (e.currentTarget.style.background = '#ffffff')}>Get Started</Link>
         </div>
-        <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
+
+        <button className="md:hidden" style={{ color: '#ffffff', background: 'transparent', border: 'none' }} onClick={() => setOpen(!open)}>
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
+
       {open && (
-        <div className="md:hidden px-6 py-4 flex flex-col gap-3" style={{ background: 'rgba(8,8,8,0.95)', borderTop: '1px solid #1e1e1e' }}>
-          <button onClick={() => goToSection('how-it-works')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>How it works</button>
-          <button onClick={() => goToSection('what-we-check')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>What we check</button>
-          <button onClick={() => goToSection('pricing')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>Pricing</button>
-          <button onClick={() => goToSection('security-privacy')} className="text-sm py-2 text-left" style={{ color: '#71717a' }}>Security</button>
-          <Link to="/login" className="text-foreground text-sm py-2" onClick={() => setOpen(false)}>Log in</Link>
-          <Link to="/signup" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-semibold text-center hover:brightness-110 transition-all duration-200" onClick={() => setOpen(false)}>Get Started</Link>
+        <div className="md:hidden flex flex-col gap-3" style={{ background: '#000000', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
+          <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>How it works</button>
+          <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>What we check</button>
+          <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Pricing</button>
+          <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Security</button>
+          <Link to="/login" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Log in</Link>
+          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '10px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center' }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
       )}
     </nav>
