@@ -31,6 +31,50 @@ function runSecurityPreChecks(codeBundle: string) {
 }
 
 // ============================================================
+// SECTION 1b: Pre-analysis — deterministic feature detection
+// ============================================================
+function runPreAnalysis(codeBundle: string) {
+  const code = codeBundle.toLowerCase();
+
+  const paymentKeywords = /stripe|lemonsqueezy|lemon\s*squeezy|paddle|razorpay|loadstripe|paymentintent|checkout\.session/i;
+  const hasPayments = paymentKeywords.test(codeBundle);
+
+  let paymentProvider: string | null = null;
+  if (hasPayments) {
+    if (/stripe|loadstripe/i.test(codeBundle)) paymentProvider = "Stripe";
+    else if (/lemonsqueezy|lemon\s*squeezy/i.test(codeBundle)) paymentProvider = "Lemon Squeezy";
+    else if (/paddle/i.test(codeBundle)) paymentProvider = "Paddle";
+    else if (/razorpay/i.test(codeBundle)) paymentProvider = "Razorpay";
+    else paymentProvider = "Other";
+  }
+
+  const hasUserAccounts = /supabase\.auth|signin|signup|signIn|signUp|user\.id|auth\.users/i.test(codeBundle);
+
+  const hasAdminRoutes = /\/admin|isadmin|admin_role|role\s*===?\s*['"]admin['"]/i.test(codeBundle);
+
+  const hasFreePaidTiers = /\bplan\b|\bsubscription\b|\bispro\b|\bisfree\b|\btier\b|\bpremium\b/i.test(codeBundle);
+
+  let detectedAppType = "unknown";
+  if (hasPayments && hasFreePaidTiers) detectedAppType = "SaaS";
+  else if (hasPayments) detectedAppType = "E-commerce/Marketplace";
+  else if (hasUserAccounts) detectedAppType = "User App";
+
+  let detectedPlatform = "unknown";
+  if (/from ['"]@supabase\/supabase-js['"]/i.test(codeBundle)) detectedPlatform = "Supabase";
+  if (/from ['"]react['"]/i.test(codeBundle)) detectedPlatform = detectedPlatform === "Supabase" ? "React + Supabase" : "React";
+
+  return {
+    hasPayments,
+    paymentProvider,
+    hasUserAccounts,
+    hasAdminRoutes,
+    hasFreePaidTiers,
+    detectedAppType,
+    detectedPlatform,
+  };
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -319,6 +363,7 @@ serve(async (req) => {
 
       // Pre-scan deterministic checks
       const securityPreFound = runSecurityPreChecks(totalBundle);
+      const preAnalysis = runPreAnalysis(totalBundle);
 
       // Probe Supabase tables
       const rlsFindings: any[] = [];
@@ -407,7 +452,7 @@ Return ONLY this JSON:
         mergedFacts = { app_understanding: merged, questions: uniqueQs };
       }
 
-      return new Response(JSON.stringify(mergedFacts), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ ...mergedFacts, pre_analysis: preAnalysis }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ============================================================

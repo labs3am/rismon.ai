@@ -131,7 +131,7 @@ export default function Dashboard() {
     await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        scopes: 'repo read:user',
+        scopes: 'repo read:user user:email',
         redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
         skipBrowserRedirect: false
       }
