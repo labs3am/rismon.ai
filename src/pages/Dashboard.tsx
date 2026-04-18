@@ -194,7 +194,6 @@ export default function Dashboard() {
         <div className="mt-6 mb-6 p-4" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 8 }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap size={18} style={{ color: '#f97316' }} />
               <span style={{ color: '#ffffff', fontSize: 14, fontWeight: 600 }}>Free Plan</span>
             </div>
             <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">
