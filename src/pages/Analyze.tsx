@@ -97,8 +97,8 @@ export default function Analyze() {
         const startedAtMs = activeSession.created_at ? new Date(activeSession.created_at).getTime() : Date.now();
         const ageSec = Math.floor((Date.now() - startedAtMs) / 1000);
 
-        // Auto-cancel sessions older than 5 minutes (edge function dies at ~2.5min anyway)
-        if (ageSec > 300) {
+        // Auto-cancel sessions older than 3 minutes (edge function dies at ~2.5min anyway)
+        if (ageSec > 180) {
           await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', activeSession.id);
           localStorage.removeItem('rismon_active_analysis');
           localStorage.removeItem('rismon_analysis_stage');
@@ -132,9 +132,9 @@ export default function Analyze() {
               navigate('/dashboard');
               return;
             }
-            // Auto-fail sessions that exceed 5 minutes during polling
+            // Auto-fail sessions that exceed 3 minutes during polling
             const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-            if (elapsed > 300) {
+            if (elapsed > 180) {
               if (pollRef.current) clearInterval(pollRef.current);
               await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', activeSession.id);
               setResumingSession(false);
