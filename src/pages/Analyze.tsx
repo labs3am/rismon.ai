@@ -138,14 +138,35 @@ export default function Analyze() {
     readingStarted.current = true;
 
     const run = async () => {
+      const scanStartedAt = Date.now();
       try {
         const { data: { session: s } } = await supabase.auth.getSession();
         const token = s?.provider_token;
         if (!token) { toast.error('GitHub token expired. Please reconnect GitHub from the connect page.'); navigate('/dashboard'); return; }
 
+        // Plan check — determines scan depth
+        const { data: planRow } = await supabase
+          .from('profiles')
+          .select('plan, pro_credits')
+          .eq('id', user.id)
+          .single();
+        const planName = (planRow?.plan || 'free') as string;
+        const proCredits = planRow?.pro_credits ?? 0;
+
+        // Try Pro with no credits left → block scan and reset to free
+        if (planName === 'try_pro' && proCredits <= 0) {
+          await supabase.from('profiles').update({ plan: 'free' }).eq('id', user.id);
+          toast.error('You have used your deep scan credit. Your plan has been reset to free.');
+          navigate('/dashboard');
+          return;
+        }
+
+        const isDeepScan = planName === 'try_pro' || planName === 'pro';
+        const scanType: 'quick' | 'deep' = isDeepScan ? 'deep' : 'quick';
+
         // Create analysis record first
         const { data: analysis } = await supabase.from('analyses').insert({
-          app_id: appId, user_id: user.id, status: 'reading'
+          app_id: appId, user_id: user.id, status: 'reading', scan_type: scanType
         }).select().single();
         if (analysis) {
           setAnalysisId(analysis.id);
