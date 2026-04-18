@@ -76,6 +76,7 @@ export default function Dashboard() {
       weekStart.setHours(0, 0, 0, 0);
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
+      const totalSecurity = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.security_issues) ? a.security_issues.length : 0), 0);
 
       // Use Monday-based week for scan_usage
       const dayOfW = now.getDay();
@@ -87,7 +88,7 @@ export default function Dashboard() {
       const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
-      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });
+      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
 
