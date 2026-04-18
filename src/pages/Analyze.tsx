@@ -188,33 +188,50 @@ export default function Analyze() {
         if (!treeRes.ok) { toast.error('Failed to read repository'); navigate('/dashboard'); return; }
         const tree = await treeRes.json();
 
-        const keywords = [
-          'auth', 'login', 'signup', 'register',
-          'payment', 'pay', 'stripe', 'razorpay', 'subscription', 'billing', 'checkout',
-          'user', 'profile', 'account', 'member',
-          'admin', 'dashboard', 'settings',
-          'route', 'router', 'navigate', 'page',
-          'api', 'endpoint', 'handler', 'server',
-          'middleware', 'guard', 'protect', 'private',
-          'supabase', 'database', 'schema', 'table',
-          'hook', 'context', 'provider', 'store',
-          'connect', 'github', 'repo', 'analyze',
-          'report', 'scan', 'limit', 'plan', 'free', 'pro',
-          'email', 'waitlist', 'notify',
-          'component', 'layout'
-        ];
         const exts = ['.ts', '.tsx', '.js', '.jsx', '.json'];
         const allBlobs = (tree.tree || []).filter((f: any) => f.type === 'blob');
 
-        // Frontend files (keyword-matched)
-        const frontendFiles = allBlobs
-          .filter((f: any) => exts.some(e => f.path.endsWith(e)) && !f.path.startsWith('supabase/functions/') && keywords.some(k => f.path.toLowerCase().includes(k)) && (f.size || 0) < 50000)
-          .slice(0, 40);
+        let frontendFiles: any[] = [];
+        let edgeFiles: any[] = [];
 
-        // Edge function files (everything in supabase/functions/)
-        const edgeFiles = allBlobs
-          .filter((f: any) => f.path.startsWith('supabase/functions/') && (f.path.endsWith('.ts') || f.path.endsWith('.js')) && (f.size || 0) < 80000)
-          .slice(0, 30);
+        if (scanType === 'quick') {
+          // FREE PLAN: prioritized list, capped at 20 files total.
+          const candidate = allBlobs.filter((f: any) =>
+            exts.some(e => f.path.endsWith(e)) &&
+            !f.path.startsWith('supabase/functions/') &&
+            (f.size || 0) < 50000
+          );
+
+          const priority = (path: string): number => {
+            const p = path.toLowerCase();
+            if (p === 'package.json' || p.endsWith('/package.json')) return 1;
+            if (/(auth|login|signup|signin|register)/.test(p)) return 2;
+            if (/(payment|stripe|checkout|billing|subscription|razorpay)/.test(p)) return 3;
+            if (/(route|router|app\.tsx|app\.jsx|main\.tsx|main\.jsx)/.test(p)) return 4;
+            if (/(supabase|client\.ts|integrations\/supabase)/.test(p)) return 5;
+            if (/(pages\/|page\.tsx|page\.jsx)/.test(p)) return 6;
+            if (/(query|queries|database|schema|hook)/.test(p)) return 7;
+            return 99;
+          };
+
+          frontendFiles = candidate
+            .map((f: any) => ({ ...f, _prio: priority(f.path) }))
+            .sort((a: any, b: any) => a._prio - b._prio || a.path.localeCompare(b.path))
+            .slice(0, 20);
+          edgeFiles = []; // free plan: no edge function scan
+        } else {
+          // TRY PRO / PRO: fetch ALL files, no cap.
+          frontendFiles = allBlobs.filter((f: any) =>
+            exts.some(e => f.path.endsWith(e)) &&
+            !f.path.startsWith('supabase/functions/') &&
+            (f.size || 0) < 50000
+          );
+          edgeFiles = allBlobs.filter((f: any) =>
+            f.path.startsWith('supabase/functions/') &&
+            (f.path.endsWith('.ts') || f.path.endsWith('.js')) &&
+            (f.size || 0) < 80000
+          );
+        }
 
         const totalFilesToFetch = frontendFiles.length + edgeFiles.length;
         setTotalFiles(totalFilesToFetch);
