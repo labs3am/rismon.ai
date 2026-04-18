@@ -7,6 +7,8 @@ interface Profile {
   full_name: string | null;
   email: string | null;
   company_name: string | null;
+  plan: string | null;
+  pro_credits: number;
 }
 
 interface AuthContextType {
