@@ -4,39 +4,39 @@
 
 @layer base {
   :root {
-    --background: 0 0% 3.1%;
-    --foreground: 0 0% 96.1%;
-    --card: 0 0% 6.7%;
-    --card-foreground: 0 0% 96.1%;
-    --popover: 0 0% 6.7%;
-    --popover-foreground: 0 0% 96.1%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 100%;
     --primary: 24 94% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 10.2%;
-    --secondary-foreground: 0 0% 96.1%;
-    --muted: 0 0% 11.8%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 6%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 53.3%;
     --accent: 24 94% 53%;
-    --accent-foreground: 0 0% 100%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 11.8%;
-    --input: 0 0% 16.5%;
+    --border: 0 0% 9.8%;
+    --input: 0 0% 12%;
     --ring: 24 94% 53%;
-    --radius: 0.625rem;
+    --radius: 0.5rem;
     --success: 142.1 70.6% 45.3%;
     --warning: 37.7 92.1% 50.2%;
-    --dimmed: 240 5.3% 26.1%;
-    --subtle: 240 3.7% 33.9%;
-    --input-bg: 0 0% 5.1%;
-    --hover-border: 0 0% 18%;
-    --sidebar-background: 0 0% 3.1%;
-    --sidebar-foreground: 0 0% 96.1%;
+    --dimmed: 0 0% 33%;
+    --subtle: 0 0% 33%;
+    --input-bg: 0 0% 4%;
+    --hover-border: 0 0% 20%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 24 94% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 11.8%;
-    --sidebar-accent-foreground: 0 0% 96.1%;
-    --sidebar-border: 0 0% 11.8%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 6%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 9.8%;
     --sidebar-ring: 24 94% 53%;
   }
 }
@@ -64,80 +64,78 @@
 /* Section wrappers — solid background, no blur */
 .cyber-section {
   background: #0a0a0a;
-  border-top: 1px solid rgba(249, 115, 22, 0.10);
+  border-top: 1px solid #ffffff14;
 }
 
-/* Cards — solid background, no blur, no glow */
+/* Cards — solid black, subtle border */
 .glass-card {
-  background: hsl(var(--card));
-  border: 1px solid rgba(249, 115, 22, 0.15);
+  background: #0a0a0a;
+  border: 1px solid #ffffff14;
   border-radius: 12px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 .glass-card:hover {
-  background: hsl(var(--secondary));
-  border-color: rgba(249, 115, 22, 0.35);
+  border-color: #ffffff26;
 }
 
-/* Cyber buttons — no glow */
+/* Primary button — solid orange */
 .btn-cyber-primary {
-  background: hsl(var(--primary));
+  background: #f97316;
   border: none;
-  color: hsl(var(--primary-foreground));
+  color: #ffffff;
   border-radius: 8px;
-  padding: 12px 28px;
+  padding: 12px 24px;
   font-size: 14px;
-  font-weight: 600;
-  transition: opacity 0.2s ease;
+  font-weight: 500;
+  transition: background 0.15s ease;
   display: inline-block;
   text-align: center;
+  cursor: pointer;
 }
 .btn-cyber-primary:hover {
-  opacity: 0.88;
+  background: #ea580c;
 }
-.btn-cyber-primary-pulse {
-  /* deprecated — no animation, kept for markup compat */
-}
+.btn-cyber-primary-pulse { /* deprecated */ }
 
 .btn-cyber-secondary {
   background: transparent;
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--foreground));
+  border: 1px solid #333333;
+  color: #ffffff;
   border-radius: 8px;
-  padding: 12px 28px;
+  padding: 12px 24px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
   display: inline-block;
   text-align: center;
+  cursor: pointer;
 }
 .btn-cyber-secondary:hover {
-  border-color: hsl(var(--muted-foreground));
-  background: hsl(var(--secondary));
+  border-color: #555555;
 }
 
-/* Auth card — solid, no blur */
+/* Auth card — solid, minimal */
 .auth-glass-card {
   width: 100%;
   max-width: 420px;
-  background: hsl(var(--card));
-  border: 1px solid rgba(249, 115, 22, 0.25);
-  border-radius: 16px;
+  background: #0a0a0a;
+  border: 1px solid #ffffff14;
+  border-radius: 12px;
   padding: 40px;
 }
 
 .auth-input {
   width: 100%;
-  background: hsl(var(--input-bg));
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 6px;
-  color: white;
+  background: #000000;
+  border: 1px solid #1f1f1f;
+  border-radius: 8px;
+  color: #ffffff;
   padding: 12px 16px;
   font-size: 14px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 .auth-input::placeholder {
-  color: rgba(255, 255, 255, 0.30);
+  color: #555555;
 }
 .auth-input:focus {
   outline: none;

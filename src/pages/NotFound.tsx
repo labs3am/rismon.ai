@@ -1,6 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import ParticleBackground from "@/components/ParticleBackground";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const funnyMessages = [
   "Even our AI could not find it.",
@@ -33,49 +34,49 @@ const NotFound = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background relative flex justify-center items-start font-sans">
-      <ParticleBackground />
-      <div className="relative z-10 max-w-[560px] w-full pt-[120px] px-6 pb-[60px] text-center">
-        <div className="text-[120px] font-bold leading-none text-primary/15">
+    <div className="min-h-screen" style={{ background: '#000000' }}>
+      <Navbar />
+      <div className="max-w-[560px] w-full mx-auto pt-[120px] px-6 pb-[60px] text-center">
+        <div style={{ fontSize: 120, fontWeight: 700, lineHeight: 1, color: 'rgba(249,115,22,0.2)' }}>
           404
         </div>
 
-        <div className="font-mono text-[32px] text-muted-foreground mt-2">
+        <div style={{ fontFamily: 'monospace', fontSize: 32, color: '#888888', marginTop: 8 }}>
           ¯\_(ツ)_/¯
         </div>
 
-        <h1 className="text-foreground text-[26px] font-semibold mt-6">
+        <h1 style={{ color: '#ffffff', fontSize: 26, fontWeight: 600, marginTop: 24, letterSpacing: '-0.02em' }}>
           This page does not exist.
         </h1>
 
         <p
-          className="text-muted-foreground text-base mt-3 min-h-[48px] transition-opacity duration-400"
-          style={{ opacity: fade ? 1 : 0 }}
+          style={{ color: '#888888', fontSize: 16, marginTop: 12, minHeight: 48, transition: 'opacity 0.4s', opacity: fade ? 1 : 0 }}
         >
           {funnyMessages[msgIndex]}
         </p>
 
-        <div className="inline-block glass-card p-5 mt-8 text-left">
-          <p className="text-muted-foreground text-[13px] mb-3">
+        <div className="inline-block mt-8 text-left" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 20 }}>
+          <p style={{ color: '#888888', fontSize: 13, marginBottom: 12 }}>
             Lost? Here are some real pages:
           </p>
-          <Link to="/" className="text-primary text-sm block mb-2 hover:underline">
+          <Link to="/" style={{ color: '#f97316', fontSize: 14, display: 'block', marginBottom: 8 }} className="hover:underline">
             → Go home
           </Link>
-          <Link to="/dashboard" className="text-primary text-sm block mb-2 hover:underline">
+          <Link to="/dashboard" style={{ color: '#f97316', fontSize: 14, display: 'block', marginBottom: 8 }} className="hover:underline">
             → Dashboard
           </Link>
-          <Link to="/connect" className="text-primary text-sm block hover:underline">
+          <Link to="/connect" style={{ color: '#f97316', fontSize: 14, display: 'block' }} className="hover:underline">
             → Connect an app
           </Link>
         </div>
 
-        <p className="text-muted-foreground/60 text-xs mt-6 leading-relaxed">
+        <p style={{ color: '#555555', fontSize: 12, marginTop: 24, lineHeight: 1.6 }}>
           If you got here from a real link<br />
           please reply to hello@rismon.ai<br />
           and tell us what broke.
         </p>
       </div>
+      <Footer />
     </div>
   );
 };

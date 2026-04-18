@@ -20,24 +20,24 @@ export default function DashboardNavbar() {
   const initial = profile?.full_name?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background">
-      <div className="flex h-full items-center justify-between px-6 md:px-10 max-w-[1400px] mx-auto">
-        <Link to="/dashboard" className="text-[20px] font-bold text-foreground">Rismon.ai</Link>
+    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64, background: '#000000', borderBottom: '1px solid #ffffff10' }}>
+      <div className="flex h-full items-center justify-between max-w-[1400px] mx-auto" style={{ padding: '0 24px' }}>
+        <Link to="/dashboard" style={{ fontSize: 16, fontWeight: 600, color: '#ffffff' }}>Rismon.ai</Link>
         <div className="relative" ref={ref}>
-          <button onClick={() => setOpen(!open)} className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+          <button onClick={() => setOpen(!open)} style={{ width: 36, height: 36, borderRadius: '50%', background: '#f97316', color: '#ffffff', fontSize: 14, fontWeight: 500, border: 'none', cursor: 'pointer' }}>
             {initial}
           </button>
           {open && (
-            <div className="absolute right-0 mt-2 w-56 bg-secondary border border-input rounded-xl py-2">
+            <div className="absolute right-0 mt-2 w-56 py-2" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 8 }}>
               <div className="px-4 py-2">
-                <p className="text-foreground text-sm font-medium">{profile?.full_name}</p>
-                <p className="text-muted-foreground text-xs mt-0.5">{profile?.email}</p>
+                <p style={{ color: '#ffffff', fontSize: 14, fontWeight: 500 }}>{profile?.full_name}</p>
+                <p style={{ color: '#888888', fontSize: 12, marginTop: 2 }}>{profile?.email}</p>
               </div>
-              <div className="border-t border-border my-1" />
-              <Link to="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors" onClick={() => setOpen(false)}>
+              <div style={{ borderTop: '1px solid #ffffff14', margin: '4px 0' }} />
+              <Link to="/settings" className="flex items-center gap-2 px-4 py-2 transition-colors" style={{ fontSize: 14, color: '#888888' }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')} onClick={() => setOpen(false)}>
                 <Settings size={14} /> Settings
               </Link>
-              <button onClick={async () => { await signOut(); navigate('/'); }} className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left">
+              <button onClick={async () => { await signOut(); navigate('/'); }} className="flex items-center gap-2 px-4 py-2 w-full text-left transition-colors" style={{ fontSize: 14, color: '#888888', background: 'transparent', border: 'none', cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>
                 <LogOut size={14} /> Log out
               </button>
             </div>

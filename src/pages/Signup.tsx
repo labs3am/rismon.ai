@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import ParticleBackground from '@/components/ParticleBackground';
-import BackButton from '@/components/BackButton';
+import Navbar from '@/components/Navbar';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -29,40 +28,38 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center px-4">
-      <ParticleBackground />
-      <div className="absolute top-6 left-6 z-20">
-        <BackButton to="/" label="Home" />
-      </div>
-      <div className="relative z-10 auth-glass-card">
-        <p className="text-foreground font-bold text-[22px] text-center mb-8">Rismon.ai</p>
-        <h1 className="text-foreground text-2xl font-semibold">Create your account</h1>
-        <p className="text-muted-foreground text-sm mt-1 mb-8">Free to start. No credit card.</p>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="text-foreground text-sm font-medium block mb-1.5">Full name</label>
-            <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" className="auth-input" required />
-          </div>
-          <div>
-            <label className="text-foreground text-sm font-medium block mb-1.5">Email address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="auth-input" required />
-          </div>
-          <div>
-            <label className="text-foreground text-sm font-medium block mb-1.5">Password</label>
-            <div className="relative">
-              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a strong password" className="auth-input" required />
-              <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+    <div className="min-h-screen" style={{ background: '#000000' }}>
+      <Navbar />
+      <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
+        <div className="auth-glass-card">
+          <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Create your account</h1>
+          <p style={{ color: '#888888', fontSize: 14, marginTop: 6, marginBottom: 32 }}>Free to start. No credit card.</p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Full name</label>
+              <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" className="auth-input" required />
             </div>
-          </div>
-          <button type="submit" disabled={loading} className="btn-cyber-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-            {loading && <Loader2 size={16} className="animate-spin" />} Create account
-          </button>
-        </form>
-        <p className="text-muted-foreground text-sm text-center mt-5">
-          Already have an account? <Link to="/login" className="text-primary hover:underline">Log in →</Link>
-        </p>
+            <div>
+              <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Email address</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="auth-input" required />
+            </div>
+            <div>
+              <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Password</label>
+              <div className="relative">
+                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Create a strong password" className="auth-input" required />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#888888', background: 'transparent', border: 'none' }}>
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" disabled={loading} className="btn-cyber-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+              {loading && <Loader2 size={16} className="animate-spin" />} Create account
+            </button>
+          </form>
+          <p style={{ color: '#888888', fontSize: 14, textAlign: 'center', marginTop: 20 }}>
+            Already have an account? <Link to="/login" style={{ color: '#f97316' }} className="hover:underline">Log in →</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
