@@ -1,26 +1,230 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { CheckCircle, Copy, Check, AlertTriangle, Shield, MinusCircle } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
-import BackButton from '@/components/BackButton';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import RisGuide from '@/components/RisGuide';
+import { useAuth } from '@/contexts/AuthContext';
+
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: '#ef4444',
+  high: '#f97316',
+  medium: '#f59e0b',
+  low: '#3b82f6',
+};
+
+function scoreColor(score: number) {
+  if (score >= 90) return '#22c55e';
+  if (score >= 70) return '#f59e0b';
+  if (score >= 50) return '#f97316';
+  return '#ef4444';
+}
+
+function scoreLabelFor(score: number) {
+  if (score >= 90) return 'Launch ready';
+  if (score >= 70) return 'Almost ready';
+  if (score >= 50) return 'Needs work';
+  if (score >= 30) return 'Not ready';
+  return 'Critical issues';
+}
+
+// Try to split a combined "summary verdict" string back into two parts.
+function splitSummaryVerdict(text: string): { summary: string; verdict: string } {
+  if (!text) return { summary: '', verdict: '' };
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (!sentences || sentences.length < 2) return { summary: text.trim(), verdict: '' };
+  const verdict = sentences[sentences.length - 1].trim();
+  const summary = sentences.slice(0, -1).join(' ').trim();
+  return { summary, verdict };
+}
+
+// Section label component
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        color: '#555555',
+        letterSpacing: '0.1em',
+        marginBottom: 16,
+        textTransform: 'uppercase',
+        fontWeight: 600,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FindingCard({ f, idx }: { f: any; idx: number }) {
+  const [copied, setCopied] = useState(false);
+  const sev = (f.severity || 'medium').toLowerCase();
+  const color = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
+
+  const title = f.title || 'Issue';
+  const whatWeFound = f.what_we_found || f.you_said || f.explanation || '';
+  const whatThisMeans = f.what_this_means || f.business_impact || '';
+  const howToFix = f.how_to_fix || '';
+  const fixPrompt = f.fix_prompt || '';
+  const techRef = f.technical_reference || '';
+  const googleQuery = f.google_query || '';
+
+  const onCopy = () => {
+    if (!fixPrompt) return;
+    navigator.clipboard.writeText(fixPrompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div
+      style={{
+        background: '#0a0a0a',
+        border: '1px solid #1a1a1a',
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 8,
+        padding: 24,
+        marginBottom: 12,
+        position: 'relative',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8, flex: 1 }}>
+          {title}
+        </div>
+        <span
+          style={{
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {sev}
+        </span>
+      </div>
+
+      {whatWeFound && (
+        <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 12 }}>
+          {whatWeFound}
+        </div>
+      )}
+
+      {whatThisMeans && (
+        <>
+          <div style={{ fontSize: 10, color: '#555555', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>
+            Impact
+          </div>
+          <div style={{ fontSize: 14, color: '#ffffff', lineHeight: 1.6, marginBottom: 16 }}>
+            {whatThisMeans}
+          </div>
+        </>
+      )}
+
+      {(howToFix || fixPrompt) && (
+        <div style={{ borderTop: '1px solid #1a1a1a', margin: '16px 0' }} />
+      )}
+
+      {howToFix && (
+        <>
+          <div style={{ fontSize: 10, color: '#555555', letterSpacing: '0.08em', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>
+            How to fix
+          </div>
+          <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 16 }}>
+            {howToFix}
+          </div>
+        </>
+      )}
+
+      {fixPrompt && (
+        <div style={{ position: 'relative' }}>
+          <div
+            style={{
+              background: '#000000',
+              border: '1px solid #222222',
+              borderRadius: 6,
+              padding: 16,
+              paddingTop: 40,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize: 13,
+              color: '#888888',
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            }}
+          >
+            {fixPrompt}
+          </div>
+          <button
+            onClick={onCopy}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              background: 'transparent',
+              border: '1px solid #333333',
+              color: '#888888',
+              padding: '4px 10px',
+              borderRadius: 4,
+              fontSize: 11,
+              cursor: 'pointer',
+              transition: 'border-color 0.15s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#555555')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#333333')}
+          >
+            {copied ? (
+              <>
+                <Check size={11} /> Copied!
+              </>
+            ) : (
+              'Copy prompt'
+            )}
+          </button>
+        </div>
+      )}
+
+      {(techRef || googleQuery) && (
+        <div style={{ marginTop: 12 }}>
+          {techRef && (
+            <div style={{ fontSize: 11, color: '#333333', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+              {techRef}
+            </div>
+          )}
+          {googleQuery && (
+            <div style={{ fontSize: 11, color: '#333333', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', marginTop: 2 }}>
+              Search: {googleQuery}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Report() {
   const { analysisId } = useParams();
+  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [copiedId, setCopiedId] = useState('');
   const generateStarted = useRef(false);
 
   useEffect(() => {
     if (!analysisId) return;
     const load = async () => {
       const { data } = await supabase.from('analyses').select('*').eq('id', analysisId).single();
-      if (!data) { toast.error('Report not found'); return; }
+      if (!data) {
+        toast.error('Report not found');
+        return;
+      }
 
       if (!data.fix_prompts || data.status === 'generating_prompts') {
         if (generateStarted.current) return;
@@ -29,10 +233,13 @@ export default function Report() {
         const { data: app } = await supabase.from('apps').select('*').eq('id', data.app_id).single();
         const { data: result, error } = await supabase.functions.invoke('analyze', {
           body: {
-            action: 'generate_fixes', platform: app?.platform,
+            action: 'generate_fixes',
+            platform: app?.platform,
             code_understanding: data.code_understanding,
-            gaps: data.gaps, security_issues: data.security_issues, unknown_features: data.unknown_features,
-          }
+            gaps: data.gaps,
+            security_issues: data.security_issues,
+            unknown_features: data.unknown_features,
+          },
         });
         if (!error && result?.fix_prompts) {
           await supabase.from('analyses').update({ fix_prompts: result.fix_prompts, status: 'complete' }).eq('id', analysisId);
@@ -49,263 +256,339 @@ export default function Report() {
     load();
   }, [analysisId]);
 
-  const copyPrompt = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(''), 2000);
-  };
-
-  const shareScore = () => {
-    navigator.clipboard.writeText(`I verified my app with Rismon.ai\nIntent match: ${analysis.intent_match_score}%.\nKnow your app. Trust your product.\nrismon.ai`);
-    toast.success('Copied to clipboard');
-  };
-
   if (loading || generating) {
     return <AnalysisLoadingScreen stage="generating" />;
   }
 
   if (!analysis) return null;
 
-  const { intent_match_score: score, summary, fix_prompts = [], what_works = [], gaps = [], security_issues = [], unknown_features = [] } = analysis;
-  const gapsList = Array.isArray(gaps) ? gaps : [];
-  const secList = Array.isArray(security_issues) ? security_issues : [];
-  const unknownList = Array.isArray(unknown_features) ? unknown_features : [];
-  const whatWorksList = Array.isArray(what_works) ? what_works : [];
-  const fixList = Array.isArray(fix_prompts) ? fix_prompts : [];
+  const score = analysis.intent_match_score ?? 0;
+  const scanType: string = analysis.scan_type || 'quick';
+  const isQuick = scanType === 'quick';
+  const isPro = profile?.plan === 'pro' || profile?.plan === 'try_pro';
 
-  const scoreColor = score <= 40 ? '#ef4444' : score <= 70 ? '#f59e0b' : '#22c55e';
-  const platformColors: Record<string, { bg: string; text: string }> = {
-    lovable: { bg: 'rgba(99,102,241,0.1)', text: '#818cf8' },
-    cursor: { bg: 'rgba(59,130,246,0.1)', text: '#60a5fa' },
-    supabase: { bg: 'rgba(34,197,94,0.1)', text: '#22c55e' },
-    general: { bg: 'rgba(113,113,122,0.1)', text: '#71717a' },
+  const fixPromptsList = Array.isArray(analysis.fix_prompts) ? analysis.fix_prompts : [];
+  // Index fix prompts by fix_id so we can attach them to gaps/security findings
+  const fixById = new Map<string, any>();
+  fixPromptsList.forEach((fp: any, i: number) => {
+    if (fp?.fix_id) fixById.set(fp.fix_id, fp);
+    else fixById.set(`fp-${i}`, fp);
+  });
+
+  const attachFix = (item: any, i: number) => {
+    if (item.fix_prompt) return item;
+    const fp = item.id ? fixById.get(item.id) : undefined;
+    if (fp) {
+      return {
+        ...item,
+        fix_prompt: fp.prompt || item.fix_prompt,
+        how_to_fix: item.how_to_fix || fp.where_to_paste || '',
+      };
+    }
+    return item;
   };
 
-  const defaultSecurityAreas = [
-    { id: 'sec_api_keys', title: 'API key exposure', status: 'not_checked', explanation: 'Connect your app to check for exposed keys' },
-    { id: 'sec_rls', title: 'Database protection (RLS)', status: 'not_checked', explanation: 'Connect Supabase for database security checks' },
-    { id: 'sec_auth_routes', title: 'Authentication on routes', status: 'not_checked', explanation: 'Run a full analysis to check route protection' },
-    { id: 'sec_env_vars', title: 'Environment variable usage', status: 'not_checked', explanation: 'Run a full analysis to check secret handling' },
-    { id: 'sec_rate_limit', title: 'Rate limiting', status: 'not_checked', explanation: 'Run a full analysis to check rate limits' },
-    { id: 'sec_public_private', title: 'Public vs private routes', status: 'not_checked', explanation: 'Run a full analysis to check route access' },
-  ];
+  const gapsList = (Array.isArray(analysis.gaps) ? analysis.gaps : []).map(attachFix);
+  const secList = (Array.isArray(analysis.security_issues) ? analysis.security_issues : []).map(attachFix);
+  const whatWorksList = Array.isArray(analysis.what_works) ? analysis.what_works : [];
 
-  const securityItems = secList.length > 0 ? secList : defaultSecurityAreas;
+  const { summary, verdict } = splitSummaryVerdict(analysis.summary || '');
+  const label = analysis.score_label || scoreLabelFor(score);
+  const sColor = scoreColor(score);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div style={{ minHeight: '100vh', background: '#000000' }}>
       <DashboardNavbar />
-      <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
-        <BackButton to="/dashboard" label="Dashboard" />
 
-        <div className="mt-4">
-          {gapsList.some((g: any) => g.severity === 'critical') || secList.some((s: any) => s.severity === 'critical')
-            ? <RisGuide pageKey="report_critical" message={"Start with the red issues first.\nCopy the fix prompt → paste into Lovable → come back and rescan.\nTakes less than 5 minutes per fix."} />
-            : <RisGuide pageKey="report_ok" message={"Great news — no critical issues found.\nCheck the medium issues next and consider a Deep Scan for a full business logic analysis."} />
-          }
+      <div className="report-container" style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px', paddingTop: 96 }}>
+        {/* SECTION 1 — HEADER */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link
+            to="/dashboard"
+            className="report-back"
+            style={{ fontSize: 13, color: '#555555', textDecoration: 'none', cursor: 'pointer' }}
+          >
+            ← Back to dashboard
+          </Link>
+          <span
+            style={{
+              background: 'transparent',
+              border: '1px solid #333333',
+              color: '#888888',
+              fontSize: 10,
+              padding: '3px 10px',
+              borderRadius: 4,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+            }}
+          >
+            {isQuick ? 'Quick Scan' : 'Deep Scan'}
+          </span>
         </div>
 
-        {/* SECTION 1: Score and summary */}
-        <div className="text-center mt-4">
-          <div className="w-[130px] h-[130px] rounded-full flex items-center justify-center mx-auto" style={{ border: `3px solid ${scoreColor}` }}>
-            <span className="text-foreground text-4xl font-bold">{score}</span>
+        {/* SECTION 2 — SCORE */}
+        <div style={{ textAlign: 'center', padding: '60px 0 48px' }}>
+          <div
+            className="report-score"
+            style={{
+              fontSize: 80,
+              fontWeight: 800,
+              letterSpacing: '-0.04em',
+              color: sColor,
+              lineHeight: 1,
+            }}
+          >
+            {score}
           </div>
-          <p className="text-foreground text-lg font-medium mt-4">{score}% match with your description</p>
-          <div className="bg-card border border-border rounded-xl p-5 mt-4">
-            <p className="text-muted-foreground text-[15px] leading-[1.6]">{summary}</p>
+          <div
+            style={{
+              fontSize: 13,
+              color: '#555555',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              marginTop: 8,
+              fontWeight: 600,
+            }}
+          >
+            Intent score
           </div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: '#ffffff', marginTop: 8 }}>{label}</div>
         </div>
 
-        {/* SECTION 2: Gaps */}
-        <div className="mt-12">
-          <h2 className="text-foreground text-[20px] font-semibold">Business logic gaps</h2>
-          {gapsList.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {gapsList.map((g: any, i: number) => {
-                const bc = g.severity === 'critical' ? '#ef4444' : g.severity === 'high' ? '#f97316' : g.severity === 'medium' ? '#f59e0b' : '#6366f1';
-                return (
-                  <div key={g.id || i} className="bg-card border border-border rounded-r-2xl p-6" style={{ borderLeft: `4px solid ${bc}` }}>
-                    <div className="flex items-center justify-between">
-                      <p className="text-foreground font-bold text-[17px]">{g.title}</p>
-                      <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: `${bc}20`, color: bc }}>{g.severity}</span>
-                    </div>
-                    <p className="text-muted-foreground text-[13px] font-semibold mt-3">You described:</p>
-                    <p className="text-foreground text-[15px] mt-1">{g.you_said}</p>
-                    <p className="text-muted-foreground text-[13px] font-semibold mt-3">What was built:</p>
-                    <p className="text-foreground text-[15px] mt-1">{g.what_was_built}</p>
-                    <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                      <p className="text-destructive text-xs font-semibold">Business impact:</p>
-                      <p className="text-foreground text-sm mt-1">{g.business_impact}</p>
-                    </div>
-                  </div>
-                );
-              })}
+        {/* SECTION 3 — SUMMARY */}
+        {summary && (
+          <div
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid #1a1a1a',
+              borderRadius: 8,
+              padding: 24,
+              marginBottom: 32,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: '#555555',
+                letterSpacing: '0.1em',
+                marginBottom: 12,
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}
+            >
+              Overview
+            </div>
+            <div style={{ fontSize: 15, color: '#888888', lineHeight: 1.7 }}>{summary}</div>
+          </div>
+        )}
+
+        {/* SECTION 4 — VERDICT */}
+        {verdict && (
+          <div
+            style={{
+              padding: 24,
+              borderTop: '1px solid #1a1a1a',
+              borderBottom: '1px solid #1a1a1a',
+              marginBottom: 32,
+              textAlign: 'center',
+              fontSize: 18,
+              fontWeight: 600,
+              color: '#ffffff',
+              lineHeight: 1.5,
+            }}
+          >
+            {verdict}
+          </div>
+        )}
+
+        {/* SECTION 5 — BUSINESS LOGIC GAPS */}
+        <div style={{ marginBottom: 32 }}>
+          <SectionLabel>Business logic gaps</SectionLabel>
+          {gapsList.length === 0 ? (
+            <div
+              style={{
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.2)',
+                borderRadius: 8,
+                padding: '16px 20px',
+                color: '#22c55e',
+                fontSize: 14,
+              }}
+            >
+              No business logic gaps found.
             </div>
           ) : (
-            <div className="mt-4 rounded-2xl p-6 flex items-center gap-3" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <CheckCircle size={24} className="text-success shrink-0" />
-              <div>
-                <p className="text-foreground font-semibold">No business logic gaps found</p>
-                <p className="text-muted-foreground text-sm mt-1">Your app matches your description</p>
-              </div>
-            </div>
+            gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} />)
           )}
         </div>
 
-        {/* SECTION 3: Security findings */}
-        <div className="mt-12">
-          <h2 className="text-foreground text-[20px] font-semibold">Security findings</h2>
-          <div className="mt-4 space-y-3">
-            {securityItems.map((s: any, i: number) => {
-              const isPassed = s.status === 'passed';
-              const isNotChecked = s.status === 'not_checked';
-
-              if (isPassed) {
-                return (
-                  <div key={s.id || i} className="bg-card border border-border rounded-r-2xl p-5" style={{ borderLeft: '4px solid #22c55e' }}>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={18} className="text-success shrink-0" />
-                      <p className="text-success font-semibold text-[15px]">Passed: {s.title}</p>
-                    </div>
-                    <p className="text-muted-foreground text-sm mt-1 ml-7">{s.explanation || 'We checked this and found no issues'}</p>
-                  </div>
-                );
-              }
-
-              if (isNotChecked) {
-                return (
-                  <div key={s.id || i} className="bg-card border border-border rounded-r-2xl p-5" style={{ borderLeft: '4px solid #52525b' }}>
-                    <div className="flex items-center gap-2">
-                      <MinusCircle size={18} style={{ color: '#52525b' }} className="shrink-0" />
-                      <p className="text-muted-foreground font-semibold text-[15px]">Not checked: {s.title}</p>
-                    </div>
-                    <p className="text-sm mt-1 ml-7" style={{ color: '#52525b' }}>{s.explanation}</p>
-                  </div>
-                );
-              }
-
-              const bc = s.severity === 'critical' ? '#ef4444' : s.severity === 'high' ? '#f97316' : s.severity === 'medium' ? '#f59e0b' : '#6366f1';
-              return (
-                <div key={s.id || i} className="bg-card border border-border rounded-r-2xl p-6" style={{ borderLeft: `4px solid ${bc}` }}>
-                  <div className="flex items-center justify-between">
-                    <p className="text-foreground font-bold text-[17px]">{s.title}</p>
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: `${bc}20`, color: bc }}>{s.severity}</span>
-                  </div>
-                  <p className="text-muted-foreground text-[15px] mt-3">{s.explanation}</p>
-                  {s.business_impact && (
-                    <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                      <p className="text-destructive text-xs font-semibold">Business impact:</p>
-                      <p className="text-foreground text-sm mt-1">{s.business_impact}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* SECTION 4: Unknown features */}
-        <div className="mt-12">
-          <h2 className="text-foreground text-[20px] font-semibold">Features we found</h2>
-          {unknownList.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {unknownList.map((f: any, i: number) => (
-                <div key={f.id || i} className="bg-card border border-border rounded-2xl p-6">
-                  <p className="text-foreground font-bold text-[17px]">{f.feature_name}</p>
-                  <p className="text-muted-foreground text-[15px] mt-2">{f.description}</p>
-                  <p className="text-muted-foreground text-[13px] italic mt-1">Found in: {f.found_where}</p>
-                  <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                      <p className="text-warning text-xs font-semibold">If you keep it:</p>
-                      <p className="text-muted-foreground text-sm mt-1">{f.risk_if_kept}</p>
-                    </div>
-                    <div className="rounded-lg p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                      <p className="text-destructive text-xs font-semibold">If you remove it:</p>
-                      <p className="text-muted-foreground text-sm mt-1">{f.risk_if_removed}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* SECTION 6 — SECURITY FINDINGS */}
+        <div style={{ marginBottom: 32 }}>
+          <SectionLabel>Security findings</SectionLabel>
+          {secList.length === 0 ? (
+            <div
+              style={{
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.2)',
+                borderRadius: 8,
+                padding: '16px 20px',
+                color: '#22c55e',
+                fontSize: 14,
+              }}
+            >
+              No security issues found.
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm mt-4">No unexpected features found</p>
+            secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} />)
           )}
         </div>
 
-        {/* SECTION 5: What works */}
-        <div className="mt-12">
-          <h2 className="text-foreground text-[20px] font-semibold">What your app does right</h2>
-          {whatWorksList.length > 0 ? (
-            <div className="mt-4 space-y-2">
+        {/* SECTION 7 — WHAT WORKS */}
+        {whatWorksList.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <SectionLabel>What your app does right</SectionLabel>
+            <div>
               {whatWorksList.map((w: string, i: number) => (
-                <div key={i} className="flex items-center gap-2.5 rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.04)' }}>
-                  <CheckCircle size={16} className="text-success shrink-0" />
-                  <span className="text-muted-foreground text-[15px]">{w}</span>
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    padding: '12px 0',
+                    borderBottom: '1px solid #0f0f0f',
+                  }}
+                >
+                  <span style={{ color: '#22c55e', fontSize: 16, flexShrink: 0, lineHeight: 1.5 }}>✓</span>
+                  <span style={{ fontSize: 14, color: '#888888', lineHeight: 1.5 }}>{w}</span>
                 </div>
               ))}
             </div>
-          ) : (
-            <p className="text-muted-foreground text-sm mt-4">Analysis did not identify specific passing areas</p>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* SECTION 6: Fix prompts */}
-        <div className="mt-12">
-          <h2 className="text-foreground text-[20px] font-semibold">Your fix prompts</h2>
-          {fixList.length > 0 ? (
-            <>
-              <p className="text-muted-foreground text-sm mt-1">Made for your app and your code. Copy each prompt and paste it into your platform.</p>
-              <div className="mt-6 space-y-5">
-                {fixList.map((fp: any, i: number) => {
-                  const pc = platformColors[fp.platform?.toLowerCase()] || platformColors.general;
-                  return (
-                    <div key={i} className="bg-card border border-border rounded-2xl p-7">
-                      <div className="flex items-center justify-between">
-                        <p className="text-foreground font-bold text-[17px]">{fp.title}</p>
-                        <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: pc.bg, color: pc.text }}>{fp.platform}</span>
-                      </div>
-                      <p className="text-muted-foreground text-[13px] font-semibold mt-4">Where to paste this:</p>
-                      <p className="text-foreground text-sm mt-1">{fp.where_to_paste}</p>
-                      <div className="relative mt-4 bg-input-bg border border-border rounded-lg p-5">
-                        <pre className="text-[14px] text-foreground/90 font-mono whitespace-pre-wrap overflow-x-auto">{fp.prompt}</pre>
-                        <button onClick={() => copyPrompt(fp.fix_id || `fp-${i}`, fp.prompt)}
-                          className="absolute top-3 right-3 flex items-center gap-1 bg-muted border border-input px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors">
-                          {copiedId === (fp.fix_id || `fp-${i}`) ? <><Check size={12} className="text-success" /> Copied</> : <><Copy size={12} /> Copy</>}
-                        </button>
-                      </div>
-                      {fp.expected_result && (
-                        <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                          <p className="text-success text-xs font-semibold">After applying this fix:</p>
-                          <p className="text-foreground text-sm mt-1">{fp.expected_result}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+        {/* SECTION 8 — QUICK SCAN BANNER */}
+        {isQuick && !isPro && (
+          <div
+            className="quick-scan-banner"
+            style={{
+              background: '#0a0a0a',
+              border: '1px solid #222222',
+              borderRadius: 8,
+              padding: '20px 24px',
+              marginTop: 32,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 16,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 14, color: '#555555' }}>
+                This was a Quick Scan covering your most critical files.
               </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm mt-4">You marked all items as fine. Run a new analysis anytime.</p>
+              <div style={{ fontSize: 13, color: '#444444', marginTop: 4 }}>
+                A Deep Scan analyzes your full codebase and may find more issues.
+              </div>
+            </div>
+            <Link
+              to="/#pricing"
+              className="deep-scan-cta"
+              style={{
+                background: 'transparent',
+                border: '1px solid #f97316',
+                color: '#f97316',
+                padding: '10px 20px',
+                borderRadius: 6,
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(249,115,22,0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              Get Deep Scan — $14.99
+            </Link>
+          </div>
+        )}
+
+        {/* SECTION 9 — ACTIONS */}
+        <div
+          className="report-actions"
+          style={{
+            marginTop: 40,
+            display: 'flex',
+            gap: 12,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <button
+            onClick={() => navigate(`/analyze/${analysis.app_id}`)}
+            style={{
+              background: '#ffffff',
+              color: '#000000',
+              padding: '12px 24px',
+              borderRadius: 8,
+              fontWeight: 500,
+              fontSize: 14,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Scan again
+          </button>
+          <Link
+            to="/dashboard"
+            style={{
+              background: 'transparent',
+              border: '1px solid #333333',
+              color: '#ffffff',
+              padding: '12px 24px',
+              borderRadius: 8,
+              fontWeight: 500,
+              fontSize: 14,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            Back to dashboard
+          </Link>
+          {isPro && (
+            <button
+              onClick={() => window.print()}
+              style={{
+                background: 'transparent',
+                border: '1px solid #333333',
+                color: '#ffffff',
+                padding: '12px 24px',
+                borderRadius: 8,
+                fontWeight: 500,
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              Download PDF
+            </button>
           )}
-        </div>
-
-        {/* SECTION 7: Actions */}
-        <div className="flex flex-wrap gap-3 mt-12">
-          <Link to={`/analyze/${analysis.app_id}`} className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90">Analyze again</Link>
-          <Link to="/dashboard" className="border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-muted-foreground/30">Back to dashboard</Link>
-          <button onClick={shareScore} className="border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-muted-foreground/30">Share my score</button>
-        </div>
-
-        {/* Honesty footer */}
-        <div className="mt-10 pt-6 border-t border-border">
-          <p className="text-[12px] leading-relaxed" style={{ color: '#52525b' }}>
-            AI-assisted code review, not a guaranteed security audit.
-            {analysis.code_understanding ? ' Two AI models reviewed your code.' : ''}
-            {' '}Verify findings before deploying to production.
-            {' '}<Link to="/#pricing" className="hover:underline" style={{ color: '#71717a' }}>See what Pro adds →</Link>
-          </p>
         </div>
       </div>
+
+      <style>{`
+        .report-back:hover { color: #ffffff !important; }
+        @media (max-width: 640px) {
+          .report-container { padding: 24px 16px !important; padding-top: 88px !important; }
+          .report-score { font-size: 60px !important; }
+          .report-actions { flex-direction: column; align-items: stretch; }
+          .report-actions a, .report-actions button { text-align: center; justify-content: center; }
+          .quick-scan-banner { flex-direction: column; align-items: flex-start; }
+          .quick-scan-banner .deep-scan-cta { align-self: stretch; text-align: center; }
+        }
+      `}</style>
     </div>
   );
 }
