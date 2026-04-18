@@ -88,7 +88,7 @@ const HOUSE_STYLE = `Strict response rules:
 - Match a non-technical founder's vocabulary, not engineering jargon.
 - Return ONLY valid JSON when asked. No surrounding text. No code fences.`;
 
-async function callGemini(systemPrompt: string, userContent: string, model = "google/gemini-2.5-flash") {
+async function callGeminiRaw(systemPrompt: string, userContent: string, model: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -106,15 +106,42 @@ async function callGemini(systemPrompt: string, userContent: string, model = "go
 
   if (!res.ok) {
     const status = res.status;
-    const body = await res.text();
-    console.error(`Gemini error [${status}]:`, body.slice(0, 500));
-    if (status === 429) throw new Error("RATE_LIMITED");
-    if (status === 402) throw new Error("CREDITS_EXHAUSTED");
-    throw new Error("AI_ERROR");
+    const body = await res.text().catch(() => "");
+    console.error(`Gemini error [${status}] model=${model}:`, body.slice(0, 500));
+    const err: any = new Error(status === 429 ? "RATE_LIMITED" : status === 402 ? "CREDITS_EXHAUSTED" : "AI_ERROR");
+    err.status = status;
+    throw err;
   }
 
   const data = await res.json();
   return data.choices?.[0]?.message?.content || "";
+}
+
+// Gemini with auto-retry on 429 + cross-fallback to Claude as last resort.
+async function callGemini(systemPrompt: string, userContent: string, model = "google/gemini-2.5-flash") {
+  const delays = [1500, 4000, 8000]; // 3 retries with backoff
+  let lastErr: any;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await callGeminiRaw(systemPrompt, userContent, model);
+    } catch (e: any) {
+      lastErr = e;
+      // Only retry on 429; bail immediately on 402/other
+      if (e?.status !== 429 || attempt === delays.length) break;
+      console.warn(`Gemini 429, retrying in ${delays[attempt]}ms (attempt ${attempt + 1}/${delays.length})`);
+      await new Promise(r => setTimeout(r, delays[attempt]));
+    }
+  }
+  // Last-resort cross-fallback: try Claude with the same prompt if available
+  if (lastErr?.status === 429 && Deno.env.get("ANTHROPIC_KEY")) {
+    try {
+      console.warn("Gemini exhausted retries. Cross-falling back to Claude.");
+      return await callClaude(systemPrompt, userContent);
+    } catch (e2) {
+      console.error("Claude cross-fallback also failed:", (e2 as Error).message);
+    }
+  }
+  throw lastErr;
 }
 
 async function callClaude(systemPrompt: string, userContent: string) {
