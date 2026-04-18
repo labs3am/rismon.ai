@@ -94,25 +94,58 @@ export default function Analyze() {
         .maybeSingle();
 
       if (activeSession) {
-        setScanSessionId(activeSession.id);
-        setResumingSession(true);
         const startedAtMs = activeSession.created_at ? new Date(activeSession.created_at).getTime() : Date.now();
-        setResumeStartedAt(startedAtMs);
-        setStage('analyzing');
-        // Poll for completion every 3 seconds
-        pollRef.current = setInterval(async () => {
-          const { data: updated } = await supabase
-            .from('scan_sessions')
-            .select('*')
-            .eq('id', activeSession.id)
-            .single();
-          if (updated && updated.status === 'complete' && updated.report_id) {
-            if (pollRef.current) clearInterval(pollRef.current);
-            setResumingSession(false);
-            navigate(`/report/${updated.report_id}`);
-          }
-        }, 3000);
-        return;
+        const ageSec = Math.floor((Date.now() - startedAtMs) / 1000);
+
+        // Auto-cancel sessions older than 5 minutes (edge function dies at ~2.5min anyway)
+        if (ageSec > 300) {
+          await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', activeSession.id);
+          localStorage.removeItem('rismon_active_analysis');
+          localStorage.removeItem('rismon_analysis_stage');
+          toast.error('Previous scan timed out. Starting fresh.');
+          // fall through to a new scan below
+        } else {
+          setScanSessionId(activeSession.id);
+          setResumingSession(true);
+          setResumeStartedAt(startedAtMs);
+          setStage('analyzing');
+          // Poll for completion every 3 seconds
+          pollRef.current = setInterval(async () => {
+            const { data: updated } = await supabase
+              .from('scan_sessions')
+              .select('*')
+              .eq('id', activeSession.id)
+              .single();
+            if (!updated) return;
+            if (updated.status === 'complete' && updated.report_id) {
+              if (pollRef.current) clearInterval(pollRef.current);
+              setResumingSession(false);
+              navigate(`/report/${updated.report_id}`);
+              return;
+            }
+            if (updated.status === 'cancelled' || updated.status === 'failed') {
+              if (pollRef.current) clearInterval(pollRef.current);
+              setResumingSession(false);
+              localStorage.removeItem('rismon_active_analysis');
+              localStorage.removeItem('rismon_analysis_stage');
+              toast.error(updated.status === 'failed' ? 'Scan failed. Please try again.' : 'Scan was cancelled.');
+              navigate('/dashboard');
+              return;
+            }
+            // Auto-fail sessions that exceed 5 minutes during polling
+            const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
+            if (elapsed > 300) {
+              if (pollRef.current) clearInterval(pollRef.current);
+              await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', activeSession.id);
+              setResumingSession(false);
+              localStorage.removeItem('rismon_active_analysis');
+              localStorage.removeItem('rismon_analysis_stage');
+              toast.error('Scan timed out. Please try again.');
+              navigate('/dashboard');
+            }
+          }, 3000);
+          return;
+        }
       }
 
       // Check for existing in-progress analysis
