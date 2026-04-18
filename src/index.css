@@ -228,12 +228,12 @@
 .vercel-pill {
   display: inline-flex;
   align-items: center;
-  background: rgba(249, 115, 22, 0.1);
-  border: 1px solid rgba(249, 115, 22, 0.3);
+  background: transparent;
+  border: 1px solid #333333;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   font-size: 12px;
-  color: #f97316;
+  color: #888888;
   margin-bottom: 24px;
 }
 .vercel-hero-h1 {
