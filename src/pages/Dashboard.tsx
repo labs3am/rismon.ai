@@ -176,7 +176,7 @@ export default function Dashboard() {
 
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
-        <p style={{ color: '#888888', marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+        <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {apps.length === 0 && (
           <div className="mt-4">
@@ -192,39 +192,39 @@ export default function Dashboard() {
         )}
 
         {/* Free Plan Status Card */}
-        <div className="mt-6 mb-6 p-4" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 8 }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span style={{ color: '#ffffff', fontSize: 14, fontWeight: 600 }}>Free Plan</span>
+        <div className="mt-6 mb-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+              </div>
+              <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
             </div>
-            <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">
-              Upgrade to Pro →
+            <button
+              onClick={() => setWaitlistOpen(true)}
+              style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+            >
+              Upgrade to Pro
             </button>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
-            <span style={{ fontSize: 13, color: stats.apps >= 1 ? '#f59e0b' : '#888888' }}>
-              {stats.apps} of 1 app used
-            </span>
-            <span style={{ fontSize: 13, color: weeklyScans >= 3 ? '#ef4444' : '#888888' }}>
-              {weeklyScans} of 3 scans used this week
-            </span>
-            <span style={{ fontSize: 13, color: '#888888' }}>
-              Resets {getResetDay()}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #ffffff0f' }}>
-            <span style={{ fontSize: 13, color: '#f59e0b' }}>40% code coverage</span>
-            <span style={{ fontSize: 13, color: '#444444' }}>·</span>
-            <span style={{ fontSize: 13, color: '#888888' }}>Upgrade to Premium for a full deep scan of your entire codebase</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[{ v: stats.apps, l: 'Apps connected' }, { v: stats.thisWeek, l: 'Analyses this week' }, { v: stats.totalGaps, l: 'Total gaps found' }].map((s, i) => (
-            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 20 }}>
-              <p style={{ color: '#ffffff', fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em' }}>{s.v}</p>
-              <p style={{ color: '#888888', fontSize: 14, marginTop: 4 }}>{s.l}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { v: stats.apps, l: 'Apps connected' },
+            { v: stats.thisWeek, l: 'Analyses this week' },
+            { v: stats.totalGaps, l: 'Total gaps found' },
+            { v: stats.totalSecurity, l: 'Security issues found' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: 24 }}>
+              <p style={{ color: '#ffffff', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
+              <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>{s.l}</p>
             </div>
           ))}
         </div>
