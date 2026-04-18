@@ -52,11 +52,6 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
-  h1, h2 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
 }
 
 @keyframes spin {
