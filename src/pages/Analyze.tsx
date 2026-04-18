@@ -66,6 +66,15 @@ export default function Analyze() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  // Tick elapsed timer while resuming a running scan
+  useEffect(() => {
+    if (!resumingSession || !resumeStartedAt) return;
+    const tick = () => setResumeElapsed(Math.floor((Date.now() - resumeStartedAt) / 1000));
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [resumingSession, resumeStartedAt]);
+
   // Load app and check limits, resume from saved state
   useEffect(() => {
     if (!user || !appId) return;
