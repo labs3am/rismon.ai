@@ -109,7 +109,7 @@ export default function Index() {
           <p className="vercel-hero-sub">
             Rismon reads your AI-built app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
           </p>
-          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for non-technical founders</p>
+          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ color: '#f97316', borderBottom: '1px solid #f97316', paddingBottom: '2px' }}>non-technical founders</span></p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
