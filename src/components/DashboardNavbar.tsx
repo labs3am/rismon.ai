@@ -20,7 +20,7 @@ export default function DashboardNavbar() {
   const initial = profile?.full_name?.charAt(0)?.toUpperCase() || 'U';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background/90 backdrop-blur-[12px]">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-background">
       <div className="flex h-full items-center justify-between px-6 md:px-10 max-w-[1400px] mx-auto">
         <Link to="/dashboard" className="text-[20px] font-bold text-foreground">Rismon.ai</Link>
         <div className="relative" ref={ref}>

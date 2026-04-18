@@ -37,7 +37,7 @@ export default function ForgotPasswordModal({ open, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
       <div className="auth-glass-card relative max-w-md w-full">
         <button onClick={handleClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X size={18} />
