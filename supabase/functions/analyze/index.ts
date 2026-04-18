@@ -321,7 +321,9 @@ serve(async (req) => {
       concern,
       project_type,
       monetization,
+      scan_type,
     } = body;
+    const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
     // Get user plan
     const { data: planData } = await serviceClient.rpc("get_user_plan", { _user_id: user.id });
