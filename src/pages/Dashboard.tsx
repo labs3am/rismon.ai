@@ -22,7 +22,7 @@ interface App {
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
-  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0 });
+  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0, totalSecurity: 0 });
   const [weeklyScans, setWeeklyScans] = useState(0);
   const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,7 @@ export default function Dashboard() {
       weekStart.setHours(0, 0, 0, 0);
       const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
       const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
+      const totalSecurity = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.security_issues) ? a.security_issues.length : 0), 0);
 
       // Use Monday-based week for scan_usage
       const dayOfW = now.getDay();
@@ -87,7 +88,7 @@ export default function Dashboard() {
       const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
 
       setApps(appsList);
-      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps });
+      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
 
@@ -106,9 +107,9 @@ export default function Dashboard() {
   };
 
   const scoreColor = (s: number) => {
-    if (s <= 40) return { bg: 'rgba(239,68,68,0.15)', text: '#ef4444' };
-    if (s <= 70) return { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b' };
-    return { bg: 'rgba(34,197,94,0.15)', text: '#22c55e' };
+    if (s <= 40) return '#ef4444';
+    if (s <= 70) return '#f59e0b';
+    return '#22c55e';
   };
 
   const handleAnalyzeNow = async (app: App) => {
@@ -175,7 +176,7 @@ export default function Dashboard() {
 
       <div className="max-w-[1100px] mx-auto px-6 md:px-10 pt-24 pb-16">
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
-        <p style={{ color: '#888888', marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+        <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {apps.length === 0 && (
           <div className="mt-4">
@@ -191,39 +192,39 @@ export default function Dashboard() {
         )}
 
         {/* Free Plan Status Card */}
-        <div className="mt-6 mb-6 p-4" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 8 }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span style={{ color: '#ffffff', fontSize: 14, fontWeight: 600 }}>Free Plan</span>
+        <div className="mt-6 mb-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
+                <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
+                <span style={{ fontSize: 13, color: '#333333' }}>·</span>
+                <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+              </div>
+              <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
             </div>
-            <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">
-              Upgrade to Pro →
+            <button
+              onClick={() => setWaitlistOpen(true)}
+              style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+            >
+              Upgrade to Pro
             </button>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3">
-            <span style={{ fontSize: 13, color: stats.apps >= 1 ? '#f59e0b' : '#888888' }}>
-              {stats.apps} of 1 app used
-            </span>
-            <span style={{ fontSize: 13, color: weeklyScans >= 3 ? '#ef4444' : '#888888' }}>
-              {weeklyScans} of 3 scans used this week
-            </span>
-            <span style={{ fontSize: 13, color: '#888888' }}>
-              Resets {getResetDay()}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid #ffffff0f' }}>
-            <span style={{ fontSize: 13, color: '#f59e0b' }}>40% code coverage</span>
-            <span style={{ fontSize: 13, color: '#444444' }}>·</span>
-            <span style={{ fontSize: 13, color: '#888888' }}>Upgrade to Premium for a full deep scan of your entire codebase</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[{ v: stats.apps, l: 'Apps connected' }, { v: stats.thisWeek, l: 'Analyses this week' }, { v: stats.totalGaps, l: 'Total gaps found' }].map((s, i) => (
-            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 20 }}>
-              <p style={{ color: '#ffffff', fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em' }}>{s.v}</p>
-              <p style={{ color: '#888888', fontSize: 14, marginTop: 4 }}>{s.l}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { v: stats.apps, l: 'Apps connected' },
+            { v: stats.thisWeek, l: 'Analyses this week' },
+            { v: stats.totalGaps, l: 'Total gaps found' },
+            { v: stats.totalSecurity, l: 'Security issues found' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: 24 }}>
+              <p style={{ color: '#ffffff', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
+              <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>{s.l}</p>
             </div>
           ))}
         </div>
@@ -253,28 +254,42 @@ export default function Dashboard() {
             <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
             <div className="mt-4 space-y-4">
               {apps.map(app => (
-                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 24 }}>
-                  <div className="flex items-center justify-between">
-                    <p style={{ color: '#ffffff', fontSize: 18, fontWeight: 600 }}>{app.app_name}</p>
-                    {app.platform && <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
-                  </div>
-                  {app.github_repo_name && (
-                    <div className="flex items-center gap-1.5 mt-2"><Github size={14} style={{ color: '#888888' }} /><span style={{ color: '#888888', fontSize: 14 }}>{app.github_owner}/{app.github_repo_name}</span></div>
-                  )}
-                  <div className="mt-4">
-                    {app.has_analyses && app.latest_score !== null ? (
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full flex items-center justify-center" style={{ width: 44, height: 44, fontSize: 14, fontWeight: 600, background: scoreColor(app.latest_score).bg, color: scoreColor(app.latest_score).text }}>{app.latest_score}</div>
-                        <span style={{ color: '#888888', fontSize: 13 }}>Last analyzed {app.latest_date ? relativeDate(app.latest_date) : ''}</span>
+                <div key={app.id} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '20px 24px' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>{app.app_name}</p>
+                        {app.platform && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>}
                       </div>
-                    ) : (
-                      <p style={{ color: '#555555', fontSize: 13, fontStyle: 'italic' }}>Not analyzed yet</p>
+                      {app.github_repo_name && (
+                        <div className="flex items-center gap-1.5 mt-1.5"><Github size={13} style={{ color: '#555555' }} /><span style={{ color: '#555555', fontSize: 13 }}>{app.github_owner}/{app.github_repo_name}</span></div>
+                      )}
+                      {app.has_analyses && app.latest_date ? (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
+                      ) : (
+                        <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
+                      )}
+                    </div>
+                    {app.has_analyses && app.latest_score !== null && (
+                      <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
+                        {app.latest_score}
+                      </div>
                     )}
                   </div>
-                  <div className="flex gap-3 mt-5">
-                    <button onClick={() => handleAnalyzeNow(app)} className="btn-cyber-primary">Analyze now</button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => handleAnalyzeNow(app)}
+                      style={{ background: '#ffffff', color: '#000000', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                    >
+                      Analyze now
+                    </button>
                     {app.has_analyses && app.latest_analysis_id && (
-                      <Link to={`/report/${app.latest_analysis_id}`} className="btn-cyber-secondary">View last report</Link>
+                      <Link
+                        to={`/report/${app.latest_analysis_id}`}
+                        style={{ border: '1px solid #1a1a1a', color: '#ffffff', padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent' }}
+                      >
+                        View report
+                      </Link>
                     )}
                   </div>
                 </div>
