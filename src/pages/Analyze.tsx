@@ -198,7 +198,7 @@ export default function Analyze() {
         let frontendFiles: any[] = [];
         let edgeFiles: any[] = [];
 
-        if (scanType === 'quick') {
+        if (localScanType === 'quick') {
           // FREE PLAN: prioritized list, capped at 20 files total.
           const candidate = allBlobs.filter((f: any) =>
             exts.some(e => f.path.endsWith(e)) &&
@@ -239,6 +239,7 @@ export default function Analyze() {
 
         const totalFilesToFetch = frontendFiles.length + edgeFiles.length;
         setTotalFiles(totalFilesToFetch);
+        setFilesScanned(totalFilesToFetch);
 
         // Fetch frontend
         let codeBundle = '';
@@ -298,7 +299,7 @@ export default function Analyze() {
 
         // Call edge function
         const { data, error } = await supabase.functions.invoke('analyze', {
-          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key }
+          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key, scan_type: localScanType }
         });
         if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
 
