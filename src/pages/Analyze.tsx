@@ -26,6 +26,8 @@ export default function Analyze() {
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showQuestions, setShowQuestions] = useState(false);
+  const [preAnalysis, setPreAnalysis] = useState<PreAnalysis | null>(null);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('gaps');
   const [decisions, setDecisions] = useState<Record<string, string>>({});
