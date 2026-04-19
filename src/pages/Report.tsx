@@ -57,6 +57,62 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Side-by-side score card. Intent is highlighted; security sits next to it.
+function ScorePanel({
+  score,
+  color,
+  label,
+  sublabel,
+  tooltip,
+  primary,
+}: {
+  score: number;
+  color: string;
+  label: string;
+  sublabel: string;
+  tooltip: string;
+  primary?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        background: '#0a0a0a',
+        border: `1px solid ${primary ? color : '#1a1a1a'}`,
+        borderRadius: 12,
+        padding: '28px 20px',
+        textAlign: 'center',
+        position: 'relative',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: '#555',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          marginBottom: 14,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 56,
+          fontWeight: 800,
+          letterSpacing: '-0.04em',
+          color,
+          lineHeight: 1,
+        }}
+      >
+        {score}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginTop: 10 }}>{sublabel}</div>
+      <div style={{ fontSize: 12, color: '#666', marginTop: 6, lineHeight: 1.4 }}>{tooltip}</div>
+    </div>
+  );
+}
+
 function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?: string }) {
   const [copied, setCopied] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
@@ -379,6 +435,18 @@ export default function Report() {
   const label = analysis.score_label || scoreLabelFor(score);
   const sColor = scoreColor(score);
 
+  // Compute a separate Security score from security findings only.
+  // Intent score (above) covers business logic gaps; this gives users a clean
+  // "is my data safe?" number alongside it.
+  const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
+  const securityDeduction = secList.reduce(
+    (sum: number, f: any) => sum + (sevPoints[(f.severity || 'medium').toLowerCase()] || 5),
+    0,
+  );
+  const securityScore = Math.max(0, 100 - securityDeduction);
+  const securityColor = scoreColor(securityScore);
+  const securityLabel = scoreLabelFor(securityScore);
+
   return (
     <div style={{ minHeight: '100vh', background: '#000000' }}>
       <DashboardNavbar />
@@ -410,33 +478,30 @@ export default function Report() {
           </span>
         </div>
 
-        {/* SECTION 2 — SCORE */}
-        <div style={{ textAlign: 'center', padding: '60px 0 48px' }}>
-          <div
-            className="report-score"
-            style={{
-              fontSize: 80,
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              color: sColor,
-              lineHeight: 1,
-            }}
-          >
-            {score}
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              color: '#555555',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              marginTop: 8,
-              fontWeight: 600,
-            }}
-          >
-            Intent score
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 500, color: '#ffffff', marginTop: 8 }}>{label}</div>
+        {/* SECTION 2 — DUAL SCORES (Intent | Security) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 16,
+            padding: '48px 0 40px',
+          }}
+        >
+          <ScorePanel
+            score={score}
+            color={sColor}
+            label="Intent match"
+            sublabel={label}
+            tooltip="Does the code do what you said the app does?"
+            primary
+          />
+          <ScorePanel
+            score={securityScore}
+            color={securityColor}
+            label="Security"
+            sublabel={securityLabel}
+            tooltip="Are your secrets safe and your data protected?"
+          />
         </div>
 
         {/* SECTION 3 — SUMMARY */}
@@ -487,7 +552,7 @@ export default function Report() {
 
         {/* SECTION 5 — BUSINESS LOGIC GAPS */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Business logic gaps</SectionLabel>
+          <SectionLabel>Intent gaps · what you wanted vs what got built</SectionLabel>
           {gapsList.length === 0 ? (
             <div
               style={{
@@ -508,7 +573,7 @@ export default function Report() {
 
         {/* SECTION 6 — SECURITY FINDINGS */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Security findings</SectionLabel>
+          <SectionLabel>Security findings · exposed secrets &amp; access risks</SectionLabel>
           {secList.length === 0 ? (
             <div
               style={{
