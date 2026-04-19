@@ -1090,32 +1090,57 @@ Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
 
-INTENT SCORE FORMULA:
-Start with 100 points.
-Deduct per finding:
-Critical: -20 points
-High: -10 points
-Medium: -5 points
-Low: -2 points
-Minimum score: 0
-Maximum score: 100
+INTENT SCORE — BUSINESS LOGIC ONLY:
+The intent score measures ONE thing: does the code do what the founder said the app does?
+SECURITY findings DO NOT lower the intent score. LEGAL findings DO NOT lower the intent score.
+PROMISES-VS-CODE findings DO NOT lower the intent score.
+Only items in business_logic_gaps lower the intent score.
+Start at 100. Deduct per business_logic_gap only:
+  Critical: -20, High: -10, Medium: -5, Low: -2. Floor at 0.
 
-SCORE LABELS:
-90-100: "Launch ready"
-70-89: "Almost ready"
-50-69: "Needs work"
-30-49: "Not ready"
-0-29: "Critical issues"
+SECURITY SCORE — INDEPENDENT:
+Compute a separate security_score from security_findings only, using the same per-severity deductions.
+
+SELF-CHECK BEFORE RETURNING:
+1. Did any security or legal item leak into business_logic_gaps? If yes, move it.
+2. Is intent_score deducting for security findings? If yes, recalculate.
+3. Are intent_score and security_score independent numbers? They must be.
+
+LEGAL & TRUST FINDINGS — soft tone, never accusatory:
+Look at the homepage_signals block. Generate up to 4 legal_findings if any of these are true:
+- No privacy policy was found (privacy_page_found is false) AND code stores user data (auth, emails, profiles tables).
+- No terms of service was found (terms_page_found is false) AND the app accepts payments or sign-ups.
+- Privacy or terms text exists but is under 400 characters or contains placeholder words like "lorem ipsum", "your privacy policy here", "TODO", "[insert".
+- Payment code exists but no refund or cancellation policy was found anywhere in privacy/terms text.
+Tone: helpful, never alarming. Example phrasing: "Most app stores and payment providers expect a privacy policy. We could not find one on your live site." NEVER say "you're breaking the law" or "you're at risk of being sued."
+
+PROMISES VS CODE — the killer find, soft tone:
+Look at homepage_text and readme_text. Extract concrete claims (features, capabilities, integrations) and check whether each one is supported by the code in app_understanding.
+Generate up to 6 landing_page_promises items, ONE per claim.
+Each item:
+{
+  "claim": "Exact short phrase from the homepage or README (max 12 words)",
+  "claim_source": "homepage" | "readme",
+  "verdict": "found" | "partial" | "not_found",
+  "evidence": "Where in the code we looked or what we found (max 25 words). For 'not_found', say what we searched for.",
+  "severity": "info" | "low" | "medium"
+}
+NEVER use the words "lie", "lying", "false", "misleading", "deceptive", or "fraud".
+ALWAYS use "we couldn't find this in your code" instead of "this isn't true".
+ALWAYS frame as "unverified claim" — the founder may have built it on a different branch, or we missed it.
 
 REPORT STRUCTURE:
 Return ONLY valid JSON:
 {
   "score": number,
   "score_label": string,
+  "security_score": number,
   "summary": "2-3 sentences. What the app does well. What the biggest concern is. Plain English. Personalized to their specific app type.",
   "verdict": "One sentence. Clear launch recommendation. Example: Fix the paywall issue before your first user signs up.",
   "business_logic_gaps": [findings],
   "security_findings": [findings],
+  "legal_findings": [{"id":"","title":"","what_we_found":"","what_this_means":"","how_to_fix":"","severity":"info|low|medium"}],
+  "landing_page_promises": [promise items as defined above],
   "what_works": ["One sentence per positive finding. Something they did right."],
   "scan_type": "quick or deep"
 }
@@ -1123,9 +1148,12 @@ Return ONLY valid JSON:
 HARD LIMITS:
 - Maximum 5 business_logic_gaps. Pick the 5 most impactful — drop weaker ones.
 - Maximum 5 security_findings. Pick the 5 most impactful — drop weaker ones.
+- Maximum 4 legal_findings.
+- Maximum 6 landing_page_promises.
 - Always find at least 2 positives.
 - Always personalize to their app type.
 - Never use technical jargon anywhere.
+- If homepage_signals is empty (no live URL given AND no README), return landing_page_promises: [] — do NOT invent claims.
 
 RESPOND WITH JSON ONLY.
 No text before or after the JSON.`;
