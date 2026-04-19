@@ -184,6 +184,71 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
 
       {(mode === 'edit' || mode === 'reject') && (
         <div>
+          {mode === 'edit' && unsureItems.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: 13,
+                  color: '#a1a1aa',
+                  marginBottom: 10,
+                  fontWeight: 500,
+                }}
+              >
+                Pick the items you'd like to clarify (optional)
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {unsureItems.map((item) => {
+                  const checked = selectedUnsure.includes(item);
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => toggleUnsure(item)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        background: checked ? 'rgba(245,158,11,0.08)' : '#0a0a0a',
+                        border: `1px solid ${checked ? 'rgba(245,158,11,0.45)' : '#1f1f1f'}`,
+                        borderRadius: 8,
+                        padding: '12px 14px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'border-color 0.15s ease, background 0.15s ease',
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        style={{
+                          flexShrink: 0,
+                          width: 16,
+                          height: 16,
+                          marginTop: 2,
+                          borderRadius: 4,
+                          border: `1px solid ${checked ? '#f59e0b' : '#3f3f46'}`,
+                          background: checked ? '#f59e0b' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#000',
+                          fontSize: 11,
+                          lineHeight: 1,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {checked ? '✓' : ''}
+                      </span>
+                      <span style={{ fontSize: 14, color: '#e5e5e5', lineHeight: 1.5 }}>
+                        {item}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <label
             style={{
               display: 'block',
@@ -194,7 +259,9 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
             }}
           >
             {mode === 'edit'
-              ? 'What did we miss or get wrong?'
+              ? unsureItems.length > 0
+                ? 'Anything else to add? (optional)'
+                : 'What did we miss or get wrong?'
               : 'In one to three sentences, what is your app actually for?'}
           </label>
           <textarea
@@ -226,7 +293,11 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button
               type="button"
-              onClick={() => setMode('idle')}
+              onClick={() => {
+                setMode('idle');
+                setSelectedUnsure([]);
+                setCorrection('');
+              }}
               className="vercel-btn-secondary"
               style={{ cursor: 'pointer' }}
             >
@@ -234,13 +305,15 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
             </button>
             <button
               type="button"
-              disabled={correction.trim().length < 5}
-              onClick={() => onConfirm(correction.trim())}
+              disabled={!canSubmitEdit}
+              onClick={() =>
+                onConfirm(mode === 'edit' ? buildEditPayload() : correction.trim())
+              }
               className="vercel-btn-primary"
               style={{
                 flex: 1,
-                cursor: correction.trim().length < 5 ? 'not-allowed' : 'pointer',
-                opacity: correction.trim().length < 5 ? 0.5 : 1,
+                cursor: !canSubmitEdit ? 'not-allowed' : 'pointer',
+                opacity: !canSubmitEdit ? 0.5 : 1,
               }}
             >
               Continue
