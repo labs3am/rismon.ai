@@ -8,6 +8,8 @@ export interface PreAnalysis {
   hasFreePaidTiers?: boolean;
   detectedAppType?: string;
   detectedPlatform?: string;
+  // 'verified' = backend ground truth available, 'partial' = table list only, 'none' = nothing
+  backendVisibility?: 'verified' | 'partial' | 'none';
 }
 
 interface SmartQ {
