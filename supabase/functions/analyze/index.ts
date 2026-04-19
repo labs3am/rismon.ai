@@ -981,51 +981,60 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
       }
 
       // ----------------------------------------------------------
-      // Reconcile findings against backend ground truth.
-      // Drops false-positive RLS claims and tags unverified findings.
+      // Hardening pipeline (applied in order):
+      //   A. Reconcile against backend ground truth (drops false positives, tags unverified).
+      //   B. Hardening filter — evidence required, banned phrases, whitelist for "verified".
+      //   C. Self-check pass — second model confirms each snippet proves the claim.
+      //   D. Cap each category at 5, sorted by severity.
+      //   E. Recompute score from "verified" findings only.
       // ----------------------------------------------------------
+      const allDropped: any[] = [];
+
+      // A. Ground truth reconcile
       const reconciledGaps = reconcileFindingsAgainstGroundTruth(claudeResult.gaps || [], groundTruth);
       const reconciledSec = reconcileFindingsAgainstGroundTruth(claudeResult.security_issues || [], groundTruth);
       claudeResult.gaps = reconciledGaps.kept;
       claudeResult.security_issues = reconciledSec.kept;
-      const droppedFindings = [...reconciledGaps.dropped, ...reconciledSec.dropped];
-      if (droppedFindings.length > 0) {
-        claudeResult.dropped_false_positives = droppedFindings;
-        // Recompute score: only "verified" findings affect it
-        const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
-        const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
-        const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
-        const deduction = verifiedOnly.reduce((s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5), 0);
-        claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+      allDropped.push(...reconciledGaps.dropped, ...reconciledSec.dropped);
+
+      // B. Evidence + speculation + whitelist filter
+      const hardenedGaps = hardenFindings(claudeResult.gaps);
+      const hardenedSec = hardenFindings(claudeResult.security_issues);
+      claudeResult.gaps = hardenedGaps.kept;
+      claudeResult.security_issues = hardenedSec.kept;
+      allDropped.push(...hardenedGaps.dropped, ...hardenedSec.dropped);
+
+      // C. Self-check pass — only on Pro tier (cost) OR when there are >= 3 findings to validate
+      const totalFindings = claudeResult.gaps.length + claudeResult.security_issues.length;
+      if ((limits.verificationPass || totalFindings >= 3) && totalFindings > 0) {
+        const checkedGaps = await selfCheckFindings(claudeResult.gaps, code_understanding);
+        const checkedSec = await selfCheckFindings(claudeResult.security_issues, code_understanding);
+        claudeResult.gaps = checkedGaps.kept;
+        claudeResult.security_issues = checkedSec.kept;
+        allDropped.push(...checkedGaps.dropped, ...checkedSec.dropped);
+        claudeResult.self_check_applied = true;
+        claudeResult.self_check_dropped = checkedGaps.dropped.length + checkedSec.dropped.length;
       }
+
+      // D. Cap each category at 5
+      claudeResult.gaps = capFindings(claudeResult.gaps, 5);
+      claudeResult.security_issues = capFindings(claudeResult.security_issues, 5);
+
+      if (allDropped.length > 0) claudeResult.dropped_false_positives = allDropped;
+
+      // E. Recompute score using only "verified" findings
+      const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
+      const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
+      const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
+      const deduction = verifiedOnly.reduce(
+        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
+        0,
+      );
+      claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+
       claudeResult.backend_verification = groundTruth
         ? (groundTruth.source === "rpc" ? "verified" : "partial")
         : "none";
-
-
-      if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
-        try {
-          const verifySystem = `You verify whether each claimed gap is actually supported by the evidence. For each gap, decide: is the claim "what was built" actually true given the code understanding? Mark each gap "confirmed" or "rejected" with one short reason.
-
-Return ONLY:
-{ "verified": [{ "id": "g1", "verdict": "confirmed|rejected", "reason": "one short sentence" }] }`;
-          const verifyUser = `Code understanding: ${JSON.stringify(code_understanding)}
-
-Founder description: ${founder_description}
-
-Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
-          const verifyText = await callGemini(verifySystem, verifyUser, "google/gemini-2.5-pro");
-          const verified = parseJSON(verifyText);
-          if (Array.isArray(verified?.verified)) {
-            const rejectedIds = new Set(verified.verified.filter((v: any) => v.verdict === "rejected").map((v: any) => v.id));
-            claudeResult.gaps = claudeResult.gaps.filter((g: any) => !rejectedIds.has(g.id));
-            claudeResult.verification_applied = true;
-            claudeResult.verification_dropped = rejectedIds.size;
-          }
-        } catch (e) {
-          console.error("Verification pass failed (non-fatal):", e);
-        }
-      }
 
       claudeResult.plan_at_scan = userPlan;
       claudeResult.edge_functions_scanned = limits.edgeFunctionScan;
