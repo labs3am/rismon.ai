@@ -36,6 +36,9 @@ export default function Analyze() {
   const [fileCount, setFileCount] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
   const [currentFile, setCurrentFile] = useState('');
+  // Keep code bundles in memory so the analyze step can ship them to Gemini for file-level verification.
+  const codeBundleRef = useRef<string>('');
+  const edgeBundleRef = useRef<string>('');
 
   // Prevent double API calls
   const readingStarted = useRef(false);
@@ -374,6 +377,9 @@ export default function Analyze() {
         }
         codeBundle = codeBundle.slice(0, 60000);
         edgeFunctionBundle = edgeFunctionBundle.slice(0, 60000);
+        // Cache for the analyze step (Gemini file re-read verifier needs the actual file contents)
+        codeBundleRef.current = codeBundle;
+        edgeBundleRef.current = edgeFunctionBundle;
 
         let tableNames = '';
         if (app.supabase_url && app.supabase_anon_key) {
@@ -495,7 +501,19 @@ export default function Analyze() {
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze', {
-        body: { action: 'analyze', code_understanding: codeUnderstanding, founder_description: description, user_answers: answers, concern, project_type: intentMeta.projectType, monetization: intentMeta.monetization, scan_type: scanType }
+        body: {
+          action: 'analyze',
+          code_understanding: codeUnderstanding,
+          founder_description: description,
+          user_answers: answers,
+          concern,
+          project_type: intentMeta.projectType,
+          monetization: intentMeta.monetization,
+          scan_type: scanType,
+          // Send the bundles so Gemini can re-open cited files and fact-check Claude
+          codeBundle: codeBundleRef.current,
+          edgeFunctionBundle: edgeBundleRef.current,
+        }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
 
