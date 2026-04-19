@@ -1359,23 +1359,82 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         dropped_total: allDropped.length,
       };
 
-      // E. Recompute INTENT score from business_logic_gaps only (verified findings).
-      // Security findings DO NOT affect the intent score — that's the whole point of having two scores.
-      const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
-      const verifiedGapsOnly = (claudeResult.gaps || []).filter((f: any) => f.confidence === "verified");
-      const intentDeduction = verifiedGapsOnly.reduce(
-        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
-        0,
-      );
-      claudeResult.intent_match_score = Math.max(0, 100 - intentDeduction);
+      // ============================================================
+      // SCORING — Moderate strictness (2026-04 update).
+      // Goal: make 100 hard to earn so the score is a real signal.
+      //
+      // Old logic only deducted for "verified" findings, but the strict
+      // verification whitelist meant ~80% of findings were unverified and
+      // deducted ZERO. A scary unverified finding took off 0 points.
+      // Promises-vs-code mismatches and missing legal pages also deducted 0.
+      // Net effect: most apps scored 95-100 even with real problems.
+      //
+      // New rules:
+      //   • verified findings deduct heavily
+      //   • unverified findings deduct lightly (signal, not noise)
+      //   • promises-vs-code mismatches deduct from intent
+      //   • missing legal pages deduct from security
+      //   • without backend ground-truth verification, both scores cap at 95
+      //     (you cannot earn a perfect score without proof)
+      // ============================================================
+      const verifiedPoints: Record<string, number> = { critical: 13, high: 8, medium: 4, low: 2 };
+      const unverifiedPoints: Record<string, number> = { critical: 5, high: 3, medium: 2, low: 1 };
 
-      // Compute SECURITY score independently from verified security findings.
-      const verifiedSecOnly = (claudeResult.security_issues || []).filter((f: any) => f.confidence === "verified");
-      const secDeduction = verifiedSecOnly.reduce(
-        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
-        0,
+      const scoreFinding = (f: any): number => {
+        const sev = (f.severity || "medium").toLowerCase();
+        const table = f.confidence === "verified" ? verifiedPoints : unverifiedPoints;
+        return table[sev] ?? 2;
+      };
+
+      // ---------- INTENT SCORE ----------
+      const gapsList = Array.isArray(claudeResult.gaps) ? claudeResult.gaps : [];
+      let intentDeduction = gapsList.reduce((s: number, f: any) => s + scoreFinding(f), 0);
+
+      // Promises-vs-code mismatch — the killer signal.
+      const promisesList = Array.isArray(claudeResult.landing_page_promises)
+        ? claudeResult.landing_page_promises : [];
+      for (const p of promisesList) {
+        const v = (p?.verdict || "").toLowerCase();
+        if (v === "not_found") intentDeduction += 3;
+        else if (v === "partial") intentDeduction += 1.5;
+      }
+
+      // ---------- SECURITY SCORE ----------
+      const secList = Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : [];
+      let secDeduction = secList.reduce((s: number, f: any) => s + scoreFinding(f), 0);
+
+      // Legal & trust gaps — affect security, not intent.
+      const legalList = Array.isArray(claudeResult.legal_findings) ? claudeResult.legal_findings : [];
+      const homepageFound = !!homepageSignals?.privacy_page_found;
+      const termsFound = !!homepageSignals?.terms_page_found;
+      const hasLiveUrl = !!homepageSignals?.has_live_url;
+      if (hasLiveUrl) {
+        if (!homepageFound) secDeduction += 4;
+        if (!termsFound) secDeduction += 3;
+      }
+      // Placeholder text in legal pages (lorem ipsum, TODO, etc.) is a hard signal.
+      const hasPlaceholder = legalList.some((l: any) =>
+        /placeholder|lorem|todo|insert/i.test(l?.what_we_found || "")
       );
-      claudeResult.security_score = Math.max(0, 100 - secDeduction);
+      if (hasPlaceholder) secDeduction += 5;
+
+      // Round half-points and floor at 0.
+      let intentScore = Math.max(0, Math.round(100 - intentDeduction));
+      let securityScore = Math.max(0, Math.round(100 - secDeduction));
+
+      // ---------- 95-CAP: no perfect score without backend proof ----------
+      // If we never confirmed the database rules directly, we can't honestly
+      // give 100. Cap both scores at 95 — the founder still sees a great
+      // result, but the perfect badge is reserved for fully-verified scans.
+      const backendVerified = groundTruth?.source === "rpc";
+      if (!backendVerified) {
+        intentScore = Math.min(intentScore, 95);
+        securityScore = Math.min(securityScore, 95);
+      }
+
+      claudeResult.intent_match_score = intentScore;
+      claudeResult.security_score = securityScore;
+      claudeResult.scoring_version = "2026-04-moderate";
 
       // Pass through new finding arrays (already validated by the prompt schema).
       // Add ids if Claude didn't supply them so the UI can key on them.
