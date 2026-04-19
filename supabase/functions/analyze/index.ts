@@ -369,56 +369,44 @@ async function callClaude(systemPrompt: string, userContent: string) {
   return data.content?.[0]?.text || "";
 }
 
-// Hybrid: prefer Lovable AI Gemini 2.5 Pro (cheap, fast, no separate key).
-// On rate-limit / credit / 5xx, fall back to Claude Sonnet (if ANTHROPIC_KEY is set).
-// The same system prompt is used either way so the report voice & JSON shape
-// stay consistent.
+// Hybrid: Claude Sonnet is the primary engine (best report voice + reasoning).
+// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the same
+// system prompt so the report style stays consistent.
 async function callClaudeWithFallback(systemPrompt: string, userContent: string) {
-  // 1) Try Lovable AI Gemini 2.5 Pro first (primary).
+  // 1) Primary: Claude Sonnet
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-    const res = await fetch(LOVABLE_AI_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const status = res.status;
-      const body = await res.text().catch(() => "");
-      console.error(`Gemini primary error [${status}]:`, body.slice(0, 300));
-      // Retryable: try Claude as fallback
-      if (status === 429 || status === 402 || status >= 500) {
-        throw new Error("GEMINI_RETRYABLE");
-      }
-      throw new Error("AI_ERROR");
-    }
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || "";
+    return await callClaude(systemPrompt, userContent);
   } catch (e: any) {
-    if (e?.message !== "GEMINI_RETRYABLE" && e?.message !== "LOVABLE_API_KEY not configured") {
+    if (e?.message !== "CLAUDE_RETRYABLE" && e?.message !== "ANTHROPIC_KEY not configured") {
       throw e;
     }
-    // 2) Fall back to Claude if available.
-    const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_KEY");
-    if (!ANTHROPIC_KEY) {
-      console.error("Gemini failed and no ANTHROPIC_KEY configured for fallback.");
-      throw new Error("AI_ERROR");
-    }
-    console.warn("Gemini unavailable. Falling back to Claude Sonnet.");
-    try {
-      return await callClaude(systemPrompt, userContent);
-    } catch (e2: any) {
-      if (e2?.message === "CLAUDE_RETRYABLE") throw new Error("AI_ERROR");
-      throw e2;
-    }
+    console.warn(`Claude unavailable (${e?.status || e?.message}). Falling back to Gemini 2.5 Pro.`);
   }
+
+  // 2) Fallback: Lovable AI Gemini 2.5 Pro
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("AI_ERROR");
+  const res = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const status = res.status;
+    const body = await res.text().catch(() => "");
+    console.error(`Gemini fallback error [${status}]:`, body.slice(0, 300));
+    if (status === 429) throw new Error("RATE_LIMITED");
+    if (status === 402) throw new Error("CREDITS_EXHAUSTED");
+    throw new Error("AI_ERROR");
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
 }
 
 function parseJSON(text: string): any {
