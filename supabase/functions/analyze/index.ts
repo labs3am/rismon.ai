@@ -816,6 +816,10 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
           fix_prompt: f?.fix_prompt || "",
           technical_reference: f?.technical_reference || "",
           google_query: f?.google_query || "",
+          // confidence transparency
+          confidence: (f?.confidence || "likely").toLowerCase(),
+          confidence_reason: f?.confidence_reason || "",
+          evidence: f?.evidence || "",
         };
       };
 
