@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CheckCircle, Edit3, X } from 'lucide-react';
 
 export interface AppUnderstanding {
   business_type_guess?: string;
@@ -22,9 +21,9 @@ interface Props {
 }
 
 /**
- * "Here's what we think your app does" screen.
- * User confirms, edits, or rejects Claude's understanding before we run the audit.
- * This is the most important UX step — it anchors every finding that follows.
+ * "Here's what we read in your code" screen — Rismon's signature moment.
+ * No emojis. Premium homepage-style buttons. Three actions: confirm, edit, reject.
+ * The whole point of Rismon is that it TELLS the founder what they built — this is that screen.
  */
 export default function AppUnderstandingCard({ understanding, onConfirm }: Props) {
   const [mode, setMode] = useState<'idle' | 'edit' | 'reject'>('idle');
@@ -40,47 +39,52 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
     : 'We read your code.';
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 24px' }}>
-      <div style={{ marginBottom: 24 }}>
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px' }}>
+      {/* Pill — homepage style */}
+      <div style={{ marginBottom: 20 }}>
         <span
           style={{
-            display: 'inline-block',
-            background: 'rgba(99,102,241,0.08)',
-            border: '1px solid rgba(99,102,241,0.20)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: 'transparent',
+            border: '1px solid #333333',
             borderRadius: 999,
-            padding: '4px 12px',
+            padding: '6px 14px',
             fontSize: 11,
-            color: '#818cf8',
-            letterSpacing: '0.05em',
+            color: '#888888',
+            letterSpacing: '0.08em',
             textTransform: 'uppercase',
+            fontWeight: 500,
           }}
         >
           Step 1 of 2 · Confirm
         </span>
-        <h2
-          style={{
-            fontSize: 24,
-            fontWeight: 600,
-            color: '#ffffff',
-            margin: '12px 0 8px',
-            lineHeight: 1.3,
-          }}
-        >
-          Here's what we think your app does
-        </h2>
-        <p style={{ fontSize: 15, color: '#888', lineHeight: 1.5 }}>
-          {summary} Tell us if we got it right — this makes the report 10× more accurate.
-        </p>
       </div>
+
+      <h2
+        style={{
+          fontSize: 32,
+          fontWeight: 700,
+          color: '#ffffff',
+          margin: '0 0 12px',
+          lineHeight: 1.15,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        Here is what we read in your code
+      </h2>
+      <p style={{ fontSize: 16, color: '#888888', lineHeight: 1.6, marginBottom: 28 }}>
+        {summary} Tell us if we got it right — this is what we will check your app against.
+      </p>
 
       {/* Understanding panel */}
       <div
         style={{
           background: '#0a0a0a',
-          border: '1px solid #1a1a1a',
+          border: '1px solid #ffffff14',
           borderRadius: 12,
-          padding: 24,
-          marginBottom: 20,
+          padding: 28,
+          marginBottom: 24,
         }}
       >
         {features.length > 0 && (
@@ -120,41 +124,35 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
         )}
 
         {(u.unknown_features?.length || 0) > 0 && (
-          <Section label="Things we're not sure about">
+          <Section label="Things we are not sure about">
             <PillList items={(u.unknown_features || []).slice(0, 5)} warning />
           </Section>
         )}
 
         {features.length === 0 && tables.length === 0 && (
-          <p style={{ color: '#666', fontSize: 14 }}>
-            We didn't find much yet — please describe what your app does below.
+          <p style={{ color: '#666', fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+            We did not find much yet — please describe what your app does below.
           </p>
         )}
       </div>
 
-      {/* Action buttons */}
+      {/* Action buttons — homepage style */}
       {mode === 'idle' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <ActionButton
-            icon={<CheckCircle size={18} />}
-            label="Yes, that's right"
+            label="Yes, that is right"
             sublabel="Continue to a few quick questions"
-            color="#22c55e"
             primary
             onClick={() => onConfirm()}
           />
           <ActionButton
-            icon={<Edit3 size={18} />}
             label="Mostly right — let me add details"
-            sublabel="Tell us what's missing or wrong"
-            color="#f59e0b"
+            sublabel="Tell us what is missing or what we got wrong"
             onClick={() => setMode('edit')}
           />
           <ActionButton
-            icon={<X size={18} />}
-            label="No, this isn't what my app is"
+            label="No, this is not what my app is"
             sublabel="Describe it in your own words"
-            color="#ef4444"
             onClick={() => setMode('reject')}
           />
         </div>
@@ -173,7 +171,7 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
           >
             {mode === 'edit'
               ? 'What did we miss or get wrong?'
-              : 'In 1–3 sentences, what is your app actually for?'}
+              : 'In one to three sentences, what is your app actually for?'}
           </label>
           <textarea
             autoFocus
@@ -181,14 +179,14 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
             onChange={(e) => setCorrection(e.target.value)}
             placeholder={
               mode === 'edit'
-                ? "Example: It's not just a marketplace — sellers also get a dashboard to upload bulk products via CSV."
-                : "Example: It's a Discord bot that summarizes long YouTube videos for my friends — no users, no payments, just me running it on a server."
+                ? "Example: It is not just a marketplace — sellers also get a dashboard to upload bulk products via CSV."
+                : "Example: It is a Discord bot that summarizes long YouTube videos for my friends. No users, no payments, just me running it on a server."
             }
             rows={5}
             style={{
               width: '100%',
               background: '#000',
-              border: '1px solid #f97316',
+              border: '1px solid #333',
               borderRadius: 8,
               padding: 14,
               color: '#fff',
@@ -196,41 +194,32 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
               fontFamily: 'inherit',
               resize: 'vertical',
               outline: 'none',
+              transition: 'border-color 0.15s',
             }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = '#f97316')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = '#333')}
           />
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button
               type="button"
               onClick={() => setMode('idle')}
-              style={{
-                background: 'transparent',
-                border: '1px solid #2a2a2a',
-                color: '#a1a1aa',
-                padding: '12px 20px',
-                borderRadius: 8,
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
+              className="vercel-btn-secondary"
+              style={{ cursor: 'pointer' }}
             >
-              ← Back
+              Back
             </button>
             <button
               type="button"
               disabled={correction.trim().length < 5}
               onClick={() => onConfirm(correction.trim())}
+              className="vercel-btn-primary"
               style={{
-                background: correction.trim().length < 5 ? '#1a1a1a' : '#ffffff',
-                color: correction.trim().length < 5 ? '#555' : '#000',
-                padding: '12px 24px',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 14,
                 flex: 1,
-                border: 'none',
                 cursor: correction.trim().length < 5 ? 'not-allowed' : 'pointer',
+                opacity: correction.trim().length < 5 ? 0.5 : 1,
               }}
             >
-              Continue →
+              Continue
             </button>
           </div>
         </div>
@@ -247,8 +236,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
           fontSize: 11,
           color: '#555',
           textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          marginBottom: 8,
+          letterSpacing: '0.1em',
+          marginBottom: 10,
+          fontWeight: 600,
         }}
       >
         {label}
@@ -267,7 +257,7 @@ function PillList({
   muted?: boolean;
   warning?: boolean;
 }) {
-  const bg = warning ? 'rgba(245,158,11,0.08)' : muted ? '#0f0f0f' : '#141414';
+  const bg = warning ? 'rgba(245,158,11,0.06)' : muted ? '#0f0f0f' : '#141414';
   const border = warning ? 'rgba(245,158,11,0.25)' : muted ? '#1f1f1f' : '#262626';
   const color = warning ? '#fbbf24' : muted ? '#888' : '#e5e5e5';
   return (
@@ -279,7 +269,7 @@ function PillList({
             background: bg,
             border: `1px solid ${border}`,
             borderRadius: 6,
-            padding: '5px 10px',
+            padding: '6px 12px',
             fontSize: 13,
             color,
           }}
@@ -292,17 +282,13 @@ function PillList({
 }
 
 function ActionButton({
-  icon,
   label,
   sublabel,
-  color,
   primary,
   onClick,
 }: {
-  icon: React.ReactNode;
   label: string;
   sublabel: string;
-  color: string;
   primary?: boolean;
   onClick: () => void;
 }) {
@@ -311,46 +297,43 @@ function ActionButton({
       type="button"
       onClick={onClick}
       style={{
-        background: primary ? color : '#0a0a0a',
-        border: `1px solid ${primary ? color : '#1f1f1f'}`,
+        background: primary ? '#ffffff' : '#0a0a0a',
+        border: `1px solid ${primary ? '#ffffff' : '#1f1f1f'}`,
         borderRadius: 10,
-        padding: '14px 18px',
+        padding: '16px 20px',
         cursor: 'pointer',
         textAlign: 'left',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
         transition: 'border-color 0.15s ease, background 0.15s ease',
       }}
       onMouseEnter={(e) => {
-        if (!primary) e.currentTarget.style.borderColor = color;
+        if (!primary) e.currentTarget.style.borderColor = '#444';
+        else e.currentTarget.style.background = '#e5e5e5';
       }}
       onMouseLeave={(e) => {
         if (!primary) e.currentTarget.style.borderColor = '#1f1f1f';
+        else e.currentTarget.style.background = '#ffffff';
       }}
     >
-      <span style={{ color: primary ? '#000' : color, display: 'flex' }}>{icon}</span>
-      <span style={{ flex: 1 }}>
-        <div
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: primary ? '#000' : '#fff',
-            lineHeight: 1.3,
-          }}
-        >
-          {label}
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: primary ? 'rgba(0,0,0,0.7)' : '#777',
-            marginTop: 2,
-          }}
-        >
-          {sublabel}
-        </div>
-      </span>
+      <div
+        style={{
+          fontSize: 15,
+          fontWeight: 600,
+          color: primary ? '#000' : '#fff',
+          lineHeight: 1.3,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 13,
+          color: primary ? 'rgba(0,0,0,0.65)' : '#777',
+          marginTop: 4,
+          lineHeight: 1.4,
+        }}
+      >
+        {sublabel}
+      </div>
     </button>
   );
 }

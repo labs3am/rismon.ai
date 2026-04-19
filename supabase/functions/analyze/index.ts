@@ -393,6 +393,122 @@ Does the real file prove the claim?`;
 }
 
 // ============================================================
+// SECTION 1f: Homepage signal reader
+// Pulls README, live URL homepage HTML, /privacy and /terms pages
+// so the analyzer can compare what the founder PROMISES on their
+// homepage vs what the code actually does. This is the core
+// Rismon moat — every other scanner only reads code.
+// ============================================================
+function stripHtmlToText(html: string): string {
+  if (!html) return "";
+  // Strip scripts/styles, then tags. Collapse whitespace. Cap length.
+  const cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.slice(0, 12000);
+}
+
+function normalizeUrl(raw: string): string | null {
+  if (!raw) return null;
+  let u = raw.trim();
+  if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+  try { const parsed = new URL(u); return parsed.origin; } catch { return null; }
+}
+
+async function fetchPage(url: string, timeoutMs = 7000): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; RismonBot/1.0; +https://rismon.ai)" },
+      redirect: "follow",
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text;
+  } catch { return null; }
+}
+
+async function fetchHomepageSignals(liveUrl: string | null, githubOwner: string | null, githubRepo: string | null) {
+  const result: any = {
+    has_live_url: false,
+    homepage_text: null as string | null,
+    privacy_text: null as string | null,
+    terms_text: null as string | null,
+    readme_text: null as string | null,
+    privacy_page_found: false,
+    terms_page_found: false,
+    notes: [] as string[],
+  };
+
+  // 1) README from GitHub raw (try main, then master)
+  if (githubOwner && githubRepo) {
+    for (const branch of ["main", "master"]) {
+      for (const fname of ["README.md", "readme.md", "README.MD"]) {
+        const raw = await fetchPage(`https://raw.githubusercontent.com/${githubOwner}/${githubRepo}/${branch}/${fname}`, 5000);
+        if (raw && raw.length > 30) {
+          result.readme_text = raw.slice(0, 8000);
+          break;
+        }
+      }
+      if (result.readme_text) break;
+    }
+  }
+
+  // 2) Live site (homepage + /privacy + /terms)
+  const origin = normalizeUrl(liveUrl || "");
+  if (origin) {
+    result.has_live_url = true;
+    const homeHtml = await fetchPage(origin);
+    if (homeHtml) result.homepage_text = stripHtmlToText(homeHtml);
+
+    // Try common privacy paths
+    for (const path of ["/privacy", "/privacy-policy", "/legal/privacy", "/policies/privacy"]) {
+      const html = await fetchPage(`${origin}${path}`);
+      if (html) {
+        const text = stripHtmlToText(html);
+        // Must look like a real policy, not a 404 SPA fallback
+        if (text.length > 200 && /privacy|data|cookie|personal/i.test(text)) {
+          result.privacy_text = text;
+          result.privacy_page_found = true;
+          break;
+        }
+      }
+    }
+
+    // Try common terms paths
+    for (const path of ["/terms", "/terms-of-service", "/tos", "/legal/terms", "/policies/terms"]) {
+      const html = await fetchPage(`${origin}${path}`);
+      if (html) {
+        const text = stripHtmlToText(html);
+        if (text.length > 200 && /terms|agreement|liability|service/i.test(text)) {
+          result.terms_text = text;
+          result.terms_page_found = true;
+          break;
+        }
+      }
+    }
+  } else {
+    result.notes.push("No live URL was provided — we could only read the code, not the deployed site.");
+  }
+
+  return result;
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -974,32 +1090,57 @@ Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
 
-INTENT SCORE FORMULA:
-Start with 100 points.
-Deduct per finding:
-Critical: -20 points
-High: -10 points
-Medium: -5 points
-Low: -2 points
-Minimum score: 0
-Maximum score: 100
+INTENT SCORE — BUSINESS LOGIC ONLY:
+The intent score measures ONE thing: does the code do what the founder said the app does?
+SECURITY findings DO NOT lower the intent score. LEGAL findings DO NOT lower the intent score.
+PROMISES-VS-CODE findings DO NOT lower the intent score.
+Only items in business_logic_gaps lower the intent score.
+Start at 100. Deduct per business_logic_gap only:
+  Critical: -20, High: -10, Medium: -5, Low: -2. Floor at 0.
 
-SCORE LABELS:
-90-100: "Launch ready"
-70-89: "Almost ready"
-50-69: "Needs work"
-30-49: "Not ready"
-0-29: "Critical issues"
+SECURITY SCORE — INDEPENDENT:
+Compute a separate security_score from security_findings only, using the same per-severity deductions.
+
+SELF-CHECK BEFORE RETURNING:
+1. Did any security or legal item leak into business_logic_gaps? If yes, move it.
+2. Is intent_score deducting for security findings? If yes, recalculate.
+3. Are intent_score and security_score independent numbers? They must be.
+
+LEGAL & TRUST FINDINGS — soft tone, never accusatory:
+Look at the homepage_signals block. Generate up to 4 legal_findings if any of these are true:
+- No privacy policy was found (privacy_page_found is false) AND code stores user data (auth, emails, profiles tables).
+- No terms of service was found (terms_page_found is false) AND the app accepts payments or sign-ups.
+- Privacy or terms text exists but is under 400 characters or contains placeholder words like "lorem ipsum", "your privacy policy here", "TODO", "[insert".
+- Payment code exists but no refund or cancellation policy was found anywhere in privacy/terms text.
+Tone: helpful, never alarming. Example phrasing: "Most app stores and payment providers expect a privacy policy. We could not find one on your live site." NEVER say "you're breaking the law" or "you're at risk of being sued."
+
+PROMISES VS CODE — the killer find, soft tone:
+Look at homepage_text and readme_text. Extract concrete claims (features, capabilities, integrations) and check whether each one is supported by the code in app_understanding.
+Generate up to 6 landing_page_promises items, ONE per claim.
+Each item:
+{
+  "claim": "Exact short phrase from the homepage or README (max 12 words)",
+  "claim_source": "homepage" | "readme",
+  "verdict": "found" | "partial" | "not_found",
+  "evidence": "Where in the code we looked or what we found (max 25 words). For 'not_found', say what we searched for.",
+  "severity": "info" | "low" | "medium"
+}
+NEVER use the words "lie", "lying", "false", "misleading", "deceptive", or "fraud".
+ALWAYS use "we couldn't find this in your code" instead of "this isn't true".
+ALWAYS frame as "unverified claim" — the founder may have built it on a different branch, or we missed it.
 
 REPORT STRUCTURE:
 Return ONLY valid JSON:
 {
   "score": number,
   "score_label": string,
+  "security_score": number,
   "summary": "2-3 sentences. What the app does well. What the biggest concern is. Plain English. Personalized to their specific app type.",
   "verdict": "One sentence. Clear launch recommendation. Example: Fix the paywall issue before your first user signs up.",
   "business_logic_gaps": [findings],
   "security_findings": [findings],
+  "legal_findings": [{"id":"","title":"","what_we_found":"","what_this_means":"","how_to_fix":"","severity":"info|low|medium"}],
+  "landing_page_promises": [promise items as defined above],
   "what_works": ["One sentence per positive finding. Something they did right."],
   "scan_type": "quick or deep"
 }
@@ -1007,9 +1148,12 @@ Return ONLY valid JSON:
 HARD LIMITS:
 - Maximum 5 business_logic_gaps. Pick the 5 most impactful — drop weaker ones.
 - Maximum 5 security_findings. Pick the 5 most impactful — drop weaker ones.
+- Maximum 4 legal_findings.
+- Maximum 6 landing_page_promises.
 - Always find at least 2 positives.
 - Always personalize to their app type.
 - Never use technical jargon anywhere.
+- If homepage_signals is empty (no live URL given AND no README), return landing_page_promises: [] — do NOT invent claims.
 
 RESPOND WITH JSON ONLY.
 No text before or after the JSON.`;
@@ -1026,18 +1170,51 @@ No text before or after the JSON.`;
           : `\n\nBACKEND PARTIAL VISIBILITY: We could only list table names, not their rules. Tables visible: ${JSON.stringify(groundTruth.tables.map((t: any) => t.table))}. Mark all access-control claims as "unverified" since rules could not be checked directly.`)
         : `\n\nNO BACKEND VISIBILITY: The user did not connect their backend (or hasn't installed the Rismon verification function). Mark every claim about database access rules, server validation, or admin enforcement as "unverified" and ask the founder to confirm in plain English.`;
 
+      // Fetch homepage signals — README, live URL homepage, /privacy, /terms.
+      // This is the foundation of the "promises vs code" finding type.
+      // We pull the app row to get live_url, github_owner, github_repo_name and app_description.
+      let appRow: any = null;
+      if (app_id) {
+        const { data } = await supabase
+          .from("apps")
+          .select("live_url, github_owner, github_repo_name, app_description")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        appRow = data;
+      }
+      const homepageSignals = await fetchHomepageSignals(
+        appRow?.live_url || null,
+        appRow?.github_owner || null,
+        appRow?.github_repo_name || null,
+      );
+      const homepageBlock = `\n\nHOMEPAGE SIGNALS (what we read from the live site and README):
+- live URL provided: ${homepageSignals.has_live_url ? "yes" : "no"}
+- privacy page found: ${homepageSignals.privacy_page_found ? "yes" : "no"}
+- terms page found: ${homepageSignals.terms_page_found ? "yes" : "no"}
+- README excerpt: ${homepageSignals.readme_text ? homepageSignals.readme_text.slice(0, 2000) : "(none found)"}
+- Homepage text excerpt: ${homepageSignals.homepage_text ? homepageSignals.homepage_text.slice(0, 3000) : "(none — no live URL or fetch failed)"}
+- Privacy text excerpt: ${homepageSignals.privacy_text ? homepageSignals.privacy_text.slice(0, 1500) : "(none)"}
+- Terms text excerpt: ${homepageSignals.terms_text ? homepageSignals.terms_text.slice(0, 1500) : "(none)"}
+
+Use this when generating legal_findings and landing_page_promises. If everything is "(none)", return both as [].`;
+
+      const founderShortDescription = appRow?.app_description
+        ? `\n\nFounder's short app description (entered when connecting): "${appRow.app_description}"`
+        : "";
+
       const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
 
 App understanding: ${JSON.stringify(code_understanding)}
 
-Founder described: ${founder_description}
+Founder described: ${founder_description}${founderShortDescription}
 
 Founder concern (most worried about): ${concern || "(none specified)"}
 
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
 
-Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}`;
+Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}${homepageBlock}`;
 
       const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
@@ -1182,15 +1359,53 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         dropped_total: allDropped.length,
       };
 
-      // E. Recompute score using only "verified" findings
-      const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
-      const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
+      // E. Recompute INTENT score from business_logic_gaps only (verified findings).
+      // Security findings DO NOT affect the intent score — that's the whole point of having two scores.
       const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
-      const deduction = verifiedOnly.reduce(
+      const verifiedGapsOnly = (claudeResult.gaps || []).filter((f: any) => f.confidence === "verified");
+      const intentDeduction = verifiedGapsOnly.reduce(
         (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
         0,
       );
-      claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+      claudeResult.intent_match_score = Math.max(0, 100 - intentDeduction);
+
+      // Compute SECURITY score independently from verified security findings.
+      const verifiedSecOnly = (claudeResult.security_issues || []).filter((f: any) => f.confidence === "verified");
+      const secDeduction = verifiedSecOnly.reduce(
+        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
+        0,
+      );
+      claudeResult.security_score = Math.max(0, 100 - secDeduction);
+
+      // Pass through new finding arrays (already validated by the prompt schema).
+      // Add ids if Claude didn't supply them so the UI can key on them.
+      const legalArr = Array.isArray(claudeResult.legal_findings) ? claudeResult.legal_findings : [];
+      claudeResult.legal_findings = legalArr.slice(0, 4).map((l: any, i: number) => ({
+        id: l?.id || `legal-${i + 1}`,
+        title: l?.title || "Legal gap",
+        what_we_found: l?.what_we_found || "",
+        what_this_means: l?.what_this_means || "",
+        how_to_fix: l?.how_to_fix || "",
+        severity: (l?.severity || "low").toLowerCase(),
+      }));
+
+      const promisesArr = Array.isArray(claudeResult.landing_page_promises) ? claudeResult.landing_page_promises : [];
+      claudeResult.landing_page_promises = promisesArr.slice(0, 6).map((p: any, i: number) => ({
+        id: p?.id || `promise-${i + 1}`,
+        claim: typeof p?.claim === "string" ? p.claim : "",
+        claim_source: p?.claim_source === "readme" ? "readme" : "homepage",
+        verdict: ["found", "partial", "not_found"].includes(p?.verdict) ? p.verdict : "not_found",
+        evidence: typeof p?.evidence === "string" ? p.evidence : "",
+        severity: (p?.severity || "info").toLowerCase(),
+      }));
+
+      // Homepage signals — what we read. The UI shows a soft "we also read your homepage" line.
+      claudeResult.homepage_signals = {
+        has_live_url: homepageSignals.has_live_url,
+        privacy_page_found: homepageSignals.privacy_page_found,
+        terms_page_found: homepageSignals.terms_page_found,
+        readme_found: !!homepageSignals.readme_text,
+      };
 
       claudeResult.backend_verification = groundTruth
         ? (groundTruth.source === "rpc" ? "verified" : "partial")
