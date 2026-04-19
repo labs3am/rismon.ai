@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistModal from '@/components/WaitlistModal';
+import SEO from '@/components/SEO';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -98,6 +99,11 @@ export default function Index() {
 
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
+      <SEO
+        title="Rismon.ai — Know What Your AI Actually Built"
+        description="Rismon reads your AI-built app and tells you exactly what was built, what works, and what could go wrong. Free scan. Plain English. No code knowledge needed."
+        canonicalPath="/"
+      />
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 

@@ -1,11 +1,17 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
+import SEO from '@/components/SEO';
 import { AlertTriangle } from 'lucide-react';
 
 export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Terms of Service — Rismon.ai"
+        description="Terms governing use of Rismon.ai. Analysis is advisory and does not replace a professional security audit for production apps."
+        canonicalPath="/terms"
+      />
       <Navbar />
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />

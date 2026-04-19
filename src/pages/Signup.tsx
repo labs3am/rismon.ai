@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
+import SEO from '@/components/SEO';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -29,6 +30,11 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
+      <SEO
+        title="Sign up free — Rismon.ai"
+        description="Create your free Rismon.ai account. Scan your AI-built app in 60 seconds. No credit card. Plain English findings and copy-paste fix prompts."
+        canonicalPath="/signup"
+      />
       <Navbar />
       <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
         <div className="auth-glass-card">

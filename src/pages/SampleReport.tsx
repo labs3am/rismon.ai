@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle, Copy, Check, AlertTriangle, Shield, MinusCircle, ArrowRight, Lock } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -108,6 +109,11 @@ export default function SampleReport() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sample Report — See What Rismon Finds"
+        description="An example Rismon.ai report: intent match score, plain-English gaps, security issues, and ready-to-paste fix prompts for an AI-built fitness app."
+        canonicalPath="/sample-report"
+      />
       <Navbar />
 
       {/* Sample banner */}
