@@ -245,16 +245,29 @@ export default function SmartIntentQuestions({
     );
   }
 
-  const allAnswered = questions.every((q) => questionAnswers[q.id]);
+  // An "Other" answer only counts as answered once the user has typed something.
+  const isAnswered = (q: SmartQ) => {
+    const v = questionAnswers[q.id];
+    if (!v) return false;
+    if (v === OTHER_VALUE) return false; // selected but not yet described
+    if (v.startsWith('other:')) return v.slice('other:'.length).trim().length > 0;
+    return true;
+  };
+  const allAnswered = questions.every(isAnswered);
   const noQuestions = questions.length === 0;
 
   const handleSelect = (qId: string, value: string) => {
+    // If selecting "Other", don't auto-advance — wait for the textarea input.
+    const isOther = value === OTHER_VALUE;
     const next = { ...questionAnswers, [qId]: value };
     setQuestionAnswers(next);
-    // Auto-advance
-    if (step < questions.length - 1) {
+    if (!isOther && step < questions.length - 1) {
       setTimeout(() => setStep((s) => s + 1), 150);
     }
+  };
+
+  const handleOtherText = (qId: string, text: string) => {
+    setQuestionAnswers({ ...questionAnswers, [qId]: `other:${text}` });
   };
 
   const currentQ = questions[step];
