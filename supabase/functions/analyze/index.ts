@@ -709,7 +709,7 @@ Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
 
-If something CANNOT be verified from the available information, mark it "unverified" and explain in `confidence_reason` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
+If something CANNOT be verified from the available information, mark it "unverified" and explain in \`confidence_reason\` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
 
 INTENT SCORE FORMULA:
 Start with 100 points.
