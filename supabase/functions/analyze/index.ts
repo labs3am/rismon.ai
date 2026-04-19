@@ -160,6 +160,110 @@ function reconcileFindingsAgainstGroundTruth(findings: any[], groundTruth: any):
 }
 
 // ============================================================
+// SECTION 1d: Prompt hardening — evidence + speculation + whitelist filters
+// applied to AI output AFTER parsing, BEFORE returning to the user.
+// ============================================================
+
+const BANNED_SPECULATION = [
+  "might", "may be", "could be", "appears to", "possibly", "seems to",
+  "potentially", "likely vulnerable", "in theory", "it's possible that",
+  "this could lead to", "may allow", "could allow",
+];
+
+const VERIFIABLE_CATEGORIES = new Set([
+  "rls",
+  "admin_access",
+  "payment_validation",
+  "secret_exposure",
+]);
+
+// Tactic 1: Drop findings that lack mandatory evidence (file_path + line_number + code_snippet).
+// Tactic 2: Force any "verified" finding outside the whitelist down to "unverified".
+// Tactic 3: Drop findings whose prose contains banned speculative phrases.
+function hardenFindings(findings: any[]): { kept: any[]; dropped: any[] } {
+  if (!Array.isArray(findings)) return { kept: [], dropped: [] };
+  const kept: any[] = [];
+  const dropped: any[] = [];
+
+  for (const f of findings) {
+    const hasFile = typeof f?.file_path === "string" && f.file_path.trim().length > 0;
+    const hasLine = typeof f?.line_number === "number" && f.line_number > 0;
+    const hasSnippet = typeof f?.code_snippet === "string" && f.code_snippet.trim().length > 0;
+    if (!hasFile || !hasLine || !hasSnippet) {
+      dropped.push({
+        id: f?.id, title: f?.title,
+        reason: "Discarded: missing required evidence (file_path, line_number, or code_snippet).",
+      });
+      continue;
+    }
+
+    const prose = `${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.how_to_fix || ""}`.toLowerCase();
+    const hit = BANNED_SPECULATION.find((p) => prose.includes(p));
+    if (hit) {
+      dropped.push({
+        id: f?.id, title: f?.title,
+        reason: `Discarded: speculative phrase "${hit}".`,
+      });
+      continue;
+    }
+
+    let confidence = (f?.confidence || "unverified").toLowerCase();
+    if (confidence === "verified" && !VERIFIABLE_CATEGORIES.has((f?.category || "").toLowerCase())) {
+      confidence = "unverified";
+      f.confidence_reason = (f.confidence_reason || "") +
+        " (Auto-downgraded: this category cannot be verified without backend access.)";
+    }
+    if (confidence !== "verified") confidence = "unverified";
+
+    kept.push({ ...f, confidence });
+  }
+  return { kept, dropped };
+}
+
+// Tactic 5 — cap each category at 5, sorted by severity.
+const SEVERITY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+function capFindings(findings: any[], max = 5): any[] {
+  if (!Array.isArray(findings)) return [];
+  return [...findings]
+    .sort((a, b) => (SEVERITY_RANK[(b?.severity || "medium").toLowerCase()] || 2) -
+                    (SEVERITY_RANK[(a?.severity || "medium").toLowerCase()] || 2))
+    .slice(0, max);
+}
+
+// Tactic 4 — self-check pass. Asks a cheap model to confirm each finding's
+// code_snippet actually proves the claim. Rejected ids are dropped.
+async function selfCheckFindings(findings: any[], codeUnderstanding: any): Promise<{ kept: any[]; dropped: any[] }> {
+  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
+  const checkable = findings.map((f) => ({
+    id: f.id, title: f.title, claim: f.what_we_found,
+    file_path: f.file_path, line_number: f.line_number, code_snippet: f.code_snippet,
+  }));
+  const system = `You are a strict code reviewer. For each finding, judge whether the code_snippet PROVES the claim. Be skeptical. If the snippet is unrelated, ambiguous, or insufficient — reject. Return ONLY:
+{ "results": [{ "id": "...", "verdict": "confirmed|rejected", "reason": "one short sentence" }] }`;
+  const user = `App context: ${JSON.stringify(codeUnderstanding).slice(0, 2000)}
+
+Findings to verify:
+${JSON.stringify(checkable, null, 2)}`;
+  try {
+    const text = await callGemini(system, user, "google/gemini-2.5-flash");
+    const parsed = parseJSON(text);
+    const verdicts = Array.isArray(parsed?.results) ? parsed.results : [];
+    const rejectedMap = new Map<string, string>();
+    for (const v of verdicts) {
+      if (v?.verdict === "rejected" && v?.id) rejectedMap.set(v.id, v.reason || "Self-check rejected.");
+    }
+    const kept = findings.filter((f) => !rejectedMap.has(f.id));
+    const dropped = findings
+      .filter((f) => rejectedMap.has(f.id))
+      .map((f) => ({ id: f.id, title: f.title, reason: `Self-check: ${rejectedMap.get(f.id)}` }));
+    return { kept, dropped };
+  } catch (e) {
+    console.error("Self-check pass failed (non-fatal):", (e as Error).message);
+    return { kept: findings, dropped: [] };
+  }
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
