@@ -552,7 +552,7 @@ export default function Report() {
 
         {/* SECTION 5 — BUSINESS LOGIC GAPS */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Business logic gaps</SectionLabel>
+          <SectionLabel>Intent gaps · what you wanted vs what got built</SectionLabel>
           {gapsList.length === 0 ? (
             <div
               style={{
@@ -573,7 +573,7 @@ export default function Report() {
 
         {/* SECTION 6 — SECURITY FINDINGS */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Security findings</SectionLabel>
+          <SectionLabel>Security findings · exposed secrets &amp; access risks</SectionLabel>
           {secList.length === 0 ? (
             <div
               style={{
