@@ -90,7 +90,7 @@ function buildAnalysisReminderHtml(userName: string): string {
               ${stepRow("1", "Go to your dashboard", "Click Connect an app", false)}
               ${stepRow("2", "Enter your app name", "Choose Lovable, Bolt, Cursor or whichever platform you used", false)}
               ${stepRow("3", "Connect your GitHub", "Read only. We cannot edit or delete anything. Code is discarded after scan.", false)}
-              ${stepRow("4", "Get your plain English report", "Takes about 60 seconds. No code knowledge needed.", true)}
+              ${stepRow("4", "Get your founder-friendly report", "Takes about 60 seconds. No code knowledge needed.", true)}
             </table>
           </div>
 

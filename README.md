@@ -1,7 +1,8 @@
 # Rismon.ai
 AI agent that reads your AI-built app
-and tells you in plain English what 
-was built, what works, and what needs fixing.
+and shows you what was built, what works,
+and what needs fixing — with proof for
+every finding (exact file, line, and snippet).
 
 Built for non-technical founders who 
 build with Lovable, Bolt, Cursor, 

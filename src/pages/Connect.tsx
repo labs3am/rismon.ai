@@ -517,7 +517,7 @@ export default function Connect() {
                         <details className="mt-3 group">
                           <summary className="text-primary text-[12px] font-medium cursor-pointer hover:underline list-none flex items-center gap-1">
                             <span className="group-open:rotate-90 inline-block transition-transform">▸</span>
-                            What does this SQL actually do? (in plain English)
+                            What does this SQL actually do?
                           </summary>
                           <div className="mt-2 p-3 rounded-md bg-black/30 border border-border text-[12px] text-muted-foreground leading-relaxed space-y-2">
                             <p>✓ It creates a <strong className="text-foreground">read-only function</strong> that returns a list of your table names and which ones have access rules turned on.</p>
@@ -553,7 +553,7 @@ grant execute on function public.rismon_security_metadata() to anon, authenticat
                           </p>
                         </details>
                         <p className="text-muted-foreground text-[11px] mt-3">
-                          Don't want to run SQL? That's fine — click Connect anyway. We'll just mark database findings as "unverified" and ask you about them in plain English during the scan.
+                          Don't want to run SQL? That's fine — click Connect anyway. We'll just mark database findings as "unverified" and ask you about them during the scan.
                         </p>
                       </div>
                     </div>
