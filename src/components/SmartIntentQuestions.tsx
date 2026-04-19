@@ -39,6 +39,21 @@ function otherText(v: string | undefined) {
 function buildQuestions(pre: PreAnalysis): SmartQ[] {
   const qs: SmartQ[] = [];
 
+  // ALWAYS ask app type first. The AI heavily weights this when generating findings,
+  // and it prevents bad assumptions for non-web apps (bots, APIs, CLIs).
+  qs.push({
+    id: 'app_kind',
+    contextBadge: 'About your app',
+    question: 'What kind of app is this?',
+    options: [
+      { value: 'web_app', label: 'Web app with a UI', description: 'Has pages users visit in a browser' },
+      { value: 'backend_api', label: 'Backend / API only', description: 'No UI — serves data to other apps' },
+      { value: 'mobile_app', label: 'Mobile app', description: 'iOS, Android, or React Native' },
+      { value: 'bot_automation', label: 'Bot or automation', description: 'Discord bot, Telegram bot, cron jobs, scrapers' },
+      { value: 'cli_library', label: 'CLI tool or library', description: 'Command-line program or npm package' },
+    ],
+  });
+
   // TIER 2: Honest follow-up questions when backend cannot be verified.
   // These let the AI ask instead of hallucinate.
   const noBackendVerify = !pre.backendVisibility || pre.backendVisibility !== 'verified';
