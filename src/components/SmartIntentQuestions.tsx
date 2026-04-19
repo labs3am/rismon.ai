@@ -22,6 +22,48 @@ interface SmartQ {
 function buildQuestions(pre: PreAnalysis): SmartQ[] {
   const qs: SmartQ[] = [];
 
+  // TIER 2: Honest follow-up questions when backend cannot be verified.
+  // These let the AI ask instead of hallucinate.
+  const noBackendVerify = !pre.backendVisibility || pre.backendVisibility !== 'verified';
+  if (noBackendVerify && pre.hasUserAccounts) {
+    qs.push({
+      id: 'rls_self_report',
+      contextBadge: 'We could not check your database directly',
+      question: 'Did you set up access rules so users only see their own data?',
+      options: [
+        { value: 'yes_rules', label: 'Yes — I set up access rules', description: 'Each user can only read/edit their own rows' },
+        { value: 'no_rules', label: 'No — I did not set this up', description: 'Anyone could potentially read everyone\'s data' },
+        { value: 'not_sure', label: 'Not sure — the AI built this', description: 'We will mark database findings as unverified' },
+        { value: 'no_backend', label: 'I don\'t use a database yet' },
+      ],
+    });
+  }
+  if (noBackendVerify && pre.hasAdminRoutes) {
+    qs.push({
+      id: 'admin_enforcement',
+      contextBadge: 'Admin area detected',
+      question: 'Where is the admin area protected?',
+      options: [
+        { value: 'server', label: 'In my backend / edge function', description: 'A server-side check rejects non-admins' },
+        { value: 'database', label: 'In the database', description: 'Database rules enforce admin-only access' },
+        { value: 'frontend_only', label: 'Only the frontend hides it', description: 'No real protection — anyone who finds the URL gets in' },
+        { value: 'not_sure', label: 'Not sure' },
+      ],
+    });
+  }
+  if (noBackendVerify && pre.hasPayments) {
+    qs.push({
+      id: 'payment_webhook',
+      contextBadge: `${pre.paymentProvider || 'Payment'} detected`,
+      question: 'Is your payment confirmed by your server (not just the browser)?',
+      options: [
+        { value: 'webhook_yes', label: 'Yes — I have a webhook handler', description: 'Server verifies the payment before unlocking access' },
+        { value: 'no_webhook', label: 'No — I just trust the browser', description: 'Users could fake a successful payment' },
+        { value: 'not_sure', label: 'Not sure' },
+      ],
+    });
+  }
+
   if (pre.hasPayments && pre.hasFreePaidTiers) {
     qs.push({
       id: 'free_vs_paid',
