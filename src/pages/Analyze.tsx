@@ -456,6 +456,7 @@ export default function Analyze() {
         }
 
         setCodeUnderstanding(data.app_understanding);
+        setPreAnalysis((data.pre_analysis as PreAnalysis) || null);
         setQuestions(data.questions || []);
         setStage('describe');
         localStorage.setItem('rismon_analysis_stage', 'describe');
