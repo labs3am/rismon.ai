@@ -393,6 +393,122 @@ Does the real file prove the claim?`;
 }
 
 // ============================================================
+// SECTION 1f: Homepage signal reader
+// Pulls README, live URL homepage HTML, /privacy and /terms pages
+// so the analyzer can compare what the founder PROMISES on their
+// homepage vs what the code actually does. This is the core
+// Rismon moat — every other scanner only reads code.
+// ============================================================
+function stripHtmlToText(html: string): string {
+  if (!html) return "";
+  // Strip scripts/styles, then tags. Collapse whitespace. Cap length.
+  const cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.slice(0, 12000);
+}
+
+function normalizeUrl(raw: string): string | null {
+  if (!raw) return null;
+  let u = raw.trim();
+  if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+  try { const parsed = new URL(u); return parsed.origin; } catch { return null; }
+}
+
+async function fetchPage(url: string, timeoutMs = 7000): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const res = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; RismonBot/1.0; +https://rismon.ai)" },
+      redirect: "follow",
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text;
+  } catch { return null; }
+}
+
+async function fetchHomepageSignals(liveUrl: string | null, githubOwner: string | null, githubRepo: string | null) {
+  const result: any = {
+    has_live_url: false,
+    homepage_text: null as string | null,
+    privacy_text: null as string | null,
+    terms_text: null as string | null,
+    readme_text: null as string | null,
+    privacy_page_found: false,
+    terms_page_found: false,
+    notes: [] as string[],
+  };
+
+  // 1) README from GitHub raw (try main, then master)
+  if (githubOwner && githubRepo) {
+    for (const branch of ["main", "master"]) {
+      for (const fname of ["README.md", "readme.md", "README.MD"]) {
+        const raw = await fetchPage(`https://raw.githubusercontent.com/${githubOwner}/${githubRepo}/${branch}/${fname}`, 5000);
+        if (raw && raw.length > 30) {
+          result.readme_text = raw.slice(0, 8000);
+          break;
+        }
+      }
+      if (result.readme_text) break;
+    }
+  }
+
+  // 2) Live site (homepage + /privacy + /terms)
+  const origin = normalizeUrl(liveUrl || "");
+  if (origin) {
+    result.has_live_url = true;
+    const homeHtml = await fetchPage(origin);
+    if (homeHtml) result.homepage_text = stripHtmlToText(homeHtml);
+
+    // Try common privacy paths
+    for (const path of ["/privacy", "/privacy-policy", "/legal/privacy", "/policies/privacy"]) {
+      const html = await fetchPage(`${origin}${path}`);
+      if (html) {
+        const text = stripHtmlToText(html);
+        // Must look like a real policy, not a 404 SPA fallback
+        if (text.length > 200 && /privacy|data|cookie|personal/i.test(text)) {
+          result.privacy_text = text;
+          result.privacy_page_found = true;
+          break;
+        }
+      }
+    }
+
+    // Try common terms paths
+    for (const path of ["/terms", "/terms-of-service", "/tos", "/legal/terms", "/policies/terms"]) {
+      const html = await fetchPage(`${origin}${path}`);
+      if (html) {
+        const text = stripHtmlToText(html);
+        if (text.length > 200 && /terms|agreement|liability|service/i.test(text)) {
+          result.terms_text = text;
+          result.terms_page_found = true;
+          break;
+        }
+      }
+    }
+  } else {
+    result.notes.push("No live URL was provided — we could only read the code, not the deployed site.");
+  }
+
+  return result;
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
