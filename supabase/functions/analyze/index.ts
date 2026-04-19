@@ -697,10 +697,10 @@ TEST EVERY SENTENCE:
 "Would someone who runs a restaurant understand this without Googling it?"
 If no → rewrite completely.
 
-FINDINGS FORMAT:
-For each issue found return:
+FINDINGS FORMAT — EVERY field below is REQUIRED. Findings missing any of file_path, line_number, or code_snippet will be DISCARDED.
 {
   "severity": "critical|high|medium|low",
+  "category": "rls|admin_access|payment_validation|secret_exposure|input_validation|business_logic|other",
   "title": "Plain English max 8 words",
   "what_we_found": "One sentence. What exists in the code. No technical terms.",
   "what_this_means": "Real world consequence. Use dollar amounts if relevant. Use number of users if relevant. Max 2 sentences.",
@@ -708,20 +708,36 @@ For each issue found return:
   "fix_prompt": "Exact prompt to paste into Lovable or Cursor. Ready to use. No editing needed.",
   "technical_reference": "Short technical name for developers to Google. Max 5 words. Example: supabase-rls-not-enabled",
   "google_query": "Exact search term. Example: supabase row level security",
-  "confidence": "verified | likely | unverified",
-  "evidence": "Where in the code or database you saw this. One short phrase. Example: src/pages/Admin.tsx line 45, or 'no edge function found for /webhook'"
+  "confidence": "verified | unverified",
+  "confidence_reason": "Why this confidence level — what evidence you have OR what you would need to confirm.",
+  "file_path": "Exact path from the code, e.g. src/pages/Admin.tsx. REQUIRED.",
+  "line_number": 45,
+  "code_snippet": "Verbatim line(s) of code (max 200 chars) that prove the finding. Copy directly from the source. REQUIRED.",
+  "evidence": "One short phrase summarizing the proof."
 }
 
-CONFIDENCE RULES — MOST IMPORTANT:
-- "verified" = You have direct evidence in the code or in the GROUND TRUTH block. Use this only if you can point to specific code or a confirmed missing piece.
-- "likely"   = Strong indirect signals but no smoking gun. Use this when something LOOKS wrong but you cannot fully confirm without backend access.
-- "unverified" = You're guessing because the backend was not visible. Use this whenever the claim depends on database access rules, server-side validation, webhook handlers, or admin enforcement that you could not actually inspect.
+CONFIDENCE — STRICT WHITELIST:
+Only these categories can EVER be marked "verified":
+  - rls               → only if GROUND TRUTH block confirms the table has no policies
+  - admin_access      → only if you can quote the exact unprotected route AND the founder said admin should be restricted
+  - payment_validation → only if no edge function or webhook handler is present in the scanned code
+  - secret_exposure   → only if a real secret pattern was matched (sk_live_, ghp_, AIza...)
+
+Every other category, AND every claim where the backend was not directly inspected, MUST be "unverified".
+If you mark something "verified" that does not meet the rule above, the finding will be DROPPED.
+
+BANNED PHRASES — using any of these auto-discards the finding:
+  "might", "may be", "could be", "appears to", "possibly", "seems to",
+  "potentially", "likely vulnerable", "in theory", "it's possible that",
+  "this could lead to", "may allow", "could allow"
+
+Replace banned phrases with concrete statements:
+  BAD:  "This might allow users to see other users' data."
+  GOOD: "Line 45 of src/pages/Orders.tsx queries `orders` with no user_id filter."
 
 Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
-
-If something CANNOT be verified from the available information, mark it "unverified" and explain in \`confidence_reason\` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
 
 INTENT SCORE FORMULA:
 Start with 100 points.
@@ -753,11 +769,12 @@ Return ONLY valid JSON:
   "scan_type": "quick or deep"
 }
 
-Maximum 5 business logic gaps.
-Maximum 5 security findings.
-Always find at least 2 positives.
-Always personalize to their app type.
-Never use technical jargon anywhere.
+HARD LIMITS:
+- Maximum 5 business_logic_gaps. Pick the 5 most impactful — drop weaker ones.
+- Maximum 5 security_findings. Pick the 5 most impactful — drop weaker ones.
+- Always find at least 2 positives.
+- Always personalize to their app type.
+- Never use technical jargon anywhere.
 
 RESPOND WITH JSON ONLY.
 No text before or after the JSON.`;
