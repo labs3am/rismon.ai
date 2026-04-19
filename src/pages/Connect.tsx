@@ -542,15 +542,26 @@ grant execute on function public.rismon_security_metadata() to anon, authenticat
               </div>
             )}
 
-            <div className="flex gap-3 mt-6">
-              <button onClick={handleSkipSupabase} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                Skip — scan without backend verification
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <button
+                onClick={handleComplete}
+                disabled={saving || serviceRoleWarning || !supabaseUrl || !supabaseKey}
+                className="flex-1 bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving && <Loader2 size={16} className="animate-spin" />}
+                Connect & continue (recommended)
               </button>
-              <button onClick={handleComplete} disabled={saving || serviceRoleWarning}
-                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
-                {saving && <Loader2 size={16} className="animate-spin" />} Continue with backend connected
+              <button
+                onClick={handleSkipSupabase}
+                disabled={saving}
+                className="flex-1 sm:flex-none border border-input text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-hover-border transition-colors disabled:opacity-50"
+              >
+                Skip — code-only scan
               </button>
             </div>
+            <p className="text-subtle text-[11px] mt-2 text-center sm:text-left">
+              Skipping means database findings will be marked "unverified". You can always reconnect later.
+            </p>
           </div>
         )}
       </div>
