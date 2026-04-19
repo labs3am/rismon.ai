@@ -1359,15 +1359,53 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         dropped_total: allDropped.length,
       };
 
-      // E. Recompute score using only "verified" findings
-      const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
-      const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
+      // E. Recompute INTENT score from business_logic_gaps only (verified findings).
+      // Security findings DO NOT affect the intent score — that's the whole point of having two scores.
       const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
-      const deduction = verifiedOnly.reduce(
+      const verifiedGapsOnly = (claudeResult.gaps || []).filter((f: any) => f.confidence === "verified");
+      const intentDeduction = verifiedGapsOnly.reduce(
         (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
         0,
       );
-      claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+      claudeResult.intent_match_score = Math.max(0, 100 - intentDeduction);
+
+      // Compute SECURITY score independently from verified security findings.
+      const verifiedSecOnly = (claudeResult.security_issues || []).filter((f: any) => f.confidence === "verified");
+      const secDeduction = verifiedSecOnly.reduce(
+        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
+        0,
+      );
+      claudeResult.security_score = Math.max(0, 100 - secDeduction);
+
+      // Pass through new finding arrays (already validated by the prompt schema).
+      // Add ids if Claude didn't supply them so the UI can key on them.
+      const legalArr = Array.isArray(claudeResult.legal_findings) ? claudeResult.legal_findings : [];
+      claudeResult.legal_findings = legalArr.slice(0, 4).map((l: any, i: number) => ({
+        id: l?.id || `legal-${i + 1}`,
+        title: l?.title || "Legal gap",
+        what_we_found: l?.what_we_found || "",
+        what_this_means: l?.what_this_means || "",
+        how_to_fix: l?.how_to_fix || "",
+        severity: (l?.severity || "low").toLowerCase(),
+      }));
+
+      const promisesArr = Array.isArray(claudeResult.landing_page_promises) ? claudeResult.landing_page_promises : [];
+      claudeResult.landing_page_promises = promisesArr.slice(0, 6).map((p: any, i: number) => ({
+        id: p?.id || `promise-${i + 1}`,
+        claim: typeof p?.claim === "string" ? p.claim : "",
+        claim_source: p?.claim_source === "readme" ? "readme" : "homepage",
+        verdict: ["found", "partial", "not_found"].includes(p?.verdict) ? p.verdict : "not_found",
+        evidence: typeof p?.evidence === "string" ? p.evidence : "",
+        severity: (p?.severity || "info").toLowerCase(),
+      }));
+
+      // Homepage signals — what we read. The UI shows a soft "we also read your homepage" line.
+      claudeResult.homepage_signals = {
+        has_live_url: homepageSignals.has_live_url,
+        privacy_page_found: homepageSignals.privacy_page_found,
+        terms_page_found: homepageSignals.terms_page_found,
+        readme_found: !!homepageSignals.readme_text,
+      };
 
       claudeResult.backend_verification = groundTruth
         ? (groundTruth.source === "rpc" ? "verified" : "partial")
