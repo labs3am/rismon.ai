@@ -52,4 +52,4 @@ rismon.ai
 
 hello@rismon.ai
 
-Built in India by Labs3am.
+Built by Labs3am.
