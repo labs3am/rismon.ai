@@ -705,11 +705,11 @@ CONFIDENCE RULES — MOST IMPORTANT:
 - "likely"   = Strong indirect signals but no smoking gun. Use this when something LOOKS wrong but you cannot fully confirm without backend access.
 - "unverified" = You're guessing because the backend was not visible. Use this whenever the claim depends on database access rules, server-side validation, webhook handlers, or admin enforcement that you could not actually inspect.
 
-Frontend code without `.eq('user_id', ...)` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
+Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
 
-If something CANNOT be verified from the available information, mark it "unverified" and explain in `confidence_reason` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
+If something CANNOT be verified from the available information, mark it "unverified" and explain in \`confidence_reason\` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
 
 INTENT SCORE FORMULA:
 Start with 100 points.
