@@ -1099,13 +1099,18 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
 
       // ----------------------------------------------------------
       // Hardening pipeline (applied in order):
-      //   A. Reconcile against backend ground truth (drops false positives, tags unverified).
+      //   A. Reconcile against backend ground truth (drops false-positive RLS claims).
       //   B. Hardening filter — evidence required, banned phrases, whitelist for "verified".
-      //   C. Self-check pass — second model confirms each snippet proves the claim.
-      //   D. Cap each category at 5, sorted by severity.
-      //   E. Recompute score from "verified" findings only.
+      //   C. Snippet self-check — Gemini Flash judges if the snippet proves the claim.
+      //   D. FILE RE-READ verifier — Gemini opens the actual cited file and fact-checks.
+      //   E. Cap each category at 5, sorted by severity.
+      //   F. Recompute score from "verified" findings only.
       // ----------------------------------------------------------
       const allDropped: any[] = [];
+      const claudeGenerated = {
+        gaps: (claudeResult.gaps || []).length,
+        security: (claudeResult.security_issues || []).length,
+      };
 
       // A. Ground truth reconcile
       const reconciledGaps = reconcileFindingsAgainstGroundTruth(claudeResult.gaps || [], groundTruth);
@@ -1121,7 +1126,7 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
       claudeResult.security_issues = hardenedSec.kept;
       allDropped.push(...hardenedGaps.dropped, ...hardenedSec.dropped);
 
-      // C. Self-check pass — only on Pro tier (cost) OR when there are >= 3 findings to validate
+      // C. Snippet self-check
       const totalFindings = claudeResult.gaps.length + claudeResult.security_issues.length;
       if ((limits.verificationPass || totalFindings >= 3) && totalFindings > 0) {
         const checkedGaps = await selfCheckFindings(claudeResult.gaps, code_understanding);
@@ -1133,11 +1138,35 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         claudeResult.self_check_dropped = checkedGaps.dropped.length + checkedSec.dropped.length;
       }
 
-      // D. Cap each category at 5
+      // D. FILE RE-READ verifier — the main accuracy upgrade.
+      // Gemini opens the actual cited file from the bundle and fact-checks Claude's claim
+      // against the real source code, not just Claude's snippet.
+      if (codeBundle || edgeFunctionBundle) {
+        const verifiedGaps = await verifyFindingsAgainstRealFiles(
+          claudeResult.gaps, codeBundle || "", edgeFunctionBundle || "",
+        );
+        const verifiedSec = await verifyFindingsAgainstRealFiles(
+          claudeResult.security_issues, codeBundle || "", edgeFunctionBundle || "",
+        );
+        claudeResult.gaps = verifiedGaps.kept;
+        claudeResult.security_issues = verifiedSec.kept;
+        allDropped.push(...verifiedGaps.dropped, ...verifiedSec.dropped);
+        claudeResult.file_reread_applied = true;
+        claudeResult.file_reread_dropped = verifiedGaps.dropped.length + verifiedSec.dropped.length;
+      }
+
+      // E. Cap each category at 5
       claudeResult.gaps = capFindings(claudeResult.gaps, 5);
       claudeResult.security_issues = capFindings(claudeResult.security_issues, 5);
 
       if (allDropped.length > 0) claudeResult.dropped_false_positives = allDropped;
+
+      // Filter funnel telemetry — useful for monitoring over-filtering in production logs.
+      claudeResult.filter_funnel = {
+        claude_generated: claudeGenerated.gaps + claudeGenerated.security,
+        final_kept: claudeResult.gaps.length + claudeResult.security_issues.length,
+        dropped_total: allDropped.length,
+      };
 
       // E. Recompute score using only "verified" findings
       const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
