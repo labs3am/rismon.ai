@@ -243,6 +243,50 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
           )}
         </div>
       )}
+
+      {/* Dispute footer */}
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'flex-end' }}>
+        {!disputeOpen ? (
+          <button
+            onClick={() => setDisputeOpen(true)}
+            style={{ background: 'transparent', border: 'none', color: '#555555', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#888888')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#555555')}
+          >
+            Report wrong finding
+          </button>
+        ) : disputeSent ? (
+          <div style={{ fontSize: 12, color: '#22c55e' }}>✓ Thanks — we'll review it.</div>
+        ) : (
+          <div style={{ width: '100%' }}>
+            <textarea
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              placeholder="Why is this finding wrong? (e.g., 'RLS is actually enabled on this table — I checked')"
+              rows={3}
+              style={{
+                width: '100%', background: '#000', border: '1px solid #222', borderRadius: 6,
+                padding: 10, color: '#fff', fontSize: 13, fontFamily: 'inherit', resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setDisputeOpen(false); setDisputeReason(''); }}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitDispute}
+                disabled={disputeSending}
+                style={{ background: '#f97316', border: 'none', color: '#000', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: disputeSending ? 0.6 : 1 }}
+              >
+                {disputeSending ? 'Sending...' : 'Send to Rismon team'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
