@@ -837,7 +837,7 @@ BANNED PHRASES — using any of these auto-discards the finding:
 
 Replace banned phrases with concrete statements:
   BAD:  "This might allow users to see other users' data."
-  GOOD: "Line 45 of src/pages/Orders.tsx queries `orders` with no user_id filter."
+  GOOD: "Line 45 of src/pages/Orders.tsx queries the orders table with no user_id filter."
 
 Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
 
