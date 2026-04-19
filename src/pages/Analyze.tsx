@@ -178,7 +178,7 @@ export default function Analyze() {
             if (existing.status === 'questions_ready' && existing.code_understanding) {
               setCodeUnderstanding(existing.code_understanding);
               setQuestions((existing.smart_questions as any[]) || []);
-              setStage('describe');
+              setStage('confirm');
               return;
             }
             if (existing.status === 'review_pending' || existing.status === 'complete') {
@@ -188,7 +188,7 @@ export default function Analyze() {
             if (existing.code_understanding) {
               setCodeUnderstanding(existing.code_understanding);
               setQuestions((existing.smart_questions as any[]) || []);
-              setStage('describe');
+              setStage('confirm');
               return;
             }
             // status 'reading' but recent and no progress → let user wait OR start fresh
@@ -473,8 +473,8 @@ export default function Analyze() {
           backendVisibility: hasBackend ? 'partial' : 'none',
         });
         setQuestions(data.questions || []);
-        setStage('describe');
-        localStorage.setItem('rismon_analysis_stage', 'describe');
+        setStage('confirm');
+        localStorage.setItem('rismon_analysis_stage', 'confirm');
       } catch (e: any) {
         if (scanSessionId) {
           await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
