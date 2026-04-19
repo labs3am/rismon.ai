@@ -88,7 +88,7 @@ const HOUSE_STYLE = `Strict response rules:
 - Match a non-technical founder's vocabulary, not engineering jargon.
 - Return ONLY valid JSON when asked. No surrounding text. No code fences.`;
 
-async function callGemini(systemPrompt: string, userContent: string, model = "google/gemini-2.5-flash") {
+async function callGeminiRaw(systemPrompt: string, userContent: string, model: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -106,15 +106,42 @@ async function callGemini(systemPrompt: string, userContent: string, model = "go
 
   if (!res.ok) {
     const status = res.status;
-    const body = await res.text();
-    console.error(`Gemini error [${status}]:`, body.slice(0, 500));
-    if (status === 429) throw new Error("RATE_LIMITED");
-    if (status === 402) throw new Error("CREDITS_EXHAUSTED");
-    throw new Error("AI_ERROR");
+    const body = await res.text().catch(() => "");
+    console.error(`Gemini error [${status}] model=${model}:`, body.slice(0, 500));
+    const err: any = new Error(status === 429 ? "RATE_LIMITED" : status === 402 ? "CREDITS_EXHAUSTED" : "AI_ERROR");
+    err.status = status;
+    throw err;
   }
 
   const data = await res.json();
   return data.choices?.[0]?.message?.content || "";
+}
+
+// Gemini with auto-retry on 429 + cross-fallback to Claude as last resort.
+async function callGemini(systemPrompt: string, userContent: string, model = "google/gemini-2.5-flash") {
+  const delays = [1500, 4000, 8000]; // 3 retries with backoff
+  let lastErr: any;
+  for (let attempt = 0; attempt <= delays.length; attempt++) {
+    try {
+      return await callGeminiRaw(systemPrompt, userContent, model);
+    } catch (e: any) {
+      lastErr = e;
+      // Only retry on 429; bail immediately on 402/other
+      if (e?.status !== 429 || attempt === delays.length) break;
+      console.warn(`Gemini 429, retrying in ${delays[attempt]}ms (attempt ${attempt + 1}/${delays.length})`);
+      await new Promise(r => setTimeout(r, delays[attempt]));
+    }
+  }
+  // Last-resort cross-fallback: try Claude with the same prompt if available
+  if (lastErr?.status === 429 && Deno.env.get("ANTHROPIC_KEY")) {
+    try {
+      console.warn("Gemini exhausted retries. Cross-falling back to Claude.");
+      return await callClaude(systemPrompt, userContent);
+    } catch (e2) {
+      console.error("Claude cross-fallback also failed:", (e2 as Error).message);
+    }
+  }
+  throw lastErr;
 }
 
 async function callClaude(systemPrompt: string, userContent: string) {
@@ -137,12 +164,60 @@ async function callClaude(systemPrompt: string, userContent: string) {
   });
 
   if (!res.ok) {
-    console.error("Claude error:", res.status);
+    const status = res.status;
+    const errBody = await res.text().catch(() => "");
+    console.error(`Claude error [${status}]:`, errBody.slice(0, 300));
+    // Tag retryable errors so the wrapper can fall back
+    if (status === 429 || status === 529 || status >= 500) {
+      const e: any = new Error("CLAUDE_RETRYABLE");
+      e.status = status;
+      throw e;
+    }
     throw new Error("AI_ERROR");
   }
 
   const data = await res.json();
   return data.content?.[0]?.text || "";
+}
+
+// Hybrid: try Claude first (preserves the original report voice/structure).
+// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the EXACT
+// same system prompt — Claude's prompt already enforces the report style and
+// JSON shape, so the output stays consistent.
+async function callClaudeWithFallback(systemPrompt: string, userContent: string) {
+  try {
+    return await callClaude(systemPrompt, userContent);
+  } catch (e: any) {
+    if (e?.message === "CLAUDE_RETRYABLE") {
+      console.warn(`Claude unavailable (${e.status}). Falling back to Gemini 2.5 Pro with Claude's prompt.`);
+      // Reuse Claude's system prompt verbatim so the report style matches.
+      // Do NOT append HOUSE_STYLE here — Claude's prompt already defines the voice.
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+      const res = await fetch(LOVABLE_AI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const status = res.status;
+        const body = await res.text().catch(() => "");
+        console.error(`Gemini fallback error [${status}]:`, body.slice(0, 300));
+        if (status === 429) throw new Error("RATE_LIMITED");
+        if (status === 402) throw new Error("CREDITS_EXHAUSTED");
+        throw new Error("AI_ERROR");
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    }
+    throw e;
+  }
 }
 
 function parseJSON(text: string): any {
@@ -180,7 +255,7 @@ const PLAN_LIMITS = {
   },
 };
 
-async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number) {
+async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number, currentScanSessionId?: string | null) {
   const limits = PLAN_LIMITS[plan];
 
   // 1. Repo size cap
@@ -189,12 +264,17 @@ async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free"
   }
 
   // 2. Concurrent scan lock
-  const { data: active } = await serviceClient
+  let activeQuery = serviceClient
     .from("scan_sessions")
     .select("id")
     .eq("user_id", userId)
-    .in("status", ["pending", "analyzing"])
-    .limit(1);
+    .in("status", ["pending", "analyzing"]);
+
+  if (currentScanSessionId) {
+    activeQuery = activeQuery.neq("id", currentScanSessionId);
+  }
+
+  const { data: active } = await activeQuery.limit(1);
   if (active && active.length > 0) {
     return { ok: false, code: "SCAN_IN_PROGRESS", message: "You already have a scan running. Please wait for it to finish." };
   }
@@ -322,6 +402,7 @@ serve(async (req) => {
       project_type,
       monetization,
       scan_type,
+      scan_session_id,
     } = body;
     const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
@@ -355,7 +436,7 @@ serve(async (req) => {
       const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
 
       // Enforce all abuse limits BEFORE any AI call
-      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes);
+      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes, scan_session_id);
       if (!limitCheck.ok) {
         return new Response(JSON.stringify({ error: limitCheck.message, code: limitCheck.code, existingReportId: limitCheck.existingReportId }), {
           status: 429,
@@ -584,7 +665,7 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaude(claudeSystemPrompt, claudeUserContent);
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
