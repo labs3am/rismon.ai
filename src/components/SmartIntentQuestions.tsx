@@ -135,7 +135,10 @@ function buildQuestions(pre: PreAnalysis): SmartQ[] {
     });
   }
 
-  return qs;
+  // Append the universal "Other (describe)" option to every question so users
+  // can describe situations the fixed choices don't cover (e.g. "Stripe keys
+  // exist but checkout isn't built yet").
+  return qs.map((q) => ({ ...q, options: [...q.options, OTHER_OPTION] }));
 }
 
 function DetectedPills({ pre }: { pre: PreAnalysis }) {
