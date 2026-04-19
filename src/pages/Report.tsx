@@ -57,10 +57,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FindingCard({ f, idx }: { f: any; idx: number }) {
+function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?: string }) {
   const [copied, setCopied] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSending, setDisputeSending] = useState(false);
+  const [disputeSent, setDisputeSent] = useState(false);
   const sev = (f.severity || 'medium').toLowerCase();
   const color = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
+  const confidence = (f.confidence || 'verified').toLowerCase();
+  const confColor =
+    confidence === 'verified' ? '#22c55e' : confidence === 'likely' ? '#f59e0b' : '#71717a';
+  const confLabel =
+    confidence === 'verified' ? 'Verified' : confidence === 'likely' ? 'Likely' : 'Unverified';
 
   const title = f.title || 'Issue';
   const whatWeFound = f.what_we_found || f.you_said || f.explanation || '';
@@ -75,6 +84,33 @@ function FindingCard({ f, idx }: { f: any; idx: number }) {
     navigator.clipboard.writeText(fixPrompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const submitDispute = async () => {
+    if (disputeReason.trim().length < 5) {
+      toast.error('Please add a few words explaining why this is wrong.');
+      return;
+    }
+    setDisputeSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('submit-finding-dispute', {
+        body: {
+          analysis_id: analysisId,
+          finding_id: f.id,
+          finding_name: title,
+          finding_category: sev,
+          reason: disputeReason.trim(),
+        },
+      });
+      if (error) throw error;
+      setDisputeSent(true);
+      toast.success('Thanks — we\'ll review this finding.');
+      setTimeout(() => { setDisputeOpen(false); setDisputeSent(false); setDisputeReason(''); }, 1500);
+    } catch (e: any) {
+      toast.error(e.message || 'Could not send dispute.');
+    } finally {
+      setDisputeSending(false);
+    }
   };
 
   return (
