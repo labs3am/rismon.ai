@@ -9,13 +9,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
-import SmartIntentQuestions, { PreAnalysis } from '@/components/SmartIntentQuestions';
+import { PreAnalysis } from '@/components/SmartIntentQuestions';
+import AppUnderstandingCard from '@/components/AppUnderstandingCard';
+import AiSmartQuestions from '@/components/AiSmartQuestions';
 
 export default function Analyze() {
   const { appId } = useParams();
   const { user, session } = useAuth();
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'checking' | 'reading' | 'describe' | 'analyzing' | 'review'>('checking');
+  const [stage, setStage] = useState<'checking' | 'reading' | 'confirm' | 'questions' | 'analyzing' | 'review'>('checking');
+  const [understandingCorrection, setUnderstandingCorrection] = useState<string>('');
   const [app, setApp] = useState<any>(null);
   const [analysisId, setAnalysisId] = useState('');
   const [codeUnderstanding, setCodeUnderstanding] = useState<any>(null);
