@@ -19,6 +19,23 @@ interface SmartQ {
   options: { value: string; label: string; description?: string }[];
 }
 
+// Sentinel value used for the free-text "Other" choice. The actual typed text
+// is stored as `other:<text>` so it flows straight into user_answers for the AI.
+const OTHER_VALUE = 'other';
+const OTHER_OPTION = {
+  value: OTHER_VALUE,
+  label: 'Other (describe in your own words)',
+  description: 'Tell us exactly what your situation is — the AI will use this',
+};
+
+function isOtherAnswer(v: string | undefined) {
+  return !!v && (v === OTHER_VALUE || v.startsWith('other:'));
+}
+function otherText(v: string | undefined) {
+  if (!v || !v.startsWith('other:')) return '';
+  return v.slice('other:'.length);
+}
+
 function buildQuestions(pre: PreAnalysis): SmartQ[] {
   const qs: SmartQ[] = [];
 
@@ -118,7 +135,10 @@ function buildQuestions(pre: PreAnalysis): SmartQ[] {
     });
   }
 
-  return qs;
+  // Append the universal "Other (describe)" option to every question so users
+  // can describe situations the fixed choices don't cover (e.g. "Stripe keys
+  // exist but checkout isn't built yet").
+  return qs.map((q) => ({ ...q, options: [...q.options, OTHER_OPTION] }));
 }
 
 function DetectedPills({ pre }: { pre: PreAnalysis }) {
@@ -225,16 +245,29 @@ export default function SmartIntentQuestions({
     );
   }
 
-  const allAnswered = questions.every((q) => questionAnswers[q.id]);
+  // An "Other" answer only counts as answered once the user has typed something.
+  const isAnswered = (q: SmartQ) => {
+    const v = questionAnswers[q.id];
+    if (!v) return false;
+    if (v === OTHER_VALUE) return false; // selected but not yet described
+    if (v.startsWith('other:')) return v.slice('other:'.length).trim().length > 0;
+    return true;
+  };
+  const allAnswered = questions.every(isAnswered);
   const noQuestions = questions.length === 0;
 
   const handleSelect = (qId: string, value: string) => {
+    // If selecting "Other", don't auto-advance — wait for the textarea input.
+    const isOther = value === OTHER_VALUE;
     const next = { ...questionAnswers, [qId]: value };
     setQuestionAnswers(next);
-    // Auto-advance
-    if (step < questions.length - 1) {
+    if (!isOther && step < questions.length - 1) {
       setTimeout(() => setStep((s) => s + 1), 150);
     }
+  };
+
+  const handleOtherText = (qId: string, text: string) => {
+    setQuestionAnswers({ ...questionAnswers, [qId]: `other:${text}` });
   };
 
   const currentQ = questions[step];
@@ -256,7 +289,7 @@ export default function SmartIntentQuestions({
           {questions.length > 1 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
               {questions.map((q, i) => {
-                const answered = !!questionAnswers[q.id];
+                const answered = isAnswered(q);
                 return (
                   <span
                     key={q.id}
@@ -306,37 +339,69 @@ export default function SmartIntentQuestions({
 
               <div>
                 {currentQ.options.map((opt) => {
-                  const selected = questionAnswers[currentQ.id] === opt.value;
+                  const selected =
+                    opt.value === OTHER_VALUE
+                      ? isOtherAnswer(questionAnswers[currentQ.id])
+                      : questionAnswers[currentQ.id] === opt.value;
+                  const isOtherOpt = opt.value === OTHER_VALUE;
                   return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleSelect(currentQ.id, opt.value)}
-                      onMouseEnter={(e) => {
-                        if (!selected) e.currentTarget.style.borderColor = '#333333';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selected) e.currentTarget.style.borderColor = '#1a1a1a';
-                      }}
-                      style={{
-                        background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
-                        border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
-                        borderRadius: 8,
-                        padding: '16px 20px',
-                        marginBottom: 8,
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: 'left',
-                        transition: 'border-color 0.15s ease, background 0.15s ease',
-                      }}
-                    >
-                      <div style={{ fontSize: 15, color: '#ffffff', fontWeight: 500 }}>{opt.label}</div>
-                      {opt.description && (
-                        <div style={{ fontSize: 13, color: '#555555', marginTop: 4 }}>
-                          {opt.description}
+                    <div key={opt.value}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(currentQ.id, opt.value)}
+                        onMouseEnter={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#333333';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#1a1a1a';
+                        }}
+                        style={{
+                          background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
+                          border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
+                          borderRadius: 8,
+                          padding: '16px 20px',
+                          marginBottom: 8,
+                          cursor: 'pointer',
+                          width: '100%',
+                          textAlign: 'left',
+                          transition: 'border-color 0.15s ease, background 0.15s ease',
+                        }}
+                      >
+                        <div style={{ fontSize: 15, color: '#ffffff', fontWeight: 500 }}>{opt.label}</div>
+                        {opt.description && (
+                          <div style={{ fontSize: 13, color: '#555555', marginTop: 4 }}>
+                            {opt.description}
+                          </div>
+                        )}
+                      </button>
+
+                      {isOtherOpt && selected && (
+                        <div style={{ marginTop: -4, marginBottom: 12, paddingLeft: 4 }}>
+                          <textarea
+                            autoFocus
+                            value={otherText(questionAnswers[currentQ.id])}
+                            onChange={(e) => handleOtherText(currentQ.id, e.target.value)}
+                            placeholder="Describe your situation in 1–3 sentences. Example: 'Stripe keys are in my repo but I haven't built the checkout flow yet — no one can actually pay.'"
+                            rows={4}
+                            style={{
+                              width: '100%',
+                              background: '#000',
+                              border: '1px solid #f97316',
+                              borderRadius: 8,
+                              padding: 12,
+                              color: '#fff',
+                              fontSize: 14,
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              outline: 'none',
+                            }}
+                          />
+                          <div style={{ fontSize: 12, color: '#555', marginTop: 6 }}>
+                            The AI will use your description as context. Be specific.
+                          </div>
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
