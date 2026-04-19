@@ -106,6 +106,13 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${post.meta_title || post.title} — Rismon Blog`}
+        description={post.meta_description || post.excerpt || `${post.title} — read on the Rismon blog.`}
+        canonicalPath={`/blog/${post.slug}`}
+        image={post.cover_image_url || undefined}
+        noindex={!post.published}
+      />
       <Navbar />
 
       <article className="max-w-[720px] mx-auto px-5 pt-28 pb-20">
