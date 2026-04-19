@@ -33,6 +33,7 @@ export default function Navbar() {
           <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>What we check</button>
           <button onClick={() => goToSection('pricing')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Pricing</button>
           <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Security</button>
+          <Link to="/blog" style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Blog</Link>
         </div>
 
         <div className="hidden md:flex items-center gap-3">
@@ -51,6 +52,7 @@ export default function Navbar() {
           <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>What we check</button>
           <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Pricing</button>
           <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Security</button>
+          <Link to="/blog" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/login" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Log in</Link>
           <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '10px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center' }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
