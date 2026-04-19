@@ -1170,18 +1170,51 @@ No text before or after the JSON.`;
           : `\n\nBACKEND PARTIAL VISIBILITY: We could only list table names, not their rules. Tables visible: ${JSON.stringify(groundTruth.tables.map((t: any) => t.table))}. Mark all access-control claims as "unverified" since rules could not be checked directly.`)
         : `\n\nNO BACKEND VISIBILITY: The user did not connect their backend (or hasn't installed the Rismon verification function). Mark every claim about database access rules, server validation, or admin enforcement as "unverified" and ask the founder to confirm in plain English.`;
 
+      // Fetch homepage signals — README, live URL homepage, /privacy, /terms.
+      // This is the foundation of the "promises vs code" finding type.
+      // We pull the app row to get live_url, github_owner, github_repo_name and app_description.
+      let appRow: any = null;
+      if (app_id) {
+        const { data } = await supabase
+          .from("apps")
+          .select("live_url, github_owner, github_repo_name, app_description")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        appRow = data;
+      }
+      const homepageSignals = await fetchHomepageSignals(
+        appRow?.live_url || null,
+        appRow?.github_owner || null,
+        appRow?.github_repo_name || null,
+      );
+      const homepageBlock = `\n\nHOMEPAGE SIGNALS (what we read from the live site and README):
+- live URL provided: ${homepageSignals.has_live_url ? "yes" : "no"}
+- privacy page found: ${homepageSignals.privacy_page_found ? "yes" : "no"}
+- terms page found: ${homepageSignals.terms_page_found ? "yes" : "no"}
+- README excerpt: ${homepageSignals.readme_text ? homepageSignals.readme_text.slice(0, 2000) : "(none found)"}
+- Homepage text excerpt: ${homepageSignals.homepage_text ? homepageSignals.homepage_text.slice(0, 3000) : "(none — no live URL or fetch failed)"}
+- Privacy text excerpt: ${homepageSignals.privacy_text ? homepageSignals.privacy_text.slice(0, 1500) : "(none)"}
+- Terms text excerpt: ${homepageSignals.terms_text ? homepageSignals.terms_text.slice(0, 1500) : "(none)"}
+
+Use this when generating legal_findings and landing_page_promises. If everything is "(none)", return both as [].`;
+
+      const founderShortDescription = appRow?.app_description
+        ? `\n\nFounder's short app description (entered when connecting): "${appRow.app_description}"`
+        : "";
+
       const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
 
 App understanding: ${JSON.stringify(code_understanding)}
 
-Founder described: ${founder_description}
+Founder described: ${founder_description}${founderShortDescription}
 
 Founder concern (most worried about): ${concern || "(none specified)"}
 
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
 
-Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}`;
+Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}${homepageBlock}`;
 
       const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
