@@ -85,7 +85,7 @@ export default function Blog() {
             <div className="text-muted-foreground text-sm">Loading…</div>
           ) : posts.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-10 text-center">
-              <p className="text-foreground text-lg font-medium">No posts yet — but we're cooking something 👨‍🍳</p>
+              <p className="text-foreground text-lg font-medium">No posts yet — but we're cooking something up.</p>
               <p className="text-muted-foreground text-sm mt-2">
                 {isAdmin ? 'Use Manage posts to publish your first article.' : 'Stay tuned. First drop is on the way.'}
               </p>
