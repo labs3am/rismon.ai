@@ -18,6 +18,9 @@ import Terms from "./pages/Terms";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import NotFound from "./pages/NotFound";
 import SampleReport from "./pages/SampleReport";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import AdminBlog from "./pages/AdminBlog";
 
 const queryClient = new QueryClient();
 
