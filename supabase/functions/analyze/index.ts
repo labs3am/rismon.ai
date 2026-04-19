@@ -264,6 +264,135 @@ ${JSON.stringify(checkable, null, 2)}`;
 }
 
 // ============================================================
+// SECTION 1e: File re-read verifier — the main accuracy moat.
+// For each Claude finding, we pull the cited file from the code bundle
+// and ask Gemini: "Does this REAL file actually prove Claude's claim?"
+// Gemini sees the full file, not a snippet Claude wrote, so it can
+// catch lies, missing context (e.g. parent ProtectedRoute), and stale
+// line numbers. Rejected findings are dropped.
+// ============================================================
+
+// The bundle format is: `=== <path> ===\n<content>\n\n` (set in Analyze.tsx).
+// Pull a single file's content out by exact path match.
+function extractFileFromBundle(bundle: string, path: string): string | null {
+  if (!bundle || !path) return null;
+  const marker = `=== ${path} ===`;
+  const start = bundle.indexOf(marker);
+  if (start === -1) {
+    // Try basename match as fallback (Claude sometimes drops the leading folder)
+    const base = path.split("/").pop();
+    if (!base) return null;
+    const re = new RegExp(`=== [^\\n]*${base.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")} ===`);
+    const m = bundle.match(re);
+    if (!m || m.index === undefined) return null;
+    const s = m.index + m[0].length;
+    const e = bundle.indexOf("\n=== ", s);
+    return bundle.slice(s, e === -1 ? undefined : e).trim();
+  }
+  const contentStart = start + marker.length;
+  const next = bundle.indexOf("\n=== ", contentStart);
+  return bundle.slice(contentStart, next === -1 ? undefined : next).trim();
+}
+
+// Verify each finding by sending the cited file (max ~6KB) + the claim to Gemini.
+async function verifyFindingsAgainstRealFiles(
+  findings: any[],
+  codeBundle: string,
+  edgeBundle: string,
+): Promise<{ kept: any[]; dropped: any[] }> {
+  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
+  if (!codeBundle && !edgeBundle) return { kept: findings, dropped: [] };
+
+  // Verify in parallel — each finding is an independent Gemini call.
+  const results = await Promise.all(findings.map(async (f) => {
+    const path = f?.file_path;
+    if (!path) return { f, verdict: "skipped", reason: "no file_path" };
+
+    // Try frontend bundle first, then edge function bundle
+    let fileContent = extractFileFromBundle(codeBundle, path);
+    if (!fileContent) fileContent = extractFileFromBundle(edgeBundle, path);
+
+    if (!fileContent) {
+      // File wasn't in the scanned bundle — could be a fabricated path.
+      // Don't auto-reject (might be legit unscanned file); mark unverified.
+      return {
+        f: { ...f, confidence: "unverified",
+             confidence_reason: "Cited file was not in the scanned bundle — could not fact-check." },
+        verdict: "unverifiable",
+        reason: "file not in bundle",
+      };
+    }
+
+    // Trim to ~6KB to keep costs sane and stay within model limits.
+    const trimmed = fileContent.length > 6000
+      ? fileContent.slice(0, 6000) + "\n... [truncated]"
+      : fileContent;
+
+    const system = `You are a strict code reviewer fact-checking another AI's security finding against the REAL source file.
+
+Rules:
+- The finding may be wrong, right, or partially right. Be skeptical.
+- Read the WHOLE file before judging. Auth/access checks may live in a parent component, route wrapper, or imported helper not visible here — if the finding ignores that possibility, reject it.
+- A finding is "confirmed" only if the file ACTUALLY shows the problem at or near the cited line.
+- A finding is "rejected" if the file contradicts the claim, the cited line doesn't show the problem, or the claim depends on context not in the file.
+- A finding is "needs_more_context" if the file alone isn't enough to judge (don't use this lazily).
+
+Return ONLY:
+{ "verdict": "confirmed" | "rejected" | "needs_more_context", "reason": "one short sentence" }`;
+
+    const user = `Claim from the first AI:
+- Title: ${f.title}
+- What was found: ${f.what_we_found}
+- Cited file: ${path}
+- Cited line: ${f.line_number}
+- Cited snippet: ${f.code_snippet}
+
+REAL file contents (${path}):
+\`\`\`
+${trimmed}
+\`\`\`
+
+Does the real file prove the claim?`;
+
+    try {
+      const text = await callGemini(system, user, "google/gemini-2.5-flash");
+      const parsed = parseJSON(text);
+      const verdict = (parsed?.verdict || "").toLowerCase();
+      const reason = parsed?.reason || "";
+      return { f, verdict, reason };
+    } catch (e) {
+      // On verifier failure, keep the finding but mark unverified.
+      return { f: { ...f, confidence: "unverified", confidence_reason: "Verifier could not run — kept as unverified." }, verdict: "skipped", reason: (e as Error).message };
+    }
+  }));
+
+  const kept: any[] = [];
+  const dropped: any[] = [];
+  for (const r of results) {
+    if (r.verdict === "rejected") {
+      dropped.push({ id: r.f.id, title: r.f.title, reason: `File re-read: ${r.reason}` });
+    } else if (r.verdict === "needs_more_context") {
+      // Keep but downgrade to unverified
+      kept.push({ ...r.f, confidence: "unverified",
+                  confidence_reason: `File alone wasn't enough: ${r.reason}` });
+    } else if (r.verdict === "confirmed") {
+      // Promote to verified ONLY if it was already in the verifiable category whitelist.
+      // Otherwise keep its current confidence (most likely "unverified" from the whitelist filter).
+      const inWhitelist = VERIFIABLE_CATEGORIES.has((r.f.category || "").toLowerCase());
+      kept.push({
+        ...r.f,
+        confidence: inWhitelist ? "verified" : r.f.confidence,
+        confidence_reason: `Confirmed by file re-read: ${r.reason}`,
+      });
+    } else {
+      // unverifiable / skipped — keep as-is
+      kept.push(r.f);
+    }
+  }
+  return { kept, dropped };
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
