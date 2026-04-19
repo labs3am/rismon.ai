@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Check } from 'lucide-react';
 
 export interface AppUnderstanding {
   business_type_guess?: string;
@@ -237,7 +238,7 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
                           fontWeight: 700,
                         }}
                       >
-                        {checked ? '✓' : ''}
+                        {checked ? <Check size={11} strokeWidth={3} /> : null}
                       </span>
                       <span style={{ fontSize: 14, color: '#e5e5e5', lineHeight: 1.5 }}>
                         {item}

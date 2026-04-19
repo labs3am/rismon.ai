@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock, KeyRound } from 'lucide-react';
+import { ShieldCheck, CheckCircle, AlertTriangle, Github, Loader2, Lock, KeyRound, Check } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
@@ -207,7 +207,7 @@ export default function Connect() {
           {[1, 2, 3].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${step > s ? 'bg-primary text-primary-foreground' : step === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                {step > s ? '✓' : s}
+                {step > s ? <Check size={14} strokeWidth={3} /> : s}
               </div>
               {s < 3 && <div className={`w-8 h-px ${step > s ? 'bg-primary' : 'bg-border'}`} />}
             </div>
@@ -475,7 +475,7 @@ export default function Connect() {
                       <div className="mt-2 p-3 rounded-md bg-muted/30 border border-border text-[12px] text-muted-foreground leading-relaxed">
                         <ol className="list-decimal list-inside space-y-1">
                           <li>Open your project at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">supabase.com/dashboard</a></li>
-                          <li>Click <strong className="text-foreground">⚙️ Project Settings</strong> in the left sidebar</li>
+                          <li>Click <strong className="text-foreground">Project Settings</strong> (gear icon) in the left sidebar</li>
                           <li>Click <strong className="text-foreground">API</strong></li>
                           <li>Copy the <strong className="text-foreground">Project URL</strong> at the top</li>
                         </ol>
@@ -520,10 +520,10 @@ export default function Connect() {
                             What does this SQL actually do?
                           </summary>
                           <div className="mt-2 p-3 rounded-md bg-black/30 border border-border text-[12px] text-muted-foreground leading-relaxed space-y-2">
-                            <p>✓ It creates a <strong className="text-foreground">read-only function</strong> that returns a list of your table names and which ones have access rules turned on.</p>
-                            <p>✓ It <strong className="text-foreground">never reads any user data</strong> — only the table structure (metadata).</p>
-                            <p>✓ It cannot edit, delete, or insert anything. The word <code className="text-foreground">security definer</code> just means "use this function's permissions, not the caller's" — standard Supabase pattern.</p>
-                            <p>✓ You can delete the function anytime by running <code className="text-foreground">drop function public.rismon_security_metadata();</code></p>
+                            <p>It creates a <strong className="text-foreground">read-only function</strong> that returns a list of your table names and which ones have access rules turned on.</p>
+                            <p>It <strong className="text-foreground">never reads any user data</strong> — only the table structure (metadata).</p>
+                            <p>It cannot edit, delete, or insert anything. The word <code className="text-foreground">security definer</code> just means "use this function's permissions, not the caller's" — standard Supabase pattern.</p>
+                            <p>You can delete the function anytime by running <code className="text-foreground">drop function public.rismon_security_metadata();</code></p>
                           </div>
                         </details>
 
