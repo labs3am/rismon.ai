@@ -28,11 +28,35 @@ interface Props {
 export default function AppUnderstandingCard({ understanding, onConfirm }: Props) {
   const [mode, setMode] = useState<'idle' | 'edit' | 'reject'>('idle');
   const [correction, setCorrection] = useState('');
+  const [selectedUnsure, setSelectedUnsure] = useState<string[]>([]);
 
   const u = understanding || {};
   const features = (u.features_found || []).slice(0, 8);
   const roles = u.user_roles_found || [];
   const tables = (u.database_tables || []).slice(0, 8);
+  const unsureItems = (u.unknown_features || []).slice(0, 5);
+
+  const toggleUnsure = (item: string) => {
+    setSelectedUnsure((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+    );
+  };
+
+  const buildEditPayload = () => {
+    const parts: string[] = [];
+    if (selectedUnsure.length > 0) {
+      parts.push(
+        'Please clarify these items:\n' + selectedUnsure.map((i) => `- ${i}`).join('\n')
+      );
+    }
+    if (correction.trim()) parts.push(correction.trim());
+    return parts.join('\n\n');
+  };
+
+  const canSubmitEdit =
+    mode === 'edit'
+      ? selectedUnsure.length > 0 || correction.trim().length >= 5
+      : correction.trim().length >= 5;
 
   const summary = u.business_type_guess
     ? `This looks like a ${u.business_type_guess}.`
