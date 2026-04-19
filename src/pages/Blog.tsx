@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SEO from '@/components/SEO';
 
 const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
 
@@ -52,6 +53,11 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Blog — Rismon | Verified AI App Audits"
+        description="Guides and deep dives on shipping production-ready AI-built apps. Verify findings, fix Supabase setups, and harden your stack."
+        canonicalPath="/blog"
+      />
       <Navbar />
 
       <main className="max-w-[920px] mx-auto px-5 pt-32 pb-20">
@@ -79,9 +85,9 @@ export default function Blog() {
             <div className="text-muted-foreground text-sm">Loading…</div>
           ) : posts.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-10 text-center">
-              <p className="text-foreground text-lg font-medium">No posts yet</p>
+              <p className="text-foreground text-lg font-medium">No posts yet — but we're cooking something 👨‍🍳</p>
               <p className="text-muted-foreground text-sm mt-2">
-                {isAdmin ? 'Use Manage posts to publish your first article.' : 'Check back soon — first post is coming.'}
+                {isAdmin ? 'Use Manage posts to publish your first article.' : 'Stay tuned. First drop is on the way.'}
               </p>
             </div>
           ) : (

@@ -2,6 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const funnyMessages = [
   "Even our AI could not find it.",
@@ -35,6 +36,11 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
+      <SEO
+        title="Page not found — Rismon.ai"
+        description="That page doesn't exist on Rismon.ai. Head back to the home page or jump to your dashboard."
+        noindex
+      />
       <Navbar />
       <div className="max-w-[560px] w-full mx-auto pt-[120px] px-6 pb-[60px] text-center">
         <div style={{ fontSize: 120, fontWeight: 700, lineHeight: 1, color: 'rgba(249,115,22,0.2)' }}>

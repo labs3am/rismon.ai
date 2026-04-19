@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   high: '#f97316',
   medium: '#f59e0b',
   low: '#3b82f6',
+  info: '#71717a',
 };
 
 function scoreColor(score: number) {
@@ -29,7 +30,6 @@ function scoreLabelFor(score: number) {
   return 'Critical issues';
 }
 
-// Try to split a combined "summary verdict" string back into two parts.
 function splitSummaryVerdict(text: string): { summary: string; verdict: string } {
   if (!text) return { summary: '', verdict: '' };
   const sentences = text.match(/[^.!?]+[.!?]+/g);
@@ -39,7 +39,6 @@ function splitSummaryVerdict(text: string): { summary: string; verdict: string }
   return { summary, verdict };
 }
 
-// Section label component
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -54,6 +53,97 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  );
+}
+
+// Hero score card. Big intent number with sub-label.
+function IntentScoreCard({ score, label }: { score: number; label: string }) {
+  const c = scoreColor(score);
+  return (
+    <div
+      style={{
+        background: '#0a0a0a',
+        border: '1px solid #1a1a1a',
+        borderRadius: 16,
+        padding: '40px 32px',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: '#555',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          marginBottom: 16,
+        }}
+      >
+        Intent match
+      </div>
+      <div
+        style={{
+          fontSize: 88,
+          fontWeight: 700,
+          letterSpacing: '-0.04em',
+          color: c,
+          lineHeight: 0.95,
+        }}
+      >
+        {score}
+        <span style={{ fontSize: 28, color: '#444', fontWeight: 500, marginLeft: 4 }}>/100</span>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 500, color: '#fff', marginTop: 16 }}>{label}</div>
+      <div style={{ fontSize: 13, color: '#666', marginTop: 6, lineHeight: 1.5 }}>
+        Does your code do what you said your app does?
+      </div>
+    </div>
+  );
+}
+
+// Warning chip. Sits below the intent score. Sharp for security, soft for legal/promises.
+function WarningChip({
+  icon,
+  count,
+  label,
+  tone,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  count: number;
+  label: string;
+  tone: 'sharp' | 'soft' | 'clear';
+  onClick?: () => void;
+}) {
+  const palette =
+    tone === 'sharp'
+      ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
+      : tone === 'soft'
+        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
+        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        background: palette.bg,
+        border: `1px solid ${palette.border}`,
+        color: palette.color,
+        borderRadius: 999,
+        padding: '8px 14px',
+        fontSize: 13,
+        fontWeight: 500,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'background 0.15s, border-color 0.15s',
+      }}
+    >
+      <span style={{ display: 'flex' }}>{icon}</span>
+      <strong style={{ color: palette.color }}>{count}</strong>
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -104,7 +194,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
       });
       if (error) throw error;
       setDisputeSent(true);
-      toast.success('Thanks — we\'ll review this finding.');
+      toast.success("Thanks — we'll review this finding.");
       setTimeout(() => { setDisputeOpen(false); setDisputeSent(false); setDisputeReason(''); }, 1500);
     } catch (e: any) {
       toast.error(e.message || 'Could not send dispute.');
@@ -220,7 +310,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
           >
             {copied ? (
               <>
-                <Check size={11} /> Copied!
+                <Check size={11} /> Copied
               </>
             ) : (
               'Copy prompt'
@@ -256,13 +346,13 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
             Report wrong finding
           </button>
         ) : disputeSent ? (
-          <div style={{ fontSize: 12, color: '#22c55e' }}>✓ Thanks — we'll review it.</div>
+          <div style={{ fontSize: 12, color: '#22c55e' }}>Thanks — we'll review it.</div>
         ) : (
           <div style={{ width: '100%' }}>
             <textarea
               value={disputeReason}
               onChange={(e) => setDisputeReason(e.target.value)}
-              placeholder="Why is this finding wrong? (e.g., 'RLS is actually enabled on this table — I checked')"
+              placeholder="Why is this finding wrong? (e.g., 'I checked, this is actually protected')"
               rows={3}
               style={{
                 width: '100%', background: '#000', border: '1px solid #222', borderRadius: 6,
@@ -279,7 +369,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
               <button
                 onClick={submitDispute}
                 disabled={disputeSending}
-                style={{ background: '#f97316', border: 'none', color: '#000', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: disputeSending ? 0.6 : 1 }}
+                style={{ background: '#ffffff', border: 'none', color: '#000', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: disputeSending ? 0.6 : 1 }}
               >
                 {disputeSending ? 'Sending...' : 'Send to Rismon team'}
               </button>
@@ -287,6 +377,96 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Soft, plain card for legal findings (privacy/terms missing or weak).
+function LegalCard({ f }: { f: any }) {
+  return (
+    <div
+      style={{
+        background: '#0a0a0a',
+        border: '1px solid #1a1a1a',
+        borderLeft: '3px solid #f59e0b',
+        borderRadius: 8,
+        padding: 22,
+        marginBottom: 12,
+      }}
+    >
+      <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8 }}>{f.title}</div>
+      {f.what_we_found && (
+        <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 12 }}>{f.what_we_found}</div>
+      )}
+      {f.what_this_means && (
+        <>
+          <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+            Why it matters
+          </div>
+          <div style={{ fontSize: 14, color: '#ffffff', lineHeight: 1.6, marginBottom: 12 }}>{f.what_this_means}</div>
+        </>
+      )}
+      {f.how_to_fix && (
+        <>
+          <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+            What to do
+          </div>
+          <div style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>{f.how_to_fix}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Promises vs code — the killer find. Soft tone always.
+function PromiseRow({ p }: { p: any }) {
+  const v = (p.verdict || 'not_found').toLowerCase();
+  const palette =
+    v === 'found'
+      ? { color: '#22c55e', label: 'Found in code', bg: 'rgba(34,197,94,0.05)' }
+      : v === 'partial'
+        ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
+        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto',
+        gap: 16,
+        padding: '16px 18px',
+        background: palette.bg,
+        border: '1px solid #1a1a1a',
+        borderRadius: 8,
+        marginBottom: 10,
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 14, color: '#fff', fontWeight: 500, marginBottom: 6, lineHeight: 1.4 }}>
+          {p.claim || '(no claim text)'}
+        </div>
+        {p.evidence && (
+          <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5 }}>
+            <span style={{ color: '#555' }}>From your {p.claim_source || 'homepage'} · </span>
+            {p.evidence}
+          </div>
+        )}
+      </div>
+      <span
+        style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: palette.color,
+          border: `1px solid ${palette.color}40`,
+          padding: '4px 10px',
+          borderRadius: 999,
+          height: 'fit-content',
+          whiteSpace: 'nowrap',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {palette.label}
+      </span>
     </div>
   );
 }
@@ -351,7 +531,6 @@ export default function Report() {
   const isPro = profile?.plan === 'pro' || profile?.plan === 'try_pro';
 
   const fixPromptsList = Array.isArray(analysis.fix_prompts) ? analysis.fix_prompts : [];
-  // Index fix prompts by fix_id so we can attach them to gaps/security findings
   const fixById = new Map<string, any>();
   fixPromptsList.forEach((fp: any, i: number) => {
     if (fp?.fix_id) fixById.set(fp.fix_id, fp);
@@ -374,10 +553,16 @@ export default function Report() {
   const gapsList = (Array.isArray(analysis.gaps) ? analysis.gaps : []).map(attachFix);
   const secList = (Array.isArray(analysis.security_issues) ? analysis.security_issues : []).map(attachFix);
   const whatWorksList = Array.isArray(analysis.what_works) ? analysis.what_works : [];
+  const legalList = Array.isArray(analysis.legal_findings) ? analysis.legal_findings : [];
+  const promisesList = Array.isArray(analysis.landing_page_promises) ? analysis.landing_page_promises : [];
+  const homepageSignals = analysis.homepage_signals || null;
 
   const { summary, verdict } = splitSummaryVerdict(analysis.summary || '');
   const label = analysis.score_label || scoreLabelFor(score);
-  const sColor = scoreColor(score);
+
+  // Promises gating: free tier sees up to 2, the rest are locked behind Pro.
+  const promisesVisible = isPro ? promisesList : promisesList.slice(0, 2);
+  const promisesLocked = isPro ? 0 : Math.max(0, promisesList.length - 2);
 
   return (
     <div style={{ minHeight: '100vh', background: '#000000' }}>
@@ -410,33 +595,34 @@ export default function Report() {
           </span>
         </div>
 
-        {/* SECTION 2 — SCORE */}
-        <div style={{ textAlign: 'center', padding: '60px 0 48px' }}>
-          <div
-            className="report-score"
-            style={{
-              fontSize: 80,
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              color: sColor,
-              lineHeight: 1,
-            }}
-          >
-            {score}
+        {/* SECTION 2 — INTENT HERO + WARNING CHIPS */}
+        <div style={{ padding: '40px 0 12px' }}>
+          <IntentScoreCard score={score} label={label} />
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+            <WarningChip
+              icon={<ShieldAlert size={14} />}
+              count={secList.length}
+              label={secList.length === 1 ? 'security issue' : 'security issues'}
+              tone={secList.length === 0 ? 'clear' : 'sharp'}
+              onClick={() => document.getElementById('security-section')?.scrollIntoView({ behavior: 'smooth' })}
+            />
+            <WarningChip
+              icon={<FileText size={14} />}
+              count={legalList.length}
+              label={legalList.length === 1 ? 'legal gap' : 'legal gaps'}
+              tone={legalList.length === 0 ? 'clear' : 'soft'}
+              onClick={() => document.getElementById('legal-section')?.scrollIntoView({ behavior: 'smooth' })}
+            />
+            {promisesList.length > 0 && (
+              <WarningChip
+                icon={<AlertCircle size={14} />}
+                count={promisesList.filter((p: any) => p.verdict !== 'found').length}
+                label="unverified promises"
+                tone="soft"
+                onClick={() => document.getElementById('promises-section')?.scrollIntoView({ behavior: 'smooth' })}
+              />
+            )}
           </div>
-          <div
-            style={{
-              fontSize: 13,
-              color: '#555555',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-              marginTop: 8,
-              fontWeight: 600,
-            }}
-          >
-            Intent score
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 500, color: '#ffffff', marginTop: 8 }}>{label}</div>
         </div>
 
         {/* SECTION 3 — SUMMARY */}
@@ -447,7 +633,8 @@ export default function Report() {
               border: '1px solid #1a1a1a',
               borderRadius: 8,
               padding: 24,
-              marginBottom: 32,
+              marginTop: 32,
+              marginBottom: 24,
             }}
           >
             <div
@@ -463,6 +650,20 @@ export default function Report() {
               Overview
             </div>
             <div style={{ fontSize: 15, color: '#888888', lineHeight: 1.7 }}>{summary}</div>
+            {homepageSignals && (homepageSignals.has_live_url || homepageSignals.readme_found) && (
+              <div style={{ fontSize: 12, color: '#555', marginTop: 14, paddingTop: 14, borderTop: '1px solid #1a1a1a' }}>
+                We also read your{' '}
+                {[
+                  homepageSignals.readme_found && 'README',
+                  homepageSignals.has_live_url && 'homepage',
+                  homepageSignals.privacy_page_found && 'privacy page',
+                  homepageSignals.terms_page_found && 'terms page',
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+                .
+              </div>
+            )}
           </div>
         )}
 
@@ -485,49 +686,102 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 5 — BUSINESS LOGIC GAPS */}
+        {/* SECTION 5 — INTENT GAPS */}
         <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Business logic gaps</SectionLabel>
+          <SectionLabel>What you wanted vs what your code does</SectionLabel>
           {gapsList.length === 0 ? (
             <div
               style={{
-                background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.2)',
+                background: 'rgba(34,197,94,0.06)',
+                border: '1px solid rgba(34,197,94,0.18)',
                 borderRadius: 8,
                 padding: '16px 20px',
-                color: '#22c55e',
+                color: '#86efac',
                 fontSize: 14,
               }}
             >
-              No business logic gaps found.
+              No intent gaps found. Your code matches what you described.
             </div>
           ) : (
             gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
-        {/* SECTION 6 — SECURITY FINDINGS */}
-        <div style={{ marginBottom: 32 }}>
-          <SectionLabel>Security findings</SectionLabel>
+        {/* SECTION 6 — PROMISES VS CODE */}
+        {promisesList.length > 0 && (
+          <div id="promises-section" style={{ marginBottom: 32 }}>
+            <SectionLabel>Promises on your homepage vs your code</SectionLabel>
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: -8, marginBottom: 16 }}>
+              We read what your homepage and README claim, then checked your code for proof. Items marked
+              "not found" may still exist — they were just not in the code we scanned.
+            </p>
+            {promisesVisible.map((p: any) => (
+              <PromiseRow key={p.id} p={p} />
+            ))}
+            {promisesLocked > 0 && (
+              <div
+                style={{
+                  background: '#0a0a0a',
+                  border: '1px solid #1a1a1a',
+                  borderRadius: 8,
+                  padding: '20px 24px',
+                  marginTop: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                }}
+              >
+                <Lock size={18} style={{ color: '#888', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>
+                    {promisesLocked} more {promisesLocked === 1 ? 'promise' : 'promises'} to verify
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                    Pro shows the full claim-by-claim table — investor-ready diligence.
+                  </div>
+                </div>
+                <Link
+                  to="/#pricing"
+                  className="vercel-btn-primary"
+                  style={{ fontSize: 13, padding: '10px 18px', whiteSpace: 'nowrap' }}
+                >
+                  Unlock with Pro
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SECTION 7 — SECURITY (sharp tone) */}
+        <div id="security-section" style={{ marginBottom: 32 }}>
+          <SectionLabel>Security · these can hurt you in production</SectionLabel>
           {secList.length === 0 ? (
             <div
               style={{
-                background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.2)',
+                background: 'rgba(34,197,94,0.06)',
+                border: '1px solid rgba(34,197,94,0.18)',
                 borderRadius: 8,
                 padding: '16px 20px',
-                color: '#22c55e',
+                color: '#86efac',
                 fontSize: 14,
               }}
             >
-              No security issues found.
+              No security issues found in the code we scanned.
             </div>
           ) : (
             secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
-        {/* SECTION 7 — WHAT WORKS */}
+        {/* SECTION 8 — LEGAL (soft tone) */}
+        {legalList.length > 0 && (
+          <div id="legal-section" style={{ marginBottom: 32 }}>
+            <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
+            {legalList.map((f: any) => <LegalCard key={f.id} f={f} />)}
+          </div>
+        )}
+
+        {/* SECTION 9 — WHAT WORKS (small, demoted) */}
         {whatWorksList.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <SectionLabel>What your app does right</SectionLabel>
@@ -543,7 +797,7 @@ export default function Report() {
                     borderBottom: '1px solid #0f0f0f',
                   }}
                 >
-                  <span style={{ color: '#22c55e', fontSize: 16, flexShrink: 0, lineHeight: 1.5 }}>✓</span>
+                  <Check size={14} style={{ color: '#22c55e', flexShrink: 0, marginTop: 4 }} />
                   <span style={{ fontSize: 14, color: '#888888', lineHeight: 1.5 }}>{w}</span>
                 </div>
               ))}
@@ -551,7 +805,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 8 — QUICK SCAN BANNER */}
+        {/* SECTION 10 — QUICK SCAN BANNER */}
         {isQuick && !isPro && (
           <div
             className="quick-scan-banner"
@@ -568,37 +822,24 @@ export default function Report() {
             }}
           >
             <div>
-              <div style={{ fontSize: 14, color: '#555555' }}>
+              <div style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>
                 This was a Quick Scan covering your most critical files.
               </div>
-              <div style={{ fontSize: 13, color: '#444444', marginTop: 4 }}>
+              <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}>
                 A Deep Scan analyzes your full codebase and may find more issues.
               </div>
             </div>
             <Link
               to="/#pricing"
-              className="deep-scan-cta"
-              style={{
-                background: 'transparent',
-                border: '1px solid #f97316',
-                color: '#f97316',
-                padding: '10px 20px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                transition: 'background 0.15s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(249,115,22,0.08)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              className="vercel-btn-primary"
+              style={{ fontSize: 13, padding: '10px 18px', whiteSpace: 'nowrap' }}
             >
-              Get Deep Scan — $14.99
+              Get Deep Scan
             </Link>
           </div>
         )}
 
-        {/* SECTION 9 — ACTIONS */}
+        {/* SECTION 11 — ACTIONS */}
         <div
           className="report-actions"
           style={{
@@ -611,49 +852,21 @@ export default function Report() {
         >
           <button
             onClick={() => navigate(`/analyze/${analysis.app_id}`)}
-            style={{
-              background: '#ffffff',
-              color: '#000000',
-              padding: '12px 24px',
-              borderRadius: 8,
-              fontWeight: 500,
-              fontSize: 14,
-              border: 'none',
-              cursor: 'pointer',
-            }}
+            className="vercel-btn-primary"
           >
             Scan again
           </button>
           <Link
             to="/dashboard"
-            style={{
-              background: 'transparent',
-              border: '1px solid #333333',
-              color: '#ffffff',
-              padding: '12px 24px',
-              borderRadius: 8,
-              fontWeight: 500,
-              fontSize: 14,
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
+            className="vercel-btn-secondary"
           >
             Back to dashboard
           </Link>
           {isPro && (
             <button
               onClick={() => window.print()}
-              style={{
-                background: 'transparent',
-                border: '1px solid #333333',
-                color: '#ffffff',
-                padding: '12px 24px',
-                borderRadius: 8,
-                fontWeight: 500,
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
+              className="vercel-btn-secondary"
+              style={{ cursor: 'pointer' }}
             >
               Download PDF
             </button>
@@ -665,11 +878,9 @@ export default function Report() {
         .report-back:hover { color: #ffffff !important; }
         @media (max-width: 640px) {
           .report-container { padding: 24px 16px !important; padding-top: 88px !important; }
-          .report-score { font-size: 60px !important; }
           .report-actions { flex-direction: column; align-items: stretch; }
           .report-actions a, .report-actions button { text-align: center; justify-content: center; }
           .quick-scan-banner { flex-direction: column; align-items: flex-start; }
-          .quick-scan-banner .deep-scan-cta { align-self: stretch; text-align: center; }
         }
       `}</style>
     </div>

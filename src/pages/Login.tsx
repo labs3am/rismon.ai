@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import SEO from '@/components/SEO';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -29,6 +30,12 @@ export default function Login() {
 
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
+      <SEO
+        title="Log in — Rismon.ai"
+        description="Log in to Rismon.ai to scan your AI-built app and see plain-English findings, fix prompts, and intent match scores."
+        canonicalPath="/login"
+        noindex
+      />
       <Navbar />
       <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
         <div className="auth-glass-card">

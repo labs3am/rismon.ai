@@ -1,10 +1,16 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
+import SEO from '@/components/SEO';
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy — Rismon.ai"
+        description="How Rismon.ai handles your code, GitHub tokens, and Supabase keys. Read-only access, no source code stored, transparent data flow."
+        canonicalPath="/privacy"
+      />
       <Navbar />
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />
