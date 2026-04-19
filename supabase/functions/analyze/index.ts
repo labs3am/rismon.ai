@@ -750,6 +750,18 @@ Never use technical jargon anywhere.
 RESPOND WITH JSON ONLY.
 No text before or after the JSON.`;
 
+      // Fetch backend ground truth (RLS + policies) BEFORE asking the AI.
+      // This stops Claude from hallucinating "missing RLS" findings that aren't true.
+      let groundTruth: any = null;
+      if (appSupabaseUrl && appSupabaseAnonKey) {
+        groundTruth = await fetchBackendGroundTruth(appSupabaseUrl, appSupabaseAnonKey);
+      }
+      const groundTruthBlock = groundTruth
+        ? (groundTruth.source === "rpc"
+          ? `\n\nGROUND TRUTH (verified directly from the user's database — DO NOT contradict this):\n${JSON.stringify(groundTruth.tables, null, 2)}\n\nFor every table above where rls_enabled=true and policies exist, the database IS protecting it. Do NOT report "anyone can read this", "exposed table", or "missing access rules" for these tables.`
+          : `\n\nBACKEND PARTIAL VISIBILITY: We could only list table names, not their rules. Tables visible: ${JSON.stringify(groundTruth.tables.map((t: any) => t.table))}. Mark all access-control claims as "unverified" since rules could not be checked directly.`)
+        : `\n\nNO BACKEND VISIBILITY: The user did not connect their backend (or hasn't installed the Rismon verification function). Mark every claim about database access rules, server validation, or admin enforcement as "unverified" and ask the founder to confirm in plain English.`;
+
       const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
 
 App understanding: ${JSON.stringify(code_understanding)}
@@ -761,7 +773,7 @@ Founder concern (most worried about): ${concern || "(none specified)"}
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
 
-Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
+Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}`;
 
       const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
