@@ -1090,21 +1090,31 @@ Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing
 
 If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
 
-INTENT SCORE — BUSINESS LOGIC ONLY:
-The intent score measures ONE thing: does the code do what the founder said the app does?
+INTENT SCORE — BUSINESS LOGIC + PROMISES:
+The intent score measures: does the code do what the founder said + what the homepage promises?
 SECURITY findings DO NOT lower the intent score. LEGAL findings DO NOT lower the intent score.
-PROMISES-VS-CODE findings DO NOT lower the intent score.
-Only items in business_logic_gaps lower the intent score.
-Start at 100. Deduct per business_logic_gap only:
-  Critical: -20, High: -10, Medium: -5, Low: -2. Floor at 0.
+Start at 100. Deduct as follows:
+  Per business_logic_gap (verified): Critical -13, High -8, Medium -4, Low -2
+  Per business_logic_gap (unverified): Critical -5, High -3, Medium -2, Low -1
+  Per landing_page_promise with verdict "not_found": -3
+  Per landing_page_promise with verdict "partial": -1.5
+Floor at 0.
 
 SECURITY SCORE — INDEPENDENT:
-Compute a separate security_score from security_findings only, using the same per-severity deductions.
+Start at 100. Deduct from security_findings + legal gaps:
+  Per security_finding (verified): Critical -13, High -8, Medium -4, Low -2
+  Per security_finding (unverified): Critical -5, High -3, Medium -2, Low -1
+  No privacy page on a live site: -4
+  No terms page on a live site: -3
+  Placeholder text in privacy/terms (lorem ipsum, TODO): -5
+
+PERFECT SCORE GATE: A score of 100 requires backend ground-truth verification (the GROUND TRUTH block above came from the user's database directly). If the GROUND TRUTH block says "NO BACKEND VISIBILITY" or "PARTIAL VISIBILITY", you MUST cap intent_score and security_score at 95. The perfect score is reserved for fully-verified scans only.
 
 SELF-CHECK BEFORE RETURNING:
 1. Did any security or legal item leak into business_logic_gaps? If yes, move it.
 2. Is intent_score deducting for security findings? If yes, recalculate.
 3. Are intent_score and security_score independent numbers? They must be.
+4. If backend was not verified, are both scores ≤ 95? If not, cap them.
 
 LEGAL & TRUST FINDINGS — soft tone, never accusatory:
 Look at the homepage_signals block. Generate up to 4 legal_findings if any of these are true:
