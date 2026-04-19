@@ -127,6 +127,57 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          author_name: string
+          body_markdown: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string
+          excerpt: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_name?: string
+          body_markdown?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by: string
+          excerpt?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_name?: string
+          body_markdown?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string
+          excerpt?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       finding_disputes: {
         Row: {
           analysis_id: string | null
@@ -442,6 +493,7 @@ export type Database = {
       delete_my_account: { Args: never; Returns: undefined }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
+      is_blog_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
