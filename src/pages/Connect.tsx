@@ -21,6 +21,8 @@ export default function Connect() {
   const [appName, setAppName] = useState('');
   const [platform, setPlatform] = useState('');
   const [otherPlatform, setOtherPlatform] = useState('');
+  const [liveUrl, setLiveUrl] = useState('');
+  const [appDescription, setAppDescription] = useState('');
   const [githubConnected, setGithubConnected] = useState(false);
   const [githubToken, setGithubToken] = useState('');
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -128,6 +130,8 @@ export default function Connect() {
       github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
       supabase_url: supabaseUrl || null, supabase_anon_key: supabaseKey || null,
       platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
+      live_url: liveUrl.trim() || null,
+      app_description: appDescription.trim() || null,
     }).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
     toast.success('App connected');
@@ -141,6 +145,8 @@ export default function Connect() {
       user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
       github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
       platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
+      live_url: liveUrl.trim() || null,
+      app_description: appDescription.trim() || null,
     }).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
     toast.success('App connected');
@@ -233,6 +239,36 @@ export default function Connect() {
             {platform === 'Other AI' && (
               <input value={otherPlatform} onChange={e => setOtherPlatform(e.target.value)} placeholder="Example: Firebase Studio" className={`${inputClass} mt-3`} />
             )}
+
+            <div className="mt-7">
+              <label className="text-foreground text-sm font-medium block mb-1.5">Is your app live somewhere? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <input
+                value={liveUrl}
+                onChange={e => setLiveUrl(e.target.value)}
+                placeholder="https://yourapp.com"
+                className={inputClass}
+                inputMode="url"
+              />
+              <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
+                If you share your live link, we will read your homepage, privacy and terms pages and check that your code matches what your site promises.
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-foreground text-sm font-medium block mb-1.5">In one or two lines, what does your app do? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <textarea
+                value={appDescription}
+                onChange={e => setAppDescription(e.target.value.slice(0, 240))}
+                placeholder="Example: A booking app for small yoga studios. Students book classes, teachers manage schedules, studio owners get paid."
+                className={`${inputClass} resize-y min-h-[88px]`}
+                rows={3}
+                maxLength={240}
+              />
+              <p className="text-muted-foreground text-xs mt-2">
+                {appDescription.length}/240 characters. We will start the scan with this in mind.
+              </p>
+            </div>
+
             <button onClick={() => setStep(2)} disabled={!appName || !platform || (platform === 'Other AI' && !otherPlatform)}
               className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-7 hover:bg-primary/90 transition-colors disabled:opacity-50">Next →</button>
           </div>
