@@ -389,9 +389,27 @@ export default function Analyze() {
 
         // Call edge function
         const { data, error } = await supabase.functions.invoke('analyze', {
-          body: { action: 'read_code', codeBundle, edgeFunctionBundle, tableNames, platform: app.platform, app_id: appId, github_owner: app.github_owner, github_repo_name: app.github_repo_name, supabase_url: app.supabase_url, supabase_anon_key: app.supabase_anon_key, scan_type: localScanType }
+          body: {
+            action: 'read_code',
+            codeBundle,
+            edgeFunctionBundle,
+            tableNames,
+            platform: app.platform,
+            app_id: appId,
+            github_owner: app.github_owner,
+            github_repo_name: app.github_repo_name,
+            supabase_url: app.supabase_url,
+            supabase_anon_key: app.supabase_anon_key,
+            scan_type: localScanType,
+            scan_session_id: newSession?.id ?? null,
+          }
         });
-        if (error || !data) { toast.error('Analysis failed. Please try again.'); navigate('/dashboard'); return; }
+        if (error || !data) {
+          if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
+          toast.error('Analysis failed. Please try again.');
+          navigate('/dashboard');
+          return;
+        }
 
         // Handle limit/abuse responses from server
         if (data.code === 'WEEKLY_LIMIT' || data.code === 'MONTHLY_LIMIT') {
@@ -413,11 +431,13 @@ export default function Analyze() {
           return;
         }
         if (data.code === 'SCAN_IN_PROGRESS') {
+          if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
           toast.error(data.error);
           navigate('/dashboard');
           return;
         }
         if (data.error) {
+          if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
           toast.error(data.error);
           navigate('/dashboard');
           return;
@@ -438,6 +458,9 @@ export default function Analyze() {
         setStage('describe');
         localStorage.setItem('rismon_analysis_stage', 'describe');
       } catch (e: any) {
+        if (scanSessionId) {
+          await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+        }
         toast.error(e.message || 'Analysis failed');
         navigate('/dashboard');
       }
