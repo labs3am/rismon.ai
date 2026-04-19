@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
-import IntentTags from '@/components/IntentTags';
+import SmartIntentQuestions, { PreAnalysis } from '@/components/SmartIntentQuestions';
 
 export default function Analyze() {
   const { appId } = useParams();
