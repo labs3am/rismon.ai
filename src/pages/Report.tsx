@@ -129,18 +129,21 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
         <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8, flex: 1 }}>
           {title}
         </div>
-        <span
-          style={{
-            fontSize: 10,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color,
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {sev}
-        </span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span
+            title={confidence === 'unverified' ? 'We could not verify this directly — connect your backend for accurate scans.' : ''}
+            style={{
+              fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: confColor, fontWeight: 600, border: `1px solid ${confColor}33`,
+              padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap',
+            }}
+          >
+            {confLabel}
+          </span>
+          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {sev}
+          </span>
+        </div>
       </div>
 
       {whatWeFound && (
