@@ -18,11 +18,12 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you in plain English what was built, what works, and what is broken. You also get copy-paste prompts to fix every issue." },
-  { q: "Do I need to know how to code?", a: "No. Everything is in plain English. If you can read this sentence, you can use Rismon.ai." },
+  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you what was built, what works, and what is broken — written for founders, not engineers. You also get copy-paste prompts to fix every issue." },
+  { q: "Do I need to know how to code?", a: "No. Findings are written for founders, with a real-world example and a ready-to-use fix. If you can read this sentence, you can use Rismon.ai." },
+  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified — never guessed. When you connect your backend, we read your real database rules instead of guessing from frontend code." },
   { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
   { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
-  { q: "What does the free plan include?", a: "One app, three scans per week, the full plain English report, and fix prompts. No credit card needed." },
+  { q: "What does the free plan include?", a: "One app, three scans per week, the full founder-friendly report, and fix prompts. No credit card needed." },
   { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time, launching soon) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
   { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything." },
   { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Only your report is kept in your account." },
@@ -43,7 +44,7 @@ const steps = [
   { n: "01", title: "Create your account", text: "Sign up with your email. Takes about 30 seconds. No credit card required." },
   { n: "02", title: "Connect your app", text: "Connect your GitHub repository. Read-only access. We never store your code." },
   { n: "03", title: "We analyze your app", text: "Rismon scans your entire codebase and understands what was actually built." },
-  { n: "04", title: "Tell us your business", text: "Describe what your app is supposed to do. Just use plain English." },
+  { n: "04", title: "Tell us your business", text: "Describe what your app is supposed to do. In your own words, no jargon required." },
   { n: "05", title: "Get your report", text: "Receive a clear report showing every gap, plus exact prompts to fix each issue." },
 ];
 
@@ -85,7 +86,7 @@ const platforms = [
   { name: "Gemini", logo: geminiLogo },
 ];
 
-const freeFeatures = ['1 app', '3 scans per week', 'Plain English report', 'Business logic check', 'Security issue check', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI tools'];
+const freeFeatures = ['1 app', '3 scans per week', 'Founder-friendly report', 'Business logic check', 'Security issue check', 'GitHub secret scan', 'Fix prompts for every issue', 'Works with all AI tools'];
 const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Two AI models verify findings', 'Investor-ready PDF report', 'Priority queue', 'Priority support'];
 const proFeatures = ['Everything in Try Pro', 'Unlimited apps', '25 deep scans per month', 'Scan on every new commit', 'CVE alerts', 'Email + WhatsApp alerts', 'Score history', 'Priority support'];
 
@@ -101,7 +102,7 @@ export default function Index() {
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
       <SEO
         title="Rismon.ai — Know What Your AI Actually Built"
-        description="Rismon reads your AI-built app and tells you exactly what was built, what works, and what could go wrong. Free scan. Plain English. No code knowledge needed."
+        description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof — file, line, and snippet. Free scan. No code knowledge needed."
         canonicalPath="/"
       />
       <Navbar />
@@ -113,7 +114,7 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
-            Rismon reads your AI-built app and tells you exactly what was built, what works, and what could go wrong. Plain English. No code knowledge needed.
+            Rismon reads your AI-built app and shows you what was built, what works, and what could go wrong. Every finding comes with proof — file, line, and code snippet. No code knowledge needed.
           </p>
           <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span></p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
@@ -305,7 +306,7 @@ export default function Index() {
           <div className="max-w-[640px] mx-auto" style={{ fontSize: '16px', color: '#888888', lineHeight: 1.8 }}>
             <p className="mb-4">AI tools have made building software accessible to everyone. Anyone can describe an idea and have a working app in hours.</p>
             <p className="mb-4">But most founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
-            <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong. We give you the fix. In plain English. Every time.</p>
+            <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong, with proof. We give you the fix. Every time.</p>
           </div>
         </div>
       </section>
