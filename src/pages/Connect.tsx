@@ -374,32 +374,124 @@ export default function Connect() {
         {step === 3 && (
           <div className="bg-card border border-border rounded-2xl p-8 mt-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-foreground text-lg font-semibold">Connect Supabase</h2>
-              <span className="text-muted-foreground text-[11px] bg-muted px-2.5 py-1 rounded-full">OPTIONAL</span>
+              <h2 className="text-foreground text-lg font-semibold">Connect your backend</h2>
+              <span className="text-foreground text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full">STRONGLY RECOMMENDED</span>
             </div>
-            <p className="text-muted-foreground text-sm mt-3">Connecting Supabase lets Rismon.ai check your database structure and find more gaps. Use your anon key only.</p>
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="text-foreground text-sm font-medium block mb-1.5">Supabase Project URL</label>
-                <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="https://xxxx.supabase.co" className={inputClass} />
-              </div>
-              <div>
-                <label className="text-foreground text-sm font-medium block mb-1.5">Anon public key</label>
-                <input value={supabaseKey} onChange={e => handleSupabaseKeyChange(e.target.value)} placeholder="eyJhbG..." className={inputClass} />
-                <p className="text-subtle text-xs mt-1">Use your anon key only. Never your service role key.</p>
+            <p className="text-muted-foreground text-sm mt-3 leading-relaxed">
+              Without your backend connected, Rismon can only read your frontend code. Any finding about access rules, data privacy, or admin protection will be marked <strong className="text-foreground">unverified</strong> because we cannot check your database directly.
+            </p>
+
+            <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-foreground text-[13px] font-medium">Skip this and your scan will guess instead of verify</p>
+                  <p className="text-muted-foreground text-[12px] mt-1 leading-relaxed">
+                    The AI may flag issues that don't actually exist (false positives), or miss real ones, because it can't see what's configured on your server. We'll ask you a few plain-English questions to fill the gap, but verified data is always more accurate.
+                  </p>
+                </div>
               </div>
             </div>
+
+            <div className="mt-6">
+              <label className="text-foreground text-sm font-medium block mb-2">Which backend does your app use?</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {['Supabase', 'Firebase', 'Custom API', 'No backend'].map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => {
+                      // Note: backend type is not stored separately; only Supabase reveals the keys form.
+                      // Re-using local state via a data attribute on the container is overkill — just track in supabaseUrl
+                      if (b !== 'Supabase') {
+                        setSupabaseUrl('');
+                        setSupabaseKey('');
+                      }
+                      // Track via a window-level marker so we can show/hide the keys form
+                      (window as any).__rismon_backend_choice = b;
+                      // Force re-render
+                      setSaving((s) => s);
+                      setServiceRoleWarning(false);
+                    }}
+                    className={`px-4 py-2.5 rounded-lg text-sm border transition-colors ${
+                      ((window as any).__rismon_backend_choice || 'Supabase') === b
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-input text-foreground hover:border-hover-border'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {((window as any).__rismon_backend_choice || 'Supabase') === 'Supabase' && (
+              <>
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <label className="text-foreground text-sm font-medium block mb-1.5">Supabase Project URL</label>
+                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="https://xxxx.supabase.co" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="text-foreground text-sm font-medium block mb-1.5">Anon public key</label>
+                    <input value={supabaseKey} onChange={e => handleSupabaseKeyChange(e.target.value)} placeholder="eyJhbG..." className={inputClass} />
+                    <p className="text-subtle text-xs mt-1">Use your anon key only. Never your service role key.</p>
+                  </div>
+                </div>
+
+                {supabaseUrl && supabaseKey && !serviceRoleWarning && (
+                  <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)' }}>
+                    <p className="text-foreground text-[13px] font-medium mb-2">One last step — install our verification function (30 seconds)</p>
+                    <p className="text-muted-foreground text-[12px] leading-relaxed mb-3">
+                      Paste this into your Supabase SQL Editor. It creates a read-only function so we can check which tables have access rules. We never store your data.
+                    </p>
+                    <pre className="text-[11px] bg-black/40 border border-border rounded-md p-3 overflow-x-auto text-foreground">
+{`create or replace function public.rismon_security_metadata()
+returns json language sql security definer set search_path=public,pg_catalog as $$
+  select json_build_object('tables', coalesce(json_agg(t),'[]'::json))
+  from (
+    select c.relname as table, c.relrowsecurity as rls_enabled,
+      coalesce((select json_agg(json_build_object(
+        'name', p.policyname, 'cmd', p.cmd,
+        'qual', p.qual::text, 'with_check', p.with_check::text))
+        from pg_policies p where p.schemaname='public' and p.tablename=c.relname),'[]'::json) as policies
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r'
+  ) t;
+$$;
+grant execute on function public.rismon_security_metadata() to anon, authenticated;`}
+                    </pre>
+                    <p className="text-muted-foreground text-[11px] mt-2">
+                      Open your Supabase project → SQL Editor → paste → Run. Then come back and click Connect.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {((window as any).__rismon_backend_choice || 'Supabase') !== 'Supabase' && ((window as any).__rismon_backend_choice) !== 'No backend' && (
+              <div className="mt-5 rounded-lg p-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+                <p className="text-foreground text-[13px] font-medium">We can't directly verify {(window as any).__rismon_backend_choice} yet</p>
+                <p className="text-muted-foreground text-[12px] mt-1 leading-relaxed">
+                  We'll ask you plain-English questions during the scan instead. Your answers become ground truth — the AI will not guess.
+                </p>
+              </div>
+            )}
+
             {serviceRoleWarning && (
               <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                 <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
                 <p className="text-destructive text-sm">This is your admin key. Never share this. Use your anon public key instead. Find it: Supabase → Settings → API → anon public</p>
               </div>
             )}
+
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSkipSupabase} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">Skip for now →</button>
+              <button onClick={handleSkipSupabase} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+                Skip — scan without backend verification
+              </button>
               <button onClick={handleComplete} disabled={saving || serviceRoleWarning}
                 className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
-                {saving && <Loader2 size={16} className="animate-spin" />} Connect Supabase
+                {saving && <Loader2 size={16} className="animate-spin" />} Continue with backend connected
               </button>
             </div>
           </div>

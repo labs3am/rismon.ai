@@ -456,7 +456,13 @@ export default function Analyze() {
         }
 
         setCodeUnderstanding(data.app_understanding);
-        setPreAnalysis((data.pre_analysis as PreAnalysis) || null);
+        // Pass backendVisibility derived from whether app has supabase keys configured.
+        // The edge function returns pre_analysis without backendVisibility — we add it here.
+        const hasBackend = !!(app.supabase_url && app.supabase_anon_key);
+        setPreAnalysis({
+          ...((data.pre_analysis as PreAnalysis) || {}),
+          backendVisibility: hasBackend ? 'partial' : 'none',
+        });
         setQuestions(data.questions || []);
         setStage('describe');
         localStorage.setItem('rismon_analysis_stage', 'describe');
