@@ -35,6 +35,7 @@ export default function Footer() {
           <p style={{ color: '#444444', fontSize: 13, marginTop: 16 }}>© 2026 Rismon.ai</p>
         </div>
         <div className="flex flex-col gap-2">
+          <Link to="/blog" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Blog</Link>
           <Link to="/privacy" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Privacy Policy</Link>
           <Link to="/terms" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Terms of Service</Link>
           <a href="mailto:hello@rismon.ai" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>hello@rismon.ai</a>

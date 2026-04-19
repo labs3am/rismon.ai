@@ -884,6 +884,20 @@ You will receive this data detected from the code automatically:
 - dataPrivacy: data sharing preference
 Use this context to make findings specific to their actual app.
 
+APP KIND (CRITICAL):
+The founder answers "What kind of app is this?" as the FIRST smart question. Look for "app_kind" in the user_answers JSON.
+- "web_app" → Standard web app with UI. Findings about pages, login UI, payments, dashboards all apply.
+- "backend_api" → No UI. DO NOT generate findings about missing pages, login UI, homepage, SEO, marketing copy, or frontend forms. Focus on auth on endpoints, input validation, rate limits (if applicable), data exposure.
+- "mobile_app" → React Native or similar. The repo may be the backend OR a mobile shell. DO NOT flag missing web pages or web SEO. Focus on API security and data privacy.
+- "bot_automation" → Discord/Telegram/Slack bot, scraper, cron job, scheduled task. DO NOT generate findings about pages, login UI, payments (unless detected), or web SEO. Focus on credential safety, error handling, scheduled-task safety.
+- "cli_library" → Command-line tool or npm package. DO NOT generate findings about login, pages, payments, or web concerns. Focus on dependency safety, input handling, and published-package risks.
+- If the value starts with "other:" the founder typed a free-form description. READ IT and tailor findings to what they describe — do not assume web app defaults.
+
+If app_kind is unset, default to web_app behavior but mention in the summary that you assumed web app.
+
+SMART QUESTION "OTHER" ANSWERS:
+Any user_answers value starting with "other:" is the founder's own description (typed free text). Treat the text after the colon as ground truth — weight it more heavily than any code-pattern guess. Example: if payment_webhook="other:Stripe keys are in repo but I haven't built checkout yet" then DO NOT flag a "payment bypass" risk — instead flag "payments not yet implemented; remove unused Stripe keys before publishing."
+
 SCAN TYPE:
 You will be told if this is "quick" (free plan, 20 files) or "deep" (pro plan / try pro, full codebase).
 For quick scan: Analyze what you have. Note at end of summary: "This was a Quick Scan covering your most critical files."

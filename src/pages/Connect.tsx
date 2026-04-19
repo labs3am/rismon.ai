@@ -431,21 +431,72 @@ export default function Connect() {
                   <div>
                     <label className="text-foreground text-sm font-medium block mb-1.5">Supabase Project URL</label>
                     <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="https://xxxx.supabase.co" className={inputClass} />
+                    <details className="mt-1.5 group">
+                      <summary className="text-primary text-xs cursor-pointer hover:underline list-none flex items-center gap-1">
+                        <span className="group-open:rotate-90 inline-block transition-transform">▸</span>
+                        Where do I find this?
+                      </summary>
+                      <div className="mt-2 p-3 rounded-md bg-muted/30 border border-border text-[12px] text-muted-foreground leading-relaxed">
+                        <ol className="list-decimal list-inside space-y-1">
+                          <li>Open your project at <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">supabase.com/dashboard</a></li>
+                          <li>Click <strong className="text-foreground">⚙️ Project Settings</strong> in the left sidebar</li>
+                          <li>Click <strong className="text-foreground">API</strong></li>
+                          <li>Copy the <strong className="text-foreground">Project URL</strong> at the top</li>
+                        </ol>
+                      </div>
+                    </details>
                   </div>
                   <div>
                     <label className="text-foreground text-sm font-medium block mb-1.5">Anon public key</label>
                     <input value={supabaseKey} onChange={e => handleSupabaseKeyChange(e.target.value)} placeholder="eyJhbG..." className={inputClass} />
-                    <p className="text-subtle text-xs mt-1">Use your anon key only. Never your service role key.</p>
+                    <p className="text-subtle text-xs mt-1">Use your <strong className="text-foreground">anon public</strong> key only. Never your service role key.</p>
+                    <details className="mt-1.5 group">
+                      <summary className="text-primary text-xs cursor-pointer hover:underline list-none flex items-center gap-1">
+                        <span className="group-open:rotate-90 inline-block transition-transform">▸</span>
+                        Where do I find this?
+                      </summary>
+                      <div className="mt-2 p-3 rounded-md bg-muted/30 border border-border text-[12px] text-muted-foreground leading-relaxed">
+                        <ol className="list-decimal list-inside space-y-1">
+                          <li>Same page as the Project URL: <strong className="text-foreground">Project Settings → API</strong></li>
+                          <li>Scroll to <strong className="text-foreground">Project API keys</strong></li>
+                          <li>Copy the key labeled <strong className="text-foreground">anon · public</strong> (NOT service_role)</li>
+                        </ol>
+                        <p className="mt-2 text-[11px]">The anon key is safe to share — it respects your access rules. We reject service_role keys for safety.</p>
+                      </div>
+                    </details>
                   </div>
                 </div>
 
                 {supabaseUrl && supabaseKey && !serviceRoleWarning && (
-                  <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                    <p className="text-foreground text-[13px] font-medium mb-2">One last step — install our verification function (30 seconds)</p>
-                    <p className="text-muted-foreground text-[12px] leading-relaxed mb-3">
-                      Paste this into your Supabase SQL Editor. It creates a read-only function so we can check which tables have access rules. We never store your data.
-                    </p>
-                    <pre className="text-[11px] bg-black/40 border border-border rounded-md p-3 overflow-x-auto text-foreground">
+                  <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.20)' }}>
+                    <div className="flex items-start gap-2.5">
+                      <ShieldCheck size={16} className="text-success shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-foreground text-[13px] font-medium">
+                          Optional: install our verification helper for fully verified findings
+                        </p>
+                        <p className="text-muted-foreground text-[12px] mt-1.5 leading-relaxed">
+                          Your anon key alone lets us check connectivity. To <strong className="text-foreground">verify which tables have access rules enabled</strong> (so findings don't get marked "unverified"), paste this small SQL helper into your Supabase SQL Editor.
+                        </p>
+                        <details className="mt-3 group">
+                          <summary className="text-primary text-[12px] font-medium cursor-pointer hover:underline list-none flex items-center gap-1">
+                            <span className="group-open:rotate-90 inline-block transition-transform">▸</span>
+                            What does this SQL actually do? (in plain English)
+                          </summary>
+                          <div className="mt-2 p-3 rounded-md bg-black/30 border border-border text-[12px] text-muted-foreground leading-relaxed space-y-2">
+                            <p>✓ It creates a <strong className="text-foreground">read-only function</strong> that returns a list of your table names and which ones have access rules turned on.</p>
+                            <p>✓ It <strong className="text-foreground">never reads any user data</strong> — only the table structure (metadata).</p>
+                            <p>✓ It cannot edit, delete, or insert anything. The word <code className="text-foreground">security definer</code> just means "use this function's permissions, not the caller's" — standard Supabase pattern.</p>
+                            <p>✓ You can delete the function anytime by running <code className="text-foreground">drop function public.rismon_security_metadata();</code></p>
+                          </div>
+                        </details>
+
+                        <details className="mt-2 group">
+                          <summary className="text-primary text-[12px] font-medium cursor-pointer hover:underline list-none flex items-center gap-1">
+                            <span className="group-open:rotate-90 inline-block transition-transform">▸</span>
+                            Show the SQL to copy
+                          </summary>
+                          <pre className="mt-2 text-[11px] bg-black/40 border border-border rounded-md p-3 overflow-x-auto text-foreground">
 {`create or replace function public.rismon_security_metadata()
 returns json language sql security definer set search_path=public,pg_catalog as $$
   select json_build_object('tables', coalesce(json_agg(t),'[]'::json))
@@ -460,10 +511,16 @@ returns json language sql security definer set search_path=public,pg_catalog as 
   ) t;
 $$;
 grant execute on function public.rismon_security_metadata() to anon, authenticated;`}
-                    </pre>
-                    <p className="text-muted-foreground text-[11px] mt-2">
-                      Open your Supabase project → SQL Editor → paste → Run. Then come back and click Connect.
-                    </p>
+                          </pre>
+                          <p className="text-muted-foreground text-[11px] mt-2">
+                            Open Supabase → <strong className="text-foreground">SQL Editor</strong> → New query → paste → <strong className="text-foreground">Run</strong>. Then come back and click Connect.
+                          </p>
+                        </details>
+                        <p className="text-muted-foreground text-[11px] mt-3">
+                          Don't want to run SQL? That's fine — click Connect anyway. We'll just mark database findings as "unverified" and ask you about them in plain English during the scan.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </>
@@ -485,15 +542,26 @@ grant execute on function public.rismon_security_metadata() to anon, authenticat
               </div>
             )}
 
-            <div className="flex gap-3 mt-6">
-              <button onClick={handleSkipSupabase} disabled={saving} className="text-muted-foreground text-sm hover:text-foreground transition-colors">
-                Skip — scan without backend verification
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <button
+                onClick={handleComplete}
+                disabled={saving || serviceRoleWarning || !supabaseUrl || !supabaseKey}
+                className="flex-1 bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving && <Loader2 size={16} className="animate-spin" />}
+                Connect & continue (recommended)
               </button>
-              <button onClick={handleComplete} disabled={saving || serviceRoleWarning}
-                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2">
-                {saving && <Loader2 size={16} className="animate-spin" />} Continue with backend connected
+              <button
+                onClick={handleSkipSupabase}
+                disabled={saving}
+                className="flex-1 sm:flex-none border border-input text-foreground px-6 py-3 rounded-lg text-sm font-medium hover:border-hover-border transition-colors disabled:opacity-50"
+              >
+                Skip — code-only scan
               </button>
             </div>
+            <p className="text-subtle text-[11px] mt-2 text-center sm:text-left">
+              Skipping means database findings will be marked "unverified". You can always reconnect later.
+            </p>
           </div>
         )}
       </div>
