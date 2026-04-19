@@ -506,6 +506,7 @@ export default function Analyze() {
       const { data, error } = await supabase.functions.invoke('analyze', {
         body: {
           action: 'analyze',
+          app_id: appId,
           code_understanding: codeUnderstanding,
           founder_description: description,
           user_answers: answers,
@@ -528,6 +529,10 @@ export default function Analyze() {
         user_answers: answers, gaps: data.gaps, unknown_features: data.unknown_features,
         security_issues: data.security_issues, what_works: data.what_works,
         intent_match_score: data.intent_match_score, summary: data.summary,
+        legal_findings: data.legal_findings || [],
+        landing_page_promises: data.landing_page_promises || [],
+        homepage_signals: data.homepage_signals || null,
+        security_score: typeof data.security_score === 'number' ? data.security_score : null,
         scan_type: scanType,
         files_scanned: filesScanned,
         scan_duration_seconds: durationSeconds,
