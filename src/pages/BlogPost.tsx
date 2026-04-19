@@ -56,22 +56,7 @@ export default function BlogPost() {
       setPost(data);
       setLoading(false);
 
-      // SEO meta
-      const title = data.meta_title || data.title;
-      document.title = `${title} — Rismon Blog`;
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) metaDesc.setAttribute('content', data.meta_description || data.excerpt || '');
-
-      // Canonical
-      let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-      if (!canonical) {
-        canonical = document.createElement('link');
-        canonical.rel = 'canonical';
-        document.head.appendChild(canonical);
-      }
-      canonical.href = `${window.location.origin}/blog/${data.slug}`;
-
-      // JSON-LD Article schema
+      // JSON-LD Article schema (title/description/canonical handled by <SEO />)
       const existing = document.getElementById('blog-jsonld');
       if (existing) existing.remove();
       const ld = document.createElement('script');
