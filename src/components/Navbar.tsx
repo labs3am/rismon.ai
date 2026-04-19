@@ -31,7 +31,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <button onClick={() => goToSection('how-it-works')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>How it works</button>
           <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>What we check</button>
-          <button onClick={() => goToSection('pricing')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Pricing</button>
+          <Link to="/pricing" style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Pricing</Link>
           <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Security</button>
           <Link to="/blog" style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Blog</Link>
         </div>
@@ -50,7 +50,7 @@ export default function Navbar() {
         <div className="md:hidden flex flex-col gap-3" style={{ background: '#000000', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
           <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>How it works</button>
           <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>What we check</button>
-          <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Pricing</button>
+          <Link to="/pricing" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Pricing</Link>
           <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '8px 0', background: 'transparent', border: 'none' }}>Security</button>
           <Link to="/blog" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/login" style={{ color: '#888888', fontSize: 14, padding: '8px 0' }} onClick={() => setOpen(false)}>Log in</Link>
