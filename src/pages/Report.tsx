@@ -502,7 +502,7 @@ export default function Report() {
               No business logic gaps found.
             </div>
           ) : (
-            gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} />)
+            gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
@@ -523,7 +523,7 @@ export default function Report() {
               No security issues found.
             </div>
           ) : (
-            secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} />)
+            secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
