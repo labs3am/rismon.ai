@@ -19,6 +19,23 @@ interface SmartQ {
   options: { value: string; label: string; description?: string }[];
 }
 
+// Sentinel value used for the free-text "Other" choice. The actual typed text
+// is stored as `other:<text>` so it flows straight into user_answers for the AI.
+const OTHER_VALUE = 'other';
+const OTHER_OPTION = {
+  value: OTHER_VALUE,
+  label: 'Other (describe in your own words)',
+  description: 'Tell us exactly what your situation is — the AI will use this',
+};
+
+function isOtherAnswer(v: string | undefined) {
+  return !!v && (v === OTHER_VALUE || v.startsWith('other:'));
+}
+function otherText(v: string | undefined) {
+  if (!v || !v.startsWith('other:')) return '';
+  return v.slice('other:'.length);
+}
+
 function buildQuestions(pre: PreAnalysis): SmartQ[] {
   const qs: SmartQ[] = [];
 
