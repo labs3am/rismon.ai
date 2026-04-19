@@ -934,6 +934,7 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         return {
           id,
           severity,
+          category: (f?.category || "other").toLowerCase(),
           title,
           // legacy gap fields used by Report.tsx
           you_said: what_we_found,
@@ -950,9 +951,13 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
           technical_reference: f?.technical_reference || "",
           google_query: f?.google_query || "",
           // confidence transparency
-          confidence: (f?.confidence || "likely").toLowerCase(),
+          confidence: (f?.confidence || "unverified").toLowerCase(),
           confidence_reason: f?.confidence_reason || "",
           evidence: f?.evidence || "",
+          // hardening — required evidence fields
+          file_path: typeof f?.file_path === "string" ? f.file_path : "",
+          line_number: typeof f?.line_number === "number" ? f.line_number : 0,
+          code_snippet: typeof f?.code_snippet === "string" ? f.code_snippet : "",
         };
       };
 
