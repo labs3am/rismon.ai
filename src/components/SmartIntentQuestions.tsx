@@ -339,37 +339,69 @@ export default function SmartIntentQuestions({
 
               <div>
                 {currentQ.options.map((opt) => {
-                  const selected = questionAnswers[currentQ.id] === opt.value;
+                  const selected =
+                    opt.value === OTHER_VALUE
+                      ? isOtherAnswer(questionAnswers[currentQ.id])
+                      : questionAnswers[currentQ.id] === opt.value;
+                  const isOtherOpt = opt.value === OTHER_VALUE;
                   return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => handleSelect(currentQ.id, opt.value)}
-                      onMouseEnter={(e) => {
-                        if (!selected) e.currentTarget.style.borderColor = '#333333';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selected) e.currentTarget.style.borderColor = '#1a1a1a';
-                      }}
-                      style={{
-                        background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
-                        border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
-                        borderRadius: 8,
-                        padding: '16px 20px',
-                        marginBottom: 8,
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: 'left',
-                        transition: 'border-color 0.15s ease, background 0.15s ease',
-                      }}
-                    >
-                      <div style={{ fontSize: 15, color: '#ffffff', fontWeight: 500 }}>{opt.label}</div>
-                      {opt.description && (
-                        <div style={{ fontSize: 13, color: '#555555', marginTop: 4 }}>
-                          {opt.description}
+                    <div key={opt.value}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(currentQ.id, opt.value)}
+                        onMouseEnter={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#333333';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#1a1a1a';
+                        }}
+                        style={{
+                          background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
+                          border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
+                          borderRadius: 8,
+                          padding: '16px 20px',
+                          marginBottom: 8,
+                          cursor: 'pointer',
+                          width: '100%',
+                          textAlign: 'left',
+                          transition: 'border-color 0.15s ease, background 0.15s ease',
+                        }}
+                      >
+                        <div style={{ fontSize: 15, color: '#ffffff', fontWeight: 500 }}>{opt.label}</div>
+                        {opt.description && (
+                          <div style={{ fontSize: 13, color: '#555555', marginTop: 4 }}>
+                            {opt.description}
+                          </div>
+                        )}
+                      </button>
+
+                      {isOtherOpt && selected && (
+                        <div style={{ marginTop: -4, marginBottom: 12, paddingLeft: 4 }}>
+                          <textarea
+                            autoFocus
+                            value={otherText(questionAnswers[currentQ.id])}
+                            onChange={(e) => handleOtherText(currentQ.id, e.target.value)}
+                            placeholder="Describe your situation in 1–3 sentences. Example: 'Stripe keys are in my repo but I haven't built the checkout flow yet — no one can actually pay.'"
+                            rows={4}
+                            style={{
+                              width: '100%',
+                              background: '#000',
+                              border: '1px solid #f97316',
+                              borderRadius: 8,
+                              padding: 12,
+                              color: '#fff',
+                              fontSize: 14,
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              outline: 'none',
+                            }}
+                          />
+                          <div style={{ fontSize: 12, color: '#555', marginTop: 6 }}>
+                            The AI will use your description as context. Be specific.
+                          </div>
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
