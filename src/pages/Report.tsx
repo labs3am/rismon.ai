@@ -57,6 +57,62 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Side-by-side score card. Intent is highlighted; security sits next to it.
+function ScorePanel({
+  score,
+  color,
+  label,
+  sublabel,
+  tooltip,
+  primary,
+}: {
+  score: number;
+  color: string;
+  label: string;
+  sublabel: string;
+  tooltip: string;
+  primary?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        background: '#0a0a0a',
+        border: `1px solid ${primary ? color : '#1a1a1a'}`,
+        borderRadius: 12,
+        padding: '28px 20px',
+        textAlign: 'center',
+        position: 'relative',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: '#555',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+          marginBottom: 14,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 56,
+          fontWeight: 800,
+          letterSpacing: '-0.04em',
+          color,
+          lineHeight: 1,
+        }}
+      >
+        {score}
+      </div>
+      <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginTop: 10 }}>{sublabel}</div>
+      <div style={{ fontSize: 12, color: '#666', marginTop: 6, lineHeight: 1.4 }}>{tooltip}</div>
+    </div>
+  );
+}
+
 function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?: string }) {
   const [copied, setCopied] = useState(false);
   const [disputeOpen, setDisputeOpen] = useState(false);
