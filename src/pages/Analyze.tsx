@@ -773,8 +773,8 @@ export default function Analyze() {
     );
   }
 
-  // Describe stage — replaced by smart questions derived from preAnalysis
-  if (stage === 'describe') {
+  // Step 1: Confirm what Claude understood about the app.
+  if (stage === 'confirm') {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
@@ -782,14 +782,43 @@ export default function Analyze() {
           <div className="max-w-[640px] mx-auto px-5">
             <BackButton to="/dashboard" label="Dashboard" />
           </div>
-          <SmartIntentQuestions
-            preAnalysis={preAnalysis}
-            questionAnswers={questionAnswers}
-            setQuestionAnswers={setQuestionAnswers}
-            loading={!preAnalysis && !codeUnderstanding}
+          <AppUnderstandingCard
+            understanding={codeUnderstanding || {}}
+            onConfirm={(correction) => {
+              if (correction) {
+                setUnderstandingCorrection(correction);
+                setDescription(correction);
+                // Stash the correction so the AI sees it as the founder's own description.
+                setAnswers((prev) => ({ ...prev, _user_correction: correction }));
+              }
+              setStage('questions');
+              localStorage.setItem('rismon_analysis_stage', 'questions');
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Step 2: Ask Claude's dynamic questions + the always-ask ones.
+  if (stage === 'questions') {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNavbar />
+        <div className="pt-20">
+          <div className="max-w-[640px] mx-auto px-5">
+            <BackButton to="/dashboard" label="Dashboard" />
+          </div>
+          <AiSmartQuestions
+            questions={questions || []}
+            userCorrection={understandingCorrection}
+            answers={answers}
+            setAnswers={setAnswers}
             onComplete={() => {
-              // Map smart answers into the existing answers state for the edge function
-              setAnswers((prev) => ({ ...prev, ...questionAnswers }));
+              // Mirror the answer for the always-asked concern question into `concern`
+              if (answers._concern && answers._concern !== '__skip__') {
+                setConcern(answers._concern);
+              }
               runAnalysis();
             }}
           />
@@ -797,6 +826,7 @@ export default function Analyze() {
       </div>
     );
   }
+
 
   // Review stage
   if (stage === 'review' && analysisResult) {
