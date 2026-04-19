@@ -127,6 +127,45 @@ export type Database = {
         }
         Relationships: []
       }
+      finding_disputes: {
+        Row: {
+          analysis_id: string | null
+          created_at: string
+          finding_category: string | null
+          finding_id: string | null
+          finding_name: string | null
+          id: string
+          reason: string
+          status: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          created_at?: string
+          finding_category?: string | null
+          finding_id?: string | null
+          finding_name?: string | null
+          id?: string
+          reason: string
+          status?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string | null
+          created_at?: string
+          finding_category?: string | null
+          finding_id?: string | null
+          finding_name?: string | null
+          id?: string
+          reason?: string
+          status?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       monitored_repos: {
         Row: {
           app_id: string
