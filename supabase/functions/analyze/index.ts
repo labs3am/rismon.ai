@@ -842,7 +842,29 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         };
       }
 
-      // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
+      // ----------------------------------------------------------
+      // Reconcile findings against backend ground truth.
+      // Drops false-positive RLS claims and tags unverified findings.
+      // ----------------------------------------------------------
+      const reconciledGaps = reconcileFindingsAgainstGroundTruth(claudeResult.gaps || [], groundTruth);
+      const reconciledSec = reconcileFindingsAgainstGroundTruth(claudeResult.security_issues || [], groundTruth);
+      claudeResult.gaps = reconciledGaps.kept;
+      claudeResult.security_issues = reconciledSec.kept;
+      const droppedFindings = [...reconciledGaps.dropped, ...reconciledSec.dropped];
+      if (droppedFindings.length > 0) {
+        claudeResult.dropped_false_positives = droppedFindings;
+        // Recompute score: only "verified" findings affect it
+        const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
+        const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
+        const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
+        const deduction = verifiedOnly.reduce((s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5), 0);
+        claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+      }
+      claudeResult.backend_verification = groundTruth
+        ? (groundTruth.source === "rpc" ? "verified" : "partial")
+        : "none";
+
+
       if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
         try {
           const verifySystem = `You verify whether each claimed gap is actually supported by the evidence. For each gap, decide: is the claim "what was built" actually true given the code understanding? Mark each gap "confirmed" or "rejected" with one short reason.
