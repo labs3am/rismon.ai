@@ -22,11 +22,15 @@ export type Database = {
           files_scanned: number | null
           fix_prompts: Json | null
           gaps: Json | null
+          homepage_signals: Json | null
           id: string
           intent_match_score: number | null
+          landing_page_promises: Json | null
+          legal_findings: Json | null
           scan_duration_seconds: number | null
           scan_type: string | null
           security_issues: Json | null
+          security_score: number | null
           smart_questions: Json | null
           status: string | null
           summary: string | null
@@ -42,11 +46,15 @@ export type Database = {
           files_scanned?: number | null
           fix_prompts?: Json | null
           gaps?: Json | null
+          homepage_signals?: Json | null
           id?: string
           intent_match_score?: number | null
+          landing_page_promises?: Json | null
+          legal_findings?: Json | null
           scan_duration_seconds?: number | null
           scan_type?: string | null
           security_issues?: Json | null
+          security_score?: number | null
           smart_questions?: Json | null
           status?: string | null
           summary?: string | null
@@ -62,11 +70,15 @@ export type Database = {
           files_scanned?: number | null
           fix_prompts?: Json | null
           gaps?: Json | null
+          homepage_signals?: Json | null
           id?: string
           intent_match_score?: number | null
+          landing_page_promises?: Json | null
+          legal_findings?: Json | null
           scan_duration_seconds?: number | null
           scan_type?: string | null
           security_issues?: Json | null
+          security_score?: number | null
           smart_questions?: Json | null
           status?: string | null
           summary?: string | null
@@ -87,12 +99,14 @@ export type Database = {
       }
       apps: {
         Row: {
+          app_description: string | null
           app_name: string | null
           created_at: string | null
           github_owner: string | null
           github_repo_name: string | null
           github_repo_url: string | null
           id: string
+          live_url: string | null
           platform: string | null
           status: string | null
           supabase_anon_key: string | null
@@ -100,12 +114,14 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          app_description?: string | null
           app_name?: string | null
           created_at?: string | null
           github_owner?: string | null
           github_repo_name?: string | null
           github_repo_url?: string | null
           id?: string
+          live_url?: string | null
           platform?: string | null
           status?: string | null
           supabase_anon_key?: string | null
@@ -113,12 +129,14 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          app_description?: string | null
           app_name?: string | null
           created_at?: string | null
           github_owner?: string | null
           github_repo_name?: string | null
           github_repo_url?: string | null
           id?: string
+          live_url?: string | null
           platform?: string | null
           status?: string | null
           supabase_anon_key?: string | null
