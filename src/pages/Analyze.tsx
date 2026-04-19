@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
-import IntentTags from '@/components/IntentTags';
+import SmartIntentQuestions, { PreAnalysis } from '@/components/SmartIntentQuestions';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -26,6 +26,8 @@ export default function Analyze() {
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showQuestions, setShowQuestions] = useState(false);
+  const [preAnalysis, setPreAnalysis] = useState<PreAnalysis | null>(null);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('gaps');
   const [decisions, setDecisions] = useState<Record<string, string>>({});
@@ -454,6 +456,13 @@ export default function Analyze() {
         }
 
         setCodeUnderstanding(data.app_understanding);
+        // Pass backendVisibility derived from whether app has supabase keys configured.
+        // The edge function returns pre_analysis without backendVisibility — we add it here.
+        const hasBackend = !!(app.supabase_url && app.supabase_anon_key);
+        setPreAnalysis({
+          ...((data.pre_analysis as PreAnalysis) || {}),
+          backendVisibility: hasBackend ? 'partial' : 'none',
+        });
         setQuestions(data.questions || []);
         setStage('describe');
         localStorage.setItem('rismon_analysis_stage', 'describe');
@@ -743,79 +752,26 @@ export default function Analyze() {
     );
   }
 
-  // Describe stage
-  if (stage === 'describe' && !showQuestions) {
+  // Describe stage — replaced by smart questions derived from preAnalysis
+  if (stage === 'describe') {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
-          <BackButton to="/dashboard" label="Dashboard" />
-          <p className="text-muted-foreground text-[13px] text-right">Step 1 of 2</p>
-
-          {codeUnderstanding && (
-            <div className="rounded-xl p-4 mt-4 mb-6" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
-              <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>What we found in your code:</p>
-              <p className="text-muted-foreground text-sm mt-2">{codeUnderstanding.business_type_guess}</p>
-              {codeUnderstanding.features_found?.slice(0, 5).map((f: string, i: number) => (
-                <p key={i} className="text-muted-foreground text-sm">• {f}</p>
-              ))}
-            </div>
-          )}
-
-          <IntentTags value={description} onChange={setDescription} concern={concern} onConcernChange={setConcern} onMetaChange={setIntentMeta} />
-          <button onClick={() => setShowQuestions(true)} disabled={description.length < 30}
-            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-4 hover:bg-primary/90 disabled:opacity-50">Continue →</button>
-        </div>
-      </div>
-    );
-  }
-
-  // Questions stage
-  if (stage === 'describe' && showQuestions) {
-    const q = questions[questionStep];
-    if (!q) {
-      runAnalysis();
-      return null;
-    }
-    return (
-      <div className="min-h-screen bg-background">
-        <DashboardNavbar />
-        <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
-          <p className="text-muted-foreground text-[13px] text-right">Question {questionStep + 1} of {questions.length}</p>
-          <h2 className="text-foreground text-[22px] font-semibold">A few questions about your app</h2>
-          <div className="bg-card border border-border rounded-2xl p-8 mt-6">
-            {q.context && <p className="text-muted-foreground text-sm italic mb-5">{q.context}</p>}
-            <p className="text-foreground text-xl font-semibold leading-[1.4]">{q.question}</p>
-            <div className="mt-6">
-              {q.answer_type === 'yes_no' && (
-                <div className="flex gap-3">
-                  {['Yes', 'No'].map(v => (
-                    <button key={v} onClick={() => handleAnswer(q.id, v)}
-                      className={`w-[130px] py-3 rounded-lg text-sm font-medium border transition-colors ${answers[q.id] === v ? 'bg-primary text-primary-foreground border-primary' : 'border-input text-foreground hover:border-hover-border'}`}>{v}</button>
-                  ))}
-                </div>
-              )}
-              {q.answer_type === 'text' && (
-                <textarea value={answers[q.id] || ''} onChange={e => handleAnswer(q.id, e.target.value)} rows={3} placeholder="Describe in plain English..."
-                  className="w-full bg-input-bg border border-input rounded-lg px-4 py-3 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary resize-none" />
-              )}
-              {q.answer_type === 'select' && q.options && (
-                <div className="flex flex-wrap gap-2">
-                  {q.options.map((o: string) => (
-                    <button key={o} onClick={() => handleAnswer(q.id, o)}
-                      className={`px-4 py-2.5 rounded-lg text-sm border transition-colors ${answers[q.id] === o ? 'border-primary bg-primary/10 text-foreground' : 'border-input text-foreground hover:border-hover-border'}`}>{o}</button>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="pt-20">
+          <div className="max-w-[640px] mx-auto px-5">
+            <BackButton to="/dashboard" label="Dashboard" />
           </div>
-          <div className="flex justify-between mt-6">
-            <button onClick={() => questionStep > 0 ? setQuestionStep(questionStep - 1) : setShowQuestions(false)} className="text-muted-foreground text-sm hover:text-foreground">← Back</button>
-            <button onClick={() => questionStep < questions.length - 1 ? setQuestionStep(questionStep + 1) : runAnalysis()} disabled={!answers[q.id]}
-              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-              {questionStep < questions.length - 1 ? 'Next →' : 'See my results →'}
-            </button>
-          </div>
+          <SmartIntentQuestions
+            preAnalysis={preAnalysis}
+            questionAnswers={questionAnswers}
+            setQuestionAnswers={setQuestionAnswers}
+            loading={!preAnalysis && !codeUnderstanding}
+            onComplete={() => {
+              // Map smart answers into the existing answers state for the edge function
+              setAnswers((prev) => ({ ...prev, ...questionAnswers }));
+              runAnalysis();
+            }}
+          />
         </div>
       </div>
     );

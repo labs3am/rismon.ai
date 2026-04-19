@@ -75,6 +75,91 @@ function runPreAnalysis(codeBundle: string) {
 }
 
 // ============================================================
+// SECTION 1c: Backend verification — fetch ground truth from
+// the user's actual Supabase project (RLS status + policies)
+// using the public RPC `rismon_security_metadata` they install.
+// ============================================================
+async function fetchBackendGroundTruth(projectUrl: string, anonKey: string) {
+  // Try the read-only RPC the user pasted into their Supabase.
+  // If it doesn't exist, gracefully return null (no ground truth available).
+  try {
+    const rpcRes = await fetch(`${projectUrl}/rest/v1/rpc/rismon_security_metadata`, {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+    if (rpcRes.ok) {
+      const data = await rpcRes.json();
+      // Expected shape: { tables: [{ table, rls_enabled, policies: [{ name, cmd, qual, with_check }] }] }
+      if (data && Array.isArray(data.tables)) return { source: "rpc", ...data };
+    }
+  } catch (e) {
+    console.log("RPC ground truth fetch failed (expected if not installed):", (e as Error).message);
+  }
+  // Fallback: at least confirm the project responds (table list only — no RLS info)
+  try {
+    const res = await fetch(`${projectUrl}/rest/v1/`, { headers: { apikey: anonKey } });
+    if (res.ok) {
+      const tables = await res.json();
+      const tableList = typeof tables === "object" ? Object.keys(tables) : [];
+      return { source: "introspection", tables: tableList.map((t) => ({ table: t, rls_enabled: null, policies: null })) };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+// Drop or downgrade findings that the backend ground truth contradicts.
+// Returns the filtered findings + a list of dropped finding ids for transparency.
+function reconcileFindingsAgainstGroundTruth(findings: any[], groundTruth: any): { kept: any[]; dropped: any[] } {
+  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
+  if (!groundTruth || !Array.isArray(groundTruth.tables) || groundTruth.source !== "rpc") {
+    // No verified ground truth — mark every DB-related finding as "unverified" so the UI can show it gently.
+    const kept = findings.map((f) => {
+      const text = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
+      const dbRelated = /\brls\b|row[\s-]?level|policy|policies|access rule|anyone can read|public read|public write|expose|exposed|leak|table|database/.test(text);
+      if (dbRelated && (!f.confidence || f.confidence === "verified")) {
+        return { ...f, confidence: "unverified", confidence_reason: "We could not check your database directly — connect Supabase to verify." };
+      }
+      return f;
+    });
+    return { kept, dropped: [] };
+  }
+  const tablesWithRls = new Set(
+    groundTruth.tables.filter((t: any) => t.rls_enabled === true).map((t: any) => String(t.table).toLowerCase())
+  );
+  const kept: any[] = [];
+  const dropped: any[] = [];
+  for (const f of findings) {
+    const blob = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
+    const claimsMissingRls = /\brls\b|row[\s-]?level|access rule|anyone can read|public read|public write|missing polic|no polic|exposed.*table|table.*expos/.test(blob);
+    if (claimsMissingRls) {
+      // Find which tables are mentioned. If ALL mentioned tables have RLS on, drop the finding.
+      const mentionedTables: string[] = [];
+      for (const t of groundTruth.tables) {
+        const tname = String(t.table).toLowerCase();
+        if (tname && blob.includes(tname)) mentionedTables.push(tname);
+      }
+      if (mentionedTables.length > 0 && mentionedTables.every((t) => tablesWithRls.has(t))) {
+        dropped.push({ id: f.id, title: f.title, reason: "Database confirmed RLS is enabled for the mentioned tables." });
+        continue;
+      }
+      // Generic claim with no specific table → mark unverified instead of dropping
+      if (mentionedTables.length === 0) {
+        kept.push({ ...f, confidence: "unverified", confidence_reason: "Generic claim with no specific table — could not match against your database." });
+        continue;
+      }
+    }
+    // Default: mark as verified if not already labeled
+    kept.push({ ...f, confidence: f.confidence || "verified" });
+  }
+  return { kept, dropped };
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -610,8 +695,21 @@ For each issue found return:
   "how_to_fix": "Plain English steps. What to do in Lovable or Cursor.",
   "fix_prompt": "Exact prompt to paste into Lovable or Cursor. Ready to use. No editing needed.",
   "technical_reference": "Short technical name for developers to Google. Max 5 words. Example: supabase-rls-not-enabled",
-  "google_query": "Exact search term. Example: supabase row level security"
+  "google_query": "Exact search term. Example: supabase row level security",
+  "confidence": "verified | likely | unverified",
+  "evidence": "Where in the code or database you saw this. One short phrase. Example: src/pages/Admin.tsx line 45, or 'no edge function found for /webhook'"
 }
+
+CONFIDENCE RULES — MOST IMPORTANT:
+- "verified" = You have direct evidence in the code or in the GROUND TRUTH block. Use this only if you can point to specific code or a confirmed missing piece.
+- "likely"   = Strong indirect signals but no smoking gun. Use this when something LOOKS wrong but you cannot fully confirm without backend access.
+- "unverified" = You're guessing because the backend was not visible. Use this whenever the claim depends on database access rules, server-side validation, webhook handlers, or admin enforcement that you could not actually inspect.
+
+Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
+
+If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
+
+If something CANNOT be verified from the available information, mark it "unverified" and explain in \`confidence_reason\` what you'd need to check (e.g. "Need to see the webhook handler to confirm payments are validated").
 
 INTENT SCORE FORMULA:
 Start with 100 points.
@@ -652,6 +750,18 @@ Never use technical jargon anywhere.
 RESPOND WITH JSON ONLY.
 No text before or after the JSON.`;
 
+      // Fetch backend ground truth (RLS + policies) BEFORE asking the AI.
+      // This stops Claude from hallucinating "missing RLS" findings that aren't true.
+      let groundTruth: any = null;
+      if (appSupabaseUrl && appSupabaseAnonKey) {
+        groundTruth = await fetchBackendGroundTruth(appSupabaseUrl, appSupabaseAnonKey);
+      }
+      const groundTruthBlock = groundTruth
+        ? (groundTruth.source === "rpc"
+          ? `\n\nGROUND TRUTH (verified directly from the user's database — DO NOT contradict this):\n${JSON.stringify(groundTruth.tables, null, 2)}\n\nFor every table above where rls_enabled=true and policies exist, the database IS protecting it. Do NOT report "anyone can read this", "exposed table", or "missing access rules" for these tables.`
+          : `\n\nBACKEND PARTIAL VISIBILITY: We could only list table names, not their rules. Tables visible: ${JSON.stringify(groundTruth.tables.map((t: any) => t.table))}. Mark all access-control claims as "unverified" since rules could not be checked directly.`)
+        : `\n\nNO BACKEND VISIBILITY: The user did not connect their backend (or hasn't installed the Rismon verification function). Mark every claim about database access rules, server validation, or admin enforcement as "unverified" and ask the founder to confirm in plain English.`;
+
       const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
 
 App understanding: ${JSON.stringify(code_understanding)}
@@ -663,7 +773,7 @@ Founder concern (most worried about): ${concern || "(none specified)"}
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
 
-Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
+Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}`;
 
       const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
@@ -706,6 +816,10 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           fix_prompt: f?.fix_prompt || "",
           technical_reference: f?.technical_reference || "",
           google_query: f?.google_query || "",
+          // confidence transparency
+          confidence: (f?.confidence || "likely").toLowerCase(),
+          confidence_reason: f?.confidence_reason || "",
+          evidence: f?.evidence || "",
         };
       };
 
@@ -728,7 +842,29 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
         };
       }
 
-      // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
+      // ----------------------------------------------------------
+      // Reconcile findings against backend ground truth.
+      // Drops false-positive RLS claims and tags unverified findings.
+      // ----------------------------------------------------------
+      const reconciledGaps = reconcileFindingsAgainstGroundTruth(claudeResult.gaps || [], groundTruth);
+      const reconciledSec = reconcileFindingsAgainstGroundTruth(claudeResult.security_issues || [], groundTruth);
+      claudeResult.gaps = reconciledGaps.kept;
+      claudeResult.security_issues = reconciledSec.kept;
+      const droppedFindings = [...reconciledGaps.dropped, ...reconciledSec.dropped];
+      if (droppedFindings.length > 0) {
+        claudeResult.dropped_false_positives = droppedFindings;
+        // Recompute score: only "verified" findings affect it
+        const allKept = [...claudeResult.gaps, ...claudeResult.security_issues];
+        const verifiedOnly = allKept.filter((f: any) => f.confidence === "verified");
+        const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
+        const deduction = verifiedOnly.reduce((s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5), 0);
+        claudeResult.intent_match_score = Math.max(0, 100 - deduction);
+      }
+      claudeResult.backend_verification = groundTruth
+        ? (groundTruth.source === "rpc" ? "verified" : "partial")
+        : "none";
+
+
       if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
         try {
           const verifySystem = `You verify whether each claimed gap is actually supported by the evidence. For each gap, decide: is the claim "what was built" actually true given the code understanding? Mark each gap "confirmed" or "rejected" with one short reason.

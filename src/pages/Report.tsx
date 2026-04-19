@@ -57,10 +57,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FindingCard({ f, idx }: { f: any; idx: number }) {
+function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?: string }) {
   const [copied, setCopied] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSending, setDisputeSending] = useState(false);
+  const [disputeSent, setDisputeSent] = useState(false);
   const sev = (f.severity || 'medium').toLowerCase();
   const color = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
+  const confidence = (f.confidence || 'verified').toLowerCase();
+  const confColor =
+    confidence === 'verified' ? '#22c55e' : confidence === 'likely' ? '#f59e0b' : '#71717a';
+  const confLabel =
+    confidence === 'verified' ? 'Verified' : confidence === 'likely' ? 'Likely' : 'Unverified';
 
   const title = f.title || 'Issue';
   const whatWeFound = f.what_we_found || f.you_said || f.explanation || '';
@@ -75,6 +84,33 @@ function FindingCard({ f, idx }: { f: any; idx: number }) {
     navigator.clipboard.writeText(fixPrompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const submitDispute = async () => {
+    if (disputeReason.trim().length < 5) {
+      toast.error('Please add a few words explaining why this is wrong.');
+      return;
+    }
+    setDisputeSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('submit-finding-dispute', {
+        body: {
+          analysis_id: analysisId,
+          finding_id: f.id,
+          finding_name: title,
+          finding_category: sev,
+          reason: disputeReason.trim(),
+        },
+      });
+      if (error) throw error;
+      setDisputeSent(true);
+      toast.success('Thanks — we\'ll review this finding.');
+      setTimeout(() => { setDisputeOpen(false); setDisputeSent(false); setDisputeReason(''); }, 1500);
+    } catch (e: any) {
+      toast.error(e.message || 'Could not send dispute.');
+    } finally {
+      setDisputeSending(false);
+    }
   };
 
   return (
@@ -93,18 +129,21 @@ function FindingCard({ f, idx }: { f: any; idx: number }) {
         <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8, flex: 1 }}>
           {title}
         </div>
-        <span
-          style={{
-            fontSize: 10,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color,
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {sev}
-        </span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span
+            title={confidence === 'unverified' ? 'We could not verify this directly — connect your backend for accurate scans.' : ''}
+            style={{
+              fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
+              color: confColor, fontWeight: 600, border: `1px solid ${confColor}33`,
+              padding: '2px 8px', borderRadius: 999, whiteSpace: 'nowrap',
+            }}
+          >
+            {confLabel}
+          </span>
+          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color, fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {sev}
+          </span>
+        </div>
       </div>
 
       {whatWeFound && (
@@ -204,6 +243,50 @@ function FindingCard({ f, idx }: { f: any; idx: number }) {
           )}
         </div>
       )}
+
+      {/* Dispute footer */}
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'flex-end' }}>
+        {!disputeOpen ? (
+          <button
+            onClick={() => setDisputeOpen(true)}
+            style={{ background: 'transparent', border: 'none', color: '#555555', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#888888')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#555555')}
+          >
+            Report wrong finding
+          </button>
+        ) : disputeSent ? (
+          <div style={{ fontSize: 12, color: '#22c55e' }}>✓ Thanks — we'll review it.</div>
+        ) : (
+          <div style={{ width: '100%' }}>
+            <textarea
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              placeholder="Why is this finding wrong? (e.g., 'RLS is actually enabled on this table — I checked')"
+              rows={3}
+              style={{
+                width: '100%', background: '#000', border: '1px solid #222', borderRadius: 6,
+                padding: 10, color: '#fff', fontSize: 13, fontFamily: 'inherit', resize: 'vertical',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setDisputeOpen(false); setDisputeReason(''); }}
+                style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitDispute}
+                disabled={disputeSending}
+                style={{ background: '#f97316', border: 'none', color: '#000', padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: disputeSending ? 0.6 : 1 }}
+              >
+                {disputeSending ? 'Sending...' : 'Send to Rismon team'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -419,7 +502,7 @@ export default function Report() {
               No business logic gaps found.
             </div>
           ) : (
-            gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} />)
+            gapsList.map((g: any, i: number) => <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
@@ -440,7 +523,7 @@ export default function Report() {
               No security issues found.
             </div>
           ) : (
-            secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} />)
+            secList.map((s: any, i: number) => <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />)
           )}
         </div>
 
