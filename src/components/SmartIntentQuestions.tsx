@@ -289,7 +289,7 @@ export default function SmartIntentQuestions({
           {questions.length > 1 && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
               {questions.map((q, i) => {
-                const answered = !!questionAnswers[q.id];
+                const answered = isAnswered(q);
                 return (
                   <span
                     key={q.id}
