@@ -255,7 +255,7 @@ const PLAN_LIMITS = {
   },
 };
 
-async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number) {
+async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number, currentScanSessionId?: string | null) {
   const limits = PLAN_LIMITS[plan];
 
   // 1. Repo size cap
@@ -264,12 +264,17 @@ async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free"
   }
 
   // 2. Concurrent scan lock
-  const { data: active } = await serviceClient
+  let activeQuery = serviceClient
     .from("scan_sessions")
     .select("id")
     .eq("user_id", userId)
-    .in("status", ["pending", "analyzing"])
-    .limit(1);
+    .in("status", ["pending", "analyzing"]);
+
+  if (currentScanSessionId) {
+    activeQuery = activeQuery.neq("id", currentScanSessionId);
+  }
+
+  const { data: active } = await activeQuery.limit(1);
   if (active && active.length > 0) {
     return { ok: false, code: "SCAN_IN_PROGRESS", message: "You already have a scan running. Please wait for it to finish." };
   }
@@ -397,6 +402,7 @@ serve(async (req) => {
       project_type,
       monetization,
       scan_type,
+      scan_session_id,
     } = body;
     const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
@@ -430,7 +436,7 @@ serve(async (req) => {
       const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
 
       // Enforce all abuse limits BEFORE any AI call
-      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes);
+      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes, scan_session_id);
       if (!limitCheck.ok) {
         return new Response(JSON.stringify({ error: limitCheck.message, code: limitCheck.code, existingReportId: limitCheck.existingReportId }), {
           status: 429,
