@@ -75,6 +75,91 @@ function runPreAnalysis(codeBundle: string) {
 }
 
 // ============================================================
+// SECTION 1c: Backend verification — fetch ground truth from
+// the user's actual Supabase project (RLS status + policies)
+// using the public RPC `rismon_security_metadata` they install.
+// ============================================================
+async function fetchBackendGroundTruth(projectUrl: string, anonKey: string) {
+  // Try the read-only RPC the user pasted into their Supabase.
+  // If it doesn't exist, gracefully return null (no ground truth available).
+  try {
+    const rpcRes = await fetch(`${projectUrl}/rest/v1/rpc/rismon_security_metadata`, {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+    if (rpcRes.ok) {
+      const data = await rpcRes.json();
+      // Expected shape: { tables: [{ table, rls_enabled, policies: [{ name, cmd, qual, with_check }] }] }
+      if (data && Array.isArray(data.tables)) return { source: "rpc", ...data };
+    }
+  } catch (e) {
+    console.log("RPC ground truth fetch failed (expected if not installed):", (e as Error).message);
+  }
+  // Fallback: at least confirm the project responds (table list only — no RLS info)
+  try {
+    const res = await fetch(`${projectUrl}/rest/v1/`, { headers: { apikey: anonKey } });
+    if (res.ok) {
+      const tables = await res.json();
+      const tableList = typeof tables === "object" ? Object.keys(tables) : [];
+      return { source: "introspection", tables: tableList.map((t) => ({ table: t, rls_enabled: null, policies: null })) };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+// Drop or downgrade findings that the backend ground truth contradicts.
+// Returns the filtered findings + a list of dropped finding ids for transparency.
+function reconcileFindingsAgainstGroundTruth(findings: any[], groundTruth: any): { kept: any[]; dropped: any[] } {
+  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
+  if (!groundTruth || !Array.isArray(groundTruth.tables) || groundTruth.source !== "rpc") {
+    // No verified ground truth — mark every DB-related finding as "unverified" so the UI can show it gently.
+    const kept = findings.map((f) => {
+      const text = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
+      const dbRelated = /\brls\b|row[\s-]?level|policy|policies|access rule|anyone can read|public read|public write|expose|exposed|leak|table|database/.test(text);
+      if (dbRelated && (!f.confidence || f.confidence === "verified")) {
+        return { ...f, confidence: "unverified", confidence_reason: "We could not check your database directly — connect Supabase to verify." };
+      }
+      return f;
+    });
+    return { kept, dropped: [] };
+  }
+  const tablesWithRls = new Set(
+    groundTruth.tables.filter((t: any) => t.rls_enabled === true).map((t: any) => String(t.table).toLowerCase())
+  );
+  const kept: any[] = [];
+  const dropped: any[] = [];
+  for (const f of findings) {
+    const blob = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
+    const claimsMissingRls = /\brls\b|row[\s-]?level|access rule|anyone can read|public read|public write|missing polic|no polic|exposed.*table|table.*expos/.test(blob);
+    if (claimsMissingRls) {
+      // Find which tables are mentioned. If ALL mentioned tables have RLS on, drop the finding.
+      const mentionedTables: string[] = [];
+      for (const t of groundTruth.tables) {
+        const tname = String(t.table).toLowerCase();
+        if (tname && blob.includes(tname)) mentionedTables.push(tname);
+      }
+      if (mentionedTables.length > 0 && mentionedTables.every((t) => tablesWithRls.has(t))) {
+        dropped.push({ id: f.id, title: f.title, reason: "Database confirmed RLS is enabled for the mentioned tables." });
+        continue;
+      }
+      // Generic claim with no specific table → mark unverified instead of dropping
+      if (mentionedTables.length === 0) {
+        kept.push({ ...f, confidence: "unverified", confidence_reason: "Generic claim with no specific table — could not match against your database." });
+        continue;
+      }
+    }
+    // Default: mark as verified if not already labeled
+    kept.push({ ...f, confidence: f.confidence || "verified" });
+  }
+  return { kept, dropped };
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
