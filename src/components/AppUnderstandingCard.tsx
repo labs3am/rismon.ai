@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Check } from 'lucide-react';
 
 export interface AppUnderstanding {
   business_type_guess?: string;
