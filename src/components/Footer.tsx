@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Github, Mail } from 'lucide-react';
+import Logo from './Logo';
 
 const XLogo = ({ size = 18 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -16,7 +17,7 @@ export default function Footer() {
     <footer style={{ background: '#000000', borderTop: '1px solid #ffffff14', padding: '48px 24px' }}>
       <div className="max-w-[1100px] mx-auto flex flex-col md:flex-row md:items-start md:justify-between gap-8">
         <div>
-          <p style={{ color: '#ffffff', fontWeight: 600, fontSize: 16 }}>Rismon.ai</p>
+          <Logo />
           <p style={{ color: '#555555', fontSize: 13, marginTop: 8 }}>
             From the house of{' '}
             <a href="https://labs3am.com" target="_blank" rel="noopener noreferrer" style={{ color: '#888888' }} className="hover:underline">Labs3am</a>
