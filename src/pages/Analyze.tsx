@@ -514,9 +514,13 @@ export default function Analyze() {
           project_type: intentMeta.projectType,
           monetization: intentMeta.monetization,
           scan_type: scanType,
-          // Send the bundles so Gemini can re-open cited files and fact-check Claude
+          // Send the bundles so the deterministic scanner can produce
+          // verified findings AND so Gemini can re-open cited files.
           codeBundle: codeBundleRef.current,
           edgeFunctionBundle: edgeBundleRef.current,
+          // Forward the read_code questions so the harvester can promote
+          // their cited file/line evidence into security findings.
+          smart_questions: questions,
         }
       });
       if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }

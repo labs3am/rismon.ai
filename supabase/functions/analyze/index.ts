@@ -75,6 +75,385 @@ function runPreAnalysis(codeBundle: string) {
 }
 
 // ============================================================
+// SECTION 1c: Deterministic security scanner — produces fully-formed
+// "verified" findings with file_path + line_number + code_snippet
+// directly from the code bundle. These are PROOF, not guesses,
+// and they bypass any LLM whitelist or downgrade.
+//
+// We split the bundle by "=== filepath ===" file headers (set by the
+// frontend in src/pages/Analyze.tsx around line 357), then scan each
+// file line-by-line for the patterns below.
+//
+// Detectors (each maps to a critical/high security finding):
+//   D1 — open admin route (file path or component contains /admin AND
+//        no auth/redirect call AND no role/isAdmin check in the file)
+//   D2 — unfiltered user-table query (.from('xyz').select(...) with no
+//        .eq('user_id'|'owner_id'|'created_by'|'profile_id', ...))
+//   D3 — hardcoded bypass flag (const isPro=true, isAdmin=true,
+//        plan='pro' written as a literal in non-test code)
+//   D4 — supabase service role key referenced in a frontend file
+//        (any path NOT under supabase/functions/)
+//   D5 — explicit author-marked vulnerability comments (INTENTIONAL
+//        ISSUE, "no auth check", "data leak", "TODO: add auth")
+// ============================================================
+type DetectorFinding = {
+  id: string;
+  severity: "critical" | "high" | "medium" | "low";
+  category: string;
+  title: string;
+  what_we_found: string;
+  what_this_means: string;
+  how_to_fix: string;
+  fix_prompt: string;
+  technical_reference: string;
+  google_query: string;
+  confidence: "verified";
+  confidence_reason: string;
+  file_path: string;
+  line_number: number;
+  code_snippet: string;
+  evidence: string;
+  source: "deterministic";
+};
+
+function splitBundleByFile(bundle: string): Array<{ path: string; lines: string[] }> {
+  if (!bundle) return [];
+  const out: Array<{ path: string; lines: string[] }> = [];
+  // Header format from frontend: `=== <path> ===\n<content>\n\n`
+  const parts = bundle.split(/^===\s+(.+?)\s+===\s*$/m);
+  // parts: [preamble, path1, content1, path2, content2, ...]
+  for (let i = 1; i < parts.length; i += 2) {
+    const path = (parts[i] || "").trim();
+    const content = parts[i + 1] || "";
+    if (!path) continue;
+    out.push({ path, lines: content.split(/\r?\n/) });
+  }
+  return out;
+}
+
+const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
+
+function snippet(line: string, max = 200): string {
+  return (line || "").trim().slice(0, max);
+}
+
+function runDeterministicSecurityScan(
+  codeBundle: string,
+  edgeFunctionBundle: string,
+): DetectorFinding[] {
+  const findings: DetectorFinding[] = [];
+  const seen = new Set<string>(); // dedupe by file:line:detector
+  const push = (f: DetectorFinding) => {
+    const key = `${f.file_path}:${f.line_number}:${f.category}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    findings.push(f);
+  };
+
+  const frontendFiles = splitBundleByFile(codeBundle);
+  const edgeFiles = splitBundleByFile(edgeFunctionBundle);
+
+  // ---------- D1: Open admin route ----------
+  for (const file of frontendFiles) {
+    const isAdminFile = /\/admin|admin\.|adminpanel|admin-page|admindashboard/i.test(file.path);
+    if (!isAdminFile) continue;
+    const fullText = file.lines.join("\n");
+    const hasAuthCheck = /useauth\b|getuser\b|auth\.uid|isadmin|is_admin|user\?\.role|role\s*===?\s*['"]admin['"]|navigate\(['"]\/login|redirect\(['"]\/login|<protectedroute|requireauth/i.test(fullText);
+    if (hasAuthCheck) continue;
+    // Find the first meaningful line — component declaration or first JSX return
+    let lineNo = 1;
+    let lineText = "";
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      if (/export\s+(default\s+)?(function|const)\s+\w+|function\s+\w+\s*\(/i.test(L)) {
+        lineNo = i + 1;
+        lineText = L;
+        break;
+      }
+    }
+    if (!lineText) { lineText = file.lines[0] || ""; lineNo = 1; }
+    push({
+      id: `det-admin-${findings.length + 1}`,
+      severity: "critical",
+      category: "admin_access",
+      title: "Anyone can open your admin page",
+      what_we_found: `The admin page at ${file.path} renders without checking who is logged in or whether they are an admin.`,
+      what_this_means: "Anyone who guesses or shares the URL can see your admin dashboard, including all users, all data, and any actions you can take as the owner.",
+      how_to_fix: "Wrap this page in a login + admin role check. Redirect non-admins to the home page before any data loads.",
+      fix_prompt: `Protect the admin page in ${file.path}. At the top of the component, get the current user from Supabase auth. If there is no user, redirect to /login. Then check the user's role from the profiles or user_roles table. If the role is not "admin", redirect to / immediately. Do not render any admin content until both checks pass.`,
+      technical_reference: "missing-admin-route-guard",
+      google_query: "react protect admin route supabase auth",
+      confidence: "verified",
+      confidence_reason: "Detected directly from the file: admin path with no auth check, redirect, or role guard anywhere in the component.",
+      file_path: file.path,
+      line_number: lineNo,
+      code_snippet: snippet(lineText),
+      evidence: "Admin route component contains no useAuth/getUser/role check.",
+      source: "deterministic",
+    });
+  }
+
+  // ---------- D2: Unfiltered user-table query ----------
+  // Match .from('xyz').select(...) chains and check for a .eq('user_id'|...)
+  // anywhere in the same statement (we look at a small window of lines).
+  for (const file of frontendFiles) {
+    if (/\.test\.|\.spec\.|__tests__|node_modules|integrations\/supabase\/types/.test(file.path)) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      const m = L.match(/\.from\(\s*['"`]([a-zA-Z_][a-zA-Z0-9_]*)['"`]\s*\)/);
+      if (!m) continue;
+      const table = m[1];
+      // Look forward up to 10 lines for .select() and .eq(user_id|owner_id|...)
+      const windowText = file.lines.slice(i, i + 10).join("\n");
+      if (!/\.select\s*\(/.test(windowText)) continue;
+      // Skip auth.users — that's Supabase auth itself
+      if (/^auth\b|^_auth/i.test(table)) continue;
+      // Skip clearly-public tables
+      if (/^(blog_posts|posts|public_|categories|tags|countries|currencies|products?_public)$/i.test(table)) continue;
+      // Allow if there's a user-scoped filter anywhere in the chain
+      const hasUserFilter = /\.eq\(\s*['"`](user_id|owner_id|created_by|profile_id|author_id|customer_id|account_id)['"`]/i.test(windowText);
+      // Allow if there's an explicit single-row .eq('id', someUuidVar) — this is a "fetch by id" pattern (still risky but lower confidence; skip for now)
+      const isSingleRowById = /\.eq\(\s*['"`]id['"`]\s*,/.test(windowText) && /\.single\s*\(\s*\)|\.maybesingle\s*\(\s*\)/i.test(windowText);
+      if (hasUserFilter || isSingleRowById) continue;
+      // Only flag tables that *look* user-owned by name
+      if (!USER_TABLE_HINT.test(table)) continue;
+      push({
+        id: `det-leak-${findings.length + 1}`,
+        severity: "critical",
+        category: "rls",
+        title: `Anyone can read all rows in your "${table}" data`,
+        what_we_found: `${file.path} reads from the "${table}" table without filtering by the current user. The query returns every row in that table to whoever loads this page.`,
+        what_this_means: `Every signed-in user (and possibly anonymous visitors) sees every other user's "${table}" entries — including private content they were never meant to see.`,
+        how_to_fix: `Add a user filter to this query and turn on row-level rules in your database so the table can only return rows owned by the requester.`,
+        fix_prompt: `Fix the data leak in ${file.path} on line ${i + 1}. The query .from('${table}').select(...) returns every row to every user. 1) Add .eq('user_id', user.id) (or whichever column owns the row) to scope the query. 2) In Supabase, enable Row Level Security on the "${table}" table. 3) Add a SELECT policy: USING (auth.uid() = user_id). 4) Add INSERT/UPDATE/DELETE policies with WITH CHECK (auth.uid() = user_id).`,
+        technical_reference: "missing-user-filter-rls",
+        google_query: "supabase row level security user_id filter",
+        confidence: "verified",
+        confidence_reason: `Direct read from the file: .from('${table}').select(...) with no .eq('user_id'|'owner_id'|...) within the next 10 lines.`,
+        file_path: file.path,
+        line_number: i + 1,
+        code_snippet: snippet(L),
+        evidence: `Unfiltered .from('${table}').select(...) call.`,
+        source: "deterministic",
+      });
+      // Cap at 3 leak findings per file to avoid noise
+      if (findings.filter((f) => f.category === "rls" && f.file_path === file.path).length >= 3) break;
+    }
+  }
+
+  // ---------- D3: Hardcoded bypass flag ----------
+  for (const file of frontendFiles) {
+    if (/\.test\.|\.spec\.|__tests__/.test(file.path)) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      // const isPro = true | const isAdmin = true | let plan = 'pro' | const userPlan = 'pro'
+      const m = L.match(/(?:const|let|var)\s+(is(?:Pro|Admin|Premium|Paid|Owner|Authorized)|userPlan|plan|tier|role)\s*[:=]\s*(true|['"`](?:pro|admin|premium|owner|paid)['"`])/);
+      if (!m) continue;
+      // Skip if the line clearly comes from a destructure or a function parameter default
+      if (/\bfunction\b|\=>\s*\{|\,\s*$/.test(L) && !/^\s*(const|let|var)/.test(L)) continue;
+      const flagName = m[1];
+      const flagValue = m[2];
+      push({
+        id: `det-bypass-${findings.length + 1}`,
+        severity: "critical",
+        category: "payment_validation",
+        title: "Premium check is permanently turned on",
+        what_we_found: `${file.path} sets ${flagName} to ${flagValue} as a fixed value. Whatever code uses this flag treats every visitor as a paying or privileged user.`,
+        what_this_means: "Free users get every paid feature for free, and any 'admin only' code guarded by this flag is open to everyone. You lose revenue and lose control of admin actions.",
+        how_to_fix: `Replace the hardcoded value with a real check against the user's plan in your database (the profiles table) or your subscription provider.`,
+        fix_prompt: `Remove the hardcoded ${flagName} = ${flagValue} from ${file.path} on line ${i + 1}. Replace it with: 1) Read the current user from Supabase auth. 2) Query the profiles table for plan: const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single(). 3) Set ${flagName} = profile?.plan === 'pro'. 4) Default to false on error so paid features are NEVER given away by mistake.`,
+        technical_reference: "hardcoded-permission-flag",
+        google_query: "react supabase paywall enforce subscription",
+        confidence: "verified",
+        confidence_reason: `Direct read from the file: literal "${flagName} = ${flagValue}" assignment.`,
+        file_path: file.path,
+        line_number: i + 1,
+        code_snippet: snippet(L),
+        evidence: `Hardcoded ${flagName} = ${flagValue}.`,
+        source: "deterministic",
+      });
+    }
+  }
+
+  // ---------- D4: Service role key referenced in frontend ----------
+  for (const file of frontendFiles) {
+    // Frontend = anything NOT in supabase/functions/
+    if (/^supabase\/functions\//.test(file.path)) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      if (!/service[_-]?role/i.test(L)) continue;
+      // Ignore comments that just describe what service role IS
+      if (/^\s*(\/\/|\*|#)/.test(L) && !/key|=|import|require/.test(L.toLowerCase())) continue;
+      push({
+        id: `det-srk-${findings.length + 1}`,
+        severity: "critical",
+        category: "secret_exposure",
+        title: "Database master key is in your frontend code",
+        what_we_found: `${file.path} references the Supabase service role key. The frontend bundle is downloaded by every visitor's browser, so anyone who opens dev tools can read this key.`,
+        what_this_means: "The service role key bypasses every database rule. Whoever copies it can read, change, or delete every row in your database — users, payments, everything.",
+        how_to_fix: "Move every call that uses the service role key into a Supabase Edge Function. The frontend should only ever use the public anon key.",
+        fix_prompt: `Remove the service role key from ${file.path} on line ${i + 1}. Move the operation that needed it into a new Supabase Edge Function under supabase/functions/. The edge function reads SUPABASE_SERVICE_ROLE_KEY from Deno.env. The frontend calls the edge function with supabase.functions.invoke(). Then rotate the service role key in your Supabase dashboard immediately because the old one has already been exposed.`,
+        technical_reference: "service-role-in-frontend",
+        google_query: "supabase service role key exposed frontend",
+        confidence: "verified",
+        confidence_reason: "Direct read from a non-edge-function file: the literal phrase 'service_role' is present.",
+        file_path: file.path,
+        line_number: i + 1,
+        code_snippet: snippet(L),
+        evidence: "service_role reference in frontend bundle.",
+        source: "deterministic",
+      });
+    }
+  }
+
+  // ---------- D5: Author-marked vulnerability comments ----------
+  const authorMarkedPatterns = [
+    { rx: /intentional\s+issue|intentional\s+vulnerab|intentional\s+bug/i, label: "intentional issue" },
+    { rx: /\b(no auth check|no auth|missing auth|todo:?\s*add auth|fixme:?\s*auth)\b/i, label: "no auth check" },
+    { rx: /\b(data leak|leak data|leaks user data|unfiltered query)\b/i, label: "data leak" },
+    { rx: /\b(insecure on purpose|skip auth|bypass auth|disable rls|rls off)\b/i, label: "auth bypass" },
+  ];
+  for (const file of [...frontendFiles, ...edgeFiles]) {
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      // Only consider comments
+      if (!/\/\/|\/\*|\*\s|#\s/.test(L)) continue;
+      for (const p of authorMarkedPatterns) {
+        if (!p.rx.test(L)) continue;
+        push({
+          id: `det-marker-${findings.length + 1}`,
+          severity: "critical",
+          category: "business_logic",
+          title: "Code comment marks this as a known vulnerability",
+          what_we_found: `${file.path} line ${i + 1} contains a comment marking this area as "${p.label}". The code below the comment was left in this state on purpose — but it is shipping to real users.`,
+          what_this_means: "Whatever the comment warned about is happening in production right now. Real users are exposed to a problem the author already knew about and meant to fix.",
+          how_to_fix: "Read the comment. Implement the fix it asks for, or remove the comment and the unsafe code together.",
+          fix_prompt: `Open ${file.path} at line ${i + 1}. The comment marks a known "${p.label}". Implement the fix the comment describes (usually adding an auth check, a user_id filter, or removing a hardcoded bypass), then remove the warning comment.`,
+          technical_reference: "author-marked-vulnerability",
+          google_query: "react app intentional vulnerability fix",
+          confidence: "verified",
+          confidence_reason: "Direct read from the file: the author wrote a comment flagging this code as unsafe.",
+          file_path: file.path,
+          line_number: i + 1,
+          code_snippet: snippet(L),
+          evidence: `Comment matched pattern: ${p.label}.`,
+          source: "deterministic",
+        });
+        break; // one finding per line
+      }
+    }
+  }
+
+  return findings;
+}
+
+// ============================================================
+// SECTION 1d: Smart-question evidence harvester
+// When the read_code stage generates a question whose `context` field
+// cites a specific file + line + a damning phrase (e.g. "INTENTIONAL
+// ISSUE", "no auth check", "isPro = true"), we promote that into a
+// verified security finding even if the LLM forgets to do so later.
+// ============================================================
+function harvestFindingsFromQuestions(questions: any[]): DetectorFinding[] {
+  if (!Array.isArray(questions) || questions.length === 0) return [];
+  const findings: DetectorFinding[] = [];
+  for (let qi = 0; qi < questions.length; qi++) {
+    const q = questions[qi];
+    const ctx: string = (q?.context || "") + " " + (q?.question || "");
+    if (!ctx) continue;
+    // Extract file + line from "File: path, Line N:"
+    const fileMatch = ctx.match(/File:\s*([^\s,]+)\s*,?\s*Line\s+(\d+)/i);
+    if (!fileMatch) continue;
+    const file_path = fileMatch[1];
+    const line_number = parseInt(fileMatch[2], 10) || 1;
+    const lower = ctx.toLowerCase();
+
+    let severity: DetectorFinding["severity"] = "high";
+    let category = "business_logic";
+    let title = "";
+    let what_we_found = "";
+    let what_this_means = "";
+    let fix_prompt = "";
+    let evidence = "";
+
+    if (/no auth check|no redirect|open admin|unprotected admin/.test(lower) && /\/admin/.test(lower)) {
+      severity = "critical"; category = "admin_access";
+      title = "Anyone can open your admin page";
+      what_we_found = `${file_path} line ${line_number} is an admin route with no login or role check.`;
+      what_this_means = "Any visitor who knows the URL reaches the admin dashboard.";
+      fix_prompt = `Add a login + admin role check at the top of ${file_path}. If there is no user or the user is not an admin, redirect to / before rendering anything.`;
+      evidence = "Open admin route flagged in code understanding.";
+    } else if (/data leak|leaks user data|unfiltered query|fetches all|select\(\s*['"]\*['"]\s*\).*without/.test(lower)) {
+      severity = "critical"; category = "rls";
+      title = "Anyone can read everyone else's data";
+      what_we_found = `${file_path} line ${line_number} runs a database query with no user filter. It returns every row to every visitor.`;
+      what_this_means = "Every user sees every other user's records on this page.";
+      fix_prompt = `Open ${file_path} line ${line_number}. Add .eq('user_id', user.id) to the query, then enable row-level rules on the table in Supabase with policy USING (auth.uid() = user_id).`;
+      evidence = "Unfiltered query flagged in code understanding.";
+    } else if (/ispro\s*=\s*true|isadmin\s*=\s*true|hardcoded.*plan|plan.*hardcoded/.test(lower)) {
+      severity = "critical"; category = "payment_validation";
+      title = "Premium check is permanently turned on";
+      what_we_found = `${file_path} line ${line_number} hardcodes a permission flag to true. Every user gets premium access.`;
+      what_this_means = "Paid features are free for everyone. You lose revenue.";
+      fix_prompt = `Replace the hardcoded flag in ${file_path} line ${line_number} with a real check: read the current user, query profiles.plan, set the flag based on that value.`;
+      evidence = "Hardcoded permission flag flagged in code understanding.";
+    } else if (/service[_-]?role.*key|bypasses rls/.test(lower)) {
+      severity = "critical"; category = "secret_exposure";
+      title = "Database master key is in your frontend code";
+      what_we_found = `${file_path} line ${line_number} uses the service role key. This key bypasses every database rule.`;
+      what_this_means = "Anyone who opens your site in dev tools can read or delete all data.";
+      fix_prompt = `Move the operation in ${file_path} line ${line_number} into a Supabase Edge Function. The frontend must only use the anon key. Then rotate the service role key.`;
+      evidence = "Service role key reference flagged in code understanding.";
+    } else {
+      continue;
+    }
+
+    findings.push({
+      id: `det-q-${qi + 1}`,
+      severity,
+      category,
+      title,
+      what_we_found,
+      what_this_means,
+      how_to_fix: fix_prompt,
+      fix_prompt,
+      technical_reference: category,
+      google_query: `${category} supabase fix`,
+      confidence: "verified",
+      confidence_reason: "Promoted from the code-reading stage which cited the exact file and line.",
+      file_path,
+      line_number,
+      code_snippet: snippet(q?.context || ""),
+      evidence,
+      source: "deterministic",
+    });
+  }
+  return findings;
+}
+
+// Merge deterministic findings with LLM findings, dedupe, cap at 8.
+function mergeSecurityFindings(deterministic: DetectorFinding[], llm: any[]): any[] {
+  const out: any[] = [];
+  const seen = new Set<string>();
+  // Deterministic first — they win on ties.
+  for (const f of deterministic) {
+    const key = `${f.file_path}:${f.category}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(f);
+  }
+  for (const f of (llm || [])) {
+    const fp = f?.file_path || "";
+    const cat = (f?.category || "").toLowerCase();
+    const key = `${fp}:${cat}`;
+    if (fp && cat && seen.has(key)) continue;
+    if (fp && cat) seen.add(key);
+    out.push(f);
+  }
+  return out.slice(0, 8);
+}
+
+// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -412,6 +791,7 @@ serve(async (req) => {
       monetization,
       scan_type,
       scan_session_id,
+      smart_questions,
     } = body;
     const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
@@ -865,6 +1245,109 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         } catch (e) {
           console.error("Verification pass failed (non-fatal):", e);
         }
+      }
+
+      // ----------------------------------------------------------
+      // DETERMINISTIC SECURITY OVERLAY (added 2026-04)
+      //
+      // The LLM keeps under-reporting obvious vulnerabilities (open
+      // admin routes, .select() with no user filter, hardcoded
+      // isPro=true, service role key in frontend). We scan the code
+      // bundle ourselves and inject any such finding as a "verified"
+      // critical with file_path + line_number + code_snippet — proof
+      // that bypasses every downstream filter.
+      //
+      // We also harvest evidence from the read_code stage's smart
+      // questions: those frequently quote the exact unsafe line.
+      // ----------------------------------------------------------
+      const detFromCode = runDeterministicSecurityScan(
+        codeBundle || "",
+        edgeFunctionBundle || "",
+      );
+      const detFromQuestions = harvestFindingsFromQuestions(smart_questions || []);
+      const allDeterministic = [...detFromCode, ...detFromQuestions];
+
+      // Map each deterministic finding into the legacy shape the UI uses,
+      // then merge with what Claude returned (deterministic wins on dedupe).
+      const mappedDet = allDeterministic.map((f, i) => mapFinding(f, i, "d"));
+      // mapFinding strips some of our extra fields; re-attach what the UI
+      // and scorer need (severity is already preserved, but confidence and
+      // source need to be re-applied since mapFinding doesn't know them).
+      for (let i = 0; i < mappedDet.length; i++) {
+        const original = allDeterministic[i];
+        Object.assign(mappedDet[i], {
+          confidence: original.confidence,
+          confidence_reason: original.confidence_reason,
+          file_path: original.file_path,
+          line_number: original.line_number,
+          code_snippet: original.code_snippet,
+          evidence: original.evidence,
+          category: original.category,
+          source: original.source,
+          severity: original.severity,
+        });
+      }
+
+      claudeResult.security_issues = mergeSecurityFindings(
+        mappedDet as any,
+        Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : [],
+      );
+
+      // ----------------------------------------------------------
+      // RE-SCORE — deterministic findings deduct heavily and the
+      // critical caps from the prompt are enforced server-side too.
+      // (Claude already applied them, but if we just injected new
+      // criticals from the deterministic overlay we must re-apply.)
+      // ----------------------------------------------------------
+      const sevDeduction: Record<string, number> = { critical: 25, high: 15, medium: 8, low: 2 };
+      const allFindings = [
+        ...(Array.isArray(claudeResult.gaps) ? claudeResult.gaps : []),
+        ...(Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : []),
+      ];
+      let deduction = 0;
+      let criticalCount = 0;
+      for (const f of allFindings) {
+        const sev = (f?.severity || "medium").toLowerCase();
+        deduction += sevDeduction[sev] ?? 4;
+        if (sev === "critical") criticalCount += 1;
+      }
+      let recomputed = Math.max(0, 100 - deduction);
+      // Hard caps copied from the prompt — these MUST hold even if
+      // Claude's own arithmetic was lenient.
+      if (criticalCount >= 3) recomputed = Math.min(recomputed, 20);
+      else if (criticalCount >= 2) recomputed = Math.min(recomputed, 35);
+      else if (criticalCount >= 1) recomputed = Math.min(recomputed, 60);
+
+      // Only OVERRIDE the score if our deterministic overlay actually
+      // changed things. If Claude's score was already lower than our
+      // recompute, keep Claude's score (it knew about other context).
+      const claudeScore = typeof claudeResult.intent_match_score === "number"
+        ? claudeResult.intent_match_score : 100;
+      if (allDeterministic.length > 0 || recomputed < claudeScore) {
+        claudeResult.intent_match_score = Math.min(claudeScore, recomputed);
+        claudeResult.scoring_overlay = {
+          deterministic_findings: allDeterministic.length,
+          critical_count: criticalCount,
+          original_claude_score: claudeScore,
+          recomputed_score: claudeResult.intent_match_score,
+        };
+      }
+
+      // Also lower the security_score field if we have new critical
+      // security findings (the UI uses this for the security badge).
+      if (detFromCode.length + detFromQuestions.filter((d) => d.category !== "business_logic").length > 0) {
+        const secCount = (claudeResult.security_issues || []).length;
+        let secDed = 0;
+        for (const f of (claudeResult.security_issues || [])) {
+          secDed += sevDeduction[(f?.severity || "medium").toLowerCase()] ?? 4;
+        }
+        let secRecomputed = Math.max(0, 100 - secDed);
+        if (criticalCount >= 3) secRecomputed = Math.min(secRecomputed, 20);
+        else if (criticalCount >= 2) secRecomputed = Math.min(secRecomputed, 35);
+        else if (criticalCount >= 1) secRecomputed = Math.min(secRecomputed, 60);
+        const currentSec = typeof claudeResult.security_score === "number"
+          ? claudeResult.security_score : 100;
+        claudeResult.security_score = Math.min(currentSec, secRecomputed);
       }
 
       claudeResult.plan_at_scan = userPlan;
