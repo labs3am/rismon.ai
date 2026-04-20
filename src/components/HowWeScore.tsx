@@ -1,139 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
-
 /**
- * Scroll-animated "How we score" section.
- * Shows 100 → deductions → cap rule → final score, with each step
- * fading in as the user scrolls into view.
+ * Clean, static "How we score" section.
+ * No scroll fade-ins, no AI shimmer. Just a horizontal score bar with labeled
+ * zones and a worked example. Apple/Linear feel.
  */
-const STEPS = [
-  {
-    label: 'Start',
-    op: 'Every scan starts at',
-    delta: '100',
-    color: '#22c55e',
-    desc: 'A perfect app would keep all 100 points.',
-  },
-  {
-    op: 'Critical issue',
-    delta: '−25',
-    color: '#ef4444',
-    desc: 'Anyone-can-read data, exposed master key, hardcoded paywall bypass.',
-  },
-  {
-    op: 'High issue',
-    delta: '−15',
-    color: '#f97316',
-    desc: 'Logic that lets paying users overlap with free users, or admin actions without checks.',
-  },
-  {
-    op: 'Medium issue',
-    delta: '−8',
-    color: '#eab308',
-    desc: 'False promise on the homepage, missing usage cap, weaker fallback.',
-  },
-  {
-    op: 'False promise',
-    delta: '−8',
-    color: '#a78bfa',
-    desc: 'Homepage claims something the code does not actually do (encryption, real-time, integrations).',
-  },
+
+const ZONES = [
+  { from: 55, to: 64, label: 'Significant work', color: '#ef4444' },
+  { from: 65, to: 74, label: 'Needs work', color: '#f97316' },
+  { from: 75, to: 88, label: 'Good', color: '#eab308' },
+  { from: 89, to: 94, label: 'Strong', color: '#84cc16' },
+  { from: 95, to: 100, label: 'Excellent', color: '#22c55e' },
 ];
 
-const CAPS = [
-  { count: '1 critical', cap: 'cap at 60' },
-  { count: '2 criticals', cap: 'cap at 35' },
-  { count: '3+ criticals', cap: 'cap at 20' },
+const RANGE_MIN = 55;
+const RANGE_MAX = 100;
+const SPAN = RANGE_MAX - RANGE_MIN;
+
+const DEDUCTIONS = [
+  { label: 'Critical issue', delta: '−10', color: '#ef4444', desc: 'Anyone-can-read data, exposed master key, paywall bypass.' },
+  { label: 'High issue', delta: '−5', color: '#f97316', desc: 'Paid users overlap with free users, admin actions without checks.' },
+  { label: 'Medium issue', delta: '−2', color: '#eab308', desc: 'False promise on the homepage, missing usage cap, weak fallback.' },
+  { label: 'Low issue', delta: '−0.5', color: '#3b82f6', desc: 'Minor inconsistency or polish item we noticed.' },
 ];
 
-function useReveal<T extends HTMLElement>(threshold = 0.2) {
-  const ref = useRef<T | null>(null);
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            setShown(true);
-            io.disconnect();
-          }
-        });
-      },
-      { threshold },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [threshold]);
-  return { ref, shown };
-}
+const EXAMPLE_SCORE = 83;
+const EXAMPLE_PCT = ((EXAMPLE_SCORE - RANGE_MIN) / SPAN) * 100;
 
-function CountUp({ to, shown, duration = 900 }: { to: number; shown: boolean; duration?: number }) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!shown) return;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - t, 3);
-      setN(Math.round(eased * to));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [shown, to, duration]);
-  return <>{n}</>;
-}
-
-function DeductionRow({ step: s, index: i }: { step: typeof STEPS[number]; index: number }) {
-  const item = useReveal<HTMLDivElement>(0.3);
-  return (
-    <div
-      ref={item.ref}
-      style={{
-        opacity: item.shown ? 1 : 0,
-        transform: item.shown ? 'translateX(0)' : 'translateX(-20px)',
-        transition: `opacity 0.5s ease-out ${i * 90}ms, transform 0.5s ease-out ${i * 90}ms`,
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '16px',
-        padding: '14px 16px',
-        marginBottom: '8px',
-        border: '1px solid #ffffff10',
-        borderRadius: '10px',
-        background: '#000000',
-      }}
-    >
-      <div
-        style={{
-          minWidth: '60px',
-          textAlign: 'center',
-          fontSize: '20px',
-          fontWeight: 700,
-          color: s.color,
-          fontVariantNumeric: 'tabular-nums',
-          lineHeight: 1.1,
-          paddingTop: '2px',
-        }}
-      >
-        {s.delta}
-      </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
-          {s.op}
-        </p>
-        <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{s.desc}</p>
-      </div>
-    </div>
-  );
+function pct(n: number) {
+  return ((n - RANGE_MIN) / SPAN) * 100;
 }
 
 export default function HowWeScore() {
-  const header = useReveal<HTMLDivElement>(0.15);
-  const final = useReveal<HTMLDivElement>(0.4);
-
   return (
     <section
       id="how-we-score"
@@ -144,179 +41,280 @@ export default function HowWeScore() {
       }}
     >
       <div className="max-w-[1100px] mx-auto">
-        <div
-          ref={header.ref}
+        <p className="vercel-label">HOW WE SCORE</p>
+        <h2 className="vercel-headline">From 100 to your real score</h2>
+        <p
           style={{
-            opacity: header.shown ? 1 : 0,
-            transform: header.shown ? 'translateY(0)' : 'translateY(16px)',
-            transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+            fontSize: 16,
+            color: '#888',
+            lineHeight: 1.7,
+            maxWidth: 640,
+            marginTop: 16,
           }}
         >
-          <p className="vercel-label">HOW WE SCORE</p>
-          <h2 className="vercel-headline">From 100 to your real score</h2>
-          <p
+          Your Intent Score is the same math every time. No vibes. We start at 100, subtract for each
+          thing that does not match your business, and floor at 55 so a single bad finding never wipes
+          out a working app.
+        </p>
+
+        {/* Horizontal score bar */}
+        <div className="mt-16">
+          <div
             style={{
-              fontSize: '16px',
-              color: '#888888',
-              lineHeight: 1.7,
-              maxWidth: '640px',
-              marginTop: '16px',
+              border: '1px solid #ffffff14',
+              borderRadius: 16,
+              padding: '32px 28px 24px',
+              background: '#000',
             }}
           >
-            Your Intent Score is the same math every time. No vibes, no AI guessing.
-            We start at 100 and subtract for each thing that does not match your business.
-          </p>
-        </div>
-
-        {/* Deduction ladder */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 items-start">
-          {/* Left rail: deductions */}
-          <div>
-            {STEPS.map((s, i) => (
-              <DeductionRow key={i} step={s} index={i} />
-            ))}
-          </div>
-
-          {/* Center connector — only on desktop */}
-          <div
-            className="hidden md:flex flex-col items-center justify-center"
-            style={{ height: '100%', minHeight: '380px', paddingTop: '40px' }}
-          >
             <div
               style={{
-                width: '1px',
-                flex: 1,
-                background: 'linear-gradient(to bottom, transparent, #f97316 50%, transparent)',
-                opacity: header.shown ? 1 : 0,
-                transition: 'opacity 0.8s ease-out 0.3s',
-              }}
-            />
-            <div
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#f97316',
-                margin: '8px 0',
-                boxShadow: '0 0 16px #f97316aa',
-                opacity: header.shown ? 1 : 0,
-                transition: 'opacity 0.8s ease-out 0.5s',
-              }}
-            />
-            <div
-              style={{
-                width: '1px',
-                flex: 1,
-                background: 'linear-gradient(to bottom, transparent, #f97316 50%, transparent)',
-                opacity: header.shown ? 1 : 0,
-                transition: 'opacity 0.8s ease-out 0.7s',
-              }}
-            />
-          </div>
-
-          {/* Right rail: caps + final score */}
-          <div>
-            <div
-              style={{
-                border: '1px solid #ffffff14',
-                borderRadius: '12px',
-                padding: '20px',
-                background: '#000000',
-                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                marginBottom: 18,
               }}
             >
               <p
                 style={{
-                  fontSize: '11px',
+                  fontSize: 11,
                   letterSpacing: '0.1em',
-                  color: '#f97316',
+                  color: '#888',
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  marginBottom: '12px',
                 }}
               >
-                Critical caps
+                Score range
               </p>
-              <p style={{ fontSize: '13px', color: '#888', marginBottom: '14px', lineHeight: 1.5 }}>
-                Even if the math says higher, criticals force a hard ceiling.
+              <p style={{ fontSize: 12, color: '#555', fontVariantNumeric: 'tabular-nums' }}>
+                {RANGE_MIN} – {RANGE_MAX}
               </p>
-              {CAPS.map((c, i) => (
+            </div>
+
+            {/* Bar */}
+            <div
+              style={{
+                position: 'relative',
+                height: 28,
+                borderRadius: 999,
+                overflow: 'hidden',
+                display: 'flex',
+                background: '#0a0a0a',
+                border: '1px solid #ffffff10',
+              }}
+            >
+              {ZONES.map((z, i) => {
+                const width = ((z.to - z.from + 1) / (SPAN + 1)) * 100;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      width: `${width}%`,
+                      background: z.color,
+                      opacity: 0.85,
+                    }}
+                    title={`${z.from}–${z.to} · ${z.label}`}
+                  />
+                );
+              })}
+
+              {/* Example score marker */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  bottom: -4,
+                  left: `${EXAMPLE_PCT}%`,
+                  width: 3,
+                  background: '#fff',
+                  borderRadius: 2,
+                  transform: 'translateX(-50%)',
+                  boxShadow: '0 0 0 4px rgba(0,0,0,0.6)',
+                }}
+              />
+            </div>
+
+            {/* Tick labels */}
+            <div
+              style={{
+                position: 'relative',
+                marginTop: 10,
+                height: 36,
+              }}
+            >
+              {ZONES.map((z, i) => {
+                const center = (z.from + z.to) / 2;
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      left: `${pct(center)}%`,
+                      transform: 'translateX(-50%)',
+                      textAlign: 'center',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    <div style={{ fontSize: 10, color: '#555', fontVariantNumeric: 'tabular-nums' }}>
+                      {z.from}–{z.to}
+                    </div>
+                    <div style={{ fontSize: 11, color: z.color, fontWeight: 500, marginTop: 2 }}>
+                      {z.label}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Example marker label */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `${EXAMPLE_PCT}%`,
+                  transform: 'translateX(-50%)',
+                  bottom: -28,
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    background: '#fff',
+                    color: '#000',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    borderRadius: 999,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  Example: {EXAMPLE_SCORE}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Two columns: rules + worked example */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-16">
+          {/* Rules */}
+          <div
+            style={{
+              border: '1px solid #ffffff14',
+              borderRadius: 16,
+              padding: 28,
+              background: '#000',
+            }}
+          >
+            <p
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.1em',
+                color: '#888',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                marginBottom: 6,
+              }}
+            >
+              Deduction rules
+            </p>
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>
+              Each finding is weighted by severity. Verified findings count fully, unverified ones
+              count at half weight.
+            </p>
+            <div>
+              {DEDUCTIONS.map((d, i) => (
                 <div
                   key={i}
                   style={{
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px 0',
+                    alignItems: 'flex-start',
+                    gap: 14,
+                    padding: '14px 0',
                     borderTop: i === 0 ? 'none' : '1px solid #ffffff0a',
                   }}
                 >
-                  <span style={{ fontSize: '13px', color: '#ffffff' }}>{c.count}</span>
-                  <span
+                  <div
                     style={{
-                      fontSize: '13px',
+                      minWidth: 44,
+                      fontSize: 16,
                       fontWeight: 600,
-                      color: '#ef4444',
+                      color: d.color,
                       fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1.1,
+                      paddingTop: 1,
                     }}
                   >
-                    {c.cap}
-                  </span>
+                    {d.delta}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: '#fff', marginBottom: 3 }}>
+                      {d.label}
+                    </p>
+                    <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>{d.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Final-score reveal */}
-            <div
-              ref={final.ref}
+          {/* Worked example */}
+          <div
+            style={{
+              border: '1px solid #ffffff14',
+              borderRadius: 16,
+              padding: 28,
+              background: '#000',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <p
               style={{
-                border: '1px solid #f9731633',
-                borderRadius: '12px',
-                padding: '28px 20px',
-                background: 'radial-gradient(120% 140% at 50% 0%, #f9731610, transparent 70%), #000000',
-                textAlign: 'center',
-                opacity: final.shown ? 1 : 0,
-                transform: final.shown ? 'scale(1)' : 'scale(0.96)',
-                transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+                fontSize: 11,
+                letterSpacing: '0.1em',
+                color: '#888',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                marginBottom: 6,
               }}
             >
-              <p
-                style={{
-                  fontSize: '11px',
-                  letterSpacing: '0.1em',
-                  color: '#888',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  marginBottom: '12px',
-                }}
-              >
-                Example final score
-              </p>
+              Worked example
+            </p>
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>
+              A real Deep Scan with 1 high, 2 medium, and 1 low finding.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontVariantNumeric: 'tabular-nums' }}>
+              <ExampleRow label="Starting score" value="100" valueColor="#22c55e" />
+              <ExampleRow label="1 × High" value="−5" valueColor="#f97316" />
+              <ExampleRow label="2 × Medium" value="−4" valueColor="#eab308" />
+              <ExampleRow label="1 × Low" value="−0.5" valueColor="#3b82f6" />
+              <div style={{ height: 1, background: '#ffffff14', margin: '8px 0' }} />
               <div
                 style={{
-                  fontSize: '64px',
-                  fontWeight: 700,
-                  color: '#f97316',
-                  lineHeight: 1,
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '-0.04em',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  paddingTop: 4,
                 }}
               >
-                <CountUp to={42} shown={final.shown} />
-                <span style={{ fontSize: '24px', color: '#555', fontWeight: 500 }}>/100</span>
+                <span style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>Final score</span>
+                <span
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    color: '#fff',
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  90.5
+                  <span style={{ fontSize: 14, color: '#555', fontWeight: 500 }}>/100</span>
+                </span>
               </div>
-              <p
-                style={{
-                  fontSize: '13px',
-                  color: '#888',
-                  marginTop: '14px',
-                  lineHeight: 1.5,
-                }}
-              >
-                100 − 25 (1 critical) − 15 (1 high) − 8 (1 medium) − 8 (1 false promise)
-                <br />
-                <span style={{ color: '#666' }}>= 44, then capped at 60 for the critical = </span>
-                <span style={{ color: '#f97316', fontWeight: 600 }}>44</span>
+              <p style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                Lands in the <span style={{ color: '#84cc16' }}>Strong</span> band. The team can ship,
+                but should fix the High before launch.
               </p>
             </div>
           </div>
@@ -325,35 +323,57 @@ export default function HowWeScore() {
         {/* Footer note */}
         <div
           style={{
-            marginTop: '40px',
-            padding: '20px',
-            border: '1px dashed #ffffff14',
-            borderRadius: '10px',
-            background: '#000000',
+            marginTop: 24,
+            padding: '18px 20px',
+            border: '1px solid #ffffff14',
+            borderRadius: 12,
+            background: '#000',
             display: 'flex',
-            gap: '14px',
+            gap: 12,
             alignItems: 'flex-start',
-            opacity: final.shown ? 1 : 0,
-            transition: 'opacity 0.6s ease-out 0.2s',
           }}
         >
           <div
             style={{
-              width: '6px',
-              height: '6px',
+              width: 6,
+              height: 6,
               borderRadius: '50%',
               background: '#22c55e',
-              marginTop: '8px',
+              marginTop: 7,
               flexShrink: 0,
             }}
           />
-          <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>
             <span style={{ color: '#fff', fontWeight: 600 }}>Same input, same score, every time.</span>{' '}
-            We publish the rules so anyone can re-check our math. If a finding turns out to be wrong, you can dispute it
-            and the score recalculates instantly.
+            We publish the rules so you can re-check our math. If a finding is wrong, mark it and the
+            score recalculates instantly.
           </p>
         </div>
       </div>
     </section>
+  );
+}
+
+function ExampleRow({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  valueColor: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '4px 0',
+      }}
+    >
+      <span style={{ fontSize: 13.5, color: '#aaa' }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: valueColor }}>{value}</span>
+    </div>
   );
 }
