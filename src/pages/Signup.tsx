@@ -68,7 +68,27 @@ export default function Signup() {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="btn-cyber-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
+            <label className="flex items-start gap-2 cursor-pointer select-none" style={{ color: '#aaaaaa', fontSize: 13, lineHeight: 1.5 }}>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                style={{ marginTop: 3, accentColor: '#f97316', width: 14, height: 14, cursor: 'pointer' }}
+                required
+              />
+              <span>
+                I agree to the{' '}
+                <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#f97316' }} className="hover:underline">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#f97316' }} className="hover:underline">
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+            <button type="submit" disabled={loading || !agreed} className="btn-cyber-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               {loading && <Loader2 size={16} className="animate-spin" />} Create account
             </button>
           </form>
