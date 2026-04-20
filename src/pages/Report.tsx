@@ -24,10 +24,10 @@ function scoreColor(score: number) {
 }
 
 function scoreLabelFor(score: number) {
-  if (score >= 95) return 'Excellent — launch ready';
-  if (score >= 89) return 'Strong — minor polish';
-  if (score >= 75) return 'Good — fix a few things';
-  if (score >= 65) return 'Needs work — solid base';
+  if (score >= 95) return 'Excellent, launch ready';
+  if (score >= 89) return 'Strong, minor polish';
+  if (score >= 75) return 'Good, fix a few things';
+  if (score >= 65) return 'Needs work, solid base';
   return 'Significant work needed';
 }
 
@@ -195,7 +195,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
       });
       if (error) throw error;
       setDisputeSent(true);
-      toast.success("Thanks — we'll review this finding.");
+      toast.success("Thanks, we'll review this finding.");
       setTimeout(() => { setDisputeOpen(false); setDisputeSent(false); setDisputeReason(''); }, 1500);
     } catch (e: any) {
       toast.error(e.message || 'Could not send dispute.');
@@ -222,7 +222,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span
-            title={confidence === 'unverified' ? 'We could not verify this directly — connect your backend for accurate scans.' : ''}
+            title={confidence === 'unverified' ? 'We could not verify this directly, connect your backend for accurate scans.' : ''}
             style={{
               fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
               color: confColor, fontWeight: 600, border: `1px solid ${confColor}33`,
@@ -358,7 +358,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
             Report wrong finding
           </button>
         ) : disputeSent ? (
-          <div style={{ fontSize: 12, color: '#22c55e' }}>Thanks — we'll review it.</div>
+          <div style={{ fontSize: 12, color: '#22c55e' }}>Thanks, we'll review it.</div>
         ) : (
           <div style={{ width: '100%' }}>
             <textarea
@@ -430,7 +430,7 @@ function LegalCard({ f }: { f: any }) {
   );
 }
 
-// Promises vs code — the killer find. Soft tone always.
+// Promises vs code, the killer find. Soft tone always.
 function PromiseRow({ p }: { p: any }) {
   const v = (p.verdict || 'not_found').toLowerCase();
   const palette =
@@ -593,7 +593,7 @@ export default function Report() {
       <DashboardNavbar />
 
       <div className="report-container" style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px', paddingTop: 96 }}>
-        {/* SECTION 1 — HEADER */}
+        {/* SECTION 1, HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link
             to="/dashboard"
@@ -619,7 +619,7 @@ export default function Report() {
           </span>
         </div>
 
-        {/* SECTION 2 — INTENT HERO + WARNING CHIPS */}
+        {/* SECTION 2, INTENT HERO + WARNING CHIPS */}
         <div style={{ padding: '40px 0 12px' }}>
           <IntentScoreCard score={score} label={label} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 20 }}>
@@ -656,7 +656,7 @@ export default function Report() {
           </div>
         </div>
 
-        {/* SECTION 3 — SUMMARY */}
+        {/* SECTION 3, SUMMARY */}
         {summary && (
           <div
             style={{
@@ -720,7 +720,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 4 — VERDICT */}
+        {/* SECTION 4, VERDICT */}
         {verdict && (
           <div
             style={{
@@ -739,7 +739,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 5 — INTENT GAPS */}
+        {/* SECTION 5, INTENT GAPS */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
           {gapsList.length === 0 ? (
@@ -760,13 +760,13 @@ export default function Report() {
           )}
         </div>
 
-        {/* SECTION 6 — PROMISES VS CODE */}
+        {/* SECTION 6, PROMISES VS CODE */}
         {(promisesList.length > 0 || falsePromisesList.length > 0) && (
           <div id="promises-section" style={{ marginBottom: 32 }}>
             <SectionLabel>Promises on your homepage vs your code</SectionLabel>
             <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: -8, marginBottom: 16 }}>
               We read what your homepage and README claim, then checked your code for proof. Items marked
-              "not found" may still exist — they were just not in the code we scanned.
+              "not found" may still exist, they were just not in the code we scanned.
             </p>
             {promisesVisible.map((p: any) => (
               <PromiseRow key={p.id} p={p} />
@@ -793,7 +793,7 @@ export default function Report() {
                     {promisesLocked} more {promisesLocked === 1 ? 'promise' : 'promises'} to verify
                   </div>
                   <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                    Pro shows the full claim-by-claim table — investor-ready diligence.
+                    Pro shows the full claim-by-claim table, investor-ready diligence.
                   </div>
                 </div>
                 <Link
@@ -808,7 +808,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 7 — SECURITY (sharp tone) */}
+        {/* SECTION 7, SECURITY (sharp tone) */}
         <div id="security-section" style={{ marginBottom: 32 }}>
           <SectionLabel>Security · these can hurt you in production</SectionLabel>
           {secList.length === 0 ? (
@@ -829,7 +829,7 @@ export default function Report() {
           )}
         </div>
 
-        {/* SECTION 8 — LEGAL (soft tone) */}
+        {/* SECTION 8, LEGAL (soft tone) */}
         {legalList.length > 0 && (
           <div id="legal-section" style={{ marginBottom: 32 }}>
             <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
@@ -837,7 +837,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 9 — WHAT WORKS (small, demoted) */}
+        {/* SECTION 9, WHAT WORKS (small, demoted) */}
         {whatWorksList.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <SectionLabel>What your app does right</SectionLabel>
@@ -861,7 +861,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 10 — QUICK SCAN BANNER */}
+        {/* SECTION 10, QUICK SCAN BANNER */}
         {isQuick && !isPro && (
           <div
             className="quick-scan-banner"
@@ -895,7 +895,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 11 — ACTIONS */}
+        {/* SECTION 11, ACTIONS */}
         <div
           className="report-actions"
           style={{
