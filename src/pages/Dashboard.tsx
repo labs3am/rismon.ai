@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import RisGuide from '@/components/RisGuide';
 import { UpgradeBanner } from '@/components/ui/upgrade-banner';
+import WelcomeGuide from '@/components/WelcomeGuide';
 
 interface App {
   id: string;
@@ -178,6 +179,8 @@ export default function Dashboard() {
       <div className="max-w-[1100px] mx-auto pt-24 pb-16" style={{ paddingLeft: 48, paddingRight: 48 }}>
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+
+        <WelcomeGuide />
 
         {((profile?.plan || 'free').toLowerCase() !== 'pro') && (
           <div className="mt-5">
