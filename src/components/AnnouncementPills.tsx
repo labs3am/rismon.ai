@@ -32,8 +32,8 @@ const PILLS: Pill[] = [
   },
   {
     id: 'rismon-supabase-live-v1',
-    buttonText: 'Connect Supabase',
-    description: 'Verified backend findings. Postgres, MySQL, Mongo in beta.',
+    buttonText: 'Supabase support',
+    description: 'Optional — connect your Supabase for verified backend findings.',
     href: '/blog/connect-your-supabase-for-deeper-accuracy',
     accent: '#3ECF8E',
     icon: <Database className="h-3 w-3" strokeWidth={2.4} />,
