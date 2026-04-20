@@ -13,17 +13,23 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password) return;
+    if (!agreed) {
+      toast.error('Please agree to the Terms and Privacy Policy to continue.');
+      return;
+    }
     setLoading(true);
     const { error } = await signUp(email, password, fullName);
     if (error) {
       toast.error(error.message || 'Signup failed');
     } else {
+      try { localStorage.setItem('rismon_show_welcome_guide', '1'); } catch {}
       navigate('/dashboard');
     }
     setLoading(false);
