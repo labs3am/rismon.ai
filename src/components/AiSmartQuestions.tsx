@@ -127,17 +127,16 @@ export default function AiSmartQuestions({
       {userCorrection && (
         <div
           style={{
-            background: 'rgba(249,115,22,0.05)',
-            border: '1px solid rgba(249,115,22,0.20)',
-            borderLeft: '3px solid #f97316',
+            background: 'rgba(99,102,241,0.06)',
+            border: '1px solid rgba(99,102,241,0.20)',
             borderRadius: 8,
             padding: 12,
             marginBottom: 20,
             fontSize: 13,
-            color: '#fb923c',
+            color: '#a5b4fc',
           }}
         >
-          <strong style={{ color: '#ffffff' }}>You told us:</strong> "{userCorrection}"
+          <strong style={{ color: '#c7d2fe' }}>You told us:</strong> "{userCorrection}"
         </div>
       )}
 

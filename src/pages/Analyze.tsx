@@ -699,10 +699,10 @@ export default function Analyze() {
             {/* Live status pill */}
             <div className="flex items-center justify-center gap-2 mb-6">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#f97316' }} />
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#f97316' }} />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
+                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
               </span>
-              <span className="text-[12px] font-medium tracking-wide" style={{ color: '#f97316', letterSpacing: '0.05em' }}>SCAN RUNNING</span>
+              <span className="text-[12px] font-medium tracking-wide" style={{ color: '#22c55e', letterSpacing: '0.05em' }}>SCAN RUNNING</span>
             </div>
 
             <h2 className="text-foreground text-[24px] font-semibold text-center">Your scan is still running</h2>
@@ -727,7 +727,7 @@ export default function Analyze() {
               <div className="mt-5 w-full rounded-full overflow-hidden" style={{ background: '#1a1a1a', height: 4 }}>
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${pct}%`, background: '#f97316', boxShadow: '0 0 12px rgba(249,115,22,0.5)', transition: 'width 1s linear' }}
+                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366f1,#818cf8)', transition: 'width 1s linear' }}
                 />
               </div>
             </div>
@@ -743,10 +743,10 @@ export default function Analyze() {
                   return (
                     <div key={s.label} className="flex items-center gap-3">
                       {done && (
-                        <CheckCircle size={16} style={{ color: '#f97316' }} />
+                        <CheckCircle size={16} style={{ color: '#22c55e' }} />
                       )}
                       {active && (
-                        <span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#f97316', borderTopColor: 'transparent' }} />
+                        <span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#818cf8', borderTopColor: 'transparent' }} />
                       )}
                       {pending && (
                         <span className="w-4 h-4 rounded-full" style={{ border: '1px solid #2a2a2a' }} />
@@ -911,10 +911,10 @@ export default function Analyze() {
           {activeTab === 'gaps' && (
             <div className="mt-6 space-y-4">
               {gaps.map((g: any) => {
-                const bc = g.severity === 'critical' ? '#ef4444' : g.severity === 'high' ? '#f97316' : g.severity === 'medium' ? '#f97316' : '#ffffff';
+                const bc = g.severity === 'critical' ? '#ef4444' : g.severity === 'high' ? '#f97316' : g.severity === 'medium' ? '#f59e0b' : '#6366f1';
                 const d = decisions[g.id];
                 return (
-                  <div key={g.id} className={`bg-card border border-border rounded-r-2xl p-6 ${d === 'ignore' ? 'opacity-50' : ''}`} style={{ borderLeft: `4px solid ${d === 'fix' ? '#f97316' : bc}` }}>
+                  <div key={g.id} className={`bg-card border border-border rounded-r-2xl p-6 ${d === 'ignore' ? 'opacity-50' : ''}`} style={{ borderLeft: `4px solid ${d === 'fix' ? '#6366f1' : bc}` }}>
                     <div className="flex items-center justify-between">
                       <p className="text-foreground font-bold text-[17px]">{g.title}</p>
                       <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: `${bc}20`, color: bc }}>{g.severity}</span>
