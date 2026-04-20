@@ -52,7 +52,7 @@ export default function AnnouncementPills() {
     const next: Record<string, boolean> = {};
     PILLS.forEach((p) => {
       try {
-        next[p.id] = localStorage.getItem(STORAGE_PREFIX + p.id) === '1';
+        next[p.id] = sessionStorage.getItem(STORAGE_PREFIX + p.id) === '1';
       } catch {
         next[p.id] = false;
       }
@@ -80,7 +80,7 @@ export default function AnnouncementPills() {
 
   const dismiss = (id: string) => {
     try {
-      localStorage.setItem(STORAGE_PREFIX + id, '1');
+      sessionStorage.setItem(STORAGE_PREFIX + id, '1');
     } catch {
       /* ignore */
     }
