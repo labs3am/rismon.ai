@@ -87,6 +87,49 @@ function CountUp({ to, shown, duration = 900 }: { to: number; shown: boolean; du
   return <>{n}</>;
 }
 
+function DeductionRow({ step: s, index: i }: { step: typeof STEPS[number]; index: number }) {
+  const item = useReveal<HTMLDivElement>(0.3);
+  return (
+    <div
+      ref={item.ref}
+      style={{
+        opacity: item.shown ? 1 : 0,
+        transform: item.shown ? 'translateX(0)' : 'translateX(-20px)',
+        transition: `opacity 0.5s ease-out ${i * 90}ms, transform 0.5s ease-out ${i * 90}ms`,
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '16px',
+        padding: '14px 16px',
+        marginBottom: '8px',
+        border: '1px solid #ffffff10',
+        borderRadius: '10px',
+        background: '#000000',
+      }}
+    >
+      <div
+        style={{
+          minWidth: '60px',
+          textAlign: 'center',
+          fontSize: '20px',
+          fontWeight: 700,
+          color: s.color,
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1.1,
+          paddingTop: '2px',
+        }}
+      >
+        {s.delta}
+      </div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
+          {s.op}
+        </p>
+        <p style={{ fontSize: '13px', color: '#888', lineHeight: 1.5 }}>{s.desc}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function HowWeScore() {
   const header = useReveal<HTMLDivElement>(0.15);
   const final = useReveal<HTMLDivElement>(0.4);
