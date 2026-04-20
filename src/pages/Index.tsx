@@ -21,7 +21,7 @@ import geminiLogo from '@/assets/logos/gemini.png';
 const faqs = [
   { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you what was built, what works, and what is broken, written for founders, not engineers. You also get copy-paste prompts to fix every issue." },
   { q: "Do I need to know how to code?", a: "No. Findings are written for founders, with a real-world example and a ready-to-use fix. If you can read this sentence, you can use Rismon.ai." },
-  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified, never guessed. When you connect your backend, we read your real database rules instead of guessing from frontend code." },
+  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified, never guessed. Connecting Supabase is optional — when you do, we read your real database rules instead of guessing from frontend code." },
   { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
   { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
   { q: "What does the free plan include?", a: "One app, three scans per week, the full founder-friendly report, and fix prompts. No credit card needed." },
