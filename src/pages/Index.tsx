@@ -19,9 +19,9 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you what was built, what works, and what is broken — written for founders, not engineers. You also get copy-paste prompts to fix every issue." },
+  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you what was built, what works, and what is broken, written for founders, not engineers. You also get copy-paste prompts to fix every issue." },
   { q: "Do I need to know how to code?", a: "No. Findings are written for founders, with a real-world example and a ready-to-use fix. If you can read this sentence, you can use Rismon.ai." },
-  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified — never guessed. When you connect your backend, we read your real database rules instead of guessing from frontend code." },
+  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified, never guessed. When you connect your backend, we read your real database rules instead of guessing from frontend code." },
   { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
   { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
   { q: "What does the free plan include?", a: "One app, three scans per week, the full founder-friendly report, and fix prompts. No credit card needed." },
@@ -37,7 +37,7 @@ const personas = [
   { title: "Small business owners", q: "You built a booking system. Can your customers see each other's personal details, or is their data protected?" },
   { title: "Ecommerce builders", q: "You built an online store. Can your customers see other people's orders and payments, or is each order private?" },
   { title: "Freelancers and agencies", q: "You build apps for clients. Can you verify your work is correct before delivery, or are you just guessing?" },
-  { title: "Healthcare professionals", q: "You built a patient system. Who can access your patients' private records — only doctors, or everyone?" },
+  { title: "Healthcare professionals", q: "You built a patient system. Who can access your patients' private records, only doctors, or everyone?" },
   { title: "Educators and creators", q: "You built a course platform. Can students access paid content without paying, or is it properly secured?" },
 ];
 
@@ -102,8 +102,8 @@ export default function Index() {
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
       <SEO
-        title="Rismon.ai — Know What Your AI Actually Built"
-        description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof — file, line, and snippet. Free scan. No code knowledge needed."
+        title="Rismon.ai, Know What Your AI Actually Built"
+        description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof, file, line, and snippet. Free scan. No code knowledge needed."
         canonicalPath="/"
       />
       <Navbar />
@@ -115,7 +115,7 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
-            Rismon reads your AI-built app and shows you what was built, what works, and what could go wrong. Every finding comes with proof — file, line, and code snippet. No code knowledge needed.
+            Rismon reads your AI-built app and shows you what was built, what works, and what could go wrong. Every finding comes with proof, file, line, and code snippet. No code knowledge needed.
           </p>
           <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span></p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
@@ -184,7 +184,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* HOW WE SCORE — animated diagram */}
+      {/* HOW WE SCORE, animated diagram */}
       <HowWeScore />
 
       {/* WHAT WE FIND */}

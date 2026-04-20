@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Logo from './Logo';
+import AnnouncementPills from './AnnouncementPills';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -106,6 +107,7 @@ export default function Navbar() {
           <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '12px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center', marginTop: 4 }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
       )}
+      <AnnouncementPills />
     </nav>
   );
 }

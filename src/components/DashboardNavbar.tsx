@@ -83,7 +83,7 @@ export default function DashboardNavbar() {
           <div className="hidden md:flex items-center gap-7">
             {navLink('/dashboard', 'Dashboard')}
             {navLink('/connect', 'Connect')}
-            {navLink('/pricing', 'Pricing')}
+            {navLink('/settings', 'Settings')}
           </div>
         </div>
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Github, Clock, Zap, AlertTriangle, Rocket } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import RisGuide from '@/components/RisGuide';
+import { UpgradeBanner } from '@/components/ui/upgrade-banner';
 
 interface App {
   id: string;
@@ -177,6 +178,18 @@ export default function Dashboard() {
       <div className="max-w-[1100px] mx-auto pt-24 pb-16" style={{ paddingLeft: 48, paddingRight: 48 }}>
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+
+        {((profile?.plan || 'free').toLowerCase() !== 'pro') && (
+          <div className="mt-5">
+            <UpgradeBanner
+              buttonText="Upgrade to Pro"
+              description="for unlimited Deep Scans and faster, deeper analysis."
+              accent="#f97316"
+              icon={<Rocket className="h-3 w-3" strokeWidth={2.4} />}
+              onClick={() => navigate('/pricing')}
+            />
+          </div>
+        )}
 
         {apps.length === 0 && (
           <div className="mt-4">

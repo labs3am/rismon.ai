@@ -20,7 +20,7 @@ export default function Pricing() {
   return (
     <>
       <SEO
-        title="Pricing — Rismon.ai | Free & Pro Plans"
+        title="Pricing, Rismon.ai | Free & Pro Plans"
         description="Rismon.ai pricing: Free plan with 3 scans per week, full reports, and fix prompts. Pro at $12/mo for unlimited scans, priority analysis, and early features."
         canonicalPath="/pricing"
       />

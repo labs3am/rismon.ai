@@ -8,7 +8,7 @@ import SEO from '@/components/SEO';
 /**
  * SampleReport mirrors the live Report page layout exactly so visitors
  * see what they'll actually get. Data below is hand-crafted to showcase:
- *  - The new Moderate scoring (87/100 — capped at 95 because no backend verified)
+ *  - The new Moderate scoring (87/100, capped at 95 because no backend verified)
  *  - Proof-backed findings (file_path + line_number + code_snippet)
  *  - Verified vs Unverified confidence labels
  *  - Promises-vs-code mismatches
@@ -119,7 +119,7 @@ const sample = {
       claim_source: 'homepage',
       verdict: 'not_found',
       evidence:
-        'We searched the codebase for OpenAI, Anthropic, Gemini, and "coach" — no nutrition-coaching logic was found in the scanned files.',
+        'We searched the codebase for OpenAI, Anthropic, Gemini, and "coach", no nutrition-coaching logic was found in the scanned files.',
       severity: 'medium',
     },
     {
@@ -136,14 +136,14 @@ const sample = {
       claim_source: 'homepage',
       verdict: 'found',
       evidence:
-        'src/pages/MealPlan.tsx and src/lib/shopping-list.ts implement this — confirmed.',
+        'src/pages/MealPlan.tsx and src/lib/shopping-list.ts implement this, confirmed.',
       severity: 'info',
     },
   ],
   what_works: [
     'Email + password authentication is wired correctly with Supabase auth and a working profiles table',
     'Stripe checkout session creation includes the correct success and cancel URLs',
-    'Recipe storage uses a normalized schema (recipes, ingredients, recipe_ingredients) — clean and scalable',
+    'Recipe storage uses a normalized schema (recipes, ingredients, recipe_ingredients), clean and scalable',
     'Mobile responsive layout adapts cleanly down to 360px width',
   ],
   homepage_signals: {
@@ -224,7 +224,7 @@ function IntentScoreCard({ score, label, capped }: { score: number; label: strin
             display: 'inline-block',
           }}
         >
-          Capped at 95 — connect your backend to unlock the full 100
+          Capped at 95, connect your backend to unlock the full 100
         </div>
       )}
     </div>
@@ -335,7 +335,7 @@ function FindingCard({ f }: { f: any }) {
         {f.what_we_found}
       </div>
 
-      {/* Proof badge — file_path + line + snippet. Our visual signature. */}
+      {/* Proof badge, file_path + line + snippet. Our visual signature. */}
       {f.file_path && (
         <div
           style={{
@@ -529,7 +529,7 @@ export default function SampleReport() {
   return (
     <div style={{ minHeight: '100vh', background: '#000000' }}>
       <SEO
-        title="Sample Report — See What Rismon Finds"
+        title="Sample Report, See What Rismon Finds"
         description="Real example Rismon report: intent score, proof-backed findings, promises-vs-code checks, and copy-paste fix prompts for an AI-built meal-planning app."
         canonicalPath="/sample-report"
       />
@@ -545,7 +545,7 @@ export default function SampleReport() {
             <Shield size={16} style={{ color: '#a5b4fc' }} className="shrink-0" />
             <p className="text-sm truncate">
               <span style={{ color: '#fff', fontWeight: 500 }}>Sample report</span>{' '}
-              <span style={{ color: '#888' }}>— this is what your report looks like after a scan</span>
+              <span style={{ color: '#888' }}>, this is what your report looks like after a scan</span>
             </p>
           </div>
           <Link
@@ -566,7 +566,7 @@ export default function SampleReport() {
       </div>
 
       <div className="report-container" style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px', paddingTop: 120 }}>
-        {/* SECTION 1 — HEADER */}
+        {/* SECTION 1, HEADER */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 13, color: '#888' }}>
             App scanned: <span style={{ color: '#fff', fontWeight: 500 }}>{appName}</span>{' '}
@@ -603,7 +603,7 @@ export default function SampleReport() {
           </span>
         </div>
 
-        {/* SECTION 2 — INTENT HERO + WARNING CHIPS */}
+        {/* SECTION 2, INTENT HERO + WARNING CHIPS */}
         <div style={{ padding: '40px 0 12px' }}>
           <IntentScoreCard score={score} label={scoreLabel} capped={!backendVerified} />
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 20 }}>
@@ -628,7 +628,7 @@ export default function SampleReport() {
           </div>
         </div>
 
-        {/* SECTION 3 — SUMMARY */}
+        {/* SECTION 3, SUMMARY */}
         <div
           style={{
             background: '#0a0a0a',
@@ -657,7 +657,7 @@ export default function SampleReport() {
           </div>
         </div>
 
-        {/* SECTION 4 — VERDICT */}
+        {/* SECTION 4, VERDICT */}
         <div
           style={{
             padding: 24,
@@ -674,35 +674,35 @@ export default function SampleReport() {
           {verdict}
         </div>
 
-        {/* SECTION 5 — INTENT GAPS */}
+        {/* SECTION 5, INTENT GAPS */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
           {gaps.map((g) => <FindingCard key={g.id} f={g} />)}
         </div>
 
-        {/* SECTION 6 — PROMISES VS CODE */}
+        {/* SECTION 6, PROMISES VS CODE */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>Promises on your homepage vs your code</SectionLabel>
           <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: -8, marginBottom: 16 }}>
             We read what your homepage and README claim, then checked your code for proof. Items marked
-            "not found" may still exist — they were just not in the code we scanned.
+            "not found" may still exist, they were just not in the code we scanned.
           </p>
           {landing_page_promises.map((p) => <PromiseRow key={p.id} p={p} />)}
         </div>
 
-        {/* SECTION 7 — SECURITY */}
+        {/* SECTION 7, SECURITY */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>Security · these can hurt you in production</SectionLabel>
           {security_issues.map((s) => <FindingCard key={s.id} f={s} />)}
         </div>
 
-        {/* SECTION 8 — LEGAL */}
+        {/* SECTION 8, LEGAL */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
           {legal_findings.map((f) => <LegalCard key={f.id} f={f} />)}
         </div>
 
-        {/* SECTION 9 — WHAT WORKS */}
+        {/* SECTION 9, WHAT WORKS */}
         <div style={{ marginBottom: 32 }}>
           <SectionLabel>What your app does right</SectionLabel>
           <div>
@@ -724,7 +724,7 @@ export default function SampleReport() {
           </div>
         </div>
 
-        {/* SECTION 10 — CTA */}
+        {/* SECTION 10, CTA */}
         <div
           style={{
             marginTop: 40,

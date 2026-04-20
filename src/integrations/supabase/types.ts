@@ -346,6 +346,48 @@ export type Database = {
         }
         Relationships: []
       }
+      report_reviews: {
+        Row: {
+          analysis_id: string
+          comment: string | null
+          created_at: string
+          finding_category: string | null
+          finding_id: string
+          finding_name: string | null
+          finding_severity: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          verdict: string
+        }
+        Insert: {
+          analysis_id: string
+          comment?: string | null
+          created_at?: string
+          finding_category?: string | null
+          finding_id: string
+          finding_name?: string | null
+          finding_severity?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          verdict: string
+        }
+        Update: {
+          analysis_id?: string
+          comment?: string | null
+          created_at?: string
+          finding_category?: string | null
+          finding_id?: string
+          finding_name?: string | null
+          finding_severity?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          verdict?: string
+        }
+        Relationships: []
+      }
       scan_limits: {
         Row: {
           id: string
