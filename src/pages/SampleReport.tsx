@@ -216,11 +216,11 @@ function IntentScoreCard({ score, label, capped }: { score: number; label: strin
           style={{
             marginTop: 18,
             padding: '8px 14px',
-            background: 'rgba(99,102,241,0.06)',
-            border: '1px solid rgba(99,102,241,0.25)',
+            background: 'rgba(249,115,22,0.06)',
+            border: '1px solid rgba(249,115,22,0.25)',
             borderRadius: 999,
             fontSize: 12,
-            color: '#a5b4fc',
+            color: '#fb923c',
             display: 'inline-block',
           }}
         >
@@ -246,8 +246,8 @@ function WarningChip({
     tone === 'sharp'
       ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
       : tone === 'soft'
-        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
-        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+        ? { border: '#f9731655', color: '#fb923c', bg: 'rgba(249,115,22,0.06)' }
+        : { border: '#ffffff20', color: '#a1a1aa', bg: 'rgba(255,255,255,0.03)' };
   return (
     <span
       style={{
@@ -460,10 +460,10 @@ function PromiseRow({ p }: { p: any }) {
   const v = (p.verdict || 'not_found').toLowerCase();
   const palette =
     v === 'found'
-      ? { color: '#22c55e', label: 'Found in code', bg: 'rgba(34,197,94,0.05)' }
+      ? { color: '#ffffff', label: 'Found in code', bg: 'rgba(255,255,255,0.03)' }
       : v === 'partial'
-        ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
-        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
+        ? { color: '#f97316', label: 'Partial', bg: 'rgba(249,115,22,0.05)' }
+        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.04)' };
   return (
     <div
       style={{
@@ -538,11 +538,11 @@ export default function SampleReport() {
       {/* Sample banner */}
       <div
         className="fixed top-16 left-0 right-0 z-[999]"
-        style={{ background: 'rgba(99,102,241,0.06)', borderBottom: '1px solid rgba(99,102,241,0.25)' }}
+        style={{ background: 'rgba(249,115,22,0.06)', borderBottom: '1px solid rgba(249,115,22,0.25)', backdropFilter: 'blur(8px)' }}
       >
         <div className="max-w-[800px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <Shield size={16} style={{ color: '#a5b4fc' }} className="shrink-0" />
+            <Shield size={16} style={{ color: '#f97316' }} className="shrink-0" />
             <p className="text-sm truncate">
               <span style={{ color: '#fff', fontWeight: 500 }}>Sample report</span>{' '}
               <span style={{ color: '#888' }}>— this is what your report looks like after a scan</span>

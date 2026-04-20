@@ -278,20 +278,20 @@ export default function Connect() {
         {step === 2 && (
           <div className="bg-card border border-border rounded-2xl p-8 mt-8">
             <h2 className="text-foreground text-lg font-semibold">Connect your GitHub</h2>
-            <div className="rounded-xl p-4 mt-4" style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)' }}>
-              <div className="flex items-center gap-2"><ShieldCheck size={20} className="text-primary" /><span className="text-foreground text-sm font-semibold">Read only. Always.</span></div>
+            <div className="rounded-xl p-4 mt-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderLeft: '3px solid #f97316' }}>
+              <div className="flex items-center gap-2"><ShieldCheck size={18} style={{ color: '#f97316' }} /><span className="text-foreground text-sm font-semibold">Read only. Always.</span></div>
               <div className="mt-3 space-y-1.5">
                 {['We connect to read your code only', 'We can never edit, delete, or change anything', 'Your code is analyzed and immediately discarded', 'Nothing is stored on our servers'].map((t, i) => (
-                  <div key={i} className="flex items-center gap-2"><CheckCircle size={13} className="text-success shrink-0" /><span className="text-muted-foreground text-[13px]">{t}</span></div>
+                  <div key={i} className="flex items-center gap-2"><CheckCircle size={13} style={{ color: '#f97316' }} className="shrink-0" /><span style={{ color: '#a1a1aa', fontSize: 13 }}>{t}</span></div>
                 ))}
               </div>
             </div>
             <p className="text-subtle text-xs mt-2">GitHub is for connecting your app only. It is not used for login.</p>
 
-            <div className="flex items-start gap-2.5 mt-4 p-3 rounded-lg" style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.12)' }}>
-              <ShieldCheck size={16} className="text-primary shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 mt-4 p-3 rounded-lg" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+              <ShieldCheck size={16} style={{ color: '#f97316' }} className="shrink-0 mt-0.5" />
               <p className="text-muted-foreground text-[13px] leading-relaxed">
-                Read-only access. Your code is never stored. Rismon.ai is <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">fully open source</a> — verify our claims yourself.
+                Read-only access. Your code is never stored. Rismon.ai is <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" style={{ color: '#f97316' }} className="hover:underline">fully open source</a> — verify our claims yourself.
               </p>
             </div>
 
