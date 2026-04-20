@@ -791,6 +791,7 @@ serve(async (req) => {
       monetization,
       scan_type,
       scan_session_id,
+      smart_questions,
     } = body;
     const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
