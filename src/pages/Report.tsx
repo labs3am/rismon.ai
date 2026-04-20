@@ -119,8 +119,8 @@ function WarningChip({
     tone === 'sharp'
       ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
       : tone === 'soft'
-        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
-        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+        ? { border: '#f9731655', color: '#fb923c', bg: 'rgba(249,115,22,0.06)' }
+        : { border: '#ffffff20', color: '#a1a1aa', bg: 'rgba(255,255,255,0.03)' };
   return (
     <button
       type="button"
@@ -157,7 +157,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
   const color = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
   const confidence = (f.confidence || 'verified').toLowerCase();
   const confColor =
-    confidence === 'verified' ? '#22c55e' : confidence === 'likely' ? '#f59e0b' : '#71717a';
+    confidence === 'verified' ? '#ffffff' : confidence === 'likely' ? '#f97316' : '#71717a';
   const confLabel =
     confidence === 'verified' ? 'Verified' : confidence === 'likely' ? 'Likely' : 'Unverified';
 
@@ -346,7 +346,7 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
             Report wrong finding
           </button>
         ) : disputeSent ? (
-          <div style={{ fontSize: 12, color: '#22c55e' }}>Thanks — we'll review it.</div>
+          <div style={{ fontSize: 12, color: '#f97316' }}>Thanks — we'll review it.</div>
         ) : (
           <div style={{ width: '100%' }}>
             <textarea
@@ -388,7 +388,7 @@ function LegalCard({ f }: { f: any }) {
       style={{
         background: '#0a0a0a',
         border: '1px solid #1a1a1a',
-        borderLeft: '3px solid #f59e0b',
+        borderLeft: '3px solid #f97316',
         borderRadius: 8,
         padding: 22,
         marginBottom: 12,
