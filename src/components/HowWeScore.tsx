@@ -70,7 +70,7 @@ export default function HowWeScore() {
         </p>
 
         {/* Score scale */}
-        <div className="mt-16" style={{ ...cardStyle, padding: '36px 32px 28px' }}>
+        <div className="mt-16 animate-fade-in" style={{ ...cardStyle, padding: '36px 32px 28px' }}>
           <div
             style={{
               display: 'flex',
@@ -119,8 +119,9 @@ export default function HowWeScore() {
               );
             })}
 
-            {/* Example marker */}
+            {/* Example marker — slides in from left on mount */}
             <div
+              className="hws-marker-line"
               style={{
                 position: 'absolute',
                 left: `${EXAMPLE_PCT}%`,
@@ -132,6 +133,7 @@ export default function HowWeScore() {
               }}
             />
             <div
+              className="hws-marker-label"
               style={{
                 position: 'absolute',
                 left: `${EXAMPLE_PCT}%`,
@@ -188,7 +190,7 @@ export default function HowWeScore() {
         {/* Two columns: rules + worked example */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
           {/* Rules */}
-          <div style={{ ...cardStyle, padding: 32 }}>
+          <div className="hws-card-in" style={{ ...cardStyle, padding: 32, animationDelay: '120ms' }}>
             <p style={{ ...labelStyle, marginBottom: 6 }}>Deduction rules</p>
             <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 24 }}>
               Each finding is weighted by severity. Verified findings count fully, unverified ones
@@ -242,7 +244,7 @@ export default function HowWeScore() {
           </div>
 
           {/* Worked example */}
-          <div style={{ ...cardStyle, padding: 32, display: 'flex', flexDirection: 'column' }}>
+          <div className="hws-card-in" style={{ ...cardStyle, padding: 32, display: 'flex', flexDirection: 'column', animationDelay: '220ms' }}>
             <p style={{ ...labelStyle, marginBottom: 6 }}>Worked example</p>
             <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 24 }}>
               A real Deep Scan with 1 high, 2 medium, and 1 low finding.
@@ -289,9 +291,11 @@ export default function HowWeScore() {
 
         {/* Footer note */}
         <div
+          className="hws-card-in"
           style={{
             marginTop: 24,
             padding: '20px 24px',
+            animationDelay: '320ms',
             ...cardStyle,
           }}
         >
@@ -301,6 +305,37 @@ export default function HowWeScore() {
             score recalculates instantly.
           </p>
         </div>
+
+        {/* Local keyframes for marker reveal + card stagger */}
+        <style>{`
+          .hws-marker-line {
+            animation: hwsLineGrow 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+            transform-origin: top center;
+          }
+          .hws-marker-label {
+            animation: hwsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) 500ms both;
+          }
+          .hws-card-in {
+            opacity: 0;
+            animation: hwsFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          }
+          @keyframes hwsLineGrow {
+            from { transform: translateX(-50%) scaleY(0); opacity: 0; }
+            to   { transform: translateX(-50%) scaleY(1); opacity: 1; }
+          }
+          @keyframes hwsFadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .hws-marker-line, .hws-marker-label, .hws-card-in {
+              animation: none !important;
+              opacity: 1 !important;
+              transform: translateX(-50%) !important;
+            }
+            .hws-card-in { transform: none !important; }
+          }
+        `}</style>
       </div>
     </section>
   );
