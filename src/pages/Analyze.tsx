@@ -74,6 +74,39 @@ export default function Analyze() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  // When the user switches tabs and comes back, re-sync stage from the DB.
+  // Without this, the loading screen can show a stale "reading" message even
+  // though the scan has progressed to analyzing/questions/complete server-side.
+  useEffect(() => {
+    if (!user || !appId) return;
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const savedId = localStorage.getItem('rismon_active_analysis');
+      if (!savedId) return;
+      const { data: existing } = await supabase
+        .from('analyses')
+        .select('id, status, code_understanding, smart_questions')
+        .eq('id', savedId)
+        .maybeSingle();
+      if (!existing) return;
+      if ((existing.status === 'review_pending' || existing.status === 'complete') && existing.id) {
+        navigate(`/report/${existing.id}`);
+        return;
+      }
+      if (existing.status === 'questions_ready' && existing.code_understanding) {
+        setCodeUnderstanding(existing.code_understanding);
+        setQuestions((existing.smart_questions as any[]) || []);
+        setStage('confirm');
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [user, appId, navigate]);
+
   // Tick elapsed timer while resuming a running scan
   useEffect(() => {
     if (!resumingSession || !resumeStartedAt) return;
@@ -293,10 +326,11 @@ export default function Analyze() {
             return 99;
           };
 
+          // Free plan: ~40% coverage — scan up to 40 prioritized frontend files.
           frontendFiles = candidate
             .map((f: any) => ({ ...f, _prio: priority(f.path) }))
             .sort((a: any, b: any) => a._prio - b._prio || a.path.localeCompare(b.path))
-            .slice(0, 20);
+            .slice(0, 40);
           edgeFiles = []; // free plan: no edge function scan
         } else {
           // TRY PRO / PRO: priority-sorted, capped at 40 files total to stay under edge timeout.

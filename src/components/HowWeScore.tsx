@@ -70,7 +70,7 @@ export default function HowWeScore() {
         </p>
 
         {/* Score scale */}
-        <div className="mt-16" style={{ ...cardStyle, padding: '36px 32px 28px' }}>
+        <div className="mt-16 animate-fade-in" style={{ ...cardStyle, padding: '36px 32px 28px' }}>
           <div
             style={{
               display: 'flex',
@@ -119,8 +119,9 @@ export default function HowWeScore() {
               );
             })}
 
-            {/* Example marker */}
+            {/* Example marker — slides in from left on mount */}
             <div
+              className="hws-marker-line"
               style={{
                 position: 'absolute',
                 left: `${EXAMPLE_PCT}%`,
@@ -132,6 +133,7 @@ export default function HowWeScore() {
               }}
             />
             <div
+              className="hws-marker-label"
               style={{
                 position: 'absolute',
                 left: `${EXAMPLE_PCT}%`,
