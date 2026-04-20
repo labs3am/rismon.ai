@@ -423,10 +423,10 @@ function PromiseRow({ p }: { p: any }) {
   const v = (p.verdict || 'not_found').toLowerCase();
   const palette =
     v === 'found'
-      ? { color: '#22c55e', label: 'Found in code', bg: 'rgba(34,197,94,0.05)' }
+      ? { color: '#ffffff', label: 'Found in code', bg: 'rgba(255,255,255,0.03)' }
       : v === 'partial'
-        ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
-        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
+        ? { color: '#f97316', label: 'Partial', bg: 'rgba(249,115,22,0.05)' }
+        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.04)' };
   return (
     <div
       style={{
@@ -561,11 +561,11 @@ export default function Report() {
   const launchStatus: string | undefined = analysis.launch_status;
   const nextStep: string | undefined = analysis.next_step;
   const launchColors: Record<string, { bg: string; text: string; label: string }> = {
-    ready:      { bg: 'rgba(34,197,94,0.1)',  text: '#22c55e', label: 'Ready to launch' },
-    almost:     { bg: 'rgba(99,102,241,0.1)', text: '#818cf8', label: 'Almost ready' },
-    needs_work: { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Needs work' },
-    not_ready:  { bg: 'rgba(249,115,22,0.1)', text: '#f97316', label: 'Not ready' },
-    critical:   { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Critical issues' },
+    ready:      { bg: 'rgba(255,255,255,0.06)', text: '#ffffff', label: 'Ready to launch' },
+    almost:     { bg: 'rgba(255,255,255,0.04)', text: '#a1a1aa', label: 'Almost ready' },
+    needs_work: { bg: 'rgba(249,115,22,0.08)',  text: '#f97316', label: 'Needs work' },
+    not_ready:  { bg: 'rgba(249,115,22,0.12)',  text: '#f97316', label: 'Not ready' },
+    critical:   { bg: 'rgba(239,68,68,0.1)',    text: '#ef4444', label: 'Critical issues' },
   };
   const launchStyle = launchStatus ? (launchColors[launchStatus] || null) : null;
 
@@ -690,8 +690,9 @@ export default function Report() {
         {nextStep && (
           <div
             style={{
-              background: 'rgba(99,102,241,0.06)',
-              border: '1px solid rgba(99,102,241,0.2)',
+              background: 'rgba(249,115,22,0.05)',
+              border: '1px solid rgba(249,115,22,0.18)',
+              borderLeft: '3px solid #f97316',
               borderRadius: 8,
               padding: '16px 20px',
               marginBottom: 24,
@@ -700,10 +701,10 @@ export default function Report() {
               gap: 12,
             }}
           >
-            <span style={{ color: '#6366f1', fontSize: 16, flexShrink: 0 }}>→</span>
+            <span style={{ color: '#f97316', fontSize: 16, flexShrink: 0, lineHeight: 1.4 }}>→</span>
             <div>
-              <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Your next step</div>
-              <div style={{ fontSize: 15, color: '#ffffff' }}>{nextStep}</div>
+              <div style={{ fontSize: 11, color: '#f97316', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Your next step</div>
+              <div style={{ fontSize: 15, color: '#ffffff', lineHeight: 1.5 }}>{nextStep}</div>
             </div>
           </div>
         )}
@@ -733,11 +734,12 @@ export default function Report() {
           {gapsList.length === 0 ? (
             <div
               style={{
-                background: 'rgba(34,197,94,0.06)',
-                border: '1px solid rgba(34,197,94,0.18)',
+                background: '#0a0a0a',
+                border: '1px solid #1a1a1a',
+                borderLeft: '3px solid #ffffff',
                 borderRadius: 8,
                 padding: '16px 20px',
-                color: '#86efac',
+                color: '#a1a1aa',
                 fontSize: 14,
               }}
             >
@@ -802,11 +804,12 @@ export default function Report() {
           {secList.length === 0 ? (
             <div
               style={{
-                background: 'rgba(34,197,94,0.06)',
-                border: '1px solid rgba(34,197,94,0.18)',
+                background: '#0a0a0a',
+                border: '1px solid #1a1a1a',
+                borderLeft: '3px solid #ffffff',
                 borderRadius: 8,
                 padding: '16px 20px',
-                color: '#86efac',
+                color: '#a1a1aa',
                 fontSize: 14,
               }}
             >
@@ -841,8 +844,8 @@ export default function Report() {
                     borderBottom: '1px solid #0f0f0f',
                   }}
                 >
-                  <Check size={14} style={{ color: '#22c55e', flexShrink: 0, marginTop: 4 }} />
-                  <span style={{ fontSize: 14, color: '#888888', lineHeight: 1.5 }}>{w}</span>
+                  <Check size={14} style={{ color: '#f97316', flexShrink: 0, marginTop: 4 }} />
+                  <span style={{ fontSize: 14, color: '#a1a1aa', lineHeight: 1.5 }}>{w}</span>
                 </div>
               ))}
             </div>
