@@ -521,7 +521,7 @@ export default function Analyze() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze', {
+      const { data: rawData, error } = await supabase.functions.invoke('analyze', {
         body: {
           action: 'analyze',
           app_id: appId,
