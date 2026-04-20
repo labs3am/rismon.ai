@@ -1154,28 +1154,32 @@ Technical reference (5 words max)
 Google search term to learn more
 Exact fix prompt for Lovable or Cursor
 
-SCORING:
+SCORING (recalibrated for fairness — most apps land 70-88):
 Start at 100.
 Deduct for each finding:
-Critical: -25 points
-High: -15 points
-Medium: -8 points
-Low: -2 points
-False promise: -8 points each (applied in addition to the above if the false promise is also flagged as a separate severity)
-Minimum score: 0. Maximum score: 100.
+Critical: -10 points
+High: -5 points
+Medium: -2 points
+Low: -0.5 points
+False promise: -2 points each (additive)
 
-CRITICAL SCORE CAPS — APPLY THESE AFTER ALL DEDUCTIONS:
-If 1 or more critical findings exist: score = min(score, 60)
-If 2 or more critical findings exist: score = min(score, 35)
-If 3 or more critical findings exist: score = min(score, 20)
-A score of 90 or above is IMPOSSIBLE if any critical finding exists. Enforce this strictly.
+HARD FLOOR: Minimum possible score is 55. Never return below 55. Even the worst app gets 55 — they at least built and shipped something.
+HARD CEILING for high scores (very hard to hit):
+- 95+ requires zero critical and zero high findings AND fewer than 3 medium findings
+- 90+ requires zero critical findings AND fewer than 2 high findings
+- A score of 100 is essentially impossible — reserve for nearly perfect tiny apps
+
+CRITICAL SCORE CAPS (softer than before — apps with bugs are still trustworthy products):
+If 1 or more critical findings exist: score = min(score, 85)
+If 2 or more critical findings exist: score = min(score, 78)
+If 3 or more critical findings exist: score = min(score, 70)
 
 LAUNCH READINESS:
-90-100: Ready to launch
-70-89: Almost ready
-50-69: Needs work
-30-49: Not ready
-0-29: Critical issues
+95-100: Excellent — launch ready
+89-94: Strong — minor polish only
+75-88: Good — fix a few things before launch
+65-74: Needs work — solid foundation, important issues to address
+55-64: Significant work needed — but a real app, not a failure
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
@@ -1380,7 +1384,7 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       // (Claude already applied them, but if we just injected new
       // criticals from the deterministic overlay we must re-apply.)
       // ----------------------------------------------------------
-      const sevDeduction: Record<string, number> = { critical: 25, high: 15, medium: 8, low: 2 };
+      const sevDeduction: Record<string, number> = { critical: 10, high: 5, medium: 2, low: 0.5 };
       const allFindings = [
         ...(Array.isArray(claudeResult.gaps) ? claudeResult.gaps : []),
         ...(Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : []),
@@ -1389,46 +1393,50 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       let criticalCount = 0;
       for (const f of allFindings) {
         const sev = (f?.severity || "medium").toLowerCase();
-        deduction += sevDeduction[sev] ?? 4;
+        deduction += sevDeduction[sev] ?? 1;
         if (sev === "critical") criticalCount += 1;
       }
-      let recomputed = Math.max(0, 100 - deduction);
-      // Hard caps copied from the prompt — these MUST hold even if
-      // Claude's own arithmetic was lenient.
-      if (criticalCount >= 3) recomputed = Math.min(recomputed, 20);
-      else if (criticalCount >= 2) recomputed = Math.min(recomputed, 35);
-      else if (criticalCount >= 1) recomputed = Math.min(recomputed, 60);
+      // HARD FLOOR at 55 — never return a 0 or anything terrifying.
+      // Apps that shipped deserve credit even if they have bugs.
+      let recomputed = Math.max(55, 100 - deduction);
+      // Softer caps: a buggy app is still a real product
+      if (criticalCount >= 3) recomputed = Math.min(recomputed, 70);
+      else if (criticalCount >= 2) recomputed = Math.min(recomputed, 78);
+      else if (criticalCount >= 1) recomputed = Math.min(recomputed, 85);
 
       // Only OVERRIDE the score if our deterministic overlay actually
       // changed things. If Claude's score was already lower than our
       // recompute, keep Claude's score (it knew about other context).
       const claudeScore = typeof claudeResult.intent_match_score === "number"
         ? claudeResult.intent_match_score : 100;
-      if (allDeterministic.length > 0 || recomputed < claudeScore) {
-        claudeResult.intent_match_score = Math.min(claudeScore, recomputed);
+      // Always enforce the floor of 55 even if Claude returned lower
+      const flooredClaudeScore = Math.max(55, claudeScore);
+      if (allDeterministic.length > 0 || recomputed < flooredClaudeScore) {
+        claudeResult.intent_match_score = Math.max(55, Math.min(flooredClaudeScore, recomputed));
         claudeResult.scoring_overlay = {
           deterministic_findings: allDeterministic.length,
           critical_count: criticalCount,
           original_claude_score: claudeScore,
           recomputed_score: claudeResult.intent_match_score,
         };
+      } else {
+        claudeResult.intent_match_score = flooredClaudeScore;
       }
 
       // Also lower the security_score field if we have new critical
       // security findings (the UI uses this for the security badge).
       if (detFromCode.length + detFromQuestions.filter((d) => d.category !== "business_logic").length > 0) {
-        const secCount = (claudeResult.security_issues || []).length;
         let secDed = 0;
         for (const f of (claudeResult.security_issues || [])) {
-          secDed += sevDeduction[(f?.severity || "medium").toLowerCase()] ?? 4;
+          secDed += sevDeduction[(f?.severity || "medium").toLowerCase()] ?? 1;
         }
-        let secRecomputed = Math.max(0, 100 - secDed);
-        if (criticalCount >= 3) secRecomputed = Math.min(secRecomputed, 20);
-        else if (criticalCount >= 2) secRecomputed = Math.min(secRecomputed, 35);
-        else if (criticalCount >= 1) secRecomputed = Math.min(secRecomputed, 60);
+        let secRecomputed = Math.max(55, 100 - secDed);
+        if (criticalCount >= 3) secRecomputed = Math.min(secRecomputed, 70);
+        else if (criticalCount >= 2) secRecomputed = Math.min(secRecomputed, 78);
+        else if (criticalCount >= 1) secRecomputed = Math.min(secRecomputed, 85);
         const currentSec = typeof claudeResult.security_score === "number"
-          ? claudeResult.security_score : 100;
-        claudeResult.security_score = Math.min(currentSec, secRecomputed);
+          ? Math.max(55, claudeResult.security_score) : 100;
+        claudeResult.security_score = Math.max(55, Math.min(currentSec, secRecomputed));
       }
 
       claudeResult.plan_at_scan = userPlan;

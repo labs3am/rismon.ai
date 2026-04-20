@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
+import FindingReviewPills from '@/components/FindingReviewPills';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,18 +17,18 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 function scoreColor(score: number) {
-  if (score >= 90) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
-  if (score >= 50) return '#f97316';
-  return '#ef4444';
+  if (score >= 89) return '#22c55e';
+  if (score >= 75) return '#84cc16';
+  if (score >= 65) return '#f59e0b';
+  return '#f97316';
 }
 
 function scoreLabelFor(score: number) {
-  if (score >= 90) return 'Launch ready';
-  if (score >= 70) return 'Almost ready';
-  if (score >= 50) return 'Needs work';
-  if (score >= 30) return 'Not ready';
-  return 'Critical issues';
+  if (score >= 95) return 'Excellent — launch ready';
+  if (score >= 89) return 'Strong — minor polish';
+  if (score >= 75) return 'Good — fix a few things';
+  if (score >= 65) return 'Needs work — solid base';
+  return 'Significant work needed';
 }
 
 function splitSummaryVerdict(text: string): { summary: string; verdict: string } {
@@ -332,6 +333,17 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
             </div>
           )}
         </div>
+      )}
+
+      {/* Per-finding review pills */}
+      {analysisId && (
+        <FindingReviewPills
+          analysisId={analysisId}
+          findingId={f.id || `idx-${idx}`}
+          findingName={title}
+          findingSeverity={sev}
+          findingCategory={f.category || 'general'}
+        />
       )}
 
       {/* Dispute footer */}
