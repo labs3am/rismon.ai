@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
+import FindingReviewPills from '@/components/FindingReviewPills';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -332,6 +333,17 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
             </div>
           )}
         </div>
+      )}
+
+      {/* Per-finding review pills */}
+      {analysisId && (
+        <FindingReviewPills
+          analysisId={analysisId}
+          findingId={f.id || `idx-${idx}`}
+          findingName={title}
+          findingSeverity={sev}
+          findingCategory={f.category || 'general'}
+        />
       )}
 
       {/* Dispute footer */}
