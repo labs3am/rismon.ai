@@ -179,6 +179,18 @@ export default function Dashboard() {
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
+        {((profile?.plan || 'free').toLowerCase() !== 'pro') && (
+          <div className="mt-5">
+            <UpgradeBanner
+              buttonText="Upgrade to Pro"
+              description="for unlimited Deep Scans and faster, deeper analysis."
+              accent="#f97316"
+              icon={<Rocket className="h-3 w-3" strokeWidth={2.4} />}
+              onClick={() => navigate('/pricing')}
+            />
+          </div>
+        )}
+
         {apps.length === 0 && (
           <div className="mt-4">
             <RisGuide pageKey="dashboard_empty" message={"You haven't analyzed anything yet.\nConnect your first app and find out if it does what you actually meant to build."} />
