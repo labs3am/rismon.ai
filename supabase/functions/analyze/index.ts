@@ -1154,28 +1154,32 @@ Technical reference (5 words max)
 Google search term to learn more
 Exact fix prompt for Lovable or Cursor
 
-SCORING:
+SCORING (recalibrated for fairness — most apps land 70-88):
 Start at 100.
 Deduct for each finding:
-Critical: -25 points
-High: -15 points
-Medium: -8 points
-Low: -2 points
-False promise: -8 points each (applied in addition to the above if the false promise is also flagged as a separate severity)
-Minimum score: 0. Maximum score: 100.
+Critical: -10 points
+High: -5 points
+Medium: -2 points
+Low: -0.5 points
+False promise: -2 points each (additive)
 
-CRITICAL SCORE CAPS — APPLY THESE AFTER ALL DEDUCTIONS:
-If 1 or more critical findings exist: score = min(score, 60)
-If 2 or more critical findings exist: score = min(score, 35)
-If 3 or more critical findings exist: score = min(score, 20)
-A score of 90 or above is IMPOSSIBLE if any critical finding exists. Enforce this strictly.
+HARD FLOOR: Minimum possible score is 55. Never return below 55. Even the worst app gets 55 — they at least built and shipped something.
+HARD CEILING for high scores (very hard to hit):
+- 95+ requires zero critical and zero high findings AND fewer than 3 medium findings
+- 90+ requires zero critical findings AND fewer than 2 high findings
+- A score of 100 is essentially impossible — reserve for nearly perfect tiny apps
+
+CRITICAL SCORE CAPS (softer than before — apps with bugs are still trustworthy products):
+If 1 or more critical findings exist: score = min(score, 85)
+If 2 or more critical findings exist: score = min(score, 78)
+If 3 or more critical findings exist: score = min(score, 70)
 
 LAUNCH READINESS:
-90-100: Ready to launch
-70-89: Almost ready
-50-69: Needs work
-30-49: Not ready
-0-29: Critical issues
+95-100: Excellent — launch ready
+89-94: Strong — minor polish only
+75-88: Good — fix a few things before launch
+65-74: Needs work — solid foundation, important issues to address
+55-64: Significant work needed — but a real app, not a failure
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
