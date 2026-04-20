@@ -1247,6 +1247,109 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         }
       }
 
+      // ----------------------------------------------------------
+      // DETERMINISTIC SECURITY OVERLAY (added 2026-04)
+      //
+      // The LLM keeps under-reporting obvious vulnerabilities (open
+      // admin routes, .select() with no user filter, hardcoded
+      // isPro=true, service role key in frontend). We scan the code
+      // bundle ourselves and inject any such finding as a "verified"
+      // critical with file_path + line_number + code_snippet — proof
+      // that bypasses every downstream filter.
+      //
+      // We also harvest evidence from the read_code stage's smart
+      // questions: those frequently quote the exact unsafe line.
+      // ----------------------------------------------------------
+      const detFromCode = runDeterministicSecurityScan(
+        codeBundle || "",
+        edgeFunctionBundle || "",
+      );
+      const detFromQuestions = harvestFindingsFromQuestions(smart_questions || []);
+      const allDeterministic = [...detFromCode, ...detFromQuestions];
+
+      // Map each deterministic finding into the legacy shape the UI uses,
+      // then merge with what Claude returned (deterministic wins on dedupe).
+      const mappedDet = allDeterministic.map((f, i) => mapFinding(f, i, "d"));
+      // mapFinding strips some of our extra fields; re-attach what the UI
+      // and scorer need (severity is already preserved, but confidence and
+      // source need to be re-applied since mapFinding doesn't know them).
+      for (let i = 0; i < mappedDet.length; i++) {
+        const original = allDeterministic[i];
+        Object.assign(mappedDet[i], {
+          confidence: original.confidence,
+          confidence_reason: original.confidence_reason,
+          file_path: original.file_path,
+          line_number: original.line_number,
+          code_snippet: original.code_snippet,
+          evidence: original.evidence,
+          category: original.category,
+          source: original.source,
+          severity: original.severity,
+        });
+      }
+
+      claudeResult.security_issues = mergeSecurityFindings(
+        mappedDet as any,
+        Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : [],
+      );
+
+      // ----------------------------------------------------------
+      // RE-SCORE — deterministic findings deduct heavily and the
+      // critical caps from the prompt are enforced server-side too.
+      // (Claude already applied them, but if we just injected new
+      // criticals from the deterministic overlay we must re-apply.)
+      // ----------------------------------------------------------
+      const sevDeduction: Record<string, number> = { critical: 25, high: 15, medium: 8, low: 2 };
+      const allFindings = [
+        ...(Array.isArray(claudeResult.gaps) ? claudeResult.gaps : []),
+        ...(Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : []),
+      ];
+      let deduction = 0;
+      let criticalCount = 0;
+      for (const f of allFindings) {
+        const sev = (f?.severity || "medium").toLowerCase();
+        deduction += sevDeduction[sev] ?? 4;
+        if (sev === "critical") criticalCount += 1;
+      }
+      let recomputed = Math.max(0, 100 - deduction);
+      // Hard caps copied from the prompt — these MUST hold even if
+      // Claude's own arithmetic was lenient.
+      if (criticalCount >= 3) recomputed = Math.min(recomputed, 20);
+      else if (criticalCount >= 2) recomputed = Math.min(recomputed, 35);
+      else if (criticalCount >= 1) recomputed = Math.min(recomputed, 60);
+
+      // Only OVERRIDE the score if our deterministic overlay actually
+      // changed things. If Claude's score was already lower than our
+      // recompute, keep Claude's score (it knew about other context).
+      const claudeScore = typeof claudeResult.intent_match_score === "number"
+        ? claudeResult.intent_match_score : 100;
+      if (allDeterministic.length > 0 || recomputed < claudeScore) {
+        claudeResult.intent_match_score = Math.min(claudeScore, recomputed);
+        claudeResult.scoring_overlay = {
+          deterministic_findings: allDeterministic.length,
+          critical_count: criticalCount,
+          original_claude_score: claudeScore,
+          recomputed_score: claudeResult.intent_match_score,
+        };
+      }
+
+      // Also lower the security_score field if we have new critical
+      // security findings (the UI uses this for the security badge).
+      if (detFromCode.length + detFromQuestions.filter((d) => d.category !== "business_logic").length > 0) {
+        const secCount = (claudeResult.security_issues || []).length;
+        let secDed = 0;
+        for (const f of (claudeResult.security_issues || [])) {
+          secDed += sevDeduction[(f?.severity || "medium").toLowerCase()] ?? 4;
+        }
+        let secRecomputed = Math.max(0, 100 - secDed);
+        if (criticalCount >= 3) secRecomputed = Math.min(secRecomputed, 20);
+        else if (criticalCount >= 2) secRecomputed = Math.min(secRecomputed, 35);
+        else if (criticalCount >= 1) secRecomputed = Math.min(secRecomputed, 60);
+        const currentSec = typeof claudeResult.security_score === "number"
+          ? claudeResult.security_score : 100;
+        claudeResult.security_score = Math.min(currentSec, secRecomputed);
+      }
+
       claudeResult.plan_at_scan = userPlan;
       claudeResult.scan_type = scan_type || (userPlan === "free" ? "quick" : "deep");
       claudeResult.edge_functions_scanned = limits.edgeFunctionScan;
