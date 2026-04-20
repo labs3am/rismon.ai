@@ -17,6 +17,7 @@ type Pill = {
   href: string;
   accent: string;
   icon: React.ReactNode;
+  cta?: string;
 };
 
 const PILLS: Pill[] = [
@@ -27,6 +28,7 @@ const PILLS: Pill[] = [
     href: '/blog/claude-is-now-in-rismon',
     accent: '#f97316',
     icon: <Sparkles className="h-3 w-3" strokeWidth={2.4} />,
+    cta: 'Read more',
   },
   {
     id: 'rismon-supabase-live-v1',
@@ -35,6 +37,7 @@ const PILLS: Pill[] = [
     href: '/blog/connect-your-supabase-for-deeper-accuracy',
     accent: '#3ECF8E',
     icon: <Database className="h-3 w-3" strokeWidth={2.4} />,
+    cta: 'Learn more',
   },
 ];
 
@@ -95,31 +98,61 @@ export default function AnnouncementPills() {
     <AnimatePresence>
       {!autoHidden && (
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
           style={{
             background: '#000',
             borderBottom: '1px solid #ffffff10',
             padding: '8px 16px',
+            overflow: 'hidden',
           }}
         >
           <div
             className="mx-auto flex flex-col gap-1.5"
             style={{ maxWidth: 1200 }}
           >
-            {visible.map((p) => (
-              <UpgradeBanner
-                key={p.id}
-                buttonText={p.buttonText}
-                description={p.description}
-                accent={p.accent}
-                icon={p.icon}
-                onClick={() => navigate(p.href)}
-                onClose={() => dismiss(p.id)}
-              />
-            ))}
+            <AnimatePresence initial={true}>
+              {visible.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, x: -32 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24, transition: { duration: 0.2 } }}
+                  transition={{
+                    duration: 0.45,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: 0.08 + i * 0.12,
+                  }}
+                >
+                  <UpgradeBanner
+                    buttonText={p.buttonText}
+                    description={
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>{p.description}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(p.href);
+                          }}
+                          className="inline-flex items-center gap-0.5 font-medium underline-offset-2 hover:underline transition-colors"
+                          style={{ color: '#e5e5e5' }}
+                        >
+                          {p.cta ?? 'Read more'}
+                          <span aria-hidden style={{ marginLeft: 2 }}>→</span>
+                        </button>
+                      </span>
+                    }
+                    accent={p.accent}
+                    icon={p.icon}
+                    onClick={() => navigate(p.href)}
+                    onClose={() => dismiss(p.id)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </motion.div>
       )}
