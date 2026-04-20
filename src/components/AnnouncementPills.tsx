@@ -1,56 +1,52 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { X, Sparkles, Database } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Sparkles, Database } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { UpgradeBanner } from './ui/upgrade-banner';
 
 /**
- * Slim, dismissible announcement pills shown directly under the navbar.
- * Lovable-style: no popups, no dimming. Two stacked mini-pills.
- * Dismissed state is per-pill in localStorage so each can be closed independently.
+ * Slim announcement banners shown directly under the navbar.
+ * Auto-hide after 8s OR when the user scrolls past 80px.
+ * Each pill remembers per-session dismissal in localStorage.
  */
 
 type Pill = {
   id: string;
-  icon: React.ReactNode;
-  text: React.ReactNode;
+  buttonText: string;
+  description: React.ReactNode;
   href: string;
-  cta: string;
   accent: string;
+  icon: React.ReactNode;
 };
 
 const PILLS: Pill[] = [
   {
     id: 'rismon-claude-live-v1',
-    icon: <Sparkles size={13} strokeWidth={2.2} />,
-    text: (
-      <>
-        <strong style={{ color: '#fff', fontWeight: 600 }}>Claude is here.</strong>{' '}
-        Two AI models now verify every Deep Scan finding.
-      </>
-    ),
+    buttonText: 'Claude is here',
+    description: 'Two AI models now verify every Deep Scan finding.',
     href: '/blog/claude-is-now-in-rismon',
-    cta: 'Read the post',
     accent: '#f97316',
+    icon: <Sparkles className="h-3 w-3" strokeWidth={2.4} />,
   },
   {
     id: 'rismon-supabase-live-v1',
-    icon: <Database size={13} strokeWidth={2.2} />,
-    text: (
-      <>
-        <strong style={{ color: '#fff', fontWeight: 600 }}>Connect your Supabase</strong>{' '}
-        for verified backend findings. Postgres, MySQL, Mongo in beta.
-      </>
-    ),
+    buttonText: 'Connect Supabase',
+    description: 'Verified backend findings. Postgres, MySQL, Mongo in beta.',
     href: '/blog/connect-your-supabase-for-deeper-accuracy',
-    cta: 'See how',
     accent: '#3ECF8E',
+    icon: <Database className="h-3 w-3" strokeWidth={2.4} />,
   },
 ];
 
 const STORAGE_PREFIX = 'rismon.dismiss.';
+const AUTO_HIDE_MS = 8000;
+const SCROLL_HIDE_PX = 80;
 
 export default function AnnouncementPills() {
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
+  const [autoHidden, setAutoHidden] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const next: Record<string, boolean> = {};
@@ -65,127 +61,68 @@ export default function AnnouncementPills() {
     setMounted(true);
   }, []);
 
+  // Auto-hide after timeout
+  useEffect(() => {
+    if (!mounted) return;
+    const t = window.setTimeout(() => setAutoHidden(true), AUTO_HIDE_MS);
+    return () => window.clearTimeout(t);
+  }, [mounted]);
+
+  // Hide on scroll
+  useEffect(() => {
+    if (!mounted) return;
+    const onScroll = () => {
+      if (window.scrollY > SCROLL_HIDE_PX) setAutoHidden(true);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [mounted]);
+
   const dismiss = (id: string) => {
     try {
       localStorage.setItem(STORAGE_PREFIX + id, '1');
     } catch {
-      /* ignore quota errors */
+      /* ignore */
     }
     setHidden((h) => ({ ...h, [id]: true }));
   };
 
   if (!mounted) return null;
-
   const visible = PILLS.filter((p) => !hidden[p.id]);
   if (visible.length === 0) return null;
 
   return (
-    <div
-      style={{
-        background: '#000',
-        borderBottom: '1px solid #ffffff10',
-        padding: '8px 16px',
-      }}
-    >
-      <div
-        className="mx-auto"
-        style={{
-          maxWidth: 1200,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-        }}
-      >
-        {visible.map((p) => (
+    <AnimatePresence>
+      {!autoHidden && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          style={{
+            background: '#000',
+            borderBottom: '1px solid #ffffff10',
+            padding: '8px 16px',
+          }}
+        >
           <div
-            key={p.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              padding: '7px 14px',
-              borderRadius: 999,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              fontSize: 12.5,
-              color: '#a3a3a3',
-              animation: 'fade-in 0.25s ease-out',
-            }}
+            className="mx-auto flex flex-col gap-1.5"
+            style={{ maxWidth: 1200 }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 20,
-                  height: 20,
-                  borderRadius: 999,
-                  background: `${p.accent}1a`,
-                  color: p.accent,
-                  flexShrink: 0,
-                }}
-              >
-                {p.icon}
-              </span>
-              <span
-                style={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  letterSpacing: '-0.005em',
-                }}
-              >
-                {p.text}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <Link
-                to={p.href}
-                style={{
-                  fontSize: 12,
-                  color: '#fff',
-                  fontWeight: 500,
-                  padding: '3px 10px',
-                  borderRadius: 999,
-                  background: 'rgba(255,255,255,0.05)',
-                  whiteSpace: 'nowrap',
-                  transition: 'background 0.15s ease',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.1)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-              >
-                {p.cta}
-              </Link>
-              <button
-                onClick={() => dismiss(p.id)}
-                aria-label="Dismiss announcement"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#666',
-                  padding: 4,
-                  borderRadius: 999,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  transition: 'color 0.15s ease, background 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#fff';
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#666';
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <X size={13} />
-              </button>
-            </div>
+            {visible.map((p) => (
+              <UpgradeBanner
+                key={p.id}
+                buttonText={p.buttonText}
+                description={p.description}
+                accent={p.accent}
+                icon={p.icon}
+                onClick={() => navigate(p.href)}
+                onClose={() => dismiss(p.id)}
+              />
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
