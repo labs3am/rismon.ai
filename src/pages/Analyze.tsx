@@ -542,7 +542,7 @@ export default function Analyze() {
         }
       });
       // Recover body from non-2xx responses so server error codes reach the user.
-      let payload: any = data;
+      let payload: any = rawData;
       if (error && (error as any)?.context?.body) {
         try {
           const ctxBody = (error as any).context.body;
