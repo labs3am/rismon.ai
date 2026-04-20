@@ -276,14 +276,45 @@ function runDeterministicSecurityScan(
   }
 
   // ---------- D4: Service role key referenced in frontend ----------
+  // FIX (false-positive guard): only fire when service_role appears in
+  // a real key/env/import context — not in user-facing warnings, JSX
+  // strings, validation regexes, or detector source code that just
+  // names the pattern. Apps like Connect.tsx legitimately mention
+  // "service_role" inside a UI string telling the user NOT to paste
+  // it; that is the opposite of a vulnerability.
   for (const file of frontendFiles) {
     // Frontend = anything NOT in supabase/functions/
     if (/^supabase\/functions\//.test(file.path)) continue;
     for (let i = 0; i < file.lines.length; i++) {
       const L = file.lines[i];
       if (!/service[_-]?role/i.test(L)) continue;
-      // Ignore comments that just describe what service role IS
-      if (/^\s*(\/\/|\*|#)/.test(L) && !/key|=|import|require/.test(L.toLowerCase())) continue;
+
+      // Skip pure comments — explanatory only.
+      if (/^\s*(\/\/|\*|#)/.test(L)) continue;
+
+      // Skip lines that look like UI text / validation guards rather
+      // than real key usage. These are the actual false-positive
+      // patterns we hit on Connect.tsx and similar:
+      //   - .includes('service_role')      → user-input rejection guard
+      //   - "...service_role..."            → JSX or toast message
+      //   - /service_role/                  → regex used to redact
+      //   - service_role[^\s"']*            → redaction pattern
+      const lower = L.toLowerCase();
+      const isGuard = /\.(includes|indexof|match|test|search|replace|replaceall)\s*\(\s*['"`\/][^'"`)]*service[_-]?role/i.test(L);
+      const isRegexLiteral = /\/[^\/\n]*service[_-]?role[^\/\n]*\//i.test(L);
+      const isMarketingString = /service[_-]?role/i.test(L) && /(not\s+service[_-]?role|reject\s+service[_-]?role|never\s+paste|do\s+not\s+(use|paste)|warning|anon\s*·?\s*public)/i.test(lower);
+      if (isGuard || isRegexLiteral || isMarketingString) continue;
+
+      // Require a real key/env/import context. Without one, a bare
+      // mention of the words "service role" is not evidence.
+      const isAssignmentLike =
+        /(=|:)\s*['"`]ey[A-Za-z0-9_\-]{20,}/i.test(L) ||                 // hardcoded JWT
+        /(process\.env|import\.meta\.env|Deno\.env\.get|getenv)\s*[\.\(\[]\s*['"`]?[A-Z0-9_]*service[_-]?role/i.test(L) || // env lookup
+        /(createClient|createServerClient)\s*\([^)]*service[_-]?role/i.test(L) || // direct client init
+        /(import|require)\s*[^;]*service[_-]?role/i.test(L) ||           // import
+        /SUPABASE_SERVICE_ROLE_KEY/.test(L);                              // canonical name on a real code line
+      if (!isAssignmentLike) continue;
+
       push({
         id: `det-srk-${findings.length + 1}`,
         severity: "critical",
@@ -307,17 +338,58 @@ function runDeterministicSecurityScan(
   }
 
   // ---------- D5: Author-marked vulnerability comments ----------
+  // FIX (false-positive guard): the previous version flagged any
+  // comment that contained the LITERAL strings "no auth check",
+  // "data leak", etc. — including this analyzer's own documentation
+  // and regex labels. We now:
+  //   (1) Skip the analyzer's own file entirely — it talks about these
+  //       patterns by name on every other line.
+  //   (2) Require the comment to express AUTHOR INTENT (TODO/FIXME/
+  //       HACK/INTENTIONAL/known-bad) — not a neutral mention of the
+  //       phrase. Documentation, schema files, prompt strings, and
+  //       regex-pattern arrays do not count.
+  //   (3) Require a non-comment code line within 5 lines after the
+  //       comment. A comment alone with no real code under it cannot
+  //       be a live vulnerability.
   const authorMarkedPatterns = [
-    { rx: /intentional\s+issue|intentional\s+vulnerab|intentional\s+bug/i, label: "intentional issue" },
-    { rx: /\b(no auth check|no auth|missing auth|todo:?\s*add auth|fixme:?\s*auth)\b/i, label: "no auth check" },
-    { rx: /\b(data leak|leak data|leaks user data|unfiltered query)\b/i, label: "data leak" },
-    { rx: /\b(insecure on purpose|skip auth|bypass auth|disable rls|rls off)\b/i, label: "auth bypass" },
+    { rx: /intentional\s+(issue|vulnerab|bug)/i, label: "intentional issue" },
+    { rx: /\b(todo|fixme|hack|xxx)\b[^\n]{0,40}\b(add\s+auth|missing\s+auth|no\s+auth\s+check|auth\s+bypass)\b/i, label: "no auth check" },
+    { rx: /\b(todo|fixme|hack|xxx)\b[^\n]{0,40}\b(unfiltered\s+query|missing\s+user\s+filter|data\s+leak)\b/i, label: "data leak" },
+    { rx: /\b(insecure on purpose|skip auth|bypass auth|disable rls|rls off|leaving open)\b/i, label: "auth bypass" },
   ];
+
+  // Files we never self-scan with this detector — they document
+  // these phrases legitimately.
+  const isSelfDocFile = (p: string) =>
+    /supabase\/functions\/analyze\//i.test(p) ||
+    /\.md$/i.test(p) ||
+    /\/(prompts?|fixtures?|__samples__|examples?|docs?)\//i.test(p) ||
+    /\.test\.|\.spec\.|__tests__/.test(p);
+
   for (const file of [...frontendFiles, ...edgeFiles]) {
+    if (isSelfDocFile(file.path)) continue;
     for (let i = 0; i < file.lines.length; i++) {
       const L = file.lines[i];
-      // Only consider comments
-      if (!/\/\/|\/\*|\*\s|#\s/.test(L)) continue;
+      // Only consider real comment lines (not strings, not JSX text).
+      const isCommentLine = /^\s*(\/\/|\/\*|\*\s|\*\/|#\s)/.test(L);
+      if (!isCommentLine) continue;
+
+      // Skip lines that are obviously cataloguing patterns rather
+      // than warning about real code: "label:", "rx:", "pattern:",
+      // "matches", "detect", "regex".
+      if (/\b(label|pattern|patterns|rx|regex|matches?|detect(s|or)?|example)\s*[:=]/i.test(L)) continue;
+
+      // Require a real non-comment code line within the next 5 lines.
+      let hasNearbyCode = false;
+      for (let k = i + 1; k <= Math.min(i + 5, file.lines.length - 1); k++) {
+        const NL = file.lines[k];
+        if (!NL || NL.trim() === "") continue;
+        if (/^\s*(\/\/|\/\*|\*\s|\*\/|#\s)/.test(NL)) continue;
+        hasNearbyCode = true;
+        break;
+      }
+      if (!hasNearbyCode) continue;
+
       for (const p of authorMarkedPatterns) {
         if (!p.rx.test(L)) continue;
         push({
@@ -332,7 +404,7 @@ function runDeterministicSecurityScan(
           technical_reference: "author-marked-vulnerability",
           google_query: "react app intentional vulnerability fix",
           confidence: "verified",
-          confidence_reason: "Direct read from the file: the author wrote a comment flagging this code as unsafe.",
+          confidence_reason: "Direct read from the file: the author wrote a TODO/FIXME/INTENTIONAL comment flagging the code below it as unsafe, and there is real code on the lines after the comment.",
           file_path: file.path,
           line_number: i + 1,
           code_snippet: snippet(L),
