@@ -16,18 +16,18 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 function scoreColor(score: number) {
-  if (score >= 90) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
-  if (score >= 50) return '#f97316';
-  return '#ef4444';
+  if (score >= 89) return '#22c55e';
+  if (score >= 75) return '#84cc16';
+  if (score >= 65) return '#f59e0b';
+  return '#f97316';
 }
 
 function scoreLabelFor(score: number) {
-  if (score >= 90) return 'Launch ready';
-  if (score >= 70) return 'Almost ready';
-  if (score >= 50) return 'Needs work';
-  if (score >= 30) return 'Not ready';
-  return 'Critical issues';
+  if (score >= 95) return 'Excellent — launch ready';
+  if (score >= 89) return 'Strong — minor polish';
+  if (score >= 75) return 'Good — fix a few things';
+  if (score >= 65) return 'Needs work — solid base';
+  return 'Significant work needed';
 }
 
 function splitSummaryVerdict(text: string): { summary: string; verdict: string } {
