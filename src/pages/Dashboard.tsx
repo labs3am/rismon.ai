@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Github, Clock, Zap, AlertTriangle, Rocket } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import RisGuide from '@/components/RisGuide';
+import { UpgradeBanner } from '@/components/ui/upgrade-banner';
 
 interface App {
   id: string;
