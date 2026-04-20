@@ -23,8 +23,7 @@ export default function Logo({ to = '/', size = 'md', className = '' }: Props) {
         alignItems: 'baseline',
       }}
     >
-      Rismon ai
-      <span style={{ color: '#f97316', marginLeft: 1 }}>.</span>
+      Rismon<span style={{ color: '#f97316' }}>.</span>ai
     </span>
   );
 
