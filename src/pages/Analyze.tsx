@@ -541,7 +541,32 @@ export default function Analyze() {
           smart_questions: questions,
         }
       });
-      if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
+      // Recover body from non-2xx responses so server error codes reach the user.
+      let payload: any = data;
+      if (error && (error as any)?.context?.body) {
+        try {
+          const ctxBody = (error as any).context.body;
+          const text = typeof ctxBody === 'string' ? ctxBody : await new Response(ctxBody).text();
+          payload = JSON.parse(text);
+        } catch { /* ignore */ }
+      }
+      if (!payload) {
+        toast.error((error as any)?.message || 'Analysis failed. Please try again.');
+        analysisStarted.current = false;
+        return;
+      }
+      if (payload.code && ['WEEKLY_LIMIT','MONTHLY_LIMIT','DUPLICATE_SCAN','SCAN_IN_PROGRESS','REPO_TOO_LARGE','RATE_LIMITED','CREDITS_EXHAUSTED'].includes(payload.code)) {
+        toast.error(payload.error || 'Scan blocked.');
+        analysisStarted.current = false;
+        return;
+      }
+      if (payload.error) {
+        toast.error(payload.error);
+        analysisStarted.current = false;
+        return;
+      }
+      // Use recovered payload as the result data from here on.
+      const data: any = payload;
 
       const durationSeconds = scanStartedAtRef.current
         ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)
