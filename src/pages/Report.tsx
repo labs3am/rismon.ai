@@ -555,7 +555,19 @@ export default function Report() {
   const whatWorksList = Array.isArray(analysis.what_works) ? analysis.what_works : [];
   const legalList = Array.isArray(analysis.legal_findings) ? analysis.legal_findings : [];
   const promisesList = Array.isArray(analysis.landing_page_promises) ? analysis.landing_page_promises : [];
+  const falsePromisesList = Array.isArray(analysis.false_promises) ? analysis.false_promises : [];
   const homepageSignals = analysis.homepage_signals || null;
+  const grade: string | undefined = analysis.grade;
+  const launchStatus: string | undefined = analysis.launch_status;
+  const nextStep: string | undefined = analysis.next_step;
+  const launchColors: Record<string, { bg: string; text: string; label: string }> = {
+    ready:      { bg: 'rgba(34,197,94,0.1)',  text: '#22c55e', label: 'Ready to launch' },
+    almost:     { bg: 'rgba(99,102,241,0.1)', text: '#818cf8', label: 'Almost ready' },
+    needs_work: { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', label: 'Needs work' },
+    not_ready:  { bg: 'rgba(249,115,22,0.1)', text: '#f97316', label: 'Not ready' },
+    critical:   { bg: 'rgba(239,68,68,0.1)',  text: '#ef4444', label: 'Critical issues' },
+  };
+  const launchStyle = launchStatus ? (launchColors[launchStatus] || null) : null;
 
   const { summary, verdict } = splitSummaryVerdict(analysis.summary || '');
   const label = analysis.score_label || scoreLabelFor(score);
@@ -613,14 +625,21 @@ export default function Report() {
               tone={legalList.length === 0 ? 'clear' : 'soft'}
               onClick={() => document.getElementById('legal-section')?.scrollIntoView({ behavior: 'smooth' })}
             />
-            {promisesList.length > 0 && (
+            {(promisesList.length > 0 || falsePromisesList.length > 0) && (
               <WarningChip
                 icon={<AlertCircle size={14} />}
-                count={promisesList.filter((p: any) => p.verdict !== 'found').length}
+                count={promisesList.length > 0
+                  ? promisesList.filter((p: any) => p.verdict !== 'found').length
+                  : falsePromisesList.length}
                 label="unverified promises"
                 tone="soft"
                 onClick={() => document.getElementById('promises-section')?.scrollIntoView({ behavior: 'smooth' })}
               />
+            )}
+            {launchStyle && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', padding: '8px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500, background: launchStyle.bg, color: launchStyle.text, border: `1px solid ${launchStyle.text}40` }}>
+                {grade && <strong style={{ marginRight: 6 }}>{grade}</strong>}{launchStyle.label}
+              </span>
             )}
           </div>
         </div>
@@ -667,6 +686,28 @@ export default function Report() {
           </div>
         )}
 
+        {/* NEXT STEP BANNER */}
+        {nextStep && (
+          <div
+            style={{
+              background: 'rgba(99,102,241,0.06)',
+              border: '1px solid rgba(99,102,241,0.2)',
+              borderRadius: 8,
+              padding: '16px 20px',
+              marginBottom: 24,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+            }}
+          >
+            <span style={{ color: '#6366f1', fontSize: 16, flexShrink: 0 }}>→</span>
+            <div>
+              <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Your next step</div>
+              <div style={{ fontSize: 15, color: '#ffffff' }}>{nextStep}</div>
+            </div>
+          </div>
+        )}
+
         {/* SECTION 4 — VERDICT */}
         {verdict && (
           <div
@@ -708,7 +749,7 @@ export default function Report() {
         </div>
 
         {/* SECTION 6 — PROMISES VS CODE */}
-        {promisesList.length > 0 && (
+        {(promisesList.length > 0 || falsePromisesList.length > 0) && (
           <div id="promises-section" style={{ marginBottom: 32 }}>
             <SectionLabel>Promises on your homepage vs your code</SectionLabel>
             <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: -8, marginBottom: 16 }}>
@@ -717,6 +758,9 @@ export default function Report() {
             </p>
             {promisesVisible.map((p: any) => (
               <PromiseRow key={p.id} p={p} />
+            ))}
+            {promisesList.length === 0 && falsePromisesList.map((fp: any, i: number) => (
+              <PromiseRow key={fp.id || `fp-${i}`} p={{ claim: fp.claim || fp.title, verdict: 'not_found', evidence: fp.explanation || fp.what_we_found }} />
             ))}
             {promisesLocked > 0 && (
               <div

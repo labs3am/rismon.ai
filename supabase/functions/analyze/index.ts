@@ -75,440 +75,6 @@ function runPreAnalysis(codeBundle: string) {
 }
 
 // ============================================================
-// SECTION 1c: Backend verification — fetch ground truth from
-// the user's actual Supabase project (RLS status + policies)
-// using the public RPC `rismon_security_metadata` they install.
-// ============================================================
-async function fetchBackendGroundTruth(projectUrl: string, anonKey: string) {
-  // Try the read-only RPC the user pasted into their Supabase.
-  // If it doesn't exist, gracefully return null (no ground truth available).
-  try {
-    const rpcRes = await fetch(`${projectUrl}/rest/v1/rpc/rismon_security_metadata`, {
-      method: "POST",
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-        "Content-Type": "application/json",
-      },
-      body: "{}",
-    });
-    if (rpcRes.ok) {
-      const data = await rpcRes.json();
-      // Expected shape: { tables: [{ table, rls_enabled, policies: [{ name, cmd, qual, with_check }] }] }
-      if (data && Array.isArray(data.tables)) return { source: "rpc", ...data };
-    }
-  } catch (e) {
-    console.log("RPC ground truth fetch failed (expected if not installed):", (e as Error).message);
-  }
-  // Fallback: at least confirm the project responds (table list only — no RLS info)
-  try {
-    const res = await fetch(`${projectUrl}/rest/v1/`, { headers: { apikey: anonKey } });
-    if (res.ok) {
-      const tables = await res.json();
-      const tableList = typeof tables === "object" ? Object.keys(tables) : [];
-      return { source: "introspection", tables: tableList.map((t) => ({ table: t, rls_enabled: null, policies: null })) };
-    }
-  } catch { /* ignore */ }
-  return null;
-}
-
-// Drop or downgrade findings that the backend ground truth contradicts.
-// Returns the filtered findings + a list of dropped finding ids for transparency.
-function reconcileFindingsAgainstGroundTruth(findings: any[], groundTruth: any): { kept: any[]; dropped: any[] } {
-  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
-  if (!groundTruth || !Array.isArray(groundTruth.tables) || groundTruth.source !== "rpc") {
-    // No verified ground truth — mark every DB-related finding as "unverified" so the UI can show it gently.
-    const kept = findings.map((f) => {
-      const text = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
-      const dbRelated = /\brls\b|row[\s-]?level|policy|policies|access rule|anyone can read|public read|public write|expose|exposed|leak|table|database/.test(text);
-      if (dbRelated && (!f.confidence || f.confidence === "verified")) {
-        return { ...f, confidence: "unverified", confidence_reason: "We could not check your database directly — connect Supabase to verify." };
-      }
-      return f;
-    });
-    return { kept, dropped: [] };
-  }
-  const tablesWithRls = new Set(
-    groundTruth.tables.filter((t: any) => t.rls_enabled === true).map((t: any) => String(t.table).toLowerCase())
-  );
-  const kept: any[] = [];
-  const dropped: any[] = [];
-  for (const f of findings) {
-    const blob = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.technical_reference || ""}`.toLowerCase();
-    const claimsMissingRls = /\brls\b|row[\s-]?level|access rule|anyone can read|public read|public write|missing polic|no polic|exposed.*table|table.*expos/.test(blob);
-    if (claimsMissingRls) {
-      // Find which tables are mentioned. If ALL mentioned tables have RLS on, drop the finding.
-      const mentionedTables: string[] = [];
-      for (const t of groundTruth.tables) {
-        const tname = String(t.table).toLowerCase();
-        if (tname && blob.includes(tname)) mentionedTables.push(tname);
-      }
-      if (mentionedTables.length > 0 && mentionedTables.every((t) => tablesWithRls.has(t))) {
-        dropped.push({ id: f.id, title: f.title, reason: "Database confirmed RLS is enabled for the mentioned tables." });
-        continue;
-      }
-      // Generic claim with no specific table → mark unverified instead of dropping
-      if (mentionedTables.length === 0) {
-        kept.push({ ...f, confidence: "unverified", confidence_reason: "Generic claim with no specific table — could not match against your database." });
-        continue;
-      }
-    }
-    // Default: mark as verified if not already labeled
-    kept.push({ ...f, confidence: f.confidence || "verified" });
-  }
-  return { kept, dropped };
-}
-
-// ============================================================
-// SECTION 1d: Prompt hardening — evidence + speculation + whitelist filters
-// applied to AI output AFTER parsing, BEFORE returning to the user.
-// ============================================================
-
-const BANNED_SPECULATION = [
-  "might", "may be", "could be", "appears to", "possibly", "seems to",
-  "potentially", "likely vulnerable", "in theory", "it's possible that",
-  "this could lead to", "may allow", "could allow",
-];
-
-const VERIFIABLE_CATEGORIES = new Set([
-  "rls",
-  "admin_access",
-  "payment_validation",
-  "secret_exposure",
-]);
-
-// Tactic 1: Drop findings that lack mandatory evidence (file_path + line_number + code_snippet).
-// Tactic 2: Force any "verified" finding outside the whitelist down to "unverified".
-// Tactic 3: Drop findings whose prose contains banned speculative phrases.
-function hardenFindings(findings: any[]): { kept: any[]; dropped: any[] } {
-  if (!Array.isArray(findings)) return { kept: [], dropped: [] };
-  const kept: any[] = [];
-  const dropped: any[] = [];
-
-  for (const f of findings) {
-    const hasFile = typeof f?.file_path === "string" && f.file_path.trim().length > 0;
-    const hasLine = typeof f?.line_number === "number" && f.line_number > 0;
-    const hasSnippet = typeof f?.code_snippet === "string" && f.code_snippet.trim().length > 0;
-    if (!hasFile || !hasLine || !hasSnippet) {
-      dropped.push({
-        id: f?.id, title: f?.title,
-        reason: "Discarded: missing required evidence (file_path, line_number, or code_snippet).",
-      });
-      continue;
-    }
-
-    const prose = `${f?.what_we_found || ""} ${f?.what_this_means || ""} ${f?.how_to_fix || ""}`.toLowerCase();
-    const hit = BANNED_SPECULATION.find((p) => prose.includes(p));
-    if (hit) {
-      dropped.push({
-        id: f?.id, title: f?.title,
-        reason: `Discarded: speculative phrase "${hit}".`,
-      });
-      continue;
-    }
-
-    let confidence = (f?.confidence || "unverified").toLowerCase();
-    if (confidence === "verified" && !VERIFIABLE_CATEGORIES.has((f?.category || "").toLowerCase())) {
-      confidence = "unverified";
-      f.confidence_reason = (f.confidence_reason || "") +
-        " (Auto-downgraded: this category cannot be verified without backend access.)";
-    }
-    if (confidence !== "verified") confidence = "unverified";
-
-    kept.push({ ...f, confidence });
-  }
-  return { kept, dropped };
-}
-
-// Tactic 5 — cap each category at 5, sorted by severity.
-const SEVERITY_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
-function capFindings(findings: any[], max = 5): any[] {
-  if (!Array.isArray(findings)) return [];
-  return [...findings]
-    .sort((a, b) => (SEVERITY_RANK[(b?.severity || "medium").toLowerCase()] || 2) -
-                    (SEVERITY_RANK[(a?.severity || "medium").toLowerCase()] || 2))
-    .slice(0, max);
-}
-
-// Tactic 4 — self-check pass. Asks a cheap model to confirm each finding's
-// code_snippet actually proves the claim. Rejected ids are dropped.
-async function selfCheckFindings(findings: any[], codeUnderstanding: any): Promise<{ kept: any[]; dropped: any[] }> {
-  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
-  const checkable = findings.map((f) => ({
-    id: f.id, title: f.title, claim: f.what_we_found,
-    file_path: f.file_path, line_number: f.line_number, code_snippet: f.code_snippet,
-  }));
-  const system = `You are a strict code reviewer. For each finding, judge whether the code_snippet PROVES the claim. Be skeptical. If the snippet is unrelated, ambiguous, or insufficient — reject. Return ONLY:
-{ "results": [{ "id": "...", "verdict": "confirmed|rejected", "reason": "one short sentence" }] }`;
-  const user = `App context: ${JSON.stringify(codeUnderstanding).slice(0, 2000)}
-
-Findings to verify:
-${JSON.stringify(checkable, null, 2)}`;
-  try {
-    const text = await callGemini(system, user, "google/gemini-2.5-flash");
-    const parsed = parseJSON(text);
-    const verdicts = Array.isArray(parsed?.results) ? parsed.results : [];
-    const rejectedMap = new Map<string, string>();
-    for (const v of verdicts) {
-      if (v?.verdict === "rejected" && v?.id) rejectedMap.set(v.id, v.reason || "Self-check rejected.");
-    }
-    const kept = findings.filter((f) => !rejectedMap.has(f.id));
-    const dropped = findings
-      .filter((f) => rejectedMap.has(f.id))
-      .map((f) => ({ id: f.id, title: f.title, reason: `Self-check: ${rejectedMap.get(f.id)}` }));
-    return { kept, dropped };
-  } catch (e) {
-    console.error("Self-check pass failed (non-fatal):", (e as Error).message);
-    return { kept: findings, dropped: [] };
-  }
-}
-
-// ============================================================
-// SECTION 1e: File re-read verifier — the main accuracy moat.
-// For each Claude finding, we pull the cited file from the code bundle
-// and ask Gemini: "Does this REAL file actually prove Claude's claim?"
-// Gemini sees the full file, not a snippet Claude wrote, so it can
-// catch lies, missing context (e.g. parent ProtectedRoute), and stale
-// line numbers. Rejected findings are dropped.
-// ============================================================
-
-// The bundle format is: `=== <path> ===\n<content>\n\n` (set in Analyze.tsx).
-// Pull a single file's content out by exact path match.
-function extractFileFromBundle(bundle: string, path: string): string | null {
-  if (!bundle || !path) return null;
-  const marker = `=== ${path} ===`;
-  const start = bundle.indexOf(marker);
-  if (start === -1) {
-    // Try basename match as fallback (Claude sometimes drops the leading folder)
-    const base = path.split("/").pop();
-    if (!base) return null;
-    const re = new RegExp(`=== [^\\n]*${base.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")} ===`);
-    const m = bundle.match(re);
-    if (!m || m.index === undefined) return null;
-    const s = m.index + m[0].length;
-    const e = bundle.indexOf("\n=== ", s);
-    return bundle.slice(s, e === -1 ? undefined : e).trim();
-  }
-  const contentStart = start + marker.length;
-  const next = bundle.indexOf("\n=== ", contentStart);
-  return bundle.slice(contentStart, next === -1 ? undefined : next).trim();
-}
-
-// Verify each finding by sending the cited file (max ~6KB) + the claim to Gemini.
-async function verifyFindingsAgainstRealFiles(
-  findings: any[],
-  codeBundle: string,
-  edgeBundle: string,
-): Promise<{ kept: any[]; dropped: any[] }> {
-  if (!Array.isArray(findings) || findings.length === 0) return { kept: findings || [], dropped: [] };
-  if (!codeBundle && !edgeBundle) return { kept: findings, dropped: [] };
-
-  // Verify in parallel — each finding is an independent Gemini call.
-  const results = await Promise.all(findings.map(async (f) => {
-    const path = f?.file_path;
-    if (!path) return { f, verdict: "skipped", reason: "no file_path" };
-
-    // Try frontend bundle first, then edge function bundle
-    let fileContent = extractFileFromBundle(codeBundle, path);
-    if (!fileContent) fileContent = extractFileFromBundle(edgeBundle, path);
-
-    if (!fileContent) {
-      // File wasn't in the scanned bundle — could be a fabricated path.
-      // Don't auto-reject (might be legit unscanned file); mark unverified.
-      return {
-        f: { ...f, confidence: "unverified",
-             confidence_reason: "Cited file was not in the scanned bundle — could not fact-check." },
-        verdict: "unverifiable",
-        reason: "file not in bundle",
-      };
-    }
-
-    // Trim to ~6KB to keep costs sane and stay within model limits.
-    const trimmed = fileContent.length > 6000
-      ? fileContent.slice(0, 6000) + "\n... [truncated]"
-      : fileContent;
-
-    const system = `You are a strict code reviewer fact-checking another AI's security finding against the REAL source file.
-
-Rules:
-- The finding may be wrong, right, or partially right. Be skeptical.
-- Read the WHOLE file before judging. Auth/access checks may live in a parent component, route wrapper, or imported helper not visible here — if the finding ignores that possibility, reject it.
-- A finding is "confirmed" only if the file ACTUALLY shows the problem at or near the cited line.
-- A finding is "rejected" if the file contradicts the claim, the cited line doesn't show the problem, or the claim depends on context not in the file.
-- A finding is "needs_more_context" if the file alone isn't enough to judge (don't use this lazily).
-
-Return ONLY:
-{ "verdict": "confirmed" | "rejected" | "needs_more_context", "reason": "one short sentence" }`;
-
-    const user = `Claim from the first AI:
-- Title: ${f.title}
-- What was found: ${f.what_we_found}
-- Cited file: ${path}
-- Cited line: ${f.line_number}
-- Cited snippet: ${f.code_snippet}
-
-REAL file contents (${path}):
-\`\`\`
-${trimmed}
-\`\`\`
-
-Does the real file prove the claim?`;
-
-    try {
-      const text = await callGemini(system, user, "google/gemini-2.5-flash");
-      const parsed = parseJSON(text);
-      const verdict = (parsed?.verdict || "").toLowerCase();
-      const reason = parsed?.reason || "";
-      return { f, verdict, reason };
-    } catch (e) {
-      // On verifier failure, keep the finding but mark unverified.
-      return { f: { ...f, confidence: "unverified", confidence_reason: "Verifier could not run — kept as unverified." }, verdict: "skipped", reason: (e as Error).message };
-    }
-  }));
-
-  const kept: any[] = [];
-  const dropped: any[] = [];
-  for (const r of results) {
-    if (r.verdict === "rejected") {
-      dropped.push({ id: r.f.id, title: r.f.title, reason: `File re-read: ${r.reason}` });
-    } else if (r.verdict === "needs_more_context") {
-      // Keep but downgrade to unverified
-      kept.push({ ...r.f, confidence: "unverified",
-                  confidence_reason: `File alone wasn't enough: ${r.reason}` });
-    } else if (r.verdict === "confirmed") {
-      // Promote to verified ONLY if it was already in the verifiable category whitelist.
-      // Otherwise keep its current confidence (most likely "unverified" from the whitelist filter).
-      const inWhitelist = VERIFIABLE_CATEGORIES.has((r.f.category || "").toLowerCase());
-      kept.push({
-        ...r.f,
-        confidence: inWhitelist ? "verified" : r.f.confidence,
-        confidence_reason: `Confirmed by file re-read: ${r.reason}`,
-      });
-    } else {
-      // unverifiable / skipped — keep as-is
-      kept.push(r.f);
-    }
-  }
-  return { kept, dropped };
-}
-
-// ============================================================
-// SECTION 1f: Homepage signal reader
-// Pulls README, live URL homepage HTML, /privacy and /terms pages
-// so the analyzer can compare what the founder PROMISES on their
-// homepage vs what the code actually does. This is the core
-// Rismon moat — every other scanner only reads code.
-// ============================================================
-function stripHtmlToText(html: string): string {
-  if (!html) return "";
-  // Strip scripts/styles, then tags. Collapse whitespace. Cap length.
-  const cleaned = html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
-    .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ")
-    .trim();
-  return cleaned.slice(0, 12000);
-}
-
-function normalizeUrl(raw: string): string | null {
-  if (!raw) return null;
-  let u = raw.trim();
-  if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
-  try { const parsed = new URL(u); return parsed.origin; } catch { return null; }
-}
-
-async function fetchPage(url: string, timeoutMs = 7000): Promise<string | null> {
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; RismonBot/1.0; +https://rismon.ai)" },
-      redirect: "follow",
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text;
-  } catch { return null; }
-}
-
-async function fetchHomepageSignals(liveUrl: string | null, githubOwner: string | null, githubRepo: string | null) {
-  const result: any = {
-    has_live_url: false,
-    homepage_text: null as string | null,
-    privacy_text: null as string | null,
-    terms_text: null as string | null,
-    readme_text: null as string | null,
-    privacy_page_found: false,
-    terms_page_found: false,
-    notes: [] as string[],
-  };
-
-  // 1) README from GitHub raw (try main, then master)
-  if (githubOwner && githubRepo) {
-    for (const branch of ["main", "master"]) {
-      for (const fname of ["README.md", "readme.md", "README.MD"]) {
-        const raw = await fetchPage(`https://raw.githubusercontent.com/${githubOwner}/${githubRepo}/${branch}/${fname}`, 5000);
-        if (raw && raw.length > 30) {
-          result.readme_text = raw.slice(0, 8000);
-          break;
-        }
-      }
-      if (result.readme_text) break;
-    }
-  }
-
-  // 2) Live site (homepage + /privacy + /terms)
-  const origin = normalizeUrl(liveUrl || "");
-  if (origin) {
-    result.has_live_url = true;
-    const homeHtml = await fetchPage(origin);
-    if (homeHtml) result.homepage_text = stripHtmlToText(homeHtml);
-
-    // Try common privacy paths
-    for (const path of ["/privacy", "/privacy-policy", "/legal/privacy", "/policies/privacy"]) {
-      const html = await fetchPage(`${origin}${path}`);
-      if (html) {
-        const text = stripHtmlToText(html);
-        // Must look like a real policy, not a 404 SPA fallback
-        if (text.length > 200 && /privacy|data|cookie|personal/i.test(text)) {
-          result.privacy_text = text;
-          result.privacy_page_found = true;
-          break;
-        }
-      }
-    }
-
-    // Try common terms paths
-    for (const path of ["/terms", "/terms-of-service", "/tos", "/legal/terms", "/policies/terms"]) {
-      const html = await fetchPage(`${origin}${path}`);
-      if (html) {
-        const text = stripHtmlToText(html);
-        if (text.length > 200 && /terms|agreement|liability|service/i.test(text)) {
-          result.terms_text = text;
-          result.terms_page_found = true;
-          break;
-        }
-      }
-    }
-  } else {
-    result.notes.push("No live URL was provided — we could only read the code, not the deployed site.");
-  }
-
-  return result;
-}
-
-// ============================================================
 // SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -614,44 +180,44 @@ async function callClaude(systemPrompt: string, userContent: string) {
   return data.content?.[0]?.text || "";
 }
 
-// Hybrid: Claude Sonnet is the primary engine (best report voice + reasoning).
-// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the same
-// system prompt so the report style stays consistent.
+// Hybrid: try Claude first (preserves the original report voice/structure).
+// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the EXACT
+// same system prompt — Claude's prompt already enforces the report style and
+// JSON shape, so the output stays consistent.
 async function callClaudeWithFallback(systemPrompt: string, userContent: string) {
-  // 1) Primary: Claude Sonnet
   try {
     return await callClaude(systemPrompt, userContent);
   } catch (e: any) {
-    if (e?.message !== "CLAUDE_RETRYABLE" && e?.message !== "ANTHROPIC_KEY not configured") {
-      throw e;
+    if (e?.message === "CLAUDE_RETRYABLE") {
+      console.warn(`Claude unavailable (${e.status}). Falling back to Gemini 2.5 Pro with Claude's prompt.`);
+      // Reuse Claude's system prompt verbatim so the report style matches.
+      // Do NOT append HOUSE_STYLE here — Claude's prompt already defines the voice.
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+      const res = await fetch(LOVABLE_AI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const status = res.status;
+        const body = await res.text().catch(() => "");
+        console.error(`Gemini fallback error [${status}]:`, body.slice(0, 300));
+        if (status === 429) throw new Error("RATE_LIMITED");
+        if (status === 402) throw new Error("CREDITS_EXHAUSTED");
+        throw new Error("AI_ERROR");
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
     }
-    console.warn(`Claude unavailable (${e?.status || e?.message}). Falling back to Gemini 2.5 Pro.`);
+    throw e;
   }
-
-  // 2) Fallback: Lovable AI Gemini 2.5 Pro
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("AI_ERROR");
-  const res = await fetch(LOVABLE_AI_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const status = res.status;
-    const body = await res.text().catch(() => "");
-    console.error(`Gemini fallback error [${status}]:`, body.slice(0, 300));
-    if (status === 429) throw new Error("RATE_LIMITED");
-    if (status === 402) throw new Error("CREDITS_EXHAUSTED");
-    throw new Error("AI_ERROR");
-  }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
 }
 
 function parseJSON(text: string): any {
@@ -678,6 +244,15 @@ const PLAN_LIMITS = {
     verificationPass: false,
     emailDelivery: false,
   },
+  try_pro: {
+    weeklyScans: Infinity,
+    monthlyScans: 100,
+    maxRepoBytes: 10 * 1024 * 1024, // 10MB
+    duplicateBlockHours: 0,
+    edgeFunctionScan: true,
+    verificationPass: true,
+    emailDelivery: true,
+  },
   pro: {
     weeklyScans: Infinity,
     monthlyScans: 100,
@@ -689,7 +264,7 @@ const PLAN_LIMITS = {
   },
 };
 
-async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "pro", repoName: string, repoSizeBytes: number, currentScanSessionId?: string | null) {
+async function checkAbuseLimits(serviceClient: any, userId: string, plan: "free" | "try_pro" | "pro", repoName: string, repoSizeBytes: number, currentScanSessionId?: string | null) {
   const limits = PLAN_LIMITS[plan];
 
   // 1. Repo size cap
@@ -840,9 +415,16 @@ serve(async (req) => {
     } = body;
     const scanType: "quick" | "deep" = scan_type === "deep" ? "deep" : "quick";
 
-    // Get user plan
-    const { data: planData } = await serviceClient.rpc("get_user_plan", { _user_id: user.id });
-    const userPlan: "free" | "pro" = (planData === "pro") ? "pro" : "free";
+    // Get user plan and deep_scan_credits from profiles
+    const { data: profileRow } = await serviceClient
+      .from("profiles")
+      .select("plan, deep_scan_credits")
+      .eq("id", user.id)
+      .single();
+    const rawPlan = profileRow?.plan || "free";
+    const userPlan: "free" | "try_pro" | "pro" =
+      rawPlan === "pro" ? "pro" : rawPlan === "try_pro" ? "try_pro" : "free";
+    const deepScanCredits: number = profileRow?.deep_scan_credits ?? 3;
     const limits = PLAN_LIMITS[userPlan];
 
     // ============================================================
@@ -976,245 +558,224 @@ Return ONLY this JSON:
     // ACTION: analyze (stage 2 — Claude deep, then Gemini verifies)
     // ============================================================
     if (action === "analyze") {
-      const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit. You analyze code for non-technical founders who have never written code.
+      // Check deep_scan_credits for try_pro before calling Claude
+      if (userPlan === "try_pro" && deepScanCredits <= 0) {
+        return new Response(
+          JSON.stringify({ error: "No deep scan credits remaining", code: "no_credits" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const scanTypeHint = scan_type === "deep"
+        ? "This is a Deep Scan covering the complete codebase."
+        : "This is a Quick Scan covering the most critical files only.";
+
+      const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
+
+${scanTypeHint}
 
 CRITICAL CONTEXT:
 These apps have a specific architecture:
+
 1. GitHub contains React/TypeScript frontend code only.
+
 2. Database lives in Supabase. Tables are NOT stored in GitHub. If you see supabase.from() calls the database EXISTS. NEVER say database is missing just because SQL files are not in GitHub.
-3. Authentication is Supabase Auth. If you see supabase.auth calls real authentication EXISTS. NEVER say auth is fake if supabase.auth is used in code.
+
+3. Authentication is Supabase Auth. If you see supabase.auth calls real authentication EXISTS. NEVER say auth is fake if supabase.auth is used.
+
 4. Backend logic lives in Supabase Edge Functions. If you see supabase.functions.invoke() a real backend EXISTS.
-5. Payments: detect from imports. loadStripe = Stripe. Never assume payment doesn't work just because you see test keys.
 
-PRE-ANALYSIS CONTEXT:
-You will receive this data detected from the code automatically:
-- hasPayments: true/false
-- paymentProvider: which one
-- hasUserAccounts: true/false
-- hasAdminRoutes: true/false
-- hasFreePaidTiers: true/false
-- detectedAppType: app type
-- detectedPlatform: tech stack
-- founderConcern: what worries them
-- paidFeatures: what paid users get
-- dataPrivacy: data sharing preference
-Use this context to make findings specific to their actual app.
-
-APP KIND (CRITICAL):
-The founder answers "What kind of app is this?" as the FIRST smart question. Look for "app_kind" in the user_answers JSON.
-- "web_app" → Standard web app with UI. Findings about pages, login UI, payments, dashboards all apply.
-- "backend_api" → No UI. DO NOT generate findings about missing pages, login UI, homepage, SEO, marketing copy, or frontend forms. Focus on auth on endpoints, input validation, rate limits (if applicable), data exposure.
-- "mobile_app" → React Native or similar. The repo may be the backend OR a mobile shell. DO NOT flag missing web pages or web SEO. Focus on API security and data privacy.
-- "bot_automation" → Discord/Telegram/Slack bot, scraper, cron job, scheduled task. DO NOT generate findings about pages, login UI, payments (unless detected), or web SEO. Focus on credential safety, error handling, scheduled-task safety.
-- "cli_library" → Command-line tool or npm package. DO NOT generate findings about login, pages, payments, or web concerns. Focus on dependency safety, input handling, and published-package risks.
-- If the value starts with "other:" the founder typed a free-form description. READ IT and tailor findings to what they describe — do not assume web app defaults.
-
-If app_kind is unset, default to web_app behavior but mention in the summary that you assumed web app.
-
-SMART QUESTION "OTHER" ANSWERS:
-Any user_answers value starting with "other:" is the founder's own description (typed free text). Treat the text after the colon as ground truth — weight it more heavily than any code-pattern guess. Example: if payment_webhook="other:Stripe keys are in repo but I haven't built checkout yet" then DO NOT flag a "payment bypass" risk — instead flag "payments not yet implemented; remove unused Stripe keys before publishing."
-
-SCAN TYPE:
-You will be told if this is "quick" (free plan, 20 files) or "deep" (pro plan / try pro, full codebase).
-For quick scan: Analyze what you have. Note at end of summary: "This was a Quick Scan covering your most critical files."
-For deep scan: Full analysis. No disclaimers needed.
+5. Payments are detected from imports. If Stripe/Razorpay/Paddle detected payment system EXISTS.
 
 YOUR ONLY JOB:
-Find gaps between what the founder described and what the code does. Find security issues that could hurt their business.
+Find gaps between what the founder meant to build and what was built. Find security issues that could hurt their business or users.
 
-LANGUAGE RULES - CRITICAL:
-NEVER use these technical terms:
-- RLS / Row Level Security
-- JWT / Token / Bearer
-- CORS / CSP / XSS / CSRF
-- SQL injection
-- Authentication / Authorization (say "login check" instead)
-- Vulnerability / CVE / CVSS
-- Misconfiguration
-- Sanitization / Validation
-- Frontend / Backend / Server-side
-- Environment variable
-- Supabase / PostgreSQL
-- Any programming language names
-- Any technical acronyms
+CRITICAL LANGUAGE RULES:
+You are writing for someone who has never written a single line of code.
 
-ALWAYS use plain English:
-"login check" not "authentication"
-"your secret key" not "API key"
-"anyone can read your data" not "RLS misconfigured"
-"payment check missing" not "authorization bypass"
+FORBIDDEN WORDS - NEVER USE THESE:
+RLS, Row Level Security, JWT, CORS, CSP, XSS, CSRF, SQL injection, API endpoint, REST, GraphQL, Authentication, Authorization, Sanitization, Validation, Frontend, Backend, Server-side, Environment variable, Supabase, PostgreSQL, any database terms, any programming language names, any technical acronyms at all.
+
+REQUIRED LANGUAGE:
+Use everyday English only. Use "your app" not "the codebase". Use "your users data" not "database records". Use "anyone can access" not "unauthorized access". Use "your secret key" not "API key". Use "payment check" not "subscription validation". Always explain real world impact. Always use dollar amounts when relevant. Always use "you" and "your" to personalize.
 
 TEST EVERY SENTENCE:
-"Would someone who runs a restaurant understand this without Googling it?"
-If no → rewrite completely.
+Would a restaurant owner understand this? If no — rewrite it completely.
 
-FINDINGS FORMAT — EVERY field below is REQUIRED. Findings missing any of file_path, line_number, or code_snippet will be DISCARDED.
-{
-  "severity": "critical|high|medium|low",
-  "category": "rls|admin_access|payment_validation|secret_exposure|input_validation|business_logic|other",
-  "title": "Plain English max 8 words",
-  "what_we_found": "One sentence. What exists in the code. No technical terms.",
-  "what_this_means": "Real world consequence. Use dollar amounts if relevant. Use number of users if relevant. Max 2 sentences.",
-  "how_to_fix": "Plain English steps. What to do in Lovable or Cursor.",
-  "fix_prompt": "Exact prompt to paste into Lovable or Cursor. Ready to use. No editing needed.",
-  "technical_reference": "Short technical name for developers to Google. Max 5 words. Example: supabase-rls-not-enabled",
-  "google_query": "Exact search term. Example: supabase row level security",
-  "confidence": "verified | unverified",
-  "confidence_reason": "Why this confidence level — what evidence you have OR what you would need to confirm.",
-  "file_path": "Exact path from the code, e.g. src/pages/Admin.tsx. REQUIRED.",
-  "line_number": 45,
-  "code_snippet": "Verbatim line(s) of code (max 200 chars) that prove the finding. Copy directly from the source. REQUIRED.",
-  "evidence": "One short phrase summarizing the proof."
-}
+WHAT TO LOOK FOR:
 
-CONFIDENCE — STRICT WHITELIST:
-Only these categories can EVER be marked "verified":
-  - rls               → only if GROUND TRUTH block confirms the table has no policies
-  - admin_access      → only if you can quote the exact unprotected route AND the founder said admin should be restricted
-  - payment_validation → only if no edge function or webhook handler is present in the scanned code
-  - secret_exposure   → only if a real secret pattern was matched (sk_live_, ghp_, AIza...)
+1. PAYMENT AND ACCESS GAPS
+Check if payment logic is enforced:
+- Free tier limits enforced server-side?
+- Paid features checked before access?
+- Subscription verified on every request?
+- Trial expiry actually stops access?
 
-Every other category, AND every claim where the backend was not directly inspected, MUST be "unverified".
-If you mark something "verified" that does not meet the rule above, the finding will be DROPPED.
+2. DATA SEPARATION GAPS
+Can users see each other's data?
+- Missing user filter in queries?
+- Shared data that should be private?
+- Admin data visible to regular users?
 
-BANNED PHRASES — using any of these auto-discards the finding:
-  "might", "may be", "could be", "appears to", "possibly", "seems to",
-  "potentially", "likely vulnerable", "in theory", "it's possible that",
-  "this could lead to", "may allow", "could allow"
+3. ROLE AND PERMISSION GAPS
+- Admin routes protected properly?
+- Role checks in backend not just UI?
+- Elevated permissions restricted?
 
-Replace banned phrases with concrete statements:
-  BAD:  "This might allow users to see other users' data."
-  GOOD: "Line 45 of src/pages/Orders.tsx queries the orders table with no user_id filter."
+4. BUSINESS RULE GAPS
+- Usage limits actually enforced?
+- Referral or discount rules limited?
+- Cancellation logic correct?
 
-Frontend code without \`.eq('user_id', ...)\` filters is NOT evidence of missing access control. Supabase enforces this at the database via row-level rules. Do NOT flag missing access control unless the GROUND TRUTH block says the table has no rules, OR the founder told you so.
+5. SECURITY ISSUES
+Run ALL five checks below on every scan. These checks are MANDATORY and independent of what the founder described. If a pattern exists in the code, flag it. No benefit of the doubt. No assumptions of safety.
 
-If the GROUND TRUTH block lists a table with rls_enabled=true and policies, do NOT report "anyone can read your data" or "exposed table" for that table. The database is protecting it.
+CHECK A — EXPOSED SECRET KEYS:
+Scan every frontend file for these exact patterns:
+  - sk- (OpenAI key pattern)
+  - const.*key.*= (any hardcoded key assignment)
+  - VITE_ prefix variables assigned key values
+  - apiKey = "..." (any hardcoded value in quotes)
+  - Authorization.*Bearer.*" (hardcoded Bearer tokens)
+If ANY of these patterns exist in a frontend file: CRITICAL severity. Always flag. Never skip.
 
-INTENT SCORE — BUSINESS LOGIC ONLY:
-The intent score measures ONE thing: does the code do what the founder said the app does?
-SECURITY findings DO NOT lower the intent score. LEGAL findings DO NOT lower the intent score.
-PROMISES-VS-CODE findings DO NOT lower the intent score.
-Only items in business_logic_gaps lower the intent score.
-Start at 100. Deduct per business_logic_gap only:
-  Critical: -20, High: -10, Medium: -5, Low: -2. Floor at 0.
+CHECK B — DATA LEAK (missing user filter):
+Look for Supabase queries like .from('tableName').select('*') that do NOT have .eq('user_id', ...) or any equivalent user-scoping filter.
+If a user-owned table is queried without a user filter: CRITICAL severity. "All your users can see each other's data."
 
-SECURITY SCORE — INDEPENDENT:
-Compute a separate security_score from security_findings only, using the same per-severity deductions.
+CHECK C — UNPROTECTED ADMIN PAGES:
+Look for page components where:
+  - The component name or route path contains "admin"
+  - AND the component does NOT redirect unauthenticated users
+  - AND there is no auth check before rendering
+If found: CRITICAL severity. "Anyone who guesses the URL can access your admin panel."
 
-SELF-CHECK BEFORE RETURNING:
-1. Did any security or legal item leak into business_logic_gaps? If yes, move it.
-2. Is intent_score deducting for security findings? If yes, recalculate.
-3. Are intent_score and security_score independent numbers? They must be.
+CHECK D — HARDCODED BYPASS VALUES:
+Look for patterns like:
+  - const isPro = true
+  - const isAdmin = true
+  - Any boolean flag hardcoded to true inside auth or payment logic
+If found: CRITICAL severity. "Your payment or permission check is permanently bypassed."
 
-LEGAL & TRUST FINDINGS — soft tone, never accusatory:
-Look at the homepage_signals block. Generate up to 4 legal_findings if any of these are true:
-- No privacy policy was found (privacy_page_found is false) AND code stores user data (auth, emails, profiles tables).
-- No terms of service was found (terms_page_found is false) AND the app accepts payments or sign-ups.
-- Privacy or terms text exists but is under 400 characters or contains placeholder words like "lorem ipsum", "your privacy policy here", "TODO", "[insert".
-- Payment code exists but no refund or cancellation policy was found anywhere in privacy/terms text.
-Tone: helpful, never alarming. Example phrasing: "Most app stores and payment providers expect a privacy policy. We could not find one on your live site." NEVER say "you're breaking the law" or "you're at risk of being sued."
+CHECK E — MISSING DATABASE PROTECTION:
+If Supabase tables appear in the code (via .from() calls) but NO migration files contain any policy definitions (CREATE POLICY, ENABLE ROW LEVEL SECURITY, ALTER TABLE ... ENABLE ROW LEVEL SECURITY):
+HIGH severity. "Your database tables may be completely open — anyone could read or delete all your users' data directly."
 
-PROMISES VS CODE — the killer find, soft tone:
-Look at homepage_text and readme_text. Extract concrete claims (features, capabilities, integrations) and check whether each one is supported by the code in app_understanding.
-Generate up to 6 landing_page_promises items, ONE per claim.
-Each item:
-{
-  "claim": "Exact short phrase from the homepage or README (max 12 words)",
-  "claim_source": "homepage" | "readme",
-  "verdict": "found" | "partial" | "not_found",
-  "evidence": "Where in the code we looked or what we found (max 25 words). For 'not_found', say what we searched for.",
-  "severity": "info" | "low" | "medium"
-}
-NEVER use the words "lie", "lying", "false", "misleading", "deceptive", or "fraud".
-ALWAYS use "we couldn't find this in your code" instead of "this isn't true".
-ALWAYS frame as "unverified claim" — the founder may have built it on a different branch, or we missed it.
+6. FALSE PROMISE DETECTION
+These checks are MANDATORY on every scan. Search the homepage (index.html, landing page components, marketing copy in any component) for these exact claims. Then verify the claim against the actual code. If the code does not back up the claim, flag it as a false promise. No benefit of the doubt — if the code evidence is absent, flag it.
 
-REPORT STRUCTURE:
-Return ONLY valid JSON:
+PROMISE A — "encrypted" or "end-to-end encrypted":
+Search the codebase for encryption libraries (e.g. crypto, tweetnacl, libsodium, sjcl, CryptoJS, SubtleCrypto, webcrypto, forge).
+If the homepage claims encryption but NO encryption library is imported or used anywhere: flag as false promise. Medium severity. "Your homepage promises encryption your app does not actually do."
+
+PROMISE B — "real-time" or "live updates":
+Search for WebSocket usage (new WebSocket, socket.io, ws://, wss://) OR Supabase realtime subscriptions (.channel(), .on('postgres_changes', ...), supabase.channel).
+If the homepage claims real-time but NONE of these patterns exist: flag as false promise. Medium severity. "Your homepage says updates are live but the app actually requires a page refresh."
+
+PROMISE C — "AI-powered" or "powered by AI":
+Search backend/edge functions for AI API calls (openai, anthropic, @anthropic-ai, gemini, googleapis/ai, cohere, replicate).
+  - If AI calls exist ONLY in frontend files with a hardcoded or VITE_-prefixed key: flag as BOTH a false promise AND a security issue (Critical). "Your AI key is exposed to anyone who opens your app."
+  - If NO AI API calls exist anywhere: flag as false promise. Medium severity. "Your homepage claims AI features but no AI service is connected."
+
+PROMISE D — "sync with [ServiceName]" or "integrates with [ServiceName]":
+For each named third-party service in the homepage copy (e.g. Slack, Notion, Google Sheets, Zapier, HubSpot, Salesforce), search the codebase for that service's API domain or SDK import.
+If the named integration is not found in the code: flag as false promise. Medium severity. "Your homepage advertises a [ServiceName] integration that does not exist in the code."
+
+PROMISE E — "team collaboration", "invite your team", or "invite members":
+Search for team/organisation logic: org_id, team_id, organization, invite, member_role, workspace.
+If the homepage mentions team features but NO such logic exists in the code: flag as false promise. Medium severity. "Your homepage promises team features but there is no team logic in the app."
+
+FOR EVERY FINDING USE THIS EXACT FORMAT:
+Plain English title (max 8 words)
+Plain English explanation (2-3 sentences)
+Real world business impact (1-2 sentences)
+Technical reference (5 words max)
+Google search term to learn more
+Exact fix prompt for Lovable or Cursor
+
+SCORING:
+Start at 100.
+Deduct for each finding:
+Critical: -25 points
+High: -15 points
+Medium: -8 points
+Low: -2 points
+False promise: -8 points each (applied in addition to the above if the false promise is also flagged as a separate severity)
+Minimum score: 0. Maximum score: 100.
+
+CRITICAL SCORE CAPS — APPLY THESE AFTER ALL DEDUCTIONS:
+If 1 or more critical findings exist: score = min(score, 60)
+If 2 or more critical findings exist: score = min(score, 35)
+If 3 or more critical findings exist: score = min(score, 20)
+A score of 90 or above is IMPOSSIBLE if any critical finding exists. Enforce this strictly.
+
+LAUNCH READINESS:
+90-100: Ready to launch
+70-89: Almost ready
+50-69: Needs work
+30-49: Not ready
+0-29: Critical issues
+
+RESPOND IN THIS EXACT JSON FORMAT:
 {
   "score": number,
-  "score_label": string,
-  "security_score": number,
-  "summary": "2-3 sentences. What the app does well. What the biggest concern is. Plain English. Personalized to their specific app type.",
-  "verdict": "One sentence. Clear launch recommendation. Example: Fix the paywall issue before your first user signs up.",
-  "business_logic_gaps": [findings],
-  "security_findings": [findings],
-  "legal_findings": [{"id":"","title":"","what_we_found":"","what_this_means":"","how_to_fix":"","severity":"info|low|medium"}],
-  "landing_page_promises": [promise items as defined above],
-  "what_works": ["One sentence per positive finding. Something they did right."],
-  "scan_type": "quick or deep"
+  "grade": "A|B|C|D|F",
+  "launch_status": "ready|almost|needs_work|not_ready|critical",
+  "summary": "2 sentences. What app does well and biggest concern. Plain English.",
+  "business_logic_gaps": [
+    {
+      "severity": "critical|high|medium|low",
+      "title": "Plain English max 8 words",
+      "explanation": "Plain English 2-3 sentences",
+      "business_impact": "Real world consequence",
+      "technical_reference": "5 words max technical term",
+      "google_query": "exact search term",
+      "fix_prompt": "Exact prompt to paste into Lovable or Cursor"
+    }
+  ],
+  "security_findings": [
+    {
+      "severity": "critical|high|medium|low",
+      "title": "Plain English max 8 words",
+      "explanation": "Plain English 2-3 sentences",
+      "business_impact": "Real world consequence",
+      "technical_reference": "5 words max technical term",
+      "google_query": "exact search term",
+      "fix_prompt": "Exact prompt to paste into Lovable or Cursor"
+    }
+  ],
+  "false_promises": [
+    {
+      "severity": "critical|medium",
+      "claim": "Exact wording found on the homepage",
+      "title": "Plain English max 8 words",
+      "explanation": "Plain English 2-3 sentences",
+      "business_impact": "Real world consequence",
+      "technical_reference": "5 words max technical term",
+      "google_query": "exact search term",
+      "fix_prompt": "Exact prompt to paste into Lovable or Cursor"
+    }
+  ],
+  "what_app_does_right": [
+    "One sentence per positive finding"
+  ],
+  "next_step": "Single most important action to take first"
 }
 
-HARD LIMITS:
-- Maximum 5 business_logic_gaps. Pick the 5 most impactful — drop weaker ones.
-- Maximum 5 security_findings. Pick the 5 most impactful — drop weaker ones.
-- Maximum 4 legal_findings.
-- Maximum 6 landing_page_promises.
-- Always find at least 2 positives.
-- Always personalize to their app type.
-- Never use technical jargon anywhere.
-- If homepage_signals is empty (no live URL given AND no README), return landing_page_promises: [] — do NOT invent claims.
-
-RESPOND WITH JSON ONLY.
-No text before or after the JSON.`;
-
-      // Fetch backend ground truth (RLS + policies) BEFORE asking the AI.
-      // This stops Claude from hallucinating "missing RLS" findings that aren't true.
-      let groundTruth: any = null;
-      if (appSupabaseUrl && appSupabaseAnonKey) {
-        groundTruth = await fetchBackendGroundTruth(appSupabaseUrl, appSupabaseAnonKey);
-      }
-      const groundTruthBlock = groundTruth
-        ? (groundTruth.source === "rpc"
-          ? `\n\nGROUND TRUTH (verified directly from the user's database — DO NOT contradict this):\n${JSON.stringify(groundTruth.tables, null, 2)}\n\nFor every table above where rls_enabled=true and policies exist, the database IS protecting it. Do NOT report "anyone can read this", "exposed table", or "missing access rules" for these tables.`
-          : `\n\nBACKEND PARTIAL VISIBILITY: We could only list table names, not their rules. Tables visible: ${JSON.stringify(groundTruth.tables.map((t: any) => t.table))}. Mark all access-control claims as "unverified" since rules could not be checked directly.`)
-        : `\n\nNO BACKEND VISIBILITY: The user did not connect their backend (or hasn't installed the Rismon verification function). Mark every claim about database access rules, server validation, or admin enforcement as "unverified" and ask the founder to confirm in plain English.`;
-
-      // Fetch homepage signals — README, live URL homepage, /privacy, /terms.
-      // This is the foundation of the "promises vs code" finding type.
-      // We pull the app row to get live_url, github_owner, github_repo_name and app_description.
-      let appRow: any = null;
-      if (app_id) {
-        const { data } = await supabase
-          .from("apps")
-          .select("live_url, github_owner, github_repo_name, app_description")
-          .eq("id", app_id)
-          .eq("user_id", user.id)
-          .maybeSingle();
-        appRow = data;
-      }
-      const homepageSignals = await fetchHomepageSignals(
-        appRow?.live_url || null,
-        appRow?.github_owner || null,
-        appRow?.github_repo_name || null,
-      );
-      const homepageBlock = `\n\nHOMEPAGE SIGNALS (what we read from the live site and README):
-- live URL provided: ${homepageSignals.has_live_url ? "yes" : "no"}
-- privacy page found: ${homepageSignals.privacy_page_found ? "yes" : "no"}
-- terms page found: ${homepageSignals.terms_page_found ? "yes" : "no"}
-- README excerpt: ${homepageSignals.readme_text ? homepageSignals.readme_text.slice(0, 2000) : "(none found)"}
-- Homepage text excerpt: ${homepageSignals.homepage_text ? homepageSignals.homepage_text.slice(0, 3000) : "(none — no live URL or fetch failed)"}
-- Privacy text excerpt: ${homepageSignals.privacy_text ? homepageSignals.privacy_text.slice(0, 1500) : "(none)"}
-- Terms text excerpt: ${homepageSignals.terms_text ? homepageSignals.terms_text.slice(0, 1500) : "(none)"}
-
-Use this when generating legal_findings and landing_page_promises. If everything is "(none)", return both as [].`;
-
-      const founderShortDescription = appRow?.app_description
-        ? `\n\nFounder's short app description (entered when connecting): "${appRow.app_description}"`
-        : "";
+Maximum 5 business logic gaps. Maximum 5 security findings. Maximum 5 false promises. Always find at least 2 positives. Always include next_step. RESPOND WITH JSON ONLY. No other text.`;
 
       const claudeUserContent = `Scan type: ${scanType} (${scanType === "deep" ? "all repository files were fetched" : "only ~20 prioritized files were fetched — base findings on what is visible and avoid claiming a feature is missing if it could simply live in an unscanned file"})
 
 App understanding: ${JSON.stringify(code_understanding)}
 
-Founder described: ${founder_description}${founderShortDescription}
+Founder described: ${founder_description}
 
 Founder concern (most worried about): ${concern || "(none specified)"}
 
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
 
-Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruthBlock}${homepageBlock}`;
+Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
       const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
       let claudeResult: any;
@@ -1242,7 +803,6 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
         return {
           id,
           severity,
-          category: (f?.category || "other").toLowerCase(),
           title,
           // legacy gap fields used by Report.tsx
           you_said: what_we_found,
@@ -1258,20 +818,13 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
           fix_prompt: f?.fix_prompt || "",
           technical_reference: f?.technical_reference || "",
           google_query: f?.google_query || "",
-          // confidence transparency
-          confidence: (f?.confidence || "unverified").toLowerCase(),
-          confidence_reason: f?.confidence_reason || "",
-          evidence: f?.evidence || "",
-          // hardening — required evidence fields
-          file_path: typeof f?.file_path === "string" ? f.file_path : "",
-          line_number: typeof f?.line_number === "number" ? f.line_number : 0,
-          code_snippet: typeof f?.code_snippet === "string" ? f.code_snippet : "",
         };
       };
 
       if (claudeResult && (claudeResult.business_logic_gaps || claudeResult.security_findings || typeof claudeResult.score === "number")) {
         const gapsArr = Array.isArray(claudeResult.business_logic_gaps) ? claudeResult.business_logic_gaps : [];
         const secArr = Array.isArray(claudeResult.security_findings) ? claudeResult.security_findings : [];
+        const promisesArr = Array.isArray(claudeResult.false_promises) ? claudeResult.false_promises : [];
         const works = Array.isArray(claudeResult.what_works) ? claudeResult.what_works : [];
 
         const score = typeof claudeResult.score === "number" ? claudeResult.score : null;
@@ -1282,137 +835,50 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}${groundTruth
           intent_match_score: score,
           gaps: gapsArr.map((g: any, i: number) => mapFinding(g, i, "g")),
           security_issues: secArr.map((s: any, i: number) => mapFinding(s, i, "s")),
+          false_promises: promisesArr.map((p: any, i: number) => mapFinding(p, i, "p")),
           what_works: works,
           unknown_features: Array.isArray(claudeResult.unknown_features) ? claudeResult.unknown_features : [],
           summary: summary || claudeResult.summary || "",
         };
       }
 
-      // ----------------------------------------------------------
-      // Hardening pipeline (applied in order):
-      //   A. Reconcile against backend ground truth (drops false-positive RLS claims).
-      //   B. Hardening filter — evidence required, banned phrases, whitelist for "verified".
-      //   C. Snippet self-check — Gemini Flash judges if the snippet proves the claim.
-      //   D. FILE RE-READ verifier — Gemini opens the actual cited file and fact-checks.
-      //   E. Cap each category at 5, sorted by severity.
-      //   F. Recompute score from "verified" findings only.
-      // ----------------------------------------------------------
-      const allDropped: any[] = [];
-      const claudeGenerated = {
-        gaps: (claudeResult.gaps || []).length,
-        security: (claudeResult.security_issues || []).length,
-      };
+      // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
+      if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
+        try {
+          const verifySystem = `You verify whether each claimed gap is actually supported by the evidence. For each gap, decide: is the claim "what was built" actually true given the code understanding? Mark each gap "confirmed" or "rejected" with one short reason.
 
-      // A. Ground truth reconcile
-      const reconciledGaps = reconcileFindingsAgainstGroundTruth(claudeResult.gaps || [], groundTruth);
-      const reconciledSec = reconcileFindingsAgainstGroundTruth(claudeResult.security_issues || [], groundTruth);
-      claudeResult.gaps = reconciledGaps.kept;
-      claudeResult.security_issues = reconciledSec.kept;
-      allDropped.push(...reconciledGaps.dropped, ...reconciledSec.dropped);
+Return ONLY:
+{ "verified": [{ "id": "g1", "verdict": "confirmed|rejected", "reason": "one short sentence" }] }`;
+          const verifyUser = `Code understanding: ${JSON.stringify(code_understanding)}
 
-      // B. Evidence + speculation + whitelist filter
-      const hardenedGaps = hardenFindings(claudeResult.gaps);
-      const hardenedSec = hardenFindings(claudeResult.security_issues);
-      claudeResult.gaps = hardenedGaps.kept;
-      claudeResult.security_issues = hardenedSec.kept;
-      allDropped.push(...hardenedGaps.dropped, ...hardenedSec.dropped);
+Founder description: ${founder_description}
 
-      // C. Snippet self-check
-      const totalFindings = claudeResult.gaps.length + claudeResult.security_issues.length;
-      if ((limits.verificationPass || totalFindings >= 3) && totalFindings > 0) {
-        const checkedGaps = await selfCheckFindings(claudeResult.gaps, code_understanding);
-        const checkedSec = await selfCheckFindings(claudeResult.security_issues, code_understanding);
-        claudeResult.gaps = checkedGaps.kept;
-        claudeResult.security_issues = checkedSec.kept;
-        allDropped.push(...checkedGaps.dropped, ...checkedSec.dropped);
-        claudeResult.self_check_applied = true;
-        claudeResult.self_check_dropped = checkedGaps.dropped.length + checkedSec.dropped.length;
+Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
+          const verifyText = await callGemini(verifySystem, verifyUser, "google/gemini-2.5-pro");
+          const verified = parseJSON(verifyText);
+          if (Array.isArray(verified?.verified)) {
+            const rejectedIds = new Set(verified.verified.filter((v: any) => v.verdict === "rejected").map((v: any) => v.id));
+            claudeResult.gaps = claudeResult.gaps.filter((g: any) => !rejectedIds.has(g.id));
+            claudeResult.verification_applied = true;
+            claudeResult.verification_dropped = rejectedIds.size;
+          }
+        } catch (e) {
+          console.error("Verification pass failed (non-fatal):", e);
+        }
       }
-
-      // D. FILE RE-READ verifier — the main accuracy upgrade.
-      // Gemini opens the actual cited file from the bundle and fact-checks Claude's claim
-      // against the real source code, not just Claude's snippet.
-      if (codeBundle || edgeFunctionBundle) {
-        const verifiedGaps = await verifyFindingsAgainstRealFiles(
-          claudeResult.gaps, codeBundle || "", edgeFunctionBundle || "",
-        );
-        const verifiedSec = await verifyFindingsAgainstRealFiles(
-          claudeResult.security_issues, codeBundle || "", edgeFunctionBundle || "",
-        );
-        claudeResult.gaps = verifiedGaps.kept;
-        claudeResult.security_issues = verifiedSec.kept;
-        allDropped.push(...verifiedGaps.dropped, ...verifiedSec.dropped);
-        claudeResult.file_reread_applied = true;
-        claudeResult.file_reread_dropped = verifiedGaps.dropped.length + verifiedSec.dropped.length;
-      }
-
-      // E. Cap each category at 5
-      claudeResult.gaps = capFindings(claudeResult.gaps, 5);
-      claudeResult.security_issues = capFindings(claudeResult.security_issues, 5);
-
-      if (allDropped.length > 0) claudeResult.dropped_false_positives = allDropped;
-
-      // Filter funnel telemetry — useful for monitoring over-filtering in production logs.
-      claudeResult.filter_funnel = {
-        claude_generated: claudeGenerated.gaps + claudeGenerated.security,
-        final_kept: claudeResult.gaps.length + claudeResult.security_issues.length,
-        dropped_total: allDropped.length,
-      };
-
-      // E. Recompute INTENT score from business_logic_gaps only (verified findings).
-      // Security findings DO NOT affect the intent score — that's the whole point of having two scores.
-      const sevPoints: Record<string, number> = { critical: 20, high: 10, medium: 5, low: 2 };
-      const verifiedGapsOnly = (claudeResult.gaps || []).filter((f: any) => f.confidence === "verified");
-      const intentDeduction = verifiedGapsOnly.reduce(
-        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
-        0,
-      );
-      claudeResult.intent_match_score = Math.max(0, 100 - intentDeduction);
-
-      // Compute SECURITY score independently from verified security findings.
-      const verifiedSecOnly = (claudeResult.security_issues || []).filter((f: any) => f.confidence === "verified");
-      const secDeduction = verifiedSecOnly.reduce(
-        (s: number, f: any) => s + (sevPoints[(f.severity || "medium").toLowerCase()] || 5),
-        0,
-      );
-      claudeResult.security_score = Math.max(0, 100 - secDeduction);
-
-      // Pass through new finding arrays (already validated by the prompt schema).
-      // Add ids if Claude didn't supply them so the UI can key on them.
-      const legalArr = Array.isArray(claudeResult.legal_findings) ? claudeResult.legal_findings : [];
-      claudeResult.legal_findings = legalArr.slice(0, 4).map((l: any, i: number) => ({
-        id: l?.id || `legal-${i + 1}`,
-        title: l?.title || "Legal gap",
-        what_we_found: l?.what_we_found || "",
-        what_this_means: l?.what_this_means || "",
-        how_to_fix: l?.how_to_fix || "",
-        severity: (l?.severity || "low").toLowerCase(),
-      }));
-
-      const promisesArr = Array.isArray(claudeResult.landing_page_promises) ? claudeResult.landing_page_promises : [];
-      claudeResult.landing_page_promises = promisesArr.slice(0, 6).map((p: any, i: number) => ({
-        id: p?.id || `promise-${i + 1}`,
-        claim: typeof p?.claim === "string" ? p.claim : "",
-        claim_source: p?.claim_source === "readme" ? "readme" : "homepage",
-        verdict: ["found", "partial", "not_found"].includes(p?.verdict) ? p.verdict : "not_found",
-        evidence: typeof p?.evidence === "string" ? p.evidence : "",
-        severity: (p?.severity || "info").toLowerCase(),
-      }));
-
-      // Homepage signals — what we read. The UI shows a soft "we also read your homepage" line.
-      claudeResult.homepage_signals = {
-        has_live_url: homepageSignals.has_live_url,
-        privacy_page_found: homepageSignals.privacy_page_found,
-        terms_page_found: homepageSignals.terms_page_found,
-        readme_found: !!homepageSignals.readme_text,
-      };
-
-      claudeResult.backend_verification = groundTruth
-        ? (groundTruth.source === "rpc" ? "verified" : "partial")
-        : "none";
 
       claudeResult.plan_at_scan = userPlan;
+      claudeResult.scan_type = scan_type || (userPlan === "free" ? "quick" : "deep");
       claudeResult.edge_functions_scanned = limits.edgeFunctionScan;
+
+      // Deduct one deep_scan_credit for try_pro after successful scan
+      if (userPlan === "try_pro") {
+        await serviceClient
+          .from("profiles")
+          .update({ deep_scan_credits: Math.max(0, deepScanCredits - 1) })
+          .eq("id", user.id)
+          .eq("plan", "try_pro");
+      }
 
       return new Response(JSON.stringify(claudeResult), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -1467,8 +933,8 @@ App understanding: ${JSON.stringify(code_understanding)}`;
       } else {
         await serviceClient.from("scan_usage").insert({ user_id: user.id, week_start: mondayStr, scan_count: 1 });
       }
-      // Monthly counter (pro)
-      if (userPlan === "pro") {
+      // Monthly counter (pro and try_pro)
+      if (userPlan === "pro" || userPlan === "try_pro") {
         const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
         const monthStr = monthStart.toISOString().split("T")[0];
         const { data: existingMonth } = await serviceClient

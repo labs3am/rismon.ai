@@ -883,11 +883,11 @@ export default function Analyze() {
                     <div className="flex gap-3 mt-5">
                       <button onClick={() => setDecisions(p => ({ ...p, [g.id]: 'fix' }))}
                         className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${d === 'fix' ? 'bg-primary/10 text-primary border-none' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
-                        {d === 'fix' ? '✓ Will be fixed' : 'Fix this'}
+                        {d === 'fix' ? 'Will be fixed' : 'Fix this'}
                       </button>
                       <button onClick={() => setDecisions(p => ({ ...p, [g.id]: 'ignore' }))}
                         className={`px-5 py-2.5 rounded-lg text-sm border transition-colors ${d === 'ignore' ? 'bg-secondary text-muted-foreground' : 'border-hover-border text-foreground hover:border-muted-foreground/30'}`}>
-                        {d === 'ignore' ? '✓ Ignored' : 'This is fine'}
+                        {d === 'ignore' ? 'Ignored' : 'This is fine'}
                       </button>
                     </div>
                   </div>
@@ -943,7 +943,7 @@ export default function Analyze() {
                   </div>
                   <button onClick={() => setDecisions(p => ({ ...p, [s.id]: 'fix' }))}
                     className={`mt-4 px-5 py-2.5 rounded-lg text-sm font-medium ${decisions[s.id] === 'fix' ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
-                    {decisions[s.id] === 'fix' ? '✓ Added to fix list' : 'Add to fix list'}
+                    {decisions[s.id] === 'fix' ? 'Added to fix list' : 'Add to fix list'}
                   </button>
                 </div>
               ))}
