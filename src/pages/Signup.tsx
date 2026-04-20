@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import SEO from '@/components/SEO';
+import Logo from '@/components/Logo';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -38,8 +39,11 @@ export default function Signup() {
       <Navbar />
       <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
         <div className="auth-glass-card">
-          <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Create your account</h1>
-          <p style={{ color: '#888888', fontSize: 14, marginTop: 6, marginBottom: 32 }}>Free to start. No credit card.</p>
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <Logo to={undefined as any} size="lg" />
+          </div>
+          <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', textAlign: 'center' }}>Create your account</h1>
+          <p style={{ color: '#888888', fontSize: 14, marginTop: 8, marginBottom: 32, textAlign: 'center' }}>Free to start. No credit card.</p>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Full name</label>
