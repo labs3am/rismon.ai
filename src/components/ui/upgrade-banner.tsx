@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface UpgradeBannerProps {
@@ -37,7 +37,7 @@ export function UpgradeBanner({
 }: UpgradeBannerProps) {
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const iconVariants = {
+  const iconVariants: Variants = {
     hidden: { x: 0, y: 0, opacity: 0, rotate: 0 },
     visible: (custom: { x: number; y: number }) => ({
       x: custom.x,
@@ -45,8 +45,8 @@ export function UpgradeBanner({
       opacity: 1,
       rotate: 360,
       transition: {
-        x: { duration: 0.3, ease: "easeOut" },
-        y: { duration: 0.3, ease: "easeOut" },
+        x: { duration: 0.3, ease: "easeOut" as const },
+        y: { duration: 0.3, ease: "easeOut" as const },
         opacity: { duration: 0.3 },
         rotate: { duration: 1, type: "spring" as const, stiffness: 100, damping: 10 },
       },
