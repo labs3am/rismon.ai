@@ -415,64 +415,82 @@ export default function Analyze() {
             scan_session_id: newSession?.id ?? null,
           }
         });
-        if (error || !data) {
+        // FunctionsHttpError swallows non-2xx response bodies — try to recover them
+        // so server-sent error codes (DUPLICATE_SCAN, WEEKLY_LIMIT, etc.) reach the user.
+        let payload: any = data;
+        if (error && (error as any)?.context?.body) {
+          try {
+            const ctxBody = (error as any).context.body;
+            const text = typeof ctxBody === 'string' ? ctxBody : await new Response(ctxBody).text();
+            payload = JSON.parse(text);
+          } catch { /* fall through */ }
+        }
+        if (!payload) {
           if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
-          toast.error('Analysis failed. Please try again.');
+          const msg = (error as any)?.message || 'Analysis failed. Please try again.';
+          toast.error(msg);
           navigate('/dashboard');
           return;
         }
 
-        // Handle limit/abuse responses from server
-        if (data.code === 'WEEKLY_LIMIT' || data.code === 'MONTHLY_LIMIT') {
+        // Handle limit/abuse responses from server (use recovered payload)
+        if (payload.code === 'WEEKLY_LIMIT' || payload.code === 'MONTHLY_LIMIT') {
           setBlocked(true);
           setStage('checking');
           if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
+          toast.error(payload.error || 'Scan limit reached.');
           return;
         }
-        if (data.code === 'DUPLICATE_SCAN' && data.existingReportId) {
+        if (payload.code === 'DUPLICATE_SCAN' && payload.existingReportId) {
           toast.info('You already scanned this repo recently. Showing your existing report.');
           if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
-          navigate(`/report/${data.existingReportId}`);
+          navigate(`/report/${payload.existingReportId}`);
           return;
         }
-        if (data.code === 'REPO_TOO_LARGE') {
-          toast.error(data.error);
+        if (payload.code === 'REPO_TOO_LARGE') {
+          toast.error(payload.error);
           if (newSession) await supabase.from('scan_sessions').delete().eq('id', newSession.id);
           navigate('/dashboard');
           return;
         }
-        if (data.code === 'SCAN_IN_PROGRESS') {
+        if (payload.code === 'SCAN_IN_PROGRESS') {
           if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
-          toast.error(data.error);
+          toast.error(payload.error || 'You already have a scan running.');
           navigate('/dashboard');
           return;
         }
-        if (data.error) {
+        if (payload.code === 'RATE_LIMITED') {
           if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
-          toast.error(data.error);
+          toast.error(payload.error || 'AI rate limit hit. Try again in a minute.');
           navigate('/dashboard');
           return;
         }
+        if (payload.error) {
+          if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
+          toast.error(payload.error);
+          navigate('/dashboard');
+          return;
+        }
+        // Re-bind data to recovered payload for the success path below
+        const data2 = payload;
 
         // Update analysis record
         if (analysis) {
           await supabase.from('analyses').update({
-            code_understanding: data.app_understanding,
-            smart_questions: data.questions,
+            code_understanding: data2.app_understanding,
+            smart_questions: data2.questions,
             files_scanned: totalFilesToFetch,
             status: 'questions_ready'
           }).eq('id', analysis.id);
         }
 
-        setCodeUnderstanding(data.app_understanding);
-        // Pass backendVisibility derived from whether app has supabase keys configured.
-        // The edge function returns pre_analysis without backendVisibility — we add it here.
+        setCodeUnderstanding(data2.app_understanding);
         const hasBackend = !!(app.supabase_url && app.supabase_anon_key);
         setPreAnalysis({
-          ...((data.pre_analysis as PreAnalysis) || {}),
+          ...((data2.pre_analysis as PreAnalysis) || {}),
           backendVisibility: hasBackend ? 'partial' : 'none',
         });
-        setQuestions(data.questions || []);
+        setQuestions(data2.questions || []);
         setStage('confirm');
         localStorage.setItem('rismon_analysis_stage', 'confirm');
       } catch (e: any) {
@@ -503,7 +521,7 @@ export default function Analyze() {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze', {
+      const { data: rawData, error } = await supabase.functions.invoke('analyze', {
         body: {
           action: 'analyze',
           app_id: appId,
@@ -523,7 +541,32 @@ export default function Analyze() {
           smart_questions: questions,
         }
       });
-      if (error || !data) { toast.error('Analysis failed'); analysisStarted.current = false; return; }
+      // Recover body from non-2xx responses so server error codes reach the user.
+      let payload: any = rawData;
+      if (error && (error as any)?.context?.body) {
+        try {
+          const ctxBody = (error as any).context.body;
+          const text = typeof ctxBody === 'string' ? ctxBody : await new Response(ctxBody).text();
+          payload = JSON.parse(text);
+        } catch { /* ignore */ }
+      }
+      if (!payload) {
+        toast.error((error as any)?.message || 'Analysis failed. Please try again.');
+        analysisStarted.current = false;
+        return;
+      }
+      if (payload.code && ['WEEKLY_LIMIT','MONTHLY_LIMIT','DUPLICATE_SCAN','SCAN_IN_PROGRESS','REPO_TOO_LARGE','RATE_LIMITED','CREDITS_EXHAUSTED'].includes(payload.code)) {
+        toast.error(payload.error || 'Scan blocked.');
+        analysisStarted.current = false;
+        return;
+      }
+      if (payload.error) {
+        toast.error(payload.error);
+        analysisStarted.current = false;
+        return;
+      }
+      // Use recovered payload as the result data from here on.
+      const data: any = payload;
 
       const durationSeconds = scanStartedAtRef.current
         ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)

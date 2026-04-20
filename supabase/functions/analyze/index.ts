@@ -798,13 +798,18 @@ serve(async (req) => {
     // Get user plan and deep_scan_credits from profiles
     const { data: profileRow } = await serviceClient
       .from("profiles")
-      .select("plan, deep_scan_credits")
+      .select("plan, pro_credits, pro_until, email")
       .eq("id", user.id)
       .single();
     const rawPlan = profileRow?.plan || "free";
-    const userPlan: "free" | "try_pro" | "pro" =
+    let userPlan: "free" | "try_pro" | "pro" =
       rawPlan === "pro" ? "pro" : rawPlan === "try_pro" ? "try_pro" : "free";
-    const deepScanCredits: number = profileRow?.deep_scan_credits ?? 3;
+    const deepScanCredits: number = profileRow?.pro_credits ?? 0;
+
+    // Internal unlimited-access allowlist (founder/staff testing)
+    const UNLIMITED_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+    const isUnlimited = !!(profileRow?.email && UNLIMITED_EMAILS.has(profileRow.email.toLowerCase()));
+    if (isUnlimited) userPlan = "pro";
     const limits = PLAN_LIMITS[userPlan];
 
     // ============================================================
@@ -831,13 +836,17 @@ serve(async (req) => {
       const totalBundle = (codeBundle || "") + (edgeFunctionBundle || "");
       const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
 
-      // Enforce all abuse limits BEFORE any AI call
-      const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes, scan_session_id);
-      if (!limitCheck.ok) {
-        return new Response(JSON.stringify({ error: limitCheck.message, code: limitCheck.code, existingReportId: limitCheck.existingReportId }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      // Enforce all abuse limits BEFORE any AI call (skipped for unlimited allowlist)
+      if (!isUnlimited) {
+        const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes, scan_session_id);
+        if (!limitCheck.ok) {
+          // Return 200 so supabase.functions.invoke surfaces the body to the client
+          // (non-2xx responses get swallowed into a generic FunctionsHttpError).
+          return new Response(JSON.stringify({ error: limitCheck.message, code: limitCheck.code, existingReportId: limitCheck.existingReportId }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       // Pre-scan deterministic checks
