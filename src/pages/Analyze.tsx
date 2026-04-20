@@ -477,22 +477,20 @@ export default function Analyze() {
         // Update analysis record
         if (analysis) {
           await supabase.from('analyses').update({
-            code_understanding: data.app_understanding,
-            smart_questions: data.questions,
+            code_understanding: data2.app_understanding,
+            smart_questions: data2.questions,
             files_scanned: totalFilesToFetch,
             status: 'questions_ready'
           }).eq('id', analysis.id);
         }
 
-        setCodeUnderstanding(data.app_understanding);
-        // Pass backendVisibility derived from whether app has supabase keys configured.
-        // The edge function returns pre_analysis without backendVisibility — we add it here.
+        setCodeUnderstanding(data2.app_understanding);
         const hasBackend = !!(app.supabase_url && app.supabase_anon_key);
         setPreAnalysis({
-          ...((data.pre_analysis as PreAnalysis) || {}),
+          ...((data2.pre_analysis as PreAnalysis) || {}),
           backendVisibility: hasBackend ? 'partial' : 'none',
         });
-        setQuestions(data.questions || []);
+        setQuestions(data2.questions || []);
         setStage('confirm');
         localStorage.setItem('rismon_analysis_stage', 'confirm');
       } catch (e: any) {
