@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import UpgradeBannerHost from "@/components/UpgradeBannerHost";
 
 // Code-split every non-landing route so the initial bundle stays small.
 const Signup = lazy(() => import("./pages/Signup"));
