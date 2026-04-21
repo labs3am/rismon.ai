@@ -226,6 +226,7 @@
 
 /* ============ Vercel-style minimal homepage ============ */
 .vercel-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   background: transparent;
@@ -235,6 +236,32 @@
   font-size: 12px;
   color: #888888;
   margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.vercel-pill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.12),
+    transparent
+  );
+  animation: silver-shine 3s ease-in-out infinite;
+}
+
+@keyframes silver-shine {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 200%;
+  }
 }
 .vercel-hero-h1 {
   font-size: clamp(40px, 6vw, 72px);
