@@ -675,8 +675,12 @@ export default function Analyze() {
       setStage('review');
       localStorage.removeItem('rismon_active_analysis');
       localStorage.removeItem('rismon_analysis_stage');
-    } catch {
-      toast.error('Analysis failed');
+    } catch (e: any) {
+      if (scanSessionId) {
+        await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+      }
+      setFailureMessage(e?.message || 'Analysis failed. The scan may have been interrupted by a tab switch or network drop.');
+      setStage('failed');
       analysisStarted.current = false;
     }
   }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId, scanType, filesScanned, app]);
