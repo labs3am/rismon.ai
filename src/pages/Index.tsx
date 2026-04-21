@@ -164,22 +164,96 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>HOW IT WORKS</p>
           <h2 className={HEADLINE}>Five steps to know your app completely</h2>
-          <div className="mt-12 relative">
+          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden">
             {steps.map((s, i) => (
-              <div key={i} className="flex gap-6 relative pb-10 last:pb-0">
-                <div className="relative flex-shrink-0" style={{ width: '24px' }}>
-                  <div style={{ width: '10px', height: '10px', background: '#f97316', borderRadius: '50%', marginTop: '6px', marginLeft: '7px', position: 'relative', zIndex: 2 }} />
-                  {i < steps.length - 1 && (
-                    <div style={{ position: 'absolute', top: '20px', bottom: '-16px', left: '11px', width: '1px', background: '#f97316' }} />
-                  )}
+              <div
+                key={i}
+                className="relative group p-8 bg-[#000000] hover:bg-[#0a0a0a] transition-colors duration-300"
+                style={{ minHeight: '220px' }}
+              >
+                {/* Step number — large, ghosted background */}
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '20px',
+                    fontSize: '64px',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    color: '#ffffff',
+                    opacity: 0.04,
+                    letterSpacing: '-0.04em',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {s.n}
+                </span>
+
+                {/* Top accent badge */}
+                <div className="flex items-center gap-2 mb-6">
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      background: '#f97316',
+                      borderRadius: '50%',
+                      boxShadow: '0 0 12px #f97316',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      color: '#f97316',
+                      fontWeight: 600,
+                      letterSpacing: '0.14em',
+                    }}
+                  >
+                    STEP {s.n}
+                  </span>
                 </div>
-                <div className="flex-1">
-                  <p style={{ fontSize: '12px', color: '#f97316', fontWeight: 600, letterSpacing: '0.1em', marginBottom: '8px' }}>{s.n}</p>
-                  <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{s.title}</p>
-                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{s.text}</p>
-                </div>
+
+                <h3
+                  style={{
+                    fontSize: '17px',
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    marginBottom: '10px',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {s.title}
+                </h3>
+                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.65 }}>
+                  {s.text}
+                </p>
+
+                {/* Bottom hover bar */}
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 bottom-0 h-[2px] bg-[#f97316] transition-all duration-500 ease-out w-0 group-hover:w-full"
+                />
               </div>
             ))}
+
+            {/* Filler tile to balance the 5-step grid on lg (3 cols) */}
+            <div className="hidden lg:flex p-8 bg-[#000000] items-center justify-center">
+              <div className="text-center">
+                <p style={{ fontSize: '11px', color: '#f97316', fontWeight: 600, letterSpacing: '0.14em', marginBottom: '12px' }}>
+                  READY?
+                </p>
+                <Link
+                  to="/signup"
+                  className="vercel-btn-primary inline-block"
+                  style={{ fontSize: '13px' }}
+                >
+                  Start free scan
+                </Link>
+                <p style={{ fontSize: '12px', color: '#555555', marginTop: '12px' }}>
+                  Takes about 60 seconds
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
