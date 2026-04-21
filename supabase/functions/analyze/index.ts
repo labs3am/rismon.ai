@@ -1000,6 +1000,7 @@ serve(async (req) => {
 
       // Probe Supabase tables
       const rlsFindings: any[] = [];
+      let derivedTableNames = "";
       if (appSupabaseUrl && appSupabaseAnonKey) {
         try {
           const res = await fetch(`${appSupabaseUrl}/rest/v1/`, {
@@ -1010,10 +1011,13 @@ serve(async (req) => {
             const tableList = typeof tables === "object" ? Object.keys(tables) : [];
             if (tableList.length > 0) {
               rlsFindings.push({ type: "tables_detected", tables: tableList, note: "Check if these tables have RLS enabled" });
+              derivedTableNames = tableList.join(", ");
             }
           }
         } catch { /* ignore */ }
       }
+      // Prefer the server-derived list; fall back to anything the client sent.
+      const effectiveTableNames = derivedTableNames || tableNames || "";
 
       const preCheckContext = (securityPreFound.length > 0 || rlsFindings.length > 0)
         ? `\n\nPre-scan findings already detected: ${JSON.stringify([...securityPreFound, ...rlsFindings])}\nInclude these in your response and add anything else you find.`
