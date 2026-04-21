@@ -31,7 +31,7 @@ export default function Navbar() {
   };
 
   const linkStyle: React.CSSProperties = {
-    color: '#a3a3a3',
+    color: '#888888',
     fontSize: 13.5,
     background: 'transparent',
     border: 'none',
@@ -42,7 +42,7 @@ export default function Navbar() {
   };
 
   const isActive = (path: string) => location.pathname === path;
-  const activeStyle: React.CSSProperties = { color: '#ffffff' };
+  const activeStyle: React.CSSProperties = { color: '#ffffff', fontWeight: 500 };
 
   return (
     <nav
@@ -59,18 +59,23 @@ export default function Navbar() {
       }}
     >
       <div className="flex h-full items-center justify-between max-w-[1200px] mx-auto" style={{ padding: '0 24px' }}>
-        <Logo />
+        <div className="hidden md:flex items-center gap-6">
+          <Logo />
+          <div className="flex items-center gap-5">
+            <button onClick={() => goToSection('how-it-works')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>How it works</button>
+            <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>What we find</button>
+            <Link to="/pricing" style={isActive('/pricing') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/pricing') ? '#ffffff' : '#888888')}>Pricing</Link>
+            <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Security</button>
+            <Link to="/blog" style={isActive('/blog') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/blog') ? '#ffffff' : '#888888')}>Blog</Link>
+          </div>
+        </div>
 
-        <div className="hidden md:flex items-center gap-7">
-          <button onClick={() => goToSection('how-it-works')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#a3a3a3')}>How it works</button>
-          <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#a3a3a3')}>What we check</button>
-          <Link to="/pricing" style={isActive('/pricing') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/pricing') ? '#ffffff' : '#a3a3a3')}>Pricing</Link>
-          <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#a3a3a3')}>Security</button>
-          <Link to="/blog" style={isActive('/blog') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/blog') ? '#ffffff' : '#a3a3a3')}>Blog</Link>
+        <div className="md:hidden">
+          <Logo />
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/login" style={{ color: '#a3a3a3', fontSize: 13.5, transition: 'color 0.15s ease', fontWeight: 450 }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#a3a3a3')}>Log in</Link>
+          <Link to="/login" style={{ color: '#888888', fontSize: 13.5, transition: 'color 0.15s ease', fontWeight: 450 }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Log in</Link>
           <Link
             to="/signup"
             style={{
@@ -96,8 +101,8 @@ export default function Navbar() {
 
       {open && (
         <div className="md:hidden flex flex-col gap-2" style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
-          <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>How it works</button>
-          <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>What we check</button>
+          <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>How it works</button>
+          <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>What we find</button>
           <Link to="/pricing" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Pricing</Link>
           <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Security</button>
           <Link to="/blog" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Blog</Link>
