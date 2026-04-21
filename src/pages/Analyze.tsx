@@ -864,6 +864,50 @@ export default function Analyze() {
     );
   }
 
+  // Scan failed — show a clear restart screen instead of bouncing to dashboard
+  if (stage === 'failed') {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardNavbar />
+        <div className="max-w-[520px] mx-auto px-5 pt-32 pb-16">
+          <div className="rounded-2xl p-8 text-center" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+            <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <span className="text-destructive text-xl font-semibold">!</span>
+            </div>
+            <h2 className="text-foreground text-[22px] font-semibold mt-5">Scan was interrupted</h2>
+            <p className="text-muted-foreground text-[14px] leading-relaxed mt-3">
+              {failureMessage || 'Your scan did not finish.'}
+            </p>
+            <div className="rounded-lg p-4 mt-6 text-left" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
+              <p className="text-[12px] font-semibold uppercase" style={{ color: '#f97316', letterSpacing: '0.05em' }}>Tip</p>
+              <p className="text-[13px] mt-2" style={{ color: '#a1a1aa', lineHeight: 1.6 }}>
+                Scans can fail when you switch tabs or close the window during analysis. Please keep this tab open and active until your report appears.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 mt-7 items-center">
+              <button
+                onClick={() => {
+                  setFailureMessage(null);
+                  setStage('checking');
+                  readingStarted.current = false;
+                  analysisStarted.current = false;
+                  // Re-trigger the loader
+                  setTimeout(() => setStage('reading'), 50);
+                }}
+                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors w-full"
+              >
+                Restart scan
+              </button>
+              <Link to="/dashboard" className="text-muted-foreground text-[13px] hover:text-foreground transition-colors">
+                ← Back to dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Guard: app failed to load outside of loading stages
   if (!app) {
     return (
