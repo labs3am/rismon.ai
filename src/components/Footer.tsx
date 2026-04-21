@@ -37,6 +37,9 @@ export default function Footer() {
         </div>
         <div className="flex flex-col gap-2">
           <Link to="/blog" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Blog</Link>
+          <Link to="/pricing" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Pricing</Link>
+          <Link to="/sample-report" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Sample report</Link>
+          <Link to="/contact" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Contact</Link>
           <Link to="/privacy" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Privacy Policy</Link>
           <Link to="/terms" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>Terms of Service</Link>
           <a href="mailto:hello@rismon.ai" style={linkStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>hello@rismon.ai</a>
