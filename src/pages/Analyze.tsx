@@ -17,7 +17,7 @@ export default function Analyze() {
   const { appId } = useParams();
   const { user, session } = useAuth();
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'checking' | 'reading' | 'confirm' | 'questions' | 'analyzing' | 'review'>('checking');
+  const [stage, setStage] = useState<'checking' | 'reading' | 'confirm' | 'questions' | 'analyzing' | 'review' | 'failed'>('checking');
   const [failureMessage, setFailureMessage] = useState<string | null>(null);
   const [understandingCorrection, setUnderstandingCorrection] = useState<string>('');
   const [app, setApp] = useState<any>(null);
