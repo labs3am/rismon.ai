@@ -230,15 +230,22 @@ function IntentScoreCard({
       <div className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
         Does your code do what you said your app does?
       </div>
-      <div
-        className="mt-5 inline-block px-3.5 py-1.5 rounded-full text-xs"
-        style={{
-          background: 'rgba(249,115,22,0.06)',
-          border: '1px solid rgba(249,115,22,0.25)',
-          color: '#fdba74',
-        }}
-      >
-        Quick scan ceiling {ceiling}/100. Run a deep scan to unlock the full 100.
+      <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-xs text-muted-foreground">
+        <span
+          aria-hidden
+          style={{
+            width: 5,
+            height: 5,
+            borderRadius: 999,
+            background: 'hsl(var(--muted-foreground))',
+          }}
+        />
+        <span>
+          Quick scan ceiling{' '}
+          <span className="text-foreground tabular-nums">{ceiling}/100</span>
+          <span className="mx-1.5 text-border">·</span>
+          Run a deep scan to unlock the full 100.
+        </span>
       </div>
     </div>
   );
@@ -255,24 +262,23 @@ function WarningChip({
   label: string;
   tone: 'sharp' | 'soft' | 'clear';
 }) {
-  const palette =
-    tone === 'sharp'
-      ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
-      : tone === 'soft'
-        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
-        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+  const dotColor =
+    tone === 'sharp' ? '#ef4444' : tone === 'soft' ? '#f59e0b' : '#22c55e';
   return (
-    <span
-      className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium"
-      style={{
-        background: palette.bg,
-        border: `1px solid ${palette.border}`,
-        color: palette.color,
-      }}
-    >
-      <span className="flex">{icon}</span>
-      <strong style={{ color: palette.color }}>{count}</strong>
-      <span>{label}</span>
+    <span className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-foreground">
+      <span
+        aria-hidden
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 999,
+          background: dotColor,
+          boxShadow: `0 0 0 3px ${dotColor}1f`,
+        }}
+      />
+      <span className="flex text-muted-foreground">{icon}</span>
+      <span className="tabular-nums text-foreground">{count}</span>
+      <span className="text-muted-foreground">{label}</span>
     </span>
   );
 }
