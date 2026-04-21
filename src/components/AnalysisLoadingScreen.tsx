@@ -194,6 +194,34 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
           )}
           {stage === 'analyzing' && <span>This usually takes 30–60 seconds</span>}
         </div>
+
+        {/* Tab-switch warning */}
+        <div
+          style={{
+            marginTop: 28,
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: tabHidden ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.02)',
+            border: tabHidden ? '1px solid rgba(249,115,22,0.35)' : '1px solid #1a1a1a',
+            transition: 'background 0.3s ease, border-color 0.3s ease',
+            textAlign: 'left',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: tabHidden ? '#f97316' : '#a1a1aa',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {tabHidden ? 'Come back to this tab' : 'Keep this tab open'}
+          </div>
+          <div style={{ fontSize: 13, color: '#71717a', marginTop: 6, lineHeight: 1.5 }}>
+            Switching tabs or closing this window can interrupt the scan. Please wait here until your report is ready.
+          </div>
+        </div>
       </div>
 
       <style>{`
