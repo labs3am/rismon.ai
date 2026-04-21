@@ -116,34 +116,30 @@ function WarningChip({
   tone: 'sharp' | 'soft' | 'clear';
   onClick?: () => void;
 }) {
-  const palette =
-    tone === 'sharp'
-      ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
-      : tone === 'soft'
-        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
-        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+  const dotColor =
+    tone === 'sharp' ? '#ef4444' : tone === 'soft' ? '#f59e0b' : '#22c55e';
   return (
     <button
       type="button"
       onClick={onClick}
-      style={{
-        background: palette.bg,
-        border: `1px solid ${palette.border}`,
-        color: palette.color,
-        borderRadius: 999,
-        padding: '8px 14px',
-        fontSize: 13,
-        fontWeight: 500,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'background 0.15s, border-color 0.15s',
-      }}
+      className="group inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-foreground transition-colors hover:border-foreground/30 hover:bg-card/80"
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      <span style={{ display: 'flex' }}>{icon}</span>
-      <strong style={{ color: palette.color }}>{count}</strong>
-      <span>{label}</span>
+      <span
+        aria-hidden
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 999,
+          background: dotColor,
+          boxShadow: `0 0 0 3px ${dotColor}1f`,
+        }}
+      />
+      <span className="flex text-muted-foreground group-hover:text-foreground transition-colors">
+        {icon}
+      </span>
+      <span className="tabular-nums text-foreground">{count}</span>
+      <span className="text-muted-foreground">{label}</span>
     </button>
   );
 }
@@ -163,8 +159,19 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
     confidence === 'verified' ? 'Verified' : confidence === 'likely' ? 'Likely' : 'Unverified';
 
   const title = f.title || 'Issue';
-  const whatWeFound = f.what_we_found || f.you_said || f.explanation || '';
-  const whatThisMeans = f.what_this_means || f.business_impact || '';
+  const whatWeFoundRaw = f.what_we_found || f.you_said || f.explanation || '';
+  const whatThisMeansRaw = f.what_this_means || f.business_impact || '';
+  const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+  // De-duplicate: when the model fills both fields with the same impact text,
+  // only render the Impact section once.
+  const isDup =
+    whatWeFoundRaw &&
+    whatThisMeansRaw &&
+    (norm(whatWeFoundRaw) === norm(whatThisMeansRaw) ||
+      norm(whatWeFoundRaw).includes(norm(whatThisMeansRaw)) ||
+      norm(whatThisMeansRaw).includes(norm(whatWeFoundRaw)));
+  const whatWeFound = isDup ? '' : whatWeFoundRaw;
+  const whatThisMeans = whatThisMeansRaw || (isDup ? whatWeFoundRaw : '');
   const howToFix = f.how_to_fix || '';
   const fixPrompt = f.fix_prompt || '';
   const techRef = f.technical_reference || '';
@@ -535,7 +542,11 @@ export default function Report() {
         if (generateStarted.current) return;
         generateStarted.current = true;
         setGenerating(true);
-        const { data: app } = await supabase.from('apps').select('*').eq('id', data.app_id).single();
+        const { data: app } = await supabase
+          .from('apps')
+          .select('id,platform')
+          .eq('id', data.app_id)
+          .single();
         const { data: result, error } = await supabase.functions.invoke('analyze', {
           body: {
             action: 'generate_fixes',

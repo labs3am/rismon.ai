@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
 import HowWeScore from '@/components/HowWeScore';
 import SEO from '@/components/SEO';
@@ -102,10 +103,11 @@ export default function Index() {
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
       <SEO
-        title="Rismon.ai, Know What Your AI Actually Built"
+        title="Rismon.ai | Know what your AI actually built"
         description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof, file, line, and snippet. Free scan. No code knowledge needed."
         canonicalPath="/"
       />
+      <AnnouncementBar />
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 

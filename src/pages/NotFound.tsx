@@ -37,7 +37,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
       <SEO
-        title="Page not found — Rismon.ai"
+        title="Page not found | Rismon.ai"
         description="That page doesn't exist on Rismon.ai. Head back to the home page or jump to your dashboard."
         noindex
       />

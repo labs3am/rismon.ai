@@ -33,7 +33,6 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
 
   const u = understanding || {};
   const features = (u.features_found || []).slice(0, 8);
-  const roles = u.user_roles_found || [];
   const tables = (u.database_tables || []).slice(0, 8);
   const unsureItems = (u.unknown_features || []).slice(0, 5);
 
@@ -127,12 +126,6 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
                 u.has_messaging && 'Sends messages',
               ].filter(Boolean) as string[]}
             />
-          </Section>
-        )}
-
-        {roles.length > 0 && (
-          <Section label="Who uses it">
-            <PillList items={roles} />
           </Section>
         )}
 

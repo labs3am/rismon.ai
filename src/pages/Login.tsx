@@ -32,7 +32,7 @@ export default function Login() {
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
       <SEO
-        title="Log in — Rismon.ai"
+        title="Log in | Rismon.ai"
         description="Log in to Rismon.ai to scan your AI-built app and see plain-English findings, fix prompts, and intent match scores."
         canonicalPath="/login"
         noindex

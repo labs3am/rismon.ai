@@ -1,16 +1,18 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { Check, Copy, ShieldAlert, FileText, AlertCircle, ArrowRight, Shield } from 'lucide-react';
+import { Check, Copy, ShieldAlert, FileText, AlertCircle, ArrowRight, Database } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 
 /**
- * SampleReport mirrors the live Report page layout exactly so visitors
- * see what they'll actually get. Data below is hand-crafted to showcase:
- *  - The new Moderate scoring (87/100, capped at 95 because no backend verified)
- *  - Proof-backed findings (file_path + line_number + code_snippet)
- *  - Verified vs Unverified confidence labels
+ * SampleReport mirrors the live Report page exactly so visitors see what they
+ * will actually receive. Hand-crafted data showcases:
+ *  - The new scoring (verified findings count fully, unverified count half-weight)
+ *  - Hard caps for critical findings; QUICK SCAN max 90, DEEP SCAN max 100
+ *  - Verified vs Unverified confidence labels, with the explicit
+ *    "Connect Supabase to verify" note on DB-pattern findings
+ *  - Proof badges (file_path + line_number + code_snippet)
  *  - Promises-vs-code mismatches
  *  - Soft-tone legal findings
  *  - Copy-paste fix prompts
@@ -25,27 +27,38 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 function scoreColor(score: number) {
-  if (score >= 90) return '#22c55e';
-  if (score >= 70) return '#f59e0b';
-  if (score >= 50) return '#f97316';
-  return '#ef4444';
+  if (score >= 89) return '#22c55e';
+  if (score >= 75) return '#84cc16';
+  if (score >= 65) return '#f59e0b';
+  return '#f97316';
+}
+
+function scoreLabelFor(score: number) {
+  if (score >= 93) return 'Excellent';
+  if (score >= 85) return 'Strong';
+  if (score >= 70) return 'Good';
+  if (score >= 55) return 'Getting there';
+  if (score >= 40) return 'Needs work';
+  return 'Critical issues';
 }
 
 const sample = {
   appName: 'Mealgo',
   platform: 'Lovable',
-  score: 87,
-  scoreLabel: 'Almost ready',
   scanType: 'quick',
-  backendVerified: false, // → score capped at 95 by the new Moderate rules
+  // Quick scan ceiling = 90. One high-severity verified finding (-5) and
+  // one medium verified (-2) and a few unverified at half-weight bring this
+  // to 81.
+  score: 81,
   summary:
-    'Mealgo cleanly delivers on its core promise: weekly meal planning with shopping-list generation. Authentication, recipe storage, and the Stripe checkout flow are all wired up correctly. The biggest concern is that the homepage advertises "AI-powered nutrition coaching" but no AI integration was found in the scanned code, and the Stripe webhook does not verify signatures.',
+    'Mealgo cleanly delivers on its core promise: weekly meal planning with shopping-list generation. Authentication, recipe storage, and the Stripe checkout flow are wired up correctly. The biggest concern is that the Stripe webhook does not verify signatures, and the homepage advertises AI-powered nutrition coaching but no AI integration was found in the scanned code.',
   verdict: 'Fix the webhook signature check before your first paying user signs up.',
   gaps: [
     {
       id: 'g-1',
       severity: 'high',
       confidence: 'verified',
+      category: 'payments',
       title: 'Stripe webhook accepts unsigned events',
       what_we_found:
         'The /stripe-webhook edge function reads the request body and updates user plans without calling stripe.webhooks.constructEvent.',
@@ -58,12 +71,13 @@ const sample = {
       technical_reference: 'stripe-webhook-signature-verification',
       file_path: 'supabase/functions/stripe-webhook/index.ts',
       line_number: 42,
-      code_snippet: "const event = JSON.parse(await req.text()); // no signature check",
+      code_snippet: 'const event = JSON.parse(await req.text()); // no signature check',
     },
     {
       id: 'g-2',
       severity: 'medium',
-      confidence: 'unverified',
+      confidence: 'verified',
+      category: 'payments',
       title: 'Plan downgrade not handled on subscription cancel',
       what_we_found:
         'The webhook handles checkout.session.completed but no handler exists for customer.subscription.deleted in the scanned code.',
@@ -82,8 +96,9 @@ const sample = {
   security_issues: [
     {
       id: 's-1',
-      severity: 'medium',
+      severity: 'high',
       confidence: 'unverified',
+      category: 'secrets',
       title: 'OpenAI API key referenced in client code',
       what_we_found:
         'src/lib/ai.ts reads VITE_OPENAI_API_KEY. Anything prefixed VITE_ is bundled into the browser and visible in DevTools.',
@@ -97,6 +112,31 @@ const sample = {
       file_path: 'src/lib/ai.ts',
       line_number: 8,
       code_snippet: 'const apiKey = import.meta.env.VITE_OPENAI_API_KEY;',
+    },
+    {
+      // Database-pattern finding. Confidence is forced to "unverified" because
+      // we did not have a live Supabase connection during this scan. The card
+      // shows the "Connect Supabase to verify" note.
+      id: 's-2',
+      severity: 'high',
+      confidence: 'unverified',
+      category: 'database',
+      requires_supabase_verification: true,
+      verification_note:
+        'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.',
+      title: 'Recipes table may be missing row-level security',
+      what_we_found:
+        'src/lib/recipes.ts queries the public.recipes table with the anon key but no .eq("user_id", user.id) filter. We did not detect an RLS policy in the scanned migrations.',
+      what_this_means:
+        'If RLS is not enabled on this table, any signed-in user could read or modify every other user\'s recipes. We could not verify this directly without a live Supabase connection.',
+      how_to_fix:
+        'Enable RLS on public.recipes, then add owner-scoped SELECT, INSERT, UPDATE and DELETE policies that compare auth.uid() to the user_id column.',
+      fix_prompt:
+        'In my Supabase project, enable row-level security on the public.recipes table and add owner-scoped policies:\n\n1. ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;\n2. CREATE POLICY "owner reads" ON public.recipes FOR SELECT USING (auth.uid() = user_id);\n3. CREATE POLICY "owner writes" ON public.recipes FOR INSERT WITH CHECK (auth.uid() = user_id);\n4. CREATE POLICY "owner updates" ON public.recipes FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);\n5. CREATE POLICY "owner deletes" ON public.recipes FOR DELETE USING (auth.uid() = user_id);\n6. Test with two different accounts: account A should never see account B\'s rows.',
+      technical_reference: 'supabase-rls-owner-policy',
+      file_path: 'src/lib/recipes.ts',
+      line_number: 14,
+      code_snippet: "supabase.from('recipes').select('*')",
     },
   ],
   legal_findings: [
@@ -119,7 +159,7 @@ const sample = {
       claim_source: 'homepage',
       verdict: 'not_found',
       evidence:
-        'We searched the codebase for OpenAI, Anthropic, Gemini, and "coach", no nutrition-coaching logic was found in the scanned files.',
+        'We searched the codebase for OpenAI, Anthropic, Gemini, and "coach". No nutrition-coaching logic was found in the scanned files.',
       severity: 'medium',
     },
     {
@@ -135,13 +175,12 @@ const sample = {
       claim: 'Weekly meal plans with shopping lists',
       claim_source: 'homepage',
       verdict: 'found',
-      evidence:
-        'src/pages/MealPlan.tsx and src/lib/shopping-list.ts implement this, confirmed.',
+      evidence: 'src/pages/MealPlan.tsx and src/lib/shopping-list.ts implement this, confirmed.',
       severity: 'info',
     },
   ],
   what_works: [
-    'Email + password authentication is wired correctly with Supabase auth and a working profiles table',
+    'Email and password authentication is wired correctly with Supabase auth and a working profiles table',
     'Stripe checkout session creation includes the correct success and cancel URLs',
     'Recipe storage uses a normalized schema (recipes, ingredients, recipe_ingredients), clean and scalable',
     'Mobile responsive layout adapts cleanly down to 360px width',
@@ -156,77 +195,58 @@ const sample = {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        fontSize: 11,
-        color: '#555555',
-        letterSpacing: '0.1em',
-        marginBottom: 16,
-        textTransform: 'uppercase',
-        fontWeight: 600,
-      }}
-    >
+    <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-4">
       {children}
     </div>
   );
 }
 
-function IntentScoreCard({ score, label, capped }: { score: number; label: string; capped: boolean }) {
+function IntentScoreCard({
+  score,
+  label,
+  scanType,
+}: {
+  score: number;
+  label: string;
+  scanType: string;
+}) {
   const c = scoreColor(score);
+  const ceiling = scanType === 'deep' ? 100 : 90;
   return (
-    <div
-      style={{
-        background: '#0a0a0a',
-        border: '1px solid #1a1a1a',
-        borderRadius: 16,
-        padding: '40px 32px',
-        textAlign: 'center',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11,
-          color: '#555',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          fontWeight: 600,
-          marginBottom: 16,
-        }}
-      >
+    <div className="bg-card border border-border rounded-2xl px-8 py-10 text-center">
+      <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-4">
         Intent match
       </div>
       <div
-        style={{
-          fontSize: 88,
-          fontWeight: 700,
-          letterSpacing: '-0.04em',
-          color: c,
-          lineHeight: 0.95,
-        }}
+        className="font-bold leading-[0.95] tracking-[-0.04em]"
+        style={{ fontSize: 88, color: c }}
       >
         {score}
-        <span style={{ fontSize: 28, color: '#444', fontWeight: 500, marginLeft: 4 }}>/100</span>
+        <span className="text-[28px] font-medium ml-1" style={{ color: '#444' }}>
+          /100
+        </span>
       </div>
-      <div style={{ fontSize: 16, fontWeight: 500, color: '#fff', marginTop: 16 }}>{label}</div>
-      <div style={{ fontSize: 13, color: '#666', marginTop: 6, lineHeight: 1.5 }}>
+      <div className="text-base font-medium text-foreground mt-4">{label}</div>
+      <div className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
         Does your code do what you said your app does?
       </div>
-      {capped && (
-        <div
+      <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-xs text-muted-foreground">
+        <span
+          aria-hidden
           style={{
-            marginTop: 18,
-            padding: '8px 14px',
-            background: 'rgba(99,102,241,0.06)',
-            border: '1px solid rgba(99,102,241,0.25)',
+            width: 5,
+            height: 5,
             borderRadius: 999,
-            fontSize: 12,
-            color: '#a5b4fc',
-            display: 'inline-block',
+            background: 'hsl(var(--muted-foreground))',
           }}
-        >
-          Capped at 95, connect your backend to unlock the full 100
-        </div>
-      )}
+        />
+        <span>
+          Quick scan ceiling{' '}
+          <span className="text-foreground tabular-nums">{ceiling}/100</span>
+          <span className="mx-1.5 text-border">·</span>
+          Run a deep scan to unlock the full 100.
+        </span>
+      </div>
     </div>
   );
 }
@@ -242,30 +262,23 @@ function WarningChip({
   label: string;
   tone: 'sharp' | 'soft' | 'clear';
 }) {
-  const palette =
-    tone === 'sharp'
-      ? { border: '#ef4444', color: '#fca5a5', bg: 'rgba(239,68,68,0.06)' }
-      : tone === 'soft'
-        ? { border: '#f59e0b55', color: '#fcd34d', bg: 'rgba(245,158,11,0.06)' }
-        : { border: '#22c55e55', color: '#86efac', bg: 'rgba(34,197,94,0.06)' };
+  const dotColor =
+    tone === 'sharp' ? '#ef4444' : tone === 'soft' ? '#f59e0b' : '#22c55e';
   return (
-    <span
-      style={{
-        background: palette.bg,
-        border: `1px solid ${palette.border}`,
-        color: palette.color,
-        borderRadius: 999,
-        padding: '8px 14px',
-        fontSize: 13,
-        fontWeight: 500,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 8,
-      }}
-    >
-      <span style={{ display: 'flex' }}>{icon}</span>
-      <strong style={{ color: palette.color }}>{count}</strong>
-      <span>{label}</span>
+    <span className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-foreground">
+      <span
+        aria-hidden
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 999,
+          background: dotColor,
+          boxShadow: `0 0 0 3px ${dotColor}1f`,
+        }}
+      />
+      <span className="flex text-muted-foreground">{icon}</span>
+      <span className="tabular-nums text-foreground">{count}</span>
+      <span className="text-muted-foreground">{label}</span>
     </span>
   );
 }
@@ -285,143 +298,132 @@ function FindingCard({ f }: { f: any }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const norm = (s: string) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const isImpactDup =
+    f.what_we_found &&
+    f.what_this_means &&
+    (norm(f.what_we_found) === norm(f.what_this_means) ||
+      norm(f.what_we_found).includes(norm(f.what_this_means)) ||
+      norm(f.what_this_means).includes(norm(f.what_we_found)));
+  const showWhatWeFound = !isImpactDup && !!f.what_we_found;
+  const impactText = f.what_this_means || (isImpactDup ? f.what_we_found : '');
+
   return (
     <div
-      style={{
-        background: '#0a0a0a',
-        border: '1px solid #1a1a1a',
-        borderLeft: `3px solid ${color}`,
-        borderRadius: 8,
-        padding: 24,
-        marginBottom: 12,
-      }}
+      className="bg-card border border-border rounded-lg p-6 mb-3"
+      style={{ borderLeft: `3px solid ${color}` }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8, flex: 1 }}>
-          {f.title}
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="flex justify-between items-start gap-3">
+        <div className="text-base font-semibold text-foreground mb-2 flex-1">{f.title}</div>
+        <div className="flex gap-2 items-center">
           <span
-            style={{
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: confColor,
-              fontWeight: 600,
-              border: `1px solid ${confColor}33`,
-              padding: '2px 8px',
-              borderRadius: 999,
-              whiteSpace: 'nowrap',
-            }}
+            className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
+            style={{ color: confColor, border: `1px solid ${confColor}33` }}
           >
             {confLabel}
           </span>
           <span
-            style={{
-              fontSize: 10,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color,
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-            }}
+            className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap"
+            style={{ color }}
           >
             {sev}
           </span>
         </div>
       </div>
 
-      <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 12 }}>
-        {f.what_we_found}
-      </div>
+      {showWhatWeFound && (
+        <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
+      )}
 
-      {/* Proof badge, file_path + line + snippet. Our visual signature. */}
+      {/* Proof: file_path + line + snippet */}
       {f.file_path && (
         <div
-          style={{
-            background: '#000',
-            border: '1px solid #1a1a1a',
-            borderRadius: 6,
-            padding: '10px 12px',
-            marginBottom: 14,
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-          }}
+          className="rounded-md px-3 py-2.5 mb-3.5 font-mono"
+          style={{ background: '#000', border: '1px solid #1a1a1a' }}
         >
-          <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>
+          <div className="text-[11px] mb-1.5" style={{ color: '#666' }}>
             <span style={{ color: '#22c55e' }}>● Proof</span> · {f.file_path}
             {f.line_number ? `:${f.line_number}` : ''}
           </div>
           {f.code_snippet && (
-            <div style={{ fontSize: 12, color: '#aaa', whiteSpace: 'pre-wrap' }}>{f.code_snippet}</div>
+            <div className="text-[12px] whitespace-pre-wrap" style={{ color: '#aaa' }}>
+              {f.code_snippet}
+            </div>
           )}
         </div>
       )}
 
-      <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>
+      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
         Impact
       </div>
-      <div style={{ fontSize: 14, color: '#ffffff', lineHeight: 1.6, marginBottom: 16 }}>
-        {f.what_this_means}
-      </div>
+      <div className="text-sm text-foreground leading-relaxed mb-4">{impactText}</div>
 
-      <div style={{ borderTop: '1px solid #1a1a1a', margin: '16px 0' }} />
+      {/* Verification note for unverified DB findings */}
+      {(f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
+        <div
+          className="rounded-md px-3.5 py-2.5 mb-4 flex items-start gap-2.5"
+          style={{
+            background: 'rgba(245,158,11,0.06)',
+            border: '1px solid rgba(245,158,11,0.25)',
+          }}
+        >
+          <Database size={14} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
+          <div className="text-[13px] leading-relaxed" style={{ color: '#cbb37a' }}>
+            {f.verification_note ||
+              'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.'}{' '}
+            <Link to="/connect" className="underline" style={{ color: '#f59e0b' }}>
+              Connect Supabase
+            </Link>
+          </div>
+        </div>
+      )}
 
-      <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>
+      <div className="border-t border-border my-4" />
+
+      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-2">
         How to fix
       </div>
-      <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 16 }}>
-        {f.how_to_fix}
-      </div>
+      <div className="text-sm text-muted-foreground leading-relaxed mb-4">{f.how_to_fix}</div>
 
       {f.fix_prompt && (
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
           <div
+            className="rounded-md text-[13px] leading-relaxed whitespace-pre-wrap break-words font-mono"
             style={{
               background: '#000000',
               border: '1px solid #222222',
-              borderRadius: 6,
+              color: '#888888',
               padding: 16,
               paddingTop: 40,
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-              fontSize: 13,
-              color: '#888888',
-              lineHeight: 1.6,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
             }}
           >
             {f.fix_prompt}
           </div>
           <button
             onClick={onCopy}
+            className="absolute top-2 right-2 inline-flex items-center gap-1 rounded text-[11px] px-2.5 py-1"
             style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
               background: 'transparent',
               border: '1px solid #333333',
               color: '#888888',
-              padding: '4px 10px',
-              borderRadius: 4,
-              fontSize: 11,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
             }}
           >
             {copied ? (
-              <><Check size={11} /> Copied</>
+              <>
+                <Check size={11} /> Copied
+              </>
             ) : (
-              <><Copy size={11} /> Copy prompt</>
+              <>
+                <Copy size={11} /> Copy prompt
+              </>
             )}
           </button>
         </div>
       )}
 
       {f.technical_reference && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, color: '#333', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+        <div className="mt-3">
+          <div className="text-[11px] font-mono" style={{ color: '#333' }}>
             {f.technical_reference}
           </div>
         </div>
@@ -433,25 +435,19 @@ function FindingCard({ f }: { f: any }) {
 function LegalCard({ f }: { f: any }) {
   return (
     <div
-      style={{
-        background: '#0a0a0a',
-        border: '1px solid #1a1a1a',
-        borderLeft: '3px solid #f59e0b',
-        borderRadius: 8,
-        padding: 22,
-        marginBottom: 12,
-      }}
+      className="bg-card border border-border rounded-lg p-5 mb-3"
+      style={{ borderLeft: '3px solid #f59e0b' }}
     >
-      <div style={{ fontSize: 16, fontWeight: 600, color: '#ffffff', marginBottom: 8 }}>{f.title}</div>
-      <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 12 }}>{f.what_we_found}</div>
-      <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+      <div className="text-base font-semibold text-foreground mb-2">{f.title}</div>
+      <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
+      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
         Why it matters
       </div>
-      <div style={{ fontSize: 14, color: '#ffffff', lineHeight: 1.6, marginBottom: 12 }}>{f.what_this_means}</div>
-      <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+      <div className="text-sm text-foreground leading-relaxed mb-3">{f.what_this_means}</div>
+      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
         What to do
       </div>
-      <div style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>{f.how_to_fix}</div>
+      <div className="text-sm text-muted-foreground leading-relaxed">{f.how_to_fix}</div>
     </div>
   );
 }
@@ -466,41 +462,21 @@ function PromiseRow({ p }: { p: any }) {
         : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
   return (
     <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto',
-        gap: 16,
-        padding: '16px 18px',
-        background: palette.bg,
-        border: '1px solid #1a1a1a',
-        borderRadius: 8,
-        marginBottom: 10,
-      }}
+      className="grid gap-4 px-4 py-4 rounded-lg mb-2.5 border border-border"
+      style={{ gridTemplateColumns: '1fr auto', background: palette.bg }}
     >
       <div>
-        <div style={{ fontSize: 14, color: '#fff', fontWeight: 500, marginBottom: 6, lineHeight: 1.4 }}>
-          {p.claim}
-        </div>
+        <div className="text-sm text-foreground font-medium mb-1.5 leading-snug">{p.claim}</div>
         {p.evidence && (
-          <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5 }}>
+          <div className="text-xs text-muted-foreground leading-relaxed">
             <span style={{ color: '#555' }}>From your {p.claim_source} · </span>
             {p.evidence}
           </div>
         )}
       </div>
       <span
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: palette.color,
-          border: `1px solid ${palette.color}40`,
-          padding: '4px 10px',
-          borderRadius: 999,
-          height: 'fit-content',
-          whiteSpace: 'nowrap',
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-        }}
+        className="text-[11px] font-semibold uppercase tracking-[0.04em] rounded-full px-2.5 py-1 h-fit whitespace-nowrap"
+        style={{ color: palette.color, border: `1px solid ${palette.color}40` }}
       >
         {palette.label}
       </span>
@@ -513,9 +489,7 @@ export default function SampleReport() {
     appName,
     platform,
     score,
-    scoreLabel,
     scanType,
-    backendVerified,
     summary,
     verdict,
     gaps,
@@ -526,87 +500,71 @@ export default function SampleReport() {
     homepage_signals,
   } = sample;
 
+  const scoreLabel = scoreLabelFor(score);
+
   return (
-    <div style={{ minHeight: '100vh', background: '#000000' }}>
+    <div className="min-h-screen bg-background">
       <SEO
-        title="Sample Report, See What Rismon Finds"
+        title="Sample Report | Rismon.ai — See exactly what Rismon finds"
         description="Real example Rismon report: intent score, proof-backed findings, promises-vs-code checks, and copy-paste fix prompts for an AI-built meal-planning app."
         canonicalPath="/sample-report"
       />
       <Navbar />
 
-      {/* Sample banner */}
+      {/* Sample banner — clean, no shield/emoji icon */}
       <div
         className="fixed top-16 left-0 right-0 z-[999]"
-        style={{ background: 'rgba(99,102,241,0.06)', borderBottom: '1px solid rgba(99,102,241,0.25)' }}
+        style={{
+          background: 'rgba(249,115,22,0.06)',
+          borderBottom: '1px solid rgba(249,115,22,0.25)',
+        }}
       >
         <div className="max-w-[800px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <Shield size={16} style={{ color: '#a5b4fc' }} className="shrink-0" />
-            <p className="text-sm truncate">
-              <span style={{ color: '#fff', fontWeight: 500 }}>Sample report</span>{' '}
-              <span style={{ color: '#888' }}>, this is what your report looks like after a scan</span>
-            </p>
-          </div>
+          <p className="text-sm truncate min-w-0">
+            <span className="text-foreground font-medium">Sample report.</span>{' '}
+            <span className="text-muted-foreground">
+              This is what your report looks like after a scan.
+            </span>
+          </p>
           <Link
             to="/signup"
-            className="shrink-0 hidden sm:inline-flex items-center gap-1"
-            style={{
-              background: '#fff',
-              color: '#000',
-              padding: '6px 14px',
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
+            className="shrink-0 hidden sm:inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-md text-xs font-semibold px-3.5 py-1.5 hover:bg-primary/90 transition-colors"
           >
             Scan your app <ArrowRight size={12} />
           </Link>
         </div>
       </div>
 
-      <div className="report-container" style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px', paddingTop: 120 }}>
+      <div
+        className="report-container mx-auto px-6 pt-[120px] pb-12"
+        style={{ maxWidth: 800 }}
+      >
         {/* SECTION 1, HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 13, color: '#888' }}>
-            App scanned: <span style={{ color: '#fff', fontWeight: 500 }}>{appName}</span>{' '}
+        <div className="flex justify-between items-center">
+          <div className="text-[13px] text-muted-foreground">
+            App scanned: <span className="text-foreground font-medium">{appName}</span>
             <span
+              className="ml-2 inline-block text-[10px] uppercase tracking-[0.08em] font-semibold rounded-full px-2 py-[2px]"
               style={{
-                marginLeft: 8,
-                fontSize: 10,
-                padding: '2px 8px',
-                borderRadius: 999,
-                background: 'rgba(99,102,241,0.1)',
-                color: '#a5b4fc',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontWeight: 600,
+                background: 'rgba(249,115,22,0.1)',
+                color: '#fdba74',
               }}
             >
               {platform}
             </span>
           </div>
           <span
-            style={{
-              background: 'transparent',
-              border: '1px solid #333',
-              color: '#888',
-              fontSize: 10,
-              padding: '3px 10px',
-              borderRadius: 4,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              fontWeight: 600,
-            }}
+            className="text-[10px] uppercase tracking-[0.08em] font-semibold rounded px-2.5 py-[3px] text-muted-foreground"
+            style={{ border: '1px solid #333' }}
           >
             {scanType === 'quick' ? 'Quick Scan' : 'Deep Scan'}
           </span>
         </div>
 
         {/* SECTION 2, INTENT HERO + WARNING CHIPS */}
-        <div style={{ padding: '40px 0 12px' }}>
-          <IntentScoreCard score={score} label={scoreLabel} capped={!backendVerified} />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginTop: 20 }}>
+        <div className="pt-10 pb-3">
+          <IntentScoreCard score={score} label={scoreLabel} scanType={scanType} />
+          <div className="flex flex-wrap gap-2.5 justify-center mt-5">
             <WarningChip
               icon={<ShieldAlert size={14} />}
               count={security_issues.length}
@@ -629,21 +587,15 @@ export default function SampleReport() {
         </div>
 
         {/* SECTION 3, SUMMARY */}
-        <div
-          style={{
-            background: '#0a0a0a',
-            border: '1px solid #1a1a1a',
-            borderRadius: 8,
-            padding: 24,
-            marginTop: 32,
-            marginBottom: 24,
-          }}
-        >
-          <div style={{ fontSize: 11, color: '#555', letterSpacing: '0.1em', marginBottom: 12, textTransform: 'uppercase', fontWeight: 600 }}>
+        <div className="bg-card border border-border rounded-lg p-6 mt-8 mb-6">
+          <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-3">
             Overview
           </div>
-          <div style={{ fontSize: 15, color: '#888888', lineHeight: 1.7 }}>{summary}</div>
-          <div style={{ fontSize: 12, color: '#555', marginTop: 14, paddingTop: 14, borderTop: '1px solid #1a1a1a' }}>
+          <div className="text-[15px] text-muted-foreground leading-[1.7]">{summary}</div>
+          <div
+            className="text-xs text-muted-foreground mt-3.5 pt-3.5"
+            style={{ borderTop: '1px solid hsl(var(--border))' }}
+          >
             We also read your{' '}
             {[
               homepage_signals.readme_found && 'README',
@@ -659,102 +611,80 @@ export default function SampleReport() {
 
         {/* SECTION 4, VERDICT */}
         <div
+          className="text-center text-lg font-semibold text-foreground leading-snug py-6 mb-8"
           style={{
-            padding: 24,
-            borderTop: '1px solid #1a1a1a',
-            borderBottom: '1px solid #1a1a1a',
-            marginBottom: 32,
-            textAlign: 'center',
-            fontSize: 18,
-            fontWeight: 600,
-            color: '#ffffff',
-            lineHeight: 1.5,
+            borderTop: '1px solid hsl(var(--border))',
+            borderBottom: '1px solid hsl(var(--border))',
           }}
         >
           {verdict}
         </div>
 
         {/* SECTION 5, INTENT GAPS */}
-        <div style={{ marginBottom: 32 }}>
+        <div className="mb-8">
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
-          {gaps.map((g) => <FindingCard key={g.id} f={g} />)}
+          {gaps.map((g) => (
+            <FindingCard key={g.id} f={g} />
+          ))}
         </div>
 
         {/* SECTION 6, PROMISES VS CODE */}
-        <div style={{ marginBottom: 32 }}>
+        <div className="mb-8">
           <SectionLabel>Promises on your homepage vs your code</SectionLabel>
-          <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginTop: -8, marginBottom: 16 }}>
-            We read what your homepage and README claim, then checked your code for proof. Items marked
-            "not found" may still exist, they were just not in the code we scanned.
+          <p className="text-[13px] text-muted-foreground leading-relaxed -mt-2 mb-4">
+            We read what your homepage and README claim, then checked your code for proof. Items
+            marked &quot;not found&quot; may still exist, they were just not in the code we
+            scanned.
           </p>
-          {landing_page_promises.map((p) => <PromiseRow key={p.id} p={p} />)}
+          {landing_page_promises.map((p) => (
+            <PromiseRow key={p.id} p={p} />
+          ))}
         </div>
 
         {/* SECTION 7, SECURITY */}
-        <div style={{ marginBottom: 32 }}>
+        <div className="mb-8">
           <SectionLabel>Security · these can hurt you in production</SectionLabel>
-          {security_issues.map((s) => <FindingCard key={s.id} f={s} />)}
+          {security_issues.map((s) => (
+            <FindingCard key={s.id} f={s} />
+          ))}
         </div>
 
         {/* SECTION 8, LEGAL */}
-        <div style={{ marginBottom: 32 }}>
+        <div className="mb-8">
           <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
-          {legal_findings.map((f) => <LegalCard key={f.id} f={f} />)}
+          {legal_findings.map((f) => (
+            <LegalCard key={f.id} f={f} />
+          ))}
         </div>
 
         {/* SECTION 9, WHAT WORKS */}
-        <div style={{ marginBottom: 32 }}>
+        <div className="mb-8">
           <SectionLabel>What your app does right</SectionLabel>
           <div>
             {what_works.map((w, i) => (
               <div
                 key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 12,
-                  padding: '12px 0',
-                  borderBottom: '1px solid #0f0f0f',
-                }}
+                className="flex items-start gap-3 py-3"
+                style={{ borderBottom: '1px solid hsl(var(--border))' }}
               >
-                <Check size={14} style={{ color: '#22c55e', flexShrink: 0, marginTop: 4 }} />
-                <span style={{ fontSize: 14, color: '#888888', lineHeight: 1.5 }}>{w}</span>
+                <Check size={14} className="shrink-0 mt-1" style={{ color: '#22c55e' }} />
+                <span className="text-sm text-muted-foreground leading-relaxed">{w}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* SECTION 10, CTA */}
-        <div
-          style={{
-            marginTop: 40,
-            padding: 32,
-            background: '#0a0a0a',
-            border: '1px solid #1a1a1a',
-            borderRadius: 12,
-            textAlign: 'center',
-          }}
-        >
-          <div style={{ fontSize: 20, fontWeight: 600, color: '#fff', marginBottom: 8 }}>
+        <div className="bg-card border border-border rounded-xl p-8 text-center mt-10">
+          <div className="text-xl font-semibold text-foreground mb-2">
             Ready to scan your own app?
           </div>
-          <div style={{ fontSize: 14, color: '#888', marginBottom: 20 }}>
+          <div className="text-sm text-muted-foreground mb-5">
             Free to start. No credit card. Your code is never stored.
           </div>
           <Link
             to="/signup"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#fff',
-              color: '#000',
-              padding: '12px 24px',
-              borderRadius: 8,
-              fontSize: 14,
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
+            className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold px-6 py-3 hover:bg-primary/90 transition-colors"
           >
             Scan my app <ArrowRight size={14} />
           </Link>

@@ -38,7 +38,7 @@ export default function Signup() {
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
       <SEO
-        title="Sign up free — Rismon.ai"
+        title="Sign up free | Rismon.ai — Scan your AI-built app in 60 seconds"
         description="Create your free Rismon.ai account. Scan your AI-built app in 60 seconds. No credit card. Founder-friendly findings backed by file, line, and code snippet — plus copy-paste fix prompts."
         canonicalPath="/signup"
       />

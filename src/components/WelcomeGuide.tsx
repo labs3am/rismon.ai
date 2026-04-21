@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { X, BookOpen } from 'lucide-react';
 
 const STORAGE_KEY = 'rismon_welcome_guide_dismissed';
@@ -49,13 +48,15 @@ export default function WelcomeGuide() {
           <p style={{ color: '#888888', fontSize: 13, marginTop: 4, lineHeight: 1.6 }}>
             A two-minute guide on connecting your app, writing a clear description, and reading
             your report so every finding is accurate.{' '}
-            <Link
-              to="/blog/how-to-get-a-proper-report-from-rismon"
+            <a
+              href="/blog/how-to-get-a-proper-report-from-rismon"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{ color: '#f97316', fontWeight: 500 }}
               className="hover:underline"
             >
               Read the guide
-            </Link>
+            </a>
             .
           </p>
         </div>

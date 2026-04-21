@@ -56,7 +56,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data: appsData } = await supabase.from('apps').select('*').eq('user_id', user.id);
+      // Avoid selecting credential columns (supabase_url, supabase_anon_key) on
+      // the client. Those are only needed by server-side analysis.
+      const { data: appsData } = await supabase
+        .from('apps')
+        .select('id,user_id,app_name,platform,status,live_url,app_description,github_repo_url,github_repo_name,github_owner,created_at')
+        .eq('user_id', user.id);
       const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
 
       const appsList: App[] = (appsData || []).map(app => {

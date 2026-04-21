@@ -24,7 +24,11 @@ export default function Settings() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('apps').select('*').eq('user_id', user.id).then(({ data }) => setApps(data || []));
+    supabase
+      .from('apps')
+      .select('id,app_name,github_repo_name,github_owner,platform,created_at')
+      .eq('user_id', user.id)
+      .then(({ data }) => setApps(data || []));
   }, [user]);
 
   const saveProfile = async () => {
