@@ -64,9 +64,10 @@ export default function Navbar() {
           <div className="flex items-center gap-5">
             <button onClick={() => goToSection('how-it-works')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>How it works</button>
             <button onClick={() => goToSection('what-we-check')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>What we find</button>
-            <Link to="/pricing" style={isActive('/pricing') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/pricing') ? '#ffffff' : '#888888')}>Pricing</Link>
             <button onClick={() => goToSection('security-privacy')} style={linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Security</button>
+            <button onClick={() => goToSection('pricing')} style={isActive('/pricing') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/pricing') ? '#ffffff' : '#888888')}>Pricing</button>
             <Link to="/blog" style={isActive('/blog') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/blog') ? '#ffffff' : '#888888')}>Blog</Link>
+            <Link to="/contact" style={isActive('/contact') ? { ...linkStyle, ...activeStyle } : linkStyle} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = isActive('/contact') ? '#ffffff' : '#888888')}>Contact</Link>
           </div>
         </div>
 
