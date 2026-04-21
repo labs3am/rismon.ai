@@ -43,7 +43,7 @@ function scoreLabelFor(score: number) {
 }
 
 const sample = {
-  appName: 'Mealgo',
+  appName: 'team-notes-sync.lovable',
   platform: 'Lovable',
   scanType: 'quick',
   // Quick scan ceiling = 90. One high-severity verified finding (-5) and
@@ -51,7 +51,7 @@ const sample = {
   // to 81.
   score: 81,
   summary:
-    'Mealgo cleanly delivers on its core promise: weekly meal planning with shopping-list generation. Authentication, recipe storage, and the Stripe checkout flow are wired up correctly. The biggest concern is that the Stripe webhook does not verify signatures, and the homepage advertises AI-powered nutrition coaching but no AI integration was found in the scanned code.',
+    'team-notes-sync.lovable cleanly delivers on its core promise: weekly meal planning with shopping-list generation. Authentication, recipe storage, and the Stripe checkout flow are wired up correctly. The biggest concern is that the Stripe webhook does not verify signatures, and the homepage advertises AI-powered nutrition coaching but no AI integration was found in the scanned code.',
   verdict: 'Fix the webhook signature check before your first paying user signs up.',
   gaps: [
     {
@@ -67,7 +67,7 @@ const sample = {
       how_to_fix:
         'Read the stripe-signature header, verify it with your STRIPE_WEBHOOK_SECRET, and reject the request with 400 if verification fails.',
       fix_prompt:
-        'In my Mealgo app, the supabase/functions/stripe-webhook/index.ts edge function processes Stripe events without verifying signatures. Update it to:\n\n1. Read the "stripe-signature" header from the incoming request\n2. Use the STRIPE_WEBHOOK_SECRET env var to verify the signature with stripe.webhooks.constructEventAsync\n3. Return a 400 response if verification fails\n4. Only then process checkout.session.completed and customer.subscription.updated events\n5. Add a console.error log for failed verifications so I can monitor abuse',
+        'In my team-notes-sync.lovable app, the supabase/functions/stripe-webhook/index.ts edge function processes Stripe events without verifying signatures. Update it to:\n\n1. Read the "stripe-signature" header from the incoming request\n2. Use the STRIPE_WEBHOOK_SECRET env var to verify the signature with stripe.webhooks.constructEventAsync\n3. Return a 400 response if verification fails\n4. Only then process checkout.session.completed and customer.subscription.updated events\n5. Add a console.error log for failed verifications so I can monitor abuse',
       technical_reference: 'stripe-webhook-signature-verification',
       file_path: 'supabase/functions/stripe-webhook/index.ts',
       line_number: 42,
@@ -107,7 +107,7 @@ const sample = {
       how_to_fix:
         'Move the OpenAI call into a Supabase edge function. Store the key as OPENAI_API_KEY (no VITE_ prefix). Call the edge function from the client instead.',
       fix_prompt:
-        'My Mealgo app has the OpenAI API key exposed in client code via VITE_OPENAI_API_KEY in src/lib/ai.ts. Fix this by:\n\n1. Create a new edge function at supabase/functions/ai-suggest/index.ts that takes a "prompt" in the body and calls OpenAI server-side\n2. Use Deno.env.get("OPENAI_API_KEY") on the server (no VITE_ prefix)\n3. In src/lib/ai.ts, replace the direct OpenAI call with supabase.functions.invoke("ai-suggest", { body: { prompt } })\n4. Delete VITE_OPENAI_API_KEY from .env\n5. Add OPENAI_API_KEY as a secret to your Supabase project',
+        'My team-notes-sync.lovable app has the OpenAI API key exposed in client code via VITE_OPENAI_API_KEY in src/lib/ai.ts. Fix this by:\n\n1. Create a new edge function at supabase/functions/ai-suggest/index.ts that takes a "prompt" in the body and calls OpenAI server-side\n2. Use Deno.env.get("OPENAI_API_KEY") on the server (no VITE_ prefix)\n3. In src/lib/ai.ts, replace the direct OpenAI call with supabase.functions.invoke("ai-suggest", { body: { prompt } })\n4. Delete VITE_OPENAI_API_KEY from .env\n5. Add OPENAI_API_KEY as a secret to your Supabase project',
       technical_reference: 'client-side-api-key-exposure',
       file_path: 'src/lib/ai.ts',
       line_number: 8,
@@ -144,7 +144,7 @@ const sample = {
       id: 'l-1',
       title: 'No privacy policy found on your live site',
       what_we_found:
-        'We checked mealgo.app/privacy and the footer of your homepage. No privacy policy page was returned.',
+        'We checked team-notes-sync.lovable.app/privacy and the footer of your homepage. No privacy policy page was returned.',
       what_this_means:
         'Most app stores, payment providers, and ad platforms expect a privacy policy. Stripe, in particular, may flag your account if users complain.',
       how_to_fix:
