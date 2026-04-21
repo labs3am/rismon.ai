@@ -42,7 +42,7 @@ const upsertLink = (rel: string, href: string) => {
  * Per-page SEO updater. Keeps title, description, canonical and social cards
  * in sync with the current route so Google shows the right snippet for each link.
  */
-export default function SEO({ title, description, canonicalPath, image, noindex }: SEOProps) {
+export default function SEO({ title, description, canonicalPath, image, noindex, jsonLd }: SEOProps) {
   const location = useLocation();
 
   useEffect(() => {
@@ -68,7 +68,27 @@ export default function SEO({ title, description, canonicalPath, image, noindex 
     upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', trimmedTitle);
     upsertMeta('meta[name="twitter:description"]', 'name', 'twitter:description', trimmedDesc);
     upsertMeta('meta[name="twitter:image"]', 'name', 'twitter:image', img);
-  }, [title, description, canonicalPath, image, noindex, location.pathname]);
+
+    // Handle JSON-LD structured data
+    const existingScript = document.head.querySelector<HTMLScriptElement>('script[data-seo-jsonld]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+    if (jsonLd) {
+      const script = document.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('data-seo-jsonld', 'true');
+      script.textContent = JSON.stringify(jsonLd);
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      const cleanupScript = document.head.querySelector<HTMLScriptElement>('script[data-seo-jsonld]');
+      if (cleanupScript) {
+        cleanupScript.remove();
+      }
+    };
+  }, [title, description, canonicalPath, image, noindex, location.pathname, jsonLd]);
 
   return null;
 }
