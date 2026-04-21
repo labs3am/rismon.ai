@@ -23,7 +23,7 @@ const ANNOUNCEMENTS: Record<AnnoId, {
   supabase: {
     desktop: 'Supabase integration is live — connect your backend for verified findings',
     mobile: 'Supabase integration is live —',
-    cta: 'Connect now →',
+    cta: 'Know more →',
     href: '/blog/connect-your-supabase-for-deeper-accuracy',
   },
 };
