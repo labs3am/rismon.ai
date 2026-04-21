@@ -8,7 +8,7 @@ interface Props {
 
 /** Wordmark "Rismon ai." — the trailing dot is always orange. */
 export default function Logo({ to = '/', size = 'md', className = '' }: Props) {
-  const fontSize = size === 'sm' ? 15 : size === 'lg' ? 28 : 17;
+  const fontSize = size === 'sm' ? 14 : size === 'lg' ? 28 : 16;
 
   const inner = (
     <span
