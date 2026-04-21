@@ -521,14 +521,20 @@ export default function Report() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [notFound, setNotFound] = useState(false);
   const generateStarted = useRef(false);
 
   useEffect(() => {
     if (!analysisId) return;
     const load = async () => {
-      const { data } = await supabase.from('analyses').select('*').eq('id', analysisId).single();
-      if (!data) {
-        toast.error('Report not found');
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', analysisId)
+        .maybeSingle();
+      if (error || !data) {
+        setLoading(false);
+        setNotFound(true);
         return;
       }
 
@@ -565,6 +571,54 @@ export default function Report() {
     };
     load();
   }, [analysisId]);
+
+  // Auto-redirect to dashboard after a short pause when the report is missing
+  // or the user does not have access to it.
+  useEffect(() => {
+    if (!notFound) return;
+    const t = setTimeout(() => navigate('/dashboard'), 3000);
+    return () => clearTimeout(t);
+  }, [notFound, navigate]);
+
+  if (notFound) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: '#000000',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 24px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: 20, fontWeight: 600, color: '#ffffff' }}>
+          Report not found
+        </div>
+        <div style={{ fontSize: 14, color: '#888888', marginTop: 8, maxWidth: 360, lineHeight: 1.5 }}>
+          This report doesn't exist or you don't have access to it.
+        </div>
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{
+            marginTop: 24,
+            background: '#ffffff',
+            color: '#000000',
+            padding: '10px 20px',
+            borderRadius: 6,
+            fontSize: 14,
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Go to dashboard →
+        </button>
+      </div>
+    );
+  }
 
   if (loading || generating) {
     return <AnalysisLoadingScreen stage="generating" />;

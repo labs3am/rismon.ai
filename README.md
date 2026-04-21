@@ -1,56 +1,60 @@
 # Rismon.ai
-AI agent that reads your AI-built app
-and shows you what was built, what works,
-and what needs fixing — with proof for
-every finding (exact file, line, and snippet).
 
-Built for non-technical founders who 
-build with Lovable, Bolt, Cursor, 
-Emergent, and other AI tools.
+**Intent verification for AI-built apps.**
 
-## Why We Are Open Source
+Rismon reads your AI-built app and tells 
+you exactly what was built, what works, 
+and what could go wrong before your 
+users find out.
 
-We handle your GitHub code during analysis.
-We want you to verify exactly what happens.
-Read every line. Trust nothing blindly.
+## What it does
 
-## What Happens To Your Code
+- Reads your GitHub repository
+- Compares your homepage promises 
+  against your actual code
+- Finds gaps between what you meant 
+  to build and what was built
+- Detects critical security issues
+- Gives you copy-paste fix prompts 
+  for Lovable, Cursor, or Bolt
+- Plain English. No code knowledge needed.
 
-1. You authorize read only GitHub access
-2. We fetch specific files via GitHub API
-3. Files are sent to Claude API for analysis
-4. Claude returns findings
-5. Findings are saved to your account
-6. Your source code is discarded immediately
-7. Zero code written to our database
+## Who it's for
 
-## What We Store
+Non-technical founders who build 
+with AI coding platforms like:
+Lovable, Bolt, Cursor, Replit, v0
 
-Your app name and repo name
-Analysis results and score
-Gaps found and fix prompts
-Your email and profile
+## How it works
 
-## What We Never Store
+1. Connect your GitHub repository
+2. Answer 3-5 questions about 
+   your business intent
+3. Get a report with findings, 
+   proof, and fix prompts
 
-Your source code
-Your GitHub token
-Individual IP addresses
+## Tech stack
 
-## Tech Stack
+- Frontend: React + TypeScript (Lovable)
+- Backend: Supabase Edge Functions
+- AI: Anthropic Claude (primary) + 
+      Google Gemini (verification)
+- Auth: Supabase Auth + GitHub OAuth
+- Email: Resend
 
-Frontend: React TypeScript via Lovable
-Backend: Supabase Edge Functions
-AI: Claude API by Anthropic
-Email: Resend
-Auth: Supabase Auth
+## Live product
 
-## Live Product
+https://rismon.ai
 
-rismon.ai
+Free to start. No credit card required.
 
-## Contact
+## From the house of Labs3am
 
-hello@rismon.ai
+[Labs3am](https://labs3am.com) — 
+building useful tools for founders.
 
-Built by Labs3am.
+---
+
+*Rismon is in active development. 
+Report issues or suggest features 
+via [hello@rismon.ai](mailto:hello@rismon.ai)*
