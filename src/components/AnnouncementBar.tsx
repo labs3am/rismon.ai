@@ -47,7 +47,7 @@ export default function AnnouncementBar() {
       // Pick which announcement to show based on what user has seen.
       const seenRaw = localStorage.getItem(SEEN_KEY);
       const seen: AnnoId[] = seenRaw ? JSON.parse(seenRaw) : [];
-      const next: AnnoId = seen.includes('claude') ? 'supabase' : 'claude';
+      const next: AnnoId = seen.includes('supabase') ? 'claude' : 'supabase';
       setCurrent(next);
     } catch {
       /* ignore */
