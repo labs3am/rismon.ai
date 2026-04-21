@@ -356,7 +356,7 @@ function FindingCard({ f }: { f: any }) {
       <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
         Impact
       </div>
-      <div className="text-sm text-foreground leading-relaxed mb-4">{f.what_this_means}</div>
+      <div className="text-sm text-foreground leading-relaxed mb-4">{impactText}</div>
 
       {/* Verification note for unverified DB findings */}
       {(f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
