@@ -25,83 +25,17 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Rismon.ai",
-    "url": "https://rismon.ai",
-    "description": "Rismon.ai reads your AI-built app and shows you what was built, what works, and what needs fixing — with proof for every finding.",
-    "applicationCategory": "DeveloperApplication",
-    "operatingSystem": "Web",
-    "offers": [
-      {
-        "@type": "Offer",
-        "name": "Free",
-        "price": "0",
-        "priceCurrency": "USD",
-        "description": "1 app, 3 scans per week, full reports and fix prompts"
-      },
-      {
-        "@type": "Offer",
-        "name": "Pro",
-        "price": "12",
-        "priceCurrency": "USD",
-        "description": "3 apps, unlimited scans, priority analysis, early features"
-      }
-    ],
-    "featureList": ["Code analysis", "Security audit", "Intent match scoring", "Fix prompts", "Founder-friendly reports", "Evidence-backed findings"],
-    "sameAs": "https://github.com/labs3am/rismon.ai"
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
-      {"@type": "Question", "name": "I built an app with AI — how do I know it actually works correctly?", "acceptedAnswer": {"@type": "Answer", "text": "Connect your GitHub repo, describe what your app should do, and we compare your intent against what was actually built. You get a clear report showing what matches, what is missing, and what needs fixing — with the exact file and line as proof."}},
-      {"@type": "Question", "name": "How accurate are the findings?", "acceptedAnswer": {"@type": "Answer", "text": "Every finding includes the exact file, line number, and code snippet as evidence. Claims we cannot verify directly are clearly marked Unverified instead of being guessed. When you connect your backend, we read your real database rules rather than inferring from frontend code."}},
-      {"@type": "Question", "name": "Can anyone access my paid features without paying?", "acceptedAnswer": {"@type": "Answer", "text": "This is one of the most common issues we find. AI tools often forget to lock premium features behind payment checks. Rismon.ai detects these gaps and gives you a ready-to-paste fix prompt."}},
-      {"@type": "Question", "name": "Is my users' data actually protected?", "acceptedAnswer": {"@type": "Answer", "text": "We check if your database tables have proper access controls, if sensitive routes require authentication, and if one user can see another user's data."}},
-      {"@type": "Question", "name": "Do I need to know how to code to use this?", "acceptedAnswer": {"@type": "Answer", "text": "Not at all. Rismon.ai was built for non-technical founders. Every finding is written so a founder can understand it without Googling."}},
-      {"@type": "Question", "name": "Is it free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The free plan includes 1 app, 3 scans per week, full reports, and fix prompts. No credit card required."}},
-      {"@type": "Question", "name": "Is my source code safe with you?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We use read-only GitHub access. Your source code is processed in memory during analysis and immediately discarded. Nothing is stored. Rismon.ai is fully open source."}},
-      {"@type": "Question", "name": "How long does an analysis take?", "acceptedAnswer": {"@type": "Answer", "text": "About 60 seconds. Connect your repo, answer a few quick questions, and get your full report."}}
+      {"@type": "Question", "name": "What does Rismon.ai actually do?", "acceptedAnswer": {"@type": "Answer", "text": "Rismon reads your AI-built app and compares what you meant to build against what was actually built. It finds gaps in your business logic, security issues, and false promises on your homepage. Every finding comes with proof, file path, and a fix prompt you can paste into Lovable or Cursor."}},
+      {"@type": "Question", "name": "Do I need to know how to code?", "acceptedAnswer": {"@type": "Answer", "text": "No. Rismon is built specifically for non-technical founders. Every finding is written in plain English with real-world impact explained. No technical knowledge required."}},
+      {"@type": "Question", "name": "How accurate is the report?", "acceptedAnswer": {"@type": "Answer", "text": "Every finding is verified by two independent AI models — Claude and Gemini. You only see findings both models agree on. Verified findings are marked clearly. Unverified findings are shown separately so you can decide."}},
+      {"@type": "Question", "name": "How long does a scan take?", "acceptedAnswer": {"@type": "Answer", "text": "A Quick Scan takes 30 to 60 seconds. A Deep Scan covering your full codebase takes 60 to 90 seconds. You see a progress screen showing exactly which files are being read."}},
+      {"@type": "Question", "name": "Is my code stored anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Your code is read in memory, sent to AI for analysis, then immediately discarded. We never store your code in our database. We only store the findings and report."}},
+      {"@type": "Question", "name": "What is the difference between Free and Try Pro?", "acceptedAnswer": {"@type": "Answer", "text": "Free plan gives you 3 scans per week covering your top 20 most important files. Try Pro is a one-time payment of $14.99 that gives you one full Deep Scan covering your entire codebase with both AI models verifying every finding."}},
+      {"@type": "Question", "name": "Which AI tools do you support?", "acceptedAnswer": {"@type": "Answer", "text": "Rismon works with any app that has a GitHub repository. This includes apps built with Lovable, Bolt, Cursor, Replit, v0, Windsurf, Copilot, and any other AI coding platform."}},
+      {"@type": "Question", "name": "Will Rismon change my code?", "acceptedAnswer": {"@type": "Answer", "text": "Never. Rismon has read-only access to your GitHub repository. We cannot modify, delete, or push anything to your code. You can revoke access from GitHub settings at any time."}}
     ]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Rismon.ai",
-    "url": "https://rismon.ai",
-    "description": "AI-built app verification platform for non-technical founders",
-    "logo": "https://rismon.ai/favicon.png",
-    "email": "hello@rismon.ai",
-    "areaServed": { "@type": "Place", "name": "Worldwide" },
-    "parentOrganization": { "@type": "Organization", "name": "Labs3am", "url": "https://labs3am.com" },
-    "contactPoint": [
-      {
-        "@type": "ContactPoint",
-        "contactType": "customer support",
-        "email": "hello@rismon.ai",
-        "url": "https://rismon.ai/contact",
-        "availableLanguage": ["English"],
-        "areaServed": "Worldwide"
-      }
-    ],
-    "sameAs": ["https://github.com/labs3am/rismon.ai", "https://x.com/rismonai"]
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Rismon.ai",
-    "url": "https://rismon.ai",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://rismon.ai/?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
   }
   </script>
   
