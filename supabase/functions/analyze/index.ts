@@ -1052,14 +1052,14 @@ Return ONLY this JSON:
       let mergedFacts: any = null;
 
       if (chunks.length === 1) {
-        const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
+        const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${effectiveTableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
         const text = await callClaudeWithFallback(systemPrompt, userContent);
         mergedFacts = parseJSON(text);
       } else {
         // Per-chunk extraction then merge
         const partials: any[] = [];
         for (let i = 0; i < chunks.length; i++) {
-          const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
+          const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${effectiveTableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
           const text = await callClaudeWithFallback(systemPrompt, userContent);
           try { partials.push(parseJSON(text)); } catch { /* skip bad chunk */ }
         }
