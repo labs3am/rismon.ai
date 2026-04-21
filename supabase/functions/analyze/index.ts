@@ -909,8 +909,9 @@ serve(async (req) => {
       gaps,
       security_issues,
       unknown_features,
-      supabase_url: appSupabaseUrl,
-      supabase_anon_key: appSupabaseAnonKey,
+      // NOTE: supabase_url / supabase_anon_key are intentionally NOT read from
+      // the request body. They are sensitive credentials and must never be sent
+      // from the browser. We look them up server-side from the apps table below.
       app_id,
       github_owner,
       github_repo_name,
@@ -963,6 +964,22 @@ serve(async (req) => {
       const repoName = `${github_owner}/${github_repo_name}`;
       const totalBundle = (codeBundle || "") + (edgeFunctionBundle || "");
       const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
+
+      // Server-side lookup of the app's Supabase credentials. RLS restricts the
+      // apps table to the authenticated owner, so this can only return rows the
+      // current user owns.
+      let appSupabaseUrl: string | null = null;
+      let appSupabaseAnonKey: string | null = null;
+      if (app_id) {
+        const { data: appCreds } = await supabase
+          .from("apps")
+          .select("supabase_url, supabase_anon_key")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .single();
+        appSupabaseUrl = appCreds?.supabase_url ?? null;
+        appSupabaseAnonKey = appCreds?.supabase_anon_key ?? null;
+      }
 
       // Enforce all abuse limits BEFORE any AI call (skipped for unlimited allowlist)
       if (!isUnlimited) {
