@@ -10,6 +10,8 @@ interface SEOProps {
   image?: string;
   /** Set to true for auth/admin/utility pages we don't want indexed. */
   noindex?: boolean;
+  /** JSON-LD structured data object to inject as <script type="application/ld+json"> */
+  jsonLd?: Record<string, unknown>;
 }
 
 const SITE_ORIGIN = 'https://rismon.ai';
