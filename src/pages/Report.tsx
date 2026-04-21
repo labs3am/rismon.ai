@@ -244,12 +244,6 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
         </div>
       </div>
 
-      {whatWeFound && (
-        <div style={{ fontSize: 14, color: '#888888', lineHeight: 1.6, marginBottom: 12 }}>
-          {whatWeFound}
-        </div>
-      )}
-
       {whatThisMeans && (
         <>
           <div style={{ fontSize: 10, color: '#555555', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase', fontWeight: 600 }}>
