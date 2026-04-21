@@ -117,7 +117,9 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
-            Rismon reads your AI-built app and shows you what was built, what works, and what could go wrong. Every finding comes with proof, file, line, and code snippet. No code knowledge needed.
+            Most AI-built apps ship with gaps the founder never knew about.
+            <br />
+            Rismon.ai finds them before your users do.
           </p>
           <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span></p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
@@ -340,7 +342,7 @@ export default function Index() {
             {/* TRY PRO */}
             <div className="vercel-pricing-card vercel-pricing-card--popular">
               <p className="vercel-plan-name">TRY PRO</p>
-              <p className="vercel-price">$8.99<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / one-time</span></p>
+              <p className="vercel-price">$14.99<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / one-time</span></p>
               <p style={{ fontSize: '14px', color: '#888888', marginTop: '12px', lineHeight: 1.6 }}>
                 One full Deep Scan on a single app. Use it before launch or an investor demo.
               </p>
@@ -358,7 +360,7 @@ export default function Index() {
             {/* PRO */}
             <div className="vercel-pricing-card">
               <p className="vercel-plan-name">PRO</p>
-              <p className="vercel-price">$19.90<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / month</span></p>
+              <p className="vercel-price">$49<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / month</span></p>
               <p style={{ fontSize: '14px', color: '#888888', marginTop: '12px', lineHeight: 1.6 }}>
                 For founders shipping serious products. Unlimited apps and continuous monitoring.
               </p>
