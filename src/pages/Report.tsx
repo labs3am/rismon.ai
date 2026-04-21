@@ -535,7 +535,11 @@ export default function Report() {
         if (generateStarted.current) return;
         generateStarted.current = true;
         setGenerating(true);
-        const { data: app } = await supabase.from('apps').select('*').eq('id', data.app_id).single();
+        const { data: app } = await supabase
+          .from('apps')
+          .select('id,platform')
+          .eq('id', data.app_id)
+          .single();
         const { data: result, error } = await supabase.functions.invoke('analyze', {
           body: {
             action: 'generate_fixes',
