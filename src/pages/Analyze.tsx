@@ -120,7 +120,15 @@ export default function Analyze() {
   useEffect(() => {
     if (!user || !appId) return;
     const load = async () => {
-      const { data: appData } = await supabase.from('apps').select('*').eq('id', appId).single();
+      // Do NOT select supabase_url / supabase_anon_key on the client. The analyze
+      // edge function looks them up server-side using RLS-restricted access. This
+      // prevents these credentials from ever being exposed in browser memory or
+      // network responses.
+      const { data: appData } = await supabase
+        .from('apps')
+        .select('id,user_id,app_name,platform,status,live_url,app_description,github_repo_url,github_repo_name,github_owner,created_at')
+        .eq('id', appId)
+        .single();
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
 
