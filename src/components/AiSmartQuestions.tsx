@@ -221,7 +221,14 @@ export default function AiSmartQuestions({
         <QuestionView
           q={currentQ}
           value={answers[currentQ.id] || ''}
-          onChange={(v) => setAnswer(currentQ.id, v)}
+          onChange={(v) => {
+            // Enforce maxLength on free-text questions.
+            if (currentQ.answer_type === 'text' && currentQ.maxLength) {
+              setAnswer(currentQ.id, v.slice(0, currentQ.maxLength));
+            } else {
+              setAnswer(currentQ.id, v);
+            }
+          }}
           onSkip={() => {
             setAnswer(currentQ.id, SKIP_VALUE);
             handleNext();
