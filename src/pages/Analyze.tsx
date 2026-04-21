@@ -538,8 +538,9 @@ export default function Analyze() {
         if (scanSessionId) {
           await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
         }
-        toast.error(e.message || 'Analysis failed');
-        navigate('/dashboard');
+        setFailureMessage(e?.message || 'Analysis failed. The scan may have been interrupted.');
+        setStage('failed');
+        readingStarted.current = false;
       }
     };
     run();
