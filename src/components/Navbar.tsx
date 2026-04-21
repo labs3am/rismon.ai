@@ -106,7 +106,6 @@ export default function Navbar() {
           <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '12px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center', marginTop: 4 }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
       )}
-      <AnnouncementPills />
     </nav>
   );
 }
