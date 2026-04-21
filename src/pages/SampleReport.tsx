@@ -505,7 +505,7 @@ export default function SampleReport() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Sample Report | Rismon.ai — See exactly what Rismon finds"
+        title="Sample Report — Rismon.ai"
         description="Real example Rismon report: intent score, proof-backed findings, promises-vs-code checks, and copy-paste fix prompts for an AI-built meal-planning app."
         canonicalPath="/sample-report"
       />

@@ -139,7 +139,7 @@ export default function BlogPost() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`${post.meta_title || post.title} — Rismon Blog`}
+        title={`${post.meta_title || post.title} — Rismon.ai`}
         description={post.meta_description || post.excerpt || `${post.title} — read on the Rismon blog.`}
         canonicalPath={`/blog/${post.slug}`}
         image={post.cover_image_url || undefined}
