@@ -6,11 +6,23 @@ export interface AiQuestion {
   context?: string;
   answer_type?: 'yes_no' | 'text' | 'select';
   options?: string[];
+  /** Optional max characters for free-text questions. */
+  maxLength?: number;
+  /** Optional placeholder for free-text questions. */
+  placeholder?: string;
+}
+
+/** Signals from the code-reading step used to gate which intent questions to ask. */
+export interface IntentSignals {
+  hasPayments?: boolean;
+  hasUserAccounts?: boolean;
+  hasAdminRoutes?: boolean;
+  hasFreePaidTiers?: boolean;
 }
 
 interface Props {
-  /** Questions Claude generated from reading the code (3–8). */
-  questions: AiQuestion[];
+  /** Code signals from the read step — used to gate questions. */
+  signals?: IntentSignals;
   /** Free-text correction the user wrote on the previous step (if any). */
   userCorrection?: string;
   answers: Record<string, string>;
@@ -18,35 +30,87 @@ interface Props {
   onComplete: () => void;
 }
 
+const SKIP_VALUE = '__skip__';
+
 /**
- * Renders the dynamic questions Claude wrote after reading the code.
- * Every question is skippable — we'd rather have an honest "skip" than a
- * bad guess. The 2 most important questions are always asked even if Claude
- * generated none, so we always have minimum signal on access + concern.
+ * Build the intent-questions list based on what we detected in the code.
+ * These are about BUSINESS INTENT — what the founder meant to build —
+ * NOT about code, files, or technical implementation.
  */
-const ALWAYS_ASK: AiQuestion[] = [
-  {
-    id: '_concern',
-    question: "What worries you most about your app right now?",
-    context: 'Your answer drives what we look at first.',
-    answer_type: 'text',
-  },
-  {
-    id: '_access',
-    question: 'Who should be able to use the main features?',
-    context: 'This helps us check if the access rules match.',
+function buildIntentQuestions(s: IntentSignals): AiQuestion[] {
+  const qs: AiQuestion[] = [];
+
+  // Q1 — always
+  qs.push({
+    id: 'coreJob',
+    question: 'What is your app supposed to do for the people who use it?',
     answer_type: 'select',
     options: [
-      'Only me / my team',
-      'Anyone who signs up',
-      'Only paying users',
-      'Mix — some free, some paid',
-      "It's complicated — I'll explain",
+      'Help them get something done faster or easier',
+      'Let them buy or sell something',
+      'Give them access to content or information they pay for',
+      'Connect them with other people',
     ],
-  },
-];
+  });
 
-const SKIP_VALUE = '__skip__';
+  // Q2 — only if payments detected
+  if (s.hasPayments) {
+    qs.push({
+      id: 'paymentBehavior',
+      question: 'When someone stops paying, what should happen?',
+      answer_type: 'select',
+      options: [
+        'They should lose access immediately',
+        'They should keep access until their period ends',
+        "Nothing — I haven't built this part yet",
+        "This app doesn't have payments",
+      ],
+    });
+  }
+
+  // Q3 — only if user accounts
+  if (s.hasUserAccounts) {
+    qs.push({
+      id: 'dataVisibility',
+      question: "Should users be able to see each other's data or content?",
+      answer_type: 'select',
+      options: [
+        'No — each user only sees their own',
+        'Yes — they can see each other',
+        'Only people in the same team or group',
+        'Not sure',
+      ],
+    });
+  }
+
+  // Q4 — only if admin routes OR free/paid tiers
+  if (s.hasAdminRoutes || s.hasFreePaidTiers) {
+    qs.push({
+      id: 'restrictedAccess',
+      question: 'Is there anything in your app that ONLY you should be able to do?',
+      answer_type: 'select',
+      options: [
+        'Yes — I have an admin or owner section',
+        'Yes — some features are only for paying users',
+        'Both of the above',
+        'No — everyone gets the same access',
+      ],
+    });
+  }
+
+  // Q5 — always last. Free text. The most important answer.
+  qs.push({
+    id: 'corePromise',
+    question: 'What is the ONE thing your app must do correctly to work?',
+    context: "This is the most important answer — we'll check it specifically.",
+    answer_type: 'text',
+    maxLength: 100,
+    placeholder: 'Example: charge users before giving them access to reports',
+  });
+
+  // Cap at 5.
+  return qs.slice(0, 5);
+}
 
 export default function AiSmartQuestions({
   questions,
