@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'rismon_announcements_dismissed';
 const HIDE_AFTER_MS = 6000;
-const SCROLL_HIDE_PX = 30;
+const SCROLL_HIDE_PX = 40;
 const SUPPRESS_HOURS = 24;
 
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     try {
@@ -26,6 +27,13 @@ export default function AnnouncementBar() {
   }, []);
 
   useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
     if (!visible) return;
     const t = window.setTimeout(() => startClose(), HIDE_AFTER_MS);
     const onScroll = () => {
@@ -40,7 +48,7 @@ export default function AnnouncementBar() {
 
   const startClose = () => {
     setClosing(true);
-    window.setTimeout(() => setVisible(false), 240);
+    window.setTimeout(() => setVisible(false), 300);
   };
 
   const dismiss = () => {
@@ -54,21 +62,26 @@ export default function AnnouncementBar() {
 
   if (!visible) return null;
 
+  const text = isMobile
+    ? 'Claude + Gemini verify every finding —'
+    : 'Claude + Gemini now verify every Deep Scan finding —';
+
   return (
     <div
       style={{
         width: '100%',
+        height: 36,
         background: '#000000',
-        padding: '8px 24px',
+        borderBottom: '1px solid #1a1a1a',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 24,
-        fontSize: 13,
+        gap: 0,
         position: 'relative',
+        overflow: 'hidden',
         animation: closing
-          ? 'rismon-anno-slide-up 240ms ease-in forwards'
-          : 'rismon-anno-slide-down 240ms ease-out',
+          ? 'rismon-anno-slide-up 300ms ease forwards'
+          : 'rismon-anno-slide-down 300ms ease',
       }}
     >
       <style>{`
@@ -82,78 +95,36 @@ export default function AnnouncementBar() {
         }
       `}</style>
 
-      {/* Left announcement */}
-      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-        <span
-          style={{
-            background: '#f97316',
-            color: '#000000',
-            borderRadius: 999,
-            padding: '2px 8px',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            marginRight: 8,
-          }}
-        >
-          NEW
-        </span>
-        <span style={{ color: '#888888', fontSize: 13, marginRight: 8 }} className="truncate">
-          Claude + Gemini now verify every finding
-        </span>
-        <Link
-          to="/blog/claude-is-now-in-rismon"
-          style={{ color: '#f97316', fontSize: 13, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#f97316')}
-        >
-          Read more →
-        </Link>
-      </div>
-
-      {/* Divider */}
-      <div
-        className="hidden md:block"
+      <span
         style={{
-          width: 1,
-          height: 12,
-          background: '#222222',
+          color: '#555555',
+          fontSize: 12,
+          fontWeight: 400,
+          letterSpacing: '0.01em',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: 'calc(100% - 80px)',
         }}
-        aria-hidden
-      />
-
-      {/* Right announcement (hidden on mobile) */}
-      <div
-        className="hidden md:flex"
-        style={{ alignItems: 'center', minWidth: 0 }}
       >
-        <span
-          style={{
-            background: 'transparent',
-            border: '1px solid #333333',
-            color: '#888888',
-            borderRadius: 999,
-            padding: '2px 8px',
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            marginRight: 8,
-          }}
-        >
-          TIP
-        </span>
-        <span style={{ color: '#888888', fontSize: 13, marginRight: 8 }} className="truncate">
-          Connect Supabase for verified backend findings
-        </span>
-        <Link
-          to="/blog/connect-your-supabase-for-deeper-accuracy"
-          style={{ color: '#888888', fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
-        >
-          Learn more →
-        </Link>
-      </div>
+        {text}
+      </span>
+      <Link
+        to="/blog/claude-is-now-in-rismon"
+        style={{
+          color: '#ffffff',
+          fontSize: 12,
+          fontWeight: 500,
+          marginLeft: 6,
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = '#f97316')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff')}
+      >
+        See what changed →
+      </Link>
 
       {/* Close button */}
       <button
@@ -167,14 +138,15 @@ export default function AnnouncementBar() {
           transform: 'translateY(-50%)',
           background: 'transparent',
           border: 'none',
-          color: '#444444',
+          color: '#333333',
           cursor: 'pointer',
-          fontSize: 14,
-          padding: '0 0 0 16px',
+          fontSize: 16,
+          padding: '4px 8px',
           lineHeight: 1,
+          transition: 'color 0.15s',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#444444')}
+        onMouseEnter={(e) => (e.currentTarget.style.color = '#888888')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = '#333333')}
       >
         ×
       </button>
