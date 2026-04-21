@@ -1379,6 +1379,53 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       );
 
       // ----------------------------------------------------------
+      // DB-VERIFICATION OVERLAY (added 2026-04)
+      //
+      // Findings about database security (RLS, user data isolation,
+      // unfiltered queries, missing user filters, admin role checks
+      // against profiles, etc.) are inferred from CODE PATTERNS unless
+      // the founder connected their Supabase project so we can probe
+      // it directly. When Supabase is NOT connected:
+      //   - confidence  → "unverified"
+      //   - severity    → capped at "high"  (no critical from inference)
+      //   - verification_note → explanation shown under the finding
+      // When Supabase IS connected, these findings stay as-is (the
+      // deterministic scanner cited the file/line and we cross-checked
+      // tables via the live REST probe above).
+      // ----------------------------------------------------------
+      const supabaseConnected = !!(appSupabaseUrl && appSupabaseAnonKey);
+      const DB_CATEGORIES = new Set([
+        "rls",
+        "user_data_isolation",
+        "data_isolation",
+        "database_security",
+        "missing_user_filter",
+        "admin_access",
+        "data_leak",
+      ]);
+      const isDbRelated = (f: any) => {
+        const cat = (f?.category || "").toString().toLowerCase();
+        if (DB_CATEGORIES.has(cat)) return true;
+        const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
+        return /\brls\b|row[- ]level\s+security|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation/.test(hay);
+      };
+      if (!supabaseConnected && Array.isArray(claudeResult.security_issues)) {
+        for (const f of claudeResult.security_issues) {
+          if (!f || !isDbRelated(f)) continue;
+          // Cap severity at "high" — never "critical" without DB proof.
+          const sev = (f.severity || "medium").toLowerCase();
+          if (sev === "critical") f.severity = "high";
+          // Force confidence to unverified.
+          f.confidence = "unverified";
+          f.confidence_reason =
+            "Detected from code patterns only — your Supabase project is not connected, so we could not verify the live database rules.";
+          f.verification_note =
+            "Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.";
+          f.requires_supabase_verification = true;
+        }
+      }
+
+      // ----------------------------------------------------------
       // RE-SCORE — deterministic findings deduct heavily and the
       // critical caps from the prompt are enforced server-side too.
       // (Claude already applied them, but if we just injected new
