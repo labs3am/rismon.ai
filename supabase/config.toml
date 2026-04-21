@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.send-scan-ready-email]
 verify_jwt = false
+
+[functions.send-v2-announcement]
+verify_jwt = false
