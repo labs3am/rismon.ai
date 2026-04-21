@@ -4,7 +4,7 @@
 
 Rismon reads your AI-built app and tells 
 you exactly what was built, what works, 
-and what could go wrong — before your 
+and what could go wrong before your 
 users find out.
 
 ## What it does
@@ -48,7 +48,7 @@ https://rismon.ai
 
 Free to start. No credit card required.
 
-## Built by
+## From the house of Labs3am
 
 [Labs3am](https://labs3am.com) — 
 building useful tools for founders.
