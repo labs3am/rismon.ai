@@ -292,13 +292,15 @@ function QuestionView({
 
       <div style={{ marginTop: 20 }}>
         {isText ? (
-          <textarea
-            autoFocus
-            value={value === SKIP_VALUE ? '' : value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="Type your answer here..."
-            rows={4}
-            style={{
+          <div>
+            <textarea
+              autoFocus
+              value={value === SKIP_VALUE ? '' : value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={q.placeholder || 'Type your answer here...'}
+              maxLength={q.maxLength}
+              rows={4}
+              style={{
               width: '100%',
               background: '#000',
               border: '1px solid #2a2a2a',
@@ -309,8 +311,14 @@ function QuestionView({
               fontFamily: 'inherit',
               resize: 'vertical',
               outline: 'none',
-            }}
-          />
+              }}
+            />
+            {q.maxLength && (
+              <div style={{ fontSize: 11, color: '#555', marginTop: 6, textAlign: 'right' }}>
+                {(value === SKIP_VALUE ? 0 : value.length)}/{q.maxLength}
+              </div>
+            )}
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {opts.map((opt) => {
