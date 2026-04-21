@@ -135,7 +135,6 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
             <PillList items={roles} />
           </Section>
         )}
-
         {tables.length > 0 && (
           <Section label="Data it stores">
             <PillList items={tables} muted />
