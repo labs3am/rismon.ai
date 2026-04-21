@@ -1005,10 +1005,11 @@ export default function Analyze() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-8 border-b border-border mt-8">
+          <div className="flex gap-8 mt-8" style={{ borderBottom: '1px solid #1a1a1a' }}>
             {[{ k: 'gaps', l: `Gaps (${gaps.length})` }, { k: 'unknown', l: `Unknown features (${unknown_features.length})` }, { k: 'security', l: `Security (${security_issues.length})` }].map(t => (
               <button key={t.k} onClick={() => setActiveTab(t.k)}
-                className={`pb-3 text-[15px] font-medium transition-colors ${activeTab === t.k ? 'text-foreground border-b-2 border-primary' : 'text-muted-foreground'}`}>{t.l}</button>
+                className="pb-3 text-[15px] font-medium transition-colors"
+                style={ activeTab === t.k ? { color: '#ffffff', borderBottom: '2px solid #f97316' } : { color: '#888888' } }>{t.l}</button>
             ))}
           </div>
 
