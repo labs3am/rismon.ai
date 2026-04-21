@@ -298,6 +298,16 @@ function FindingCard({ f }: { f: any }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const norm = (s: string) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const isImpactDup =
+    f.what_we_found &&
+    f.what_this_means &&
+    (norm(f.what_we_found) === norm(f.what_this_means) ||
+      norm(f.what_we_found).includes(norm(f.what_this_means)) ||
+      norm(f.what_this_means).includes(norm(f.what_we_found)));
+  const showWhatWeFound = !isImpactDup && !!f.what_we_found;
+  const impactText = f.what_this_means || (isImpactDup ? f.what_we_found : '');
+
   return (
     <div
       className="bg-card border border-border rounded-lg p-6 mb-3"
@@ -321,7 +331,9 @@ function FindingCard({ f }: { f: any }) {
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
+      {showWhatWeFound && (
+        <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
+      )}
 
       {/* Proof: file_path + line + snippet */}
       {f.file_path && (
