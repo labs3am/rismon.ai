@@ -159,8 +159,19 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
     confidence === 'verified' ? 'Verified' : confidence === 'likely' ? 'Likely' : 'Unverified';
 
   const title = f.title || 'Issue';
-  const whatWeFound = f.what_we_found || f.you_said || f.explanation || '';
-  const whatThisMeans = f.what_this_means || f.business_impact || '';
+  const whatWeFoundRaw = f.what_we_found || f.you_said || f.explanation || '';
+  const whatThisMeansRaw = f.what_this_means || f.business_impact || '';
+  const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+  // De-duplicate: when the model fills both fields with the same impact text,
+  // only render the Impact section once.
+  const isDup =
+    whatWeFoundRaw &&
+    whatThisMeansRaw &&
+    (norm(whatWeFoundRaw) === norm(whatThisMeansRaw) ||
+      norm(whatWeFoundRaw).includes(norm(whatThisMeansRaw)) ||
+      norm(whatThisMeansRaw).includes(norm(whatWeFoundRaw)));
+  const whatWeFound = isDup ? '' : whatWeFoundRaw;
+  const whatThisMeans = whatThisMeansRaw || (isDup ? whatWeFoundRaw : '');
   const howToFix = f.how_to_fix || '';
   const fixPrompt = f.fix_prompt || '';
   const techRef = f.technical_reference || '';
