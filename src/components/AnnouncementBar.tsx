@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'rismon_announcements_dismissed';
 const HIDE_AFTER_MS = 6000;
-const SCROLL_HIDE_PX = 20;
+const SCROLL_HIDE_PX = 30;
 const SUPPRESS_HOURS = 24;
 
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   useEffect(() => {
     try {
@@ -26,9 +27,9 @@ export default function AnnouncementBar() {
 
   useEffect(() => {
     if (!visible) return;
-    const t = window.setTimeout(() => setVisible(false), HIDE_AFTER_MS);
+    const t = window.setTimeout(() => startClose(), HIDE_AFTER_MS);
     const onScroll = () => {
-      if (window.scrollY > SCROLL_HIDE_PX) setVisible(false);
+      if (window.scrollY > SCROLL_HIDE_PX) startClose();
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
@@ -37,13 +38,18 @@ export default function AnnouncementBar() {
     };
   }, [visible]);
 
+  const startClose = () => {
+    setClosing(true);
+    window.setTimeout(() => setVisible(false), 240);
+  };
+
   const dismiss = () => {
     try {
       localStorage.setItem(STORAGE_KEY, String(Date.now()));
     } catch {
       /* ignore */
     }
-    setVisible(false);
+    startClose();
   };
 
   if (!visible) return null;
@@ -51,19 +57,18 @@ export default function AnnouncementBar() {
   return (
     <div
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 200,
         width: '100%',
-        background: '#111111',
-        borderBottom: '1px solid #222222',
-        padding: '10px 24px',
+        background: '#000000',
+        padding: '8px 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 32,
+        gap: 24,
         fontSize: 13,
-        animation: 'rismon-anno-slide-down 240ms ease-out',
+        position: 'relative',
+        animation: closing
+          ? 'rismon-anno-slide-up 240ms ease-in forwards'
+          : 'rismon-anno-slide-down 240ms ease-out',
       }}
     >
       <style>{`
@@ -71,30 +76,34 @@ export default function AnnouncementBar() {
           from { transform: translateY(-100%); opacity: 0; }
           to   { transform: translateY(0);     opacity: 1; }
         }
+        @keyframes rismon-anno-slide-up {
+          from { transform: translateY(0);     opacity: 1; }
+          to   { transform: translateY(-100%); opacity: 0; }
+        }
       `}</style>
 
       {/* Left announcement */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
         <span
           style={{
-            background: 'rgba(249,115,22,0.15)',
-            border: '1px solid rgba(249,115,22,0.3)',
-            color: '#f97316',
+            background: '#f97316',
+            color: '#000000',
             borderRadius: 999,
-            padding: '2px 10px',
-            fontSize: 11,
-            fontWeight: 600,
+            padding: '2px 8px',
+            fontSize: 10,
+            fontWeight: 700,
             letterSpacing: '0.04em',
+            marginRight: 8,
           }}
         >
           NEW
         </span>
-        <span style={{ color: '#888888', fontSize: 13 }} className="truncate">
+        <span style={{ color: '#888888', fontSize: 13, marginRight: 8 }} className="truncate">
           Claude + Gemini now verify every finding
         </span>
         <Link
-          to="/blog/claude-is-here"
-          style={{ color: '#f97316', fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          to="/blog/claude-is-now-in-rismon"
+          style={{ color: '#f97316', fontSize: 13, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}
           onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
           onMouseLeave={(e) => (e.currentTarget.style.color = '#f97316')}
         >
@@ -107,9 +116,8 @@ export default function AnnouncementBar() {
         className="hidden md:block"
         style={{
           width: 1,
-          height: 16,
+          height: 12,
           background: '#222222',
-          margin: '0 16px',
         }}
         aria-hidden
       />
@@ -117,30 +125,31 @@ export default function AnnouncementBar() {
       {/* Right announcement (hidden on mobile) */}
       <div
         className="hidden md:flex"
-        style={{ alignItems: 'center', gap: 10, minWidth: 0 }}
+        style={{ alignItems: 'center', minWidth: 0 }}
       >
         <span
           style={{
-            background: 'rgba(34,197,94,0.10)',
-            border: '1px solid rgba(34,197,94,0.2)',
-            color: '#22c55e',
+            background: 'transparent',
+            border: '1px solid #333333',
+            color: '#888888',
             borderRadius: 999,
-            padding: '2px 10px',
-            fontSize: 11,
+            padding: '2px 8px',
+            fontSize: 10,
             fontWeight: 600,
             letterSpacing: '0.04em',
+            marginRight: 8,
           }}
         >
           TIP
         </span>
-        <span style={{ color: '#888888', fontSize: 13 }} className="truncate">
-          Connect Supabase for verified findings
+        <span style={{ color: '#888888', fontSize: 13, marginRight: 8 }} className="truncate">
+          Connect Supabase for verified backend findings
         </span>
         <Link
-          to="/blog/supabase-support"
-          style={{ color: '#22c55e', fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
+          to="/blog/connect-your-supabase-for-deeper-accuracy"
+          style={{ color: '#888888', fontSize: 13, textDecoration: 'none', whiteSpace: 'nowrap' }}
           onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = '#22c55e')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = '#888888')}
         >
           Learn more →
         </Link>
@@ -153,15 +162,15 @@ export default function AnnouncementBar() {
         aria-label="Dismiss announcements"
         style={{
           position: 'absolute',
-          right: 8,
+          right: 16,
           top: '50%',
           transform: 'translateY(-50%)',
           background: 'transparent',
           border: 'none',
           color: '#444444',
           cursor: 'pointer',
-          fontSize: 16,
-          padding: '0 8px',
+          fontSize: 14,
+          padding: '0 0 0 16px',
           lineHeight: 1,
         }}
         onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
