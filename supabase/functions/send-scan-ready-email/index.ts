@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { BRAND, emailShell, ctaButton } from "../_shared/email-brand.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,21 +49,26 @@ serve(async (req) => {
     }
 
     const reportUrl = `https://rismon.ai/report/${report_id}`;
-    const html = `
-      <div style="font-family:Inter,Arial,sans-serif;background:#0a0a0a;padding:40px 20px;color:#f5f5f5">
-        <div style="max-width:520px;margin:0 auto;background:#111;border:1px solid #1e1e1e;border-radius:16px;padding:32px">
-          <h1 style="font-size:22px;margin:0 0 16px;color:#fff">Your scan is ready</h1>
-          <p style="color:#a1a1aa;font-size:15px;line-height:1.6;margin:0 0 24px">
-            We finished analyzing <strong style="color:#fff">${app_name || "your app"}</strong>.
-            ${score !== undefined && score !== null ? `Your intent match score: <strong style="color:#f97316">${score}</strong>.` : ""}
-          </p>
-          <a href="${reportUrl}" style="display:inline-block;background:#f97316;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">View your report</a>
-          <p style="color:#71717a;font-size:12px;margin:24px 0 0">
-            AI-assisted code review, not a guaranteed audit. Verify findings before deploying.
-          </p>
-        </div>
-      </div>
-    `;
+    const safeApp = String(app_name || "your app").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" } as any)[c]);
+    const scoreRow = (score !== undefined && score !== null)
+      ? `<div style="margin:0 0 24px;padding:18px 22px;background:${BRAND.cardInner};border:1px solid ${BRAND.border};border-radius:10px;">
+           <p style="margin:0 0 4px;font-family:${BRAND.font};font-size:12px;color:${BRAND.textMuted};letter-spacing:0.5px;text-transform:uppercase;">Intent match score</p>
+           <p style="margin:0;font-family:${BRAND.font};font-size:36px;font-weight:700;color:${BRAND.accent};line-height:1;">${score}<span style="font-size:18px;color:${BRAND.textMuted};">/100</span></p>
+         </div>`
+      : "";
+    const body = `
+      <tr><td style="padding:36px 40px;">
+        <h2 style="margin:0 0 18px;font-family:${BRAND.font};font-size:24px;font-weight:700;color:${BRAND.text};line-height:1.3;">Your scan is ready.</h2>
+        <p style="margin:0 0 22px;font-family:${BRAND.font};font-size:15px;line-height:1.7;color:${BRAND.textMuted};">
+          We finished analyzing <strong style="color:${BRAND.text};">${safeApp}</strong>. Your founder-friendly report is waiting — open it to see what was built, what works, and the gaps to close before users find them.
+        </p>
+        ${scoreRow}
+        ${ctaButton("View my report →", reportUrl)}
+        <p style="margin:22px 0 0;font-family:${BRAND.font};font-size:12px;line-height:1.6;color:${BRAND.textDim};">
+          AI-assisted review (Claude + Gemini cross-check), not a guaranteed audit. Verify findings before deploying.
+        </p>
+      </td></tr>`;
+    const html = emailShell(body);
 
     const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
@@ -72,10 +78,11 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Rismon.ai <onboarding@resend.dev>",
+        from: BRAND.fromAddress,
         to: [user.email],
         subject: `Your scan of ${app_name || "your app"} is ready`,
         html,
+        reply_to: BRAND.replyTo,
       }),
     });
 

@@ -27,6 +27,7 @@
 //     -H "Authorization: Bearer <ANON_KEY>"
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { BRAND, emailHeader, emailFooter, ctaButton } from "../_shared/email-brand.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,16 +74,11 @@ function buildAnalysisReminderHtml(userName: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#000000;font-family:-apple-system,Inter,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 0;">
+<body style="margin:0;padding:0;background-color:${BRAND.bg};font-family:${BRAND.font};">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${BRAND.bg};padding:40px 0;">
     <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;border-radius:14px;overflow:hidden;border:1px solid #1a1a1a;">
-
-        <!-- Header -->
-        <tr><td style="padding:28px 40px;text-align:center;border-bottom:1px solid #1a1a1a;">
-          <h1 style="margin:0;font-size:22px;font-weight:700;color:#f97316;">Rismon.ai</h1>
-          <p style="margin:6px 0 0;font-size:12px;color:#a1a1aa;letter-spacing:0.5px;">Your AI App Auditor</p>
-        </td></tr>
+      <table width="560" cellpadding="0" cellspacing="0" style="background-color:${BRAND.card};border-radius:14px;overflow:hidden;border:1px solid ${BRAND.border};">
+        ${emailHeader()}
 
         <!-- Body -->
         <tr><td style="padding:36px 40px;">
@@ -122,14 +118,8 @@ function buildAnalysisReminderHtml(userName: string): string {
             </table>
           </div>
 
-          <!-- CTA Button -->
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="padding:4px 0 28px;">
-              <a href="https://rismon.ai/dashboard" style="display:inline-block;background-color:#f97316;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:10px;">
-                Analyze my app now →
-              </a>
-            </td></tr>
-          </table>
+          ${ctaButton("Analyze my app now →", BRAND.dashboardUrl)}
+          <div style="height:20px;"></div>
 
           <!-- Support box -->
           <div style="background-color:#111111;border-radius:10px;padding:20px 24px;border:1px solid #1a1a1a;">
@@ -141,20 +131,7 @@ function buildAnalysisReminderHtml(userName: string): string {
 
         </td></tr>
 
-        <!-- Footer -->
-        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
-          <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#f5f5f5;">Rismon.ai</p>
-          <p style="margin:0 0 8px;font-size:12px;color:#52525b;">
-            <a href="https://rismon.ai/privacy" style="color:#52525b;text-decoration:underline;">Privacy</a>
-            &nbsp;·&nbsp;
-            <a href="https://rismon.ai/terms" style="color:#52525b;text-decoration:underline;">Terms</a>
-            &nbsp;·&nbsp;
-            <a href="https://github.com/labs3am/rismon.ai" style="color:#52525b;text-decoration:underline;">Source code</a>
-          </p>
-          <p style="margin:0;font-size:11px;color:#3f3f46;">
-            Proudly built in India. From the house of Labs3am.
-          </p>
-        </td></tr>
+        ${emailFooter()}
 
       </table>
     </td></tr>
