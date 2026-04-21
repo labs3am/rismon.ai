@@ -549,6 +549,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      app_has_backend: { Args: { _app_id: string }; Returns: boolean }
       consume_pro_credit: { Args: { _user_id: string }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
