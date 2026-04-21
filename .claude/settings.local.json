@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(xargs ls *)",
+      "Bash(xargs grep *)",
+      "Bash(git commit *)",
+      "Bash(git rebase *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)"
+    ]
+  }
+}

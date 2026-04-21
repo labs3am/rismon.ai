@@ -8,8 +8,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
-
 interface PostRow {
   id: string;
   slug: string;
@@ -351,9 +349,19 @@ function AdminBlogEditor() {
 export default function AdminBlog() {
   const { user, loading } = useAuth();
   const { id } = useParams();
-  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecking, setAdminChecking] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { setIsAdmin(false); setAdminChecking(false); return; }
+    supabase.rpc('is_blog_admin').then(({ data }) => {
+      setIsAdmin(data === true);
+      setAdminChecking(false);
+    });
+  }, [user, loading]);
+
+  if (loading || adminChecking) {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />

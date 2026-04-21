@@ -1,3 +1,31 @@
+// HOW TO TRIGGER THIS FUNCTION
+// This function is NOT called from the frontend. It must be triggered manually
+// or via an automated job. Two options:
+//
+// Option A — pg_cron (recommended):
+//   Install pg_cron in your Supabase project (Database → Extensions → pg_cron),
+//   then run in the SQL editor:
+//     SELECT cron.schedule(
+//       'weekly-followup-email',
+//       '0 10 * * 2',  -- every Tuesday at 10:00 UTC
+//       $$
+//         SELECT net.http_post(
+//           url := '<YOUR_SUPABASE_URL>/functions/v1/send-followup-email',
+//           headers := '{"Authorization": "Bearer <SERVICE_ROLE_KEY>"}'::jsonb
+//         );
+//       $$
+//     );
+//
+// Option B — Supabase Webhook:
+//   Dashboard → Database → Webhooks → Create webhook
+//   Table: profiles, Event: INSERT
+//   HTTP URL: <YOUR_SUPABASE_URL>/functions/v1/send-followup-email
+//   Headers: Authorization: Bearer <ANON_KEY>
+//
+// Manual trigger (preview mode):
+//   curl -X POST <URL>/functions/v1/send-followup-email?preview=true \
+//     -H "Authorization: Bearer <ANON_KEY>"
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {

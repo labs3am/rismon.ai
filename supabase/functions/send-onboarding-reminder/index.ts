@@ -1,3 +1,31 @@
+// HOW TO TRIGGER THIS FUNCTION
+// This function is NOT called from the frontend. It must be triggered manually
+// or via an automated job. It emails users who signed up but never ran a scan.
+//
+// Option A — pg_cron (recommended):
+//   Install pg_cron in your Supabase project (Database → Extensions → pg_cron),
+//   then run in the SQL editor:
+//     SELECT cron.schedule(
+//       'daily-onboarding-reminder',
+//       '0 11 * * *',  -- every day at 11:00 UTC
+//       $$
+//         SELECT net.http_post(
+//           url := '<YOUR_SUPABASE_URL>/functions/v1/send-onboarding-reminder',
+//           headers := '{"Authorization": "Bearer <SERVICE_ROLE_KEY>"}'::jsonb
+//         );
+//       $$
+//     );
+//
+// Option B — Supabase Webhook:
+//   Dashboard → Database → Webhooks → Create webhook
+//   Table: profiles, Event: INSERT (fires when a new user signs up)
+//   HTTP URL: <YOUR_SUPABASE_URL>/functions/v1/send-onboarding-reminder
+//   Add a delay via pg_cron instead if you want to wait 24h before sending.
+//
+// Manual trigger (preview mode):
+//   curl -X POST <URL>/functions/v1/send-onboarding-reminder?preview=true \
+//     -H "Authorization: Bearer <ANON_KEY>"
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
