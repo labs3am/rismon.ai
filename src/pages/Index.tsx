@@ -342,7 +342,7 @@ export default function Index() {
             {/* TRY PRO */}
             <div className="vercel-pricing-card vercel-pricing-card--popular">
               <p className="vercel-plan-name">TRY PRO</p>
-              <p className="vercel-price">$8.99<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / one-time</span></p>
+              <p className="vercel-price">$14.99<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / one-time</span></p>
               <p style={{ fontSize: '14px', color: '#888888', marginTop: '12px', lineHeight: 1.6 }}>
                 One full Deep Scan on a single app. Use it before launch or an investor demo.
               </p>
