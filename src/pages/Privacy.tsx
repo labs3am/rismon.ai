@@ -7,7 +7,7 @@ export default function Privacy() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Privacy Policy — Rismon.ai"
+        title="Privacy Policy | Rismon.ai — How we handle your code"
         description="How Rismon.ai handles your code, GitHub tokens, and Supabase keys. Read-only access, no source code stored, transparent data flow."
         canonicalPath="/privacy"
       />

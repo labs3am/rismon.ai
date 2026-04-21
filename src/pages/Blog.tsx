@@ -57,7 +57,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Blog, Rismon | Verified AI App Audits"
+        title="Blog | Rismon.ai — Guides on shipping AI-built apps"
         description="Guides and deep dives on shipping production-ready AI-built apps. Verify findings, fix Supabase setups, and harden your stack."
         canonicalPath="/blog"
       />
