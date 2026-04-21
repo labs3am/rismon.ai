@@ -104,9 +104,10 @@ export default function Navbar() {
         <div className="md:hidden flex flex-col gap-2" style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
           <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>How it works</button>
           <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>What we find</button>
-          <Link to="/pricing" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Pricing</Link>
           <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Security</button>
+          <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Pricing</button>
           <Link to="/blog" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Blog</Link>
+          <Link to="/contact" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Contact</Link>
           <div style={{ height: 1, background: '#ffffff10', margin: '8px 0' }} />
           <Link to="/login" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Log in</Link>
           <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '12px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center', marginTop: 4 }} onClick={() => setOpen(false)}>Get Started</Link>
