@@ -960,14 +960,21 @@ export default function Analyze() {
             <BackButton to="/dashboard" label="Dashboard" />
           </div>
           <AiSmartQuestions
-            questions={questions || []}
+            signals={{
+              hasPayments: !!preAnalysis?.hasPayments,
+              hasUserAccounts: !!preAnalysis?.hasUserAccounts,
+              hasAdminRoutes: !!preAnalysis?.hasAdminRoutes,
+              hasFreePaidTiers: !!preAnalysis?.hasFreePaidTiers,
+            }}
             userCorrection={understandingCorrection}
             answers={answers}
             setAnswers={setAnswers}
             onComplete={() => {
-              // Mirror the answer for the always-asked concern question into `concern`
-              if (answers._concern && answers._concern !== '__skip__') {
-                setConcern(answers._concern);
+              // The founder's "core promise" answer is the most important signal —
+              // mirror it into `concern` so the analyze edge function uses it as
+              // the primary thing to verify.
+              if (answers.corePromise && answers.corePromise !== '__skip__') {
+                setConcern(String(answers.corePromise).trim());
               }
               runAnalysis();
             }}

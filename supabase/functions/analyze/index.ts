@@ -1338,7 +1338,9 @@ App understanding: ${JSON.stringify(code_understanding)}
 
 Founder described: ${founder_description}
 
-Founder concern (most worried about): ${concern || "(none specified)"}
+FOUNDER'S CORE PROMISE:
+${concern || "(none specified)"}
+Verify this works correctly in the code. This is the most important finding in the report — if it does not work, raise it as the top business_logic_gap with severity "high".
 
 Project type: ${project_type || "unknown"}
 Monetization: ${monetization || "unknown"}
