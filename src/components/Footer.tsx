@@ -22,8 +22,8 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-5">
             <Logo />
             <p className="text-[13.5px] text-[#888] mt-4 max-w-xs leading-relaxed">
-              Rismon reads your AI-built app and tells you what's broken, missing, or
-              unsafe — before your users find out.
+              Rismon reads your AI-built app and tells you what is broken,
+              missing, or unsafe before your users find out.
             </p>
             <div className="flex items-center gap-2 mt-6">
               <a
@@ -70,16 +70,6 @@ export default function Footer() {
             <ul className="flex flex-col gap-3">
               <li><Link to="/blog" className={linkCls}>Blog</Link></li>
               <li><Link to="/contact" className={linkCls}>Contact</Link></li>
-              <li>
-                <a
-                  href="https://labs3am.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={linkCls}
-                >
-                  Labs3am
-                </a>
-              </li>
             </ul>
           </div>
 
@@ -89,11 +79,6 @@ export default function Footer() {
             <ul className="flex flex-col gap-3">
               <li><Link to="/privacy" className={linkCls}>Privacy Policy</Link></li>
               <li><Link to="/terms" className={linkCls}>Terms of Service</Link></li>
-              <li>
-                <a href="mailto:hello@rismon.ai" className={linkCls}>
-                  hello@rismon.ai
-                </a>
-              </li>
             </ul>
           </div>
         </div>
