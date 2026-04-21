@@ -34,11 +34,8 @@ export default function Blog() {
     supabase.rpc('is_blog_admin').then(({ data }) => setIsAdmin(data === true));
   }, [user]);
 
-  useEffect(() => {
-    document.title = 'Blog, Rismon | Verified AI App Audits';
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', 'Guides, deep dives, and best practices for shipping production-ready AI-built apps. Learn how to verify findings, fix Supabase setups, and harden your stack.');
-  }, []);
+  // Title and meta description are handled by the <SEO /> component below
+  // so every page gets a unique, indexable title in Google.
 
   useEffect(() => {
     const load = async () => {
@@ -57,7 +54,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Blog, Rismon | Verified AI App Audits"
+        title="Blog | Rismon.ai — Guides on shipping AI-built apps"
         description="Guides and deep dives on shipping production-ready AI-built apps. Verify findings, fix Supabase setups, and harden your stack."
         canonicalPath="/blog"
       />

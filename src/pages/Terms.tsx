@@ -8,7 +8,7 @@ export default function Terms() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Terms of Service — Rismon.ai"
+        title="Terms of Service | Rismon.ai"
         description="Terms governing use of Rismon.ai. Analysis is advisory and does not replace a professional security audit for production apps."
         canonicalPath="/terms"
       />
