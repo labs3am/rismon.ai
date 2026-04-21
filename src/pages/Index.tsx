@@ -360,7 +360,7 @@ export default function Index() {
             {/* PRO */}
             <div className="vercel-pricing-card">
               <p className="vercel-plan-name">PRO</p>
-              <p className="vercel-price">$19.90<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / month</span></p>
+              <p className="vercel-price">$49<span style={{ fontSize: '16px', color: '#888888', fontWeight: 400 }}> / month</span></p>
               <p style={{ fontSize: '14px', color: '#888888', marginTop: '12px', lineHeight: 1.6 }}>
                 For founders shipping serious products. Unlimited apps and continuous monitoring.
               </p>
