@@ -593,7 +593,11 @@ export default function Analyze() {
         } catch { /* ignore */ }
       }
       if (!payload) {
-        toast.error((error as any)?.message || 'Analysis failed. Please try again.');
+        if (scanSessionId) {
+          await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+        }
+        setFailureMessage((error as any)?.message || 'Analysis failed. The scan may have been interrupted.');
+        setStage('failed');
         analysisStarted.current = false;
         return;
       }
@@ -603,7 +607,11 @@ export default function Analyze() {
         return;
       }
       if (payload.error) {
-        toast.error(payload.error);
+        if (scanSessionId) {
+          await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+        }
+        setFailureMessage(payload.error);
+        setStage('failed');
         analysisStarted.current = false;
         return;
       }
