@@ -2,14 +2,38 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'rismon_announcements_dismissed';
+const SEEN_KEY = 'rismon_announcements_seen';
 const HIDE_AFTER_MS = 6000;
 const SCROLL_HIDE_PX = 40;
 const SUPPRESS_HOURS = 24;
+
+type AnnoId = 'claude' | 'supabase';
+
+const ANNOUNCEMENTS: Record<AnnoId, {
+  desktop: string;
+  mobile: string;
+  cta: string;
+  href: string;
+}> = {
+  claude: {
+    desktop: 'Claude + Gemini now verify every Deep Scan finding —',
+    mobile: 'Claude + Gemini verify every finding —',
+    cta: 'See what changed →',
+    href: '/blog/claude-is-now-in-rismon',
+  },
+  supabase: {
+    desktop: 'Supabase integration is live — connect your backend for verified findings',
+    mobile: 'Supabase integration is live —',
+    cta: 'Connect now →',
+    href: '/blog/connect-your-supabase-for-deeper-accuracy',
+  },
+};
 
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [current, setCurrent] = useState<AnnoId>('claude');
 
   useEffect(() => {
     try {
@@ -20,6 +44,11 @@ export default function AnnouncementBar() {
           return;
         }
       }
+      // Pick which announcement to show based on what user has seen.
+      const seenRaw = localStorage.getItem(SEEN_KEY);
+      const seen: AnnoId[] = seenRaw ? JSON.parse(seenRaw) : [];
+      const next: AnnoId = seen.includes('claude') ? 'supabase' : 'claude';
+      setCurrent(next);
     } catch {
       /* ignore */
     }
@@ -54,6 +83,12 @@ export default function AnnouncementBar() {
   const dismiss = () => {
     try {
       localStorage.setItem(STORAGE_KEY, String(Date.now()));
+      const seenRaw = localStorage.getItem(SEEN_KEY);
+      const seen: AnnoId[] = seenRaw ? JSON.parse(seenRaw) : [];
+      if (!seen.includes(current)) {
+        seen.push(current);
+        localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+      }
     } catch {
       /* ignore */
     }
@@ -62,9 +97,8 @@ export default function AnnouncementBar() {
 
   if (!visible) return null;
 
-  const text = isMobile
-    ? 'Claude + Gemini verify every finding —'
-    : 'Claude + Gemini now verify every Deep Scan finding —';
+  const anno = ANNOUNCEMENTS[current];
+  const text = isMobile ? anno.mobile : anno.desktop;
 
   return (
     <div
@@ -110,7 +144,7 @@ export default function AnnouncementBar() {
         {text}
       </span>
       <Link
-        to="/blog/claude-is-now-in-rismon"
+        to={anno.href}
         style={{
           color: '#ffffff',
           fontSize: 12,
@@ -123,7 +157,7 @@ export default function AnnouncementBar() {
         onMouseEnter={(e) => (e.currentTarget.style.color = '#f97316')}
         onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff')}
       >
-        See what changed →
+        {anno.cta}
       </Link>
 
       {/* Close button */}
