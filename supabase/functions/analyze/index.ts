@@ -1104,6 +1104,23 @@ Return ONLY this JSON:
         );
       }
 
+      // Server-side lookup of the app's Supabase credentials. RLS restricts the
+      // apps table to the authenticated owner, so this can only return rows the
+      // current user owns. We need these to know whether DB-related findings
+      // could be verified live (vs inferred from code patterns only).
+      let appSupabaseUrl: string | null = null;
+      let appSupabaseAnonKey: string | null = null;
+      if (app_id) {
+        const { data: appCreds } = await supabase
+          .from("apps")
+          .select("supabase_url, supabase_anon_key")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .single();
+        appSupabaseUrl = appCreds?.supabase_url ?? null;
+        appSupabaseAnonKey = appCreds?.supabase_anon_key ?? null;
+      }
+
       // Server-side weekly scan limit — runs in Deno (server clock), user's local
       // clock cannot affect this. Belt-and-suspenders alongside the read_code check.
       if (userPlan === "free") {

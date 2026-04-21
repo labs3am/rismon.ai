@@ -38,6 +38,7 @@ interface Props {
 export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles = 0, currentFile = '', promptCount = 0, totalPrompts = 0 }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [fade, setFade] = useState(false);
+  const [tabHidden, setTabHidden] = useState(false);
 
   const messages = stage === 'reading' ? readingMessages : stage === 'analyzing' ? analyzingMessages : generatingMessages;
 
@@ -51,6 +52,23 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
     }, 2800);
     return () => clearInterval(t);
   }, [messages.length]);
+
+  // Warn the user not to switch tabs / close the tab while a scan is running.
+  // Background tabs throttle network requests, which can kill the in-flight
+  // edge function call and surface as a "scan failed" toast on return.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    const onVisibility = () => setTabHidden(document.visibilityState === 'hidden');
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   const stageLabel =
     stage === 'reading' ? 'Reading' : stage === 'analyzing' ? 'Analyzing' : 'Generating fixes';
@@ -175,6 +193,34 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
             </span>
           )}
           {stage === 'analyzing' && <span>This usually takes 30–60 seconds</span>}
+        </div>
+
+        {/* Tab-switch warning */}
+        <div
+          style={{
+            marginTop: 28,
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: tabHidden ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.02)',
+            border: tabHidden ? '1px solid rgba(249,115,22,0.35)' : '1px solid #1a1a1a',
+            transition: 'background 0.3s ease, border-color 0.3s ease',
+            textAlign: 'left',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: tabHidden ? '#f97316' : '#a1a1aa',
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {tabHidden ? 'Come back to this tab' : 'Keep this tab open'}
+          </div>
+          <div style={{ fontSize: 13, color: '#71717a', marginTop: 6, lineHeight: 1.5 }}>
+            Switching tabs or closing this window can interrupt the scan. Please wait here until your report is ready.
+          </div>
         </div>
       </div>
 
