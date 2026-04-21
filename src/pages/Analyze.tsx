@@ -1020,26 +1020,30 @@ export default function Analyze() {
                 const bc = g.severity === 'critical' ? '#ef4444' : g.severity === 'high' ? '#f97316' : g.severity === 'medium' ? '#f59e0b' : '#6366f1';
                 const d = decisions[g.id];
                 return (
-                  <div key={g.id} className={`bg-card border border-border rounded-r-2xl p-6 ${d === 'ignore' ? 'opacity-50' : ''}`} style={{ borderLeft: `4px solid ${d === 'fix' ? '#6366f1' : bc}` }}>
+                  <div key={g.id} className={`rounded-r-2xl p-6 ${d === 'ignore' ? 'opacity-50' : ''}`} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderLeft: `4px solid ${d === 'fix' ? '#f97316' : bc}` }}>
                     <div className="flex items-center justify-between">
-                      <p className="text-foreground font-bold text-[17px]">{g.title}</p>
+                      <p className="font-bold text-[17px]" style={{ color: '#ffffff' }}>{g.title}</p>
                       <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: `${bc}20`, color: bc }}>{g.severity}</span>
                     </div>
-                    <p className="text-muted-foreground text-[13px] font-semibold mt-3">You said:</p>
-                    <p className="text-foreground text-[15px] mt-1">{g.you_said}</p>
-                    <p className="text-muted-foreground text-[13px] font-semibold mt-3">What was built:</p>
-                    <p className="text-foreground text-[15px] mt-1">{g.what_was_built}</p>
+                    <p className="text-[13px] font-semibold mt-3" style={{ color: '#888888' }}>You said:</p>
+                    <p className="text-[15px] mt-1" style={{ color: '#ffffff' }}>{g.you_said}</p>
+                    <p className="text-[13px] font-semibold mt-3" style={{ color: '#888888' }}>What was built:</p>
+                    <p className="text-[15px] mt-1" style={{ color: '#ffffff' }}>{g.what_was_built}</p>
                     <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                      <p className="text-destructive text-xs font-semibold">Business impact:</p>
-                      <p className="text-foreground text-sm mt-1">{g.business_impact}</p>
+                      <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Business impact:</p>
+                      <p className="text-sm mt-1" style={{ color: '#ffffff' }}>{g.business_impact}</p>
                     </div>
                     <div className="flex gap-3 mt-5">
                       <button onClick={() => setDecisions(p => ({ ...p, [g.id]: 'fix' }))}
-                        className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${d === 'fix' ? 'bg-primary/10 text-primary border-none' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
-                        {d === 'fix' ? 'Will be fixed' : 'Fix this'}
+                        className="text-[13px] font-medium transition-colors"
+                        style={ d === 'fix'
+                          ? { background: 'transparent', border: '1px solid #f97316', color: '#f97316', borderRadius: 6, padding: '6px 14px' }
+                          : { background: 'transparent', border: '1px solid #333333', color: '#888888', borderRadius: 6, padding: '6px 14px' } }>
+                        {d === 'fix' ? 'Added to fix list' : 'Add to fix list'}
                       </button>
                       <button onClick={() => setDecisions(p => ({ ...p, [g.id]: 'ignore' }))}
-                        className={`px-5 py-2.5 rounded-lg text-sm border transition-colors ${d === 'ignore' ? 'bg-secondary text-muted-foreground' : 'border-hover-border text-foreground hover:border-muted-foreground/30'}`}>
+                        className="text-[13px] transition-colors"
+                        style={{ background: 'transparent', border: '1px solid #333333', color: '#888888', borderRadius: 6, padding: '6px 14px' }}>
                         {d === 'ignore' ? 'Ignored' : 'This is fine'}
                       </button>
                     </div>
@@ -1053,27 +1057,33 @@ export default function Analyze() {
           {activeTab === 'unknown' && (
             <div className="mt-6 space-y-4">
               {unknown_features.map((f: any) => (
-                <div key={f.id} className="bg-card border border-border rounded-2xl p-6">
-                  <p className="text-foreground font-bold text-[17px]">{f.feature_name}</p>
-                  <p className="text-muted-foreground text-[13px] mt-1">We found this in your app:</p>
-                  <p className="text-muted-foreground text-[15px] mt-2">{f.description}</p>
-                  <p className="text-muted-foreground text-[13px] italic mt-1">Found in: {f.found_where}</p>
+                <div key={f.id} className="rounded-2xl p-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+                  <p className="font-bold text-[17px]" style={{ color: '#ffffff' }}>{f.feature_name}</p>
+                  <p className="text-[13px] mt-1" style={{ color: '#888888' }}>We found this in your app:</p>
+                  <p className="text-[15px] mt-2" style={{ color: '#ffffff' }}>{f.description}</p>
+                  <p className="text-[13px] italic mt-1" style={{ color: '#888888' }}>Found in: {f.found_where}</p>
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                      <p className="text-warning text-xs font-semibold">If you keep it:</p>
-                      <p className="text-muted-foreground text-sm mt-1">{f.risk_if_kept}</p>
+                      <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>If you keep it:</p>
+                      <p className="text-sm mt-1" style={{ color: '#888888' }}>{f.risk_if_kept}</p>
                     </div>
                     <div className="rounded-lg p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                      <p className="text-destructive text-xs font-semibold">If you remove it:</p>
-                      <p className="text-muted-foreground text-sm mt-1">{f.risk_if_removed}</p>
+                      <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>If you remove it:</p>
+                      <p className="text-sm mt-1" style={{ color: '#888888' }}>{f.risk_if_removed}</p>
                     </div>
                   </div>
-                  <p className="text-foreground text-[15px] font-medium mt-4">Did you ask for this feature?</p>
+                  <p className="text-[15px] font-medium mt-4" style={{ color: '#ffffff' }}>Did you ask for this feature?</p>
                   <div className="flex gap-3 mt-3">
                     <button onClick={() => setDecisions(p => ({ ...p, [f.id]: 'keep' }))}
-                      className={`px-5 py-2.5 rounded-lg text-sm border transition-colors ${decisions[f.id] === 'keep' ? 'border-primary bg-primary/10' : 'border-hover-border text-foreground'}`}>Keep this feature</button>
+                      className="text-[13px] transition-colors"
+                      style={ decisions[f.id] === 'keep'
+                        ? { background: 'transparent', border: '1px solid #f97316', color: '#f97316', borderRadius: 6, padding: '6px 14px' }
+                        : { background: 'transparent', border: '1px solid #333333', color: '#888888', borderRadius: 6, padding: '6px 14px' } }>Keep this feature</button>
                     <button onClick={() => setDecisions(p => ({ ...p, [f.id]: 'remove' }))}
-                      className={`px-5 py-2.5 rounded-lg text-sm border transition-colors ${decisions[f.id] === 'remove' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-destructive/50 text-destructive'}`}>Remove this feature</button>
+                      className="text-[13px] transition-colors"
+                      style={ decisions[f.id] === 'remove'
+                        ? { background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 6, padding: '6px 14px' }
+                        : { background: 'transparent', border: '1px solid #333333', color: '#888888', borderRadius: 6, padding: '6px 14px' } }>Remove this feature</button>
                   </div>
                 </div>
               ))}
@@ -1084,18 +1094,21 @@ export default function Analyze() {
           {activeTab === 'security' && (
             <div className="mt-6 space-y-4">
               {security_issues.map((s: any) => (
-                <div key={s.id} className="bg-card border border-border rounded-r-2xl p-6" style={{ borderLeft: '4px solid #ef4444' }}>
+                <div key={s.id} className="rounded-r-2xl p-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderLeft: '4px solid #ef4444' }}>
                   <div className="flex items-center justify-between">
-                    <p className="text-foreground font-bold text-[17px]">{s.title}</p>
+                    <p className="font-bold text-[17px]" style={{ color: '#ffffff' }}>{s.title}</p>
                     <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>{s.severity}</span>
                   </div>
-                  <p className="text-muted-foreground text-[15px] mt-3">{s.explanation}</p>
+                  <p className="text-[15px] mt-3" style={{ color: '#888888' }}>{s.explanation}</p>
                   <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                    <p className="text-destructive text-xs font-semibold">Business impact:</p>
-                    <p className="text-foreground text-sm mt-1">{s.business_impact}</p>
+                    <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Business impact:</p>
+                    <p className="text-sm mt-1" style={{ color: '#ffffff' }}>{s.business_impact}</p>
                   </div>
                   <button onClick={() => setDecisions(p => ({ ...p, [s.id]: 'fix' }))}
-                    className={`mt-4 px-5 py-2.5 rounded-lg text-sm font-medium ${decisions[s.id] === 'fix' ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
+                    className="mt-4 text-[13px] font-medium transition-colors"
+                    style={ decisions[s.id] === 'fix'
+                      ? { background: 'transparent', border: '1px solid #f97316', color: '#f97316', borderRadius: 6, padding: '6px 14px' }
+                      : { background: 'transparent', border: '1px solid #333333', color: '#888888', borderRadius: 6, padding: '6px 14px' } }>
                     {decisions[s.id] === 'fix' ? 'Added to fix list' : 'Add to fix list'}
                   </button>
                 </div>
@@ -1105,11 +1118,12 @@ export default function Analyze() {
         </div>
 
         {/* Bottom bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-6 py-4">
+        <div className="fixed bottom-0 left-0 right-0 px-6 py-4" style={{ background: '#000000', borderTop: '1px solid #1a1a1a' }}>
           <div className="max-w-[800px] mx-auto flex items-center justify-between">
-            <p className="text-muted-foreground text-sm">{fixCount} fixes selected</p>
+            <p className="text-sm" style={{ color: '#888888' }}>{fixCount} fixes selected</p>
             <button onClick={generatePrompts} disabled={fixCount === 0}
-              className="bg-primary text-primary-foreground px-7 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50">Generate fix prompts →</button>
+              className="text-[14px] font-medium transition-opacity disabled:opacity-50"
+              style={{ background: '#ffffff', color: '#000000', borderRadius: 6, padding: '10px 20px', fontWeight: 500 }}>Generate fix prompts →</button>
           </div>
         </div>
       </div>
