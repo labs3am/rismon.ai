@@ -27,12 +27,12 @@ export default function Blog() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [posts, setPosts] = useState<PostListItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); return; }
     supabase.rpc('is_blog_admin').then(({ data }) => setIsAdmin(data === true));
   }, [user]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.title = 'Blog, Rismon | Verified AI App Audits';

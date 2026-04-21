@@ -34,8 +34,6 @@ function runSecurityPreChecks(codeBundle: string) {
 // SECTION 1b: Pre-analysis — deterministic feature detection
 // ============================================================
 function runPreAnalysis(codeBundle: string) {
-  const code = codeBundle.toLowerCase();
-
   const paymentKeywords = /stripe|lemonsqueezy|lemon\s*squeezy|paddle|razorpay|loadstripe|paymentintent|checkout\.session/i;
   const hasPayments = paymentKeywords.test(codeBundle);
 
@@ -1482,6 +1480,8 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       if (!supabaseConnected && Array.isArray(claudeResult.security_issues)) {
         for (const f of claudeResult.security_issues) {
           if (!f || !isDbRelated(f)) continue;
+          // Skip deterministic findings — they have file/line proof and don't need DB access.
+          if (f.source === "deterministic") continue;
           // Cap severity at "high" — never "critical" without DB proof.
           const sev = (f.severity || "medium").toLowerCase();
           if (sev === "critical") f.severity = "high";
@@ -1517,7 +1517,7 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       if (userPlan === "try_pro") {
         await serviceClient
           .from("profiles")
-          .update({ deep_scan_credits: Math.max(0, deepScanCredits - 1) })
+          .update({ pro_credits: Math.max(0, deepScanCredits - 1) })
           .eq("id", user.id)
           .eq("plan", "try_pro");
       }
