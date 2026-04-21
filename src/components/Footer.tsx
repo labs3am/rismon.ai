@@ -107,14 +107,14 @@ export default function Footer() {
         >
           <p style={{ fontSize: 13, color: '#333333' }}>© 2026 Rismon.ai. All rights reserved.</p>
           <p style={{ fontSize: 13, color: '#333333', whiteSpace: 'nowrap', overflow: 'visible' }}>
-            Built by{' '}
+            From the house of{' '}
             <a
               href="https://labs3am.com"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#555555', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#555555')}
+              style={{ color: '#f97316', transition: 'color 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#ea580c')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#f97316')}
             >
               Labs3am
             </a>
