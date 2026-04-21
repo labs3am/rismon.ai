@@ -1,9 +1,19 @@
 User-agent: *
 Allow: /
+Allow: /blog
+Allow: /blog/
+Allow: /sample-report
+Allow: /pricing
+Allow: /privacy
+Allow: /terms
+Allow: /sitemap.xml
+
 Disallow: /dashboard
-Disallow: /admin
-Disallow: /report
 Disallow: /connect
 Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+Disallow: /api
 
 Sitemap: https://rismon.ai/sitemap.xml

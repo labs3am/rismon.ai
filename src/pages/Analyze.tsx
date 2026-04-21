@@ -526,7 +526,8 @@ export default function Analyze() {
         }
 
         setCodeUnderstanding(data2.app_understanding);
-        const hasBackend = !!(app.supabase_url && app.supabase_anon_key);
+        const { data: hasBackendData } = await supabase.rpc('app_has_backend', { _app_id: app.id });
+        const hasBackend = !!hasBackendData;
         setPreAnalysis({
           ...((data2.pre_analysis as PreAnalysis) || {}),
           backendVisibility: hasBackend ? 'partial' : 'none',

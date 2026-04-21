@@ -97,15 +97,87 @@ const CONTAINER = 'max-w-[1100px] mx-auto';
 const LABEL = 'vercel-label';
 const HEADLINE = 'vercel-headline';
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What does Rismon.ai actually do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rismon reads your AI-built app and compares what you meant to build against what was actually built. It finds gaps in your business logic, security issues, and false promises on your homepage. Every finding comes with proof, file path, and a fix prompt you can paste into Lovable or Cursor."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to know how to code?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Rismon is built specifically for non-technical founders. Every finding is written in plain English with real-world impact explained. No technical knowledge required."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How accurate is the report?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Every finding is verified by two independent AI models — Claude and Gemini. You only see findings both models agree on. Verified findings are marked clearly. Unverified findings are shown separately so you can decide."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does a scan take?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A Quick Scan takes 30 to 60 seconds. A Deep Scan covering your full codebase takes 60 to 90 seconds. You see a progress screen showing exactly which files are being read."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my code stored anywhere?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Your code is read in memory, sent to AI for analysis, then immediately discarded. We never store your code in our database. We only store the findings and report."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between Free and Try Pro?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Free plan gives you 3 scans per week covering your top 20 most important files. Try Pro is a one-time payment of $14.99 that gives you one full Deep Scan covering your entire codebase with both AI models verifying every finding."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which AI tools do you support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rismon works with any app that has a GitHub repository. This includes apps built with Lovable, Bolt, Cursor, Replit, v0, Windsurf, Copilot, and any other AI coding platform."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will Rismon change my code?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Never. Rismon has read-only access to your GitHub repository. We cannot modify, delete, or push anything to your code. You can revoke access from GitHub settings at any time."
+      }
+    }
+  ]
+};
+
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
 
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
       <SEO
-        title="Rismon.ai | Know what your AI actually built"
-        description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof, file, line, and snippet. Free scan. No code knowledge needed."
+        title="Rismon.ai — Intent Verification for AI-Built Apps"
+        description="Scan your AI-built app before you ship. Rismon finds gaps between what you meant to build and what was actually built. Free for non-technical founders."
         canonicalPath="/"
+        jsonLd={faqJsonLd}
       />
       <AnnouncementBar />
       <Navbar />
