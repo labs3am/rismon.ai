@@ -160,7 +160,7 @@ export default function AiSmartQuestions({
             textTransform: 'uppercase',
           }}
         >
-          Step 2 of 2 · {answeredCount}/{merged.length} answered
+          A few questions · {answeredCount}/{merged.length} answered
         </span>
         <h2
           style={{
@@ -171,10 +171,10 @@ export default function AiSmartQuestions({
             lineHeight: 1.3,
           }}
         >
-          A few quick questions
+          Tell us what your app is meant to do
         </h2>
         <p style={{ fontSize: 14, color: '#888', lineHeight: 1.5 }}>
-          Skip anything you're not sure about — we'd rather you skip than guess.
+          These are about your business intent — not your code. Skip anything you're not sure about.
         </p>
       </div>
 
