@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'rismon_announcements_dismissed';
 const SEEN_KEY = 'rismon_announcements_seen';
@@ -143,8 +142,10 @@ export default function AnnouncementBar() {
       >
         {text}
       </span>
-      <Link
-        to={anno.href}
+      <a
+        href={anno.href}
+        target="_blank"
+        rel="noopener noreferrer"
         style={{
           color: '#ffffff',
           fontSize: 12,
@@ -158,7 +159,7 @@ export default function AnnouncementBar() {
         onMouseLeave={(e) => (e.currentTarget.style.color = '#ffffff')}
       >
         {anno.cta}
-      </Link>
+      </a>
 
       {/* Close button */}
       <button
