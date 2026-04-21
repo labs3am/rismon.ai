@@ -599,6 +599,7 @@ export default function Report() {
 
   const gapsList = (Array.isArray(analysis.gaps) ? analysis.gaps : []).map(attachFix);
   const secList = (Array.isArray(analysis.security_issues) ? analysis.security_issues : []).map(attachFix);
+  const unknownList = Array.isArray(analysis.unknown_features) ? analysis.unknown_features : [];
   const whatWorksList = Array.isArray(analysis.what_works) ? analysis.what_works : [];
   const legalList = Array.isArray(analysis.legal_findings) ? analysis.legal_findings : [];
   const promisesList = Array.isArray(analysis.landing_page_promises) ? analysis.landing_page_promises : [];
@@ -672,6 +673,15 @@ export default function Report() {
               tone={legalList.length === 0 ? 'clear' : 'soft'}
               onClick={() => document.getElementById('legal-section')?.scrollIntoView({ behavior: 'smooth' })}
             />
+            {unknownList.length > 0 && (
+              <WarningChip
+                icon={<AlertCircle size={14} />}
+                count={unknownList.length}
+                label={unknownList.length === 1 ? 'unknown feature' : 'unknown features'}
+                tone="soft"
+                onClick={() => document.getElementById('unknown-section')?.scrollIntoView({ behavior: 'smooth' })}
+              />
+            )}
             {(promisesList.length > 0 || falsePromisesList.length > 0) && (
               <WarningChip
                 icon={<AlertCircle size={14} />}
@@ -872,7 +882,54 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 9, WHAT WORKS (small, demoted) */}
+        {/* SECTION 9, UNKNOWN FEATURES */}
+        {unknownList.length > 0 && (
+          <div id="unknown-section" style={{ marginBottom: 32 }}>
+            <SectionLabel>Things we are not sure about</SectionLabel>
+            {unknownList.map((f: any, i: number) => (
+              <div
+                key={f.id || `u-${i}`}
+                style={{
+                  background: 'rgba(245,158,11,0.04)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  borderRadius: 8,
+                  padding: 20,
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#e5e7eb', marginBottom: 4 }}>
+                  {f.feature_name}
+                </div>
+                {f.description && (
+                  <div style={{ fontSize: 14, color: '#888888', marginBottom: 8 }}>{f.description}</div>
+                )}
+                {f.found_where && (
+                  <div style={{ fontSize: 12, color: '#555555', fontStyle: 'italic', marginBottom: 10 }}>
+                    Found in: {f.found_where}
+                  </div>
+                )}
+                {(f.risk_if_kept || f.risk_if_removed) && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {f.risk_if_kept && (
+                      <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 6, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#f59e0b', marginBottom: 4 }}>If you keep it:</div>
+                        <div style={{ fontSize: 13, color: '#888888' }}>{f.risk_if_kept}</div>
+                      </div>
+                    )}
+                    {f.risk_if_removed && (
+                      <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 6, padding: '10px 12px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', marginBottom: 4 }}>If you remove it:</div>
+                        <div style={{ fontSize: 13, color: '#888888' }}>{f.risk_if_removed}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* SECTION 10, WHAT WORKS (small, demoted) */}
         {whatWorksList.length > 0 && (
           <div style={{ marginBottom: 32 }}>
             <SectionLabel>What your app does right</SectionLabel>
