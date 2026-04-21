@@ -117,7 +117,9 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
-            Rismon reads your AI-built app and shows you what was built, what works, and what could go wrong. Every finding comes with proof, file, line, and code snippet. No code knowledge needed.
+            Most AI-built apps ship with gaps the founder never knew about.
+            <br />
+            Rismon.ai finds them before your users do.
           </p>
           <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span></p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
