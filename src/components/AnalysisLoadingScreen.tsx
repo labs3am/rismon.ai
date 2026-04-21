@@ -38,6 +38,7 @@ interface Props {
 export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles = 0, currentFile = '', promptCount = 0, totalPrompts = 0 }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [fade, setFade] = useState(false);
+  const [tabHidden, setTabHidden] = useState(false);
 
   const messages = stage === 'reading' ? readingMessages : stage === 'analyzing' ? analyzingMessages : generatingMessages;
 
@@ -51,6 +52,23 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
     }, 2800);
     return () => clearInterval(t);
   }, [messages.length]);
+
+  // Warn the user not to switch tabs / close the tab while a scan is running.
+  // Background tabs throttle network requests, which can kill the in-flight
+  // edge function call and surface as a "scan failed" toast on return.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    const onVisibility = () => setTabHidden(document.visibilityState === 'hidden');
+    window.addEventListener('beforeunload', onBeforeUnload);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   const stageLabel =
     stage === 'reading' ? 'Reading' : stage === 'analyzing' ? 'Analyzing' : 'Generating fixes';
