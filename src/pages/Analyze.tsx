@@ -991,17 +991,17 @@ export default function Analyze() {
     const scoreColor = score <= 40 ? '#ef4444' : score <= 70 ? '#f59e0b' : '#22c55e';
 
     return (
-      <div className="min-h-screen bg-background pb-24">
+      <div className="min-h-screen pb-24" style={{ background: '#000000' }}>
         <DashboardNavbar />
         <div className="max-w-[800px] mx-auto px-5 pt-24 pb-16">
           <BackButton to="/dashboard" label="Dashboard" />
           {/* Score */}
           <div className="text-center">
-            <div className="w-[120px] h-[120px] rounded-full flex items-center justify-center mx-auto" style={{ border: `3px solid ${scoreColor}` }}>
-              <span className="text-foreground text-[32px] font-bold">{score}</span>
+            <div className="text-[80px] font-bold leading-none tabular-nums" style={{ color: scoreColor, letterSpacing: '-0.03em' }}>{score}</div>
+            <p className="mt-3 text-[12px] uppercase font-semibold" style={{ color: '#888888', letterSpacing: '0.1em' }}>Intent Match</p>
+            <div className="rounded-xl p-5 mt-6 text-left" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
+              <p className="text-[15px] leading-[1.6]" style={{ color: '#ffffff' }}>{summary}</p>
             </div>
-            <p className="text-foreground text-lg font-medium mt-3">{score}% match with your description</p>
-            <div className="bg-card border border-border rounded-xl p-5 mt-4"><p className="text-muted-foreground text-[15px] leading-[1.6]">{summary}</p></div>
           </div>
 
           {/* Tabs */}
