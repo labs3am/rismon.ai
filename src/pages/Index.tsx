@@ -175,7 +175,7 @@ export default function Index() {
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
       <SEO
         title="Rismon.ai — Intent Verification for AI-Built Apps"
-        description="Rismon reads your AI-built app and shows you exactly what was built, what works, and what could go wrong. Every finding has proof, file, line, and snippet. Free scan. No code knowledge needed."
+        description="Scan your AI-built app before you ship. Rismon finds gaps between what you meant to build and what was actually built. Free for non-technical founders."
         canonicalPath="/"
         jsonLd={faqJsonLd}
       />
