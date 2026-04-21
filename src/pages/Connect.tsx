@@ -39,6 +39,7 @@ export default function Connect() {
   const [appLimitReached, setAppLimitReached] = useState(false);
   const [existingAppName, setExistingAppName] = useState('');
   const [checkingLimit, setCheckingLimit] = useState(true);
+  const [backendChoice, setBackendChoice] = useState('Supabase');
 
   // Check app limit
   useEffect(() => {
@@ -437,20 +438,15 @@ export default function Connect() {
                     key={b}
                     type="button"
                     onClick={() => {
-                      // Note: backend type is not stored separately; only Supabase reveals the keys form.
-                      // Re-using local state via a data attribute on the container is overkill — just track in supabaseUrl
                       if (b !== 'Supabase') {
                         setSupabaseUrl('');
                         setSupabaseKey('');
                       }
-                      // Track via a window-level marker so we can show/hide the keys form
-                      (window as any).__rismon_backend_choice = b;
-                      // Force re-render
-                      setSaving((s) => s);
+                      setBackendChoice(b);
                       setServiceRoleWarning(false);
                     }}
                     className={`px-4 py-2.5 rounded-lg text-sm border transition-colors ${
-                      ((window as any).__rismon_backend_choice || 'Supabase') === b
+                      backendChoice === b
                         ? 'border-primary bg-primary/10 text-foreground'
                         : 'border-input text-foreground hover:border-hover-border'
                     }`}
@@ -461,7 +457,7 @@ export default function Connect() {
               </div>
             </div>
 
-            {((window as any).__rismon_backend_choice || 'Supabase') === 'Supabase' && (
+            {backendChoice === 'Supabase' && (
               <>
                 <div className="mt-6 space-y-4">
                   <div>
@@ -562,9 +558,9 @@ grant execute on function public.rismon_security_metadata() to anon, authenticat
               </>
             )}
 
-            {((window as any).__rismon_backend_choice || 'Supabase') !== 'Supabase' && ((window as any).__rismon_backend_choice) !== 'No backend' && (
+            {backendChoice !== 'Supabase' && backendChoice !== 'No backend' && (
               <div className="mt-5 rounded-lg p-4" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
-                <p className="text-foreground text-[13px] font-medium">We can't directly verify {(window as any).__rismon_backend_choice} yet</p>
+                <p className="text-foreground text-[13px] font-medium">We can't directly verify {backendChoice} yet</p>
                 <p className="text-muted-foreground text-[12px] mt-1 leading-relaxed">
                   We'll ask you plain-English questions during the scan instead. Your answers become ground truth — the AI will not guess.
                 </p>

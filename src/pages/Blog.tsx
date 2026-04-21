@@ -6,8 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
 
-const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
-
 interface PostListItem {
   id: string;
   slug: string;
@@ -27,8 +25,13 @@ function formatDate(d: string | null) {
 
 export default function Blog() {
   const { user } = useAuth();
-  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [posts, setPosts] = useState<PostListItem[]>([]);
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase.rpc('is_blog_admin').then(({ data }) => setIsAdmin(data === true));
+  }, [user]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

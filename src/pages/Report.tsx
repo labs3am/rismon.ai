@@ -254,6 +254,36 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
         </>
       )}
 
+      {/* Verification note — shown when this DB-related finding could not be
+          confirmed against a live Supabase connection. Backend marks the
+          finding with `requires_supabase_verification` + `verification_note`. */}
+      {(f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
+        <div
+          style={{
+            background: 'rgba(245, 158, 11, 0.06)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            borderRadius: 6,
+            padding: '10px 14px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}
+        >
+          <span style={{ fontSize: 10, color: '#f59e0b', fontWeight: 700, letterSpacing: '0.08em', marginTop: 2, flexShrink: 0 }}>
+            NOTE
+          </span>
+          <div style={{ fontSize: 13, color: '#cbb37a', lineHeight: 1.6 }}>
+            {f.verification_note ||
+              'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.'}
+            {' '}
+            <Link to="/connect" style={{ color: '#f59e0b', textDecoration: 'underline' }}>
+              Connect Supabase
+            </Link>
+          </div>
+        </div>
+      )}
+
       {(howToFix || fixPrompt) && (
         <div style={{ borderTop: '1px solid #1a1a1a', margin: '16px 0' }} />
       )}

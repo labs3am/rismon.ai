@@ -526,7 +526,9 @@ function mergeSecurityFindings(deterministic: DetectorFinding[], llm: any[]): an
 }
 
 // ============================================================
-// SECTION 2: AI calls — Gemini (cheap) and Claude (deep)
+// SECTION 2: AI calls
+// Claude Sonnet 4 = primary for all analysis (read_code + analyze)
+// Gemini 2.5 Flash = verification pass (Pro only) + fallback on Claude 429/529
 // ============================================================
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -583,15 +585,6 @@ async function callGemini(systemPrompt: string, userContent: string, model = "go
       await new Promise(r => setTimeout(r, delays[attempt]));
     }
   }
-  // Last-resort cross-fallback: try Claude with the same prompt if available
-  if (lastErr?.status === 429 && Deno.env.get("ANTHROPIC_KEY")) {
-    try {
-      console.warn("Gemini exhausted retries. Cross-falling back to Claude.");
-      return await callClaude(systemPrompt, userContent);
-    } catch (e2) {
-      console.error("Claude cross-fallback also failed:", (e2 as Error).message);
-    }
-  }
   throw lastErr;
 }
 
@@ -631,16 +624,16 @@ async function callClaude(systemPrompt: string, userContent: string) {
   return data.content?.[0]?.text || "";
 }
 
-// Hybrid: try Claude first (preserves the original report voice/structure).
-// On 429 / 529 / 5xx, fall back to Lovable AI Gemini 2.5 Pro using the EXACT
-// same system prompt — Claude's prompt already enforces the report style and
+// Claude is the primary analysis engine for all read_code and analyze calls.
+// On 429 / 529 / 5xx, fall back to Gemini 2.5 Flash using the EXACT same
+// system prompt — Claude's prompt already enforces the report style and
 // JSON shape, so the output stays consistent.
 async function callClaudeWithFallback(systemPrompt: string, userContent: string) {
   try {
     return await callClaude(systemPrompt, userContent);
   } catch (e: any) {
     if (e?.message === "CLAUDE_RETRYABLE") {
-      console.warn(`Claude unavailable (${e.status}). Falling back to Gemini 2.5 Pro with Claude's prompt.`);
+      console.warn(`Claude unavailable (${e.status}). Falling back to Gemini 2.5 Flash with Claude's prompt.`);
       // Reuse Claude's system prompt verbatim so the report style matches.
       // Do NOT append HOUSE_STYLE here — Claude's prompt already defines the voice.
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -649,7 +642,7 @@ async function callClaudeWithFallback(systemPrompt: string, userContent: string)
         method: "POST",
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent },
@@ -680,6 +673,71 @@ function parseJSON(text: string): any {
   const last = jsonStr.lastIndexOf("}");
   if (first !== -1 && last !== -1) jsonStr = jsonStr.slice(first, last + 1);
   return JSON.parse(jsonStr);
+}
+
+// ============================================================
+// SECTION 2b: Server-side score calculation
+// All scoring happens here, not in the AI prompt.
+// Verified findings (confirmed by Gemini pass) cost double the unverified rate.
+// ============================================================
+function calculateScore(
+  gaps: any[],
+  securityIssues: any[],
+  falsePromises: any[],
+  verificationApplied: boolean,
+  scanType: string
+): { score: number; grade: string; launch_status: string } {
+  const DEDUCTIONS: Record<string, { verified: number; unverified: number }> = {
+    critical: { verified: 10,   unverified: 5 },
+    high:     { verified: 5,    unverified: 2.5 },
+    medium:   { verified: 2,    unverified: 1 },
+    low:      { verified: 0.5,  unverified: 0.25 },
+  };
+
+  const allFindings = [
+    ...gaps.map((f: any) => ({ ...f, _pool: "gap" })),
+    ...securityIssues.map((f: any) => ({ ...f, _pool: "sec" })),
+    ...falsePromises.map((f: any) => ({ ...f, _pool: "fp" })),
+  ];
+
+  let score = 100;
+  let criticalCount = 0;
+
+  for (const f of allFindings) {
+    const sev = (f.severity || "low").toLowerCase();
+    const table = DEDUCTIONS[sev] || DEDUCTIONS.low;
+    // Gaps tagged verified=true by the Gemini pass; security and promise findings are always unverified
+    const isVerified = verificationApplied && f._pool === "gap" && f.verified === true;
+    score -= isVerified ? table.verified : table.unverified;
+    if (sev === "critical") criticalCount++;
+  }
+
+  // Hard caps
+  if (criticalCount >= 3)      score = Math.min(score, 45);
+  else if (criticalCount >= 2) score = Math.min(score, 60);
+  else if (criticalCount >= 1) score = Math.min(score, 75);
+
+  // Quick scan ceiling (deep scan can reach 100)
+  score = Math.min(score, scanType === "deep" ? 100 : 90);
+
+  // Floor — 40 minimum always; 0 only for failed/empty scans (handled by caller)
+  score = Math.max(score, 40);
+
+  score = Math.round(score * 10) / 10;
+
+  const grade =
+    score >= 93 ? "A" :
+    score >= 85 ? "B" :
+    score >= 70 ? "C" :
+    score >= 55 ? "D" : "F";
+
+  const launch_status =
+    score >= 85 ? "ready" :
+    score >= 70 ? "almost" :
+    score >= 55 ? "needs_work" :
+    score >= 40 ? "not_ready" : "critical";
+
+  return { score, grade, launch_status };
 }
 
 // ============================================================
@@ -946,7 +1004,7 @@ serve(async (req) => {
         ? `\n\nPre-scan findings already detected: ${JSON.stringify([...securityPreFound, ...rlsFindings])}\nInclude these in your response and add anything else you find.`
         : "";
 
-      // Stage 1: extract facts via Gemini Flash (cheap, structured)
+      // Stage 1: extract facts via Claude Sonnet (primary) — falls back to Gemini 2.5 Flash on 429/529
       const includeEdge = userPlan === "pro" && edgeFunctionBundle;
       const systemPrompt = `You are a code reader. Extract facts from this codebase. Look at: features, user roles, payment code, routes (protected vs public), database tables used, coding patterns, anything that looks unintentional. ${includeEdge ? "Backend logic is included in supabase/functions/* — judge auth, payment, and data-access enforcement based on this code, not just the frontend." : "Note: only frontend code was scanned. Flag features whose backend enforcement cannot be verified."} Then generate up to 8 plain-English questions for the founder, each citing what you found.${preCheckContext}
 
@@ -976,14 +1034,14 @@ Return ONLY this JSON:
 
       if (chunks.length === 1) {
         const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
-        const text = await callGemini(systemPrompt, userContent);
+        const text = await callClaudeWithFallback(systemPrompt, userContent);
         mergedFacts = parseJSON(text);
       } else {
         // Per-chunk extraction then merge
         const partials: any[] = [];
         for (let i = 0; i < chunks.length; i++) {
           const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
-          const text = await callGemini(systemPrompt, userContent);
+          const text = await callClaudeWithFallback(systemPrompt, userContent);
           try { partials.push(parseJSON(text)); } catch { /* skip bad chunk */ }
         }
         // Merge into one
@@ -1025,6 +1083,29 @@ Return ONLY this JSON:
           JSON.stringify({ error: "No deep scan credits remaining", code: "no_credits" }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+
+      // Server-side weekly scan limit — runs in Deno (server clock), user's local
+      // clock cannot affect this. Belt-and-suspenders alongside the read_code check.
+      if (userPlan === "free") {
+        const now = new Date();
+        const day = now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - ((day + 6) % 7));
+        monday.setHours(0, 0, 0, 0);
+        const mondayStr = monday.toISOString().split("T")[0];
+        const { data: weekUsage } = await serviceClient
+          .from("scan_usage")
+          .select("scan_count")
+          .eq("user_id", user.id)
+          .eq("week_start", mondayStr);
+        const weekTotal = (weekUsage || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
+        if (weekTotal >= PLAN_LIMITS.free.weeklyScans) {
+          return new Response(
+            JSON.stringify({ error: "You've used your 3 free scans this week. Try Pro for $8.99 to run a Deep Scan now, or wait until Monday.", code: "WEEKLY_LIMIT" }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
       }
 
       const scanTypeHint = scan_type === "deep"
@@ -1154,32 +1235,18 @@ Technical reference (5 words max)
 Google search term to learn more
 Exact fix prompt for Lovable or Cursor
 
-SCORING (recalibrated for fairness — most apps land 70-88):
-Start at 100.
-Deduct for each finding:
-Critical: -10 points
-High: -5 points
-Medium: -2 points
-Low: -0.5 points
-False promise: -2 points each (additive)
+SCORING:
+Return "score": 0 — the server calculates the final score after verification.
+Your only job is to find real issues and label each one accurately as
+critical / high / medium / low. The score follows from those labels.
 
-HARD FLOOR: Minimum possible score is 55. Never return below 55. Even the worst app gets 55 — they at least built and shipped something.
-HARD CEILING for high scores (very hard to hit):
-- 95+ requires zero critical and zero high findings AND fewer than 3 medium findings
-- 90+ requires zero critical findings AND fewer than 2 high findings
-- A score of 100 is essentially impossible — reserve for nearly perfect tiny apps
-
-CRITICAL SCORE CAPS (softer than before — apps with bugs are still trustworthy products):
-If 1 or more critical findings exist: score = min(score, 85)
-If 2 or more critical findings exist: score = min(score, 78)
-If 3 or more critical findings exist: score = min(score, 70)
-
-LAUNCH READINESS:
-95-100: Excellent — launch ready
-89-94: Strong — minor polish only
-75-88: Good — fix a few things before launch
-65-74: Needs work — solid foundation, important issues to address
-55-64: Significant work needed — but a real app, not a failure
+BANDS (for reference only — server assigns the final value):
+93-100: Excellent / Perfect
+85-92: Strong
+70-84: Good
+55-69: Getting there
+40-54: Needs work
+0-39: Critical issues
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
@@ -1319,11 +1386,14 @@ Return ONLY:
 Founder description: ${founder_description}
 
 Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
-          const verifyText = await callGemini(verifySystem, verifyUser, "google/gemini-2.5-pro");
+          const verifyText = await callGemini(verifySystem, verifyUser, "google/gemini-2.5-flash");
           const verified = parseJSON(verifyText);
           if (Array.isArray(verified?.verified)) {
-            const rejectedIds = new Set(verified.verified.filter((v: any) => v.verdict === "rejected").map((v: any) => v.id));
-            claudeResult.gaps = claudeResult.gaps.filter((g: any) => !rejectedIds.has(g.id));
+            const rejectedIds  = new Set(verified.verified.filter((v: any) => v.verdict === "rejected").map((v: any) => v.id));
+            const confirmedIds = new Set(verified.verified.filter((v: any) => v.verdict === "confirmed").map((v: any) => v.id));
+            claudeResult.gaps = claudeResult.gaps
+              .filter((g: any) => !rejectedIds.has(g.id))
+              .map((g: any) => ({ ...g, verified: confirmedIds.has(g.id) }));
             claudeResult.verification_applied = true;
             claudeResult.verification_dropped = rejectedIds.size;
           }
@@ -1379,68 +1449,68 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       );
 
       // ----------------------------------------------------------
-      // RE-SCORE — deterministic findings deduct heavily and the
-      // critical caps from the prompt are enforced server-side too.
-      // (Claude already applied them, but if we just injected new
-      // criticals from the deterministic overlay we must re-apply.)
+      // DB-VERIFICATION OVERLAY (added 2026-04)
+      //
+      // Findings about database security (RLS, user data isolation,
+      // unfiltered queries, missing user filters, admin role checks
+      // against profiles, etc.) are inferred from CODE PATTERNS unless
+      // the founder connected their Supabase project so we can probe
+      // it directly. When Supabase is NOT connected:
+      //   - confidence  → "unverified"
+      //   - severity    → capped at "high"  (no critical from inference)
+      //   - verification_note → explanation shown under the finding
+      // When Supabase IS connected, these findings stay as-is (the
+      // deterministic scanner cited the file/line and we cross-checked
+      // tables via the live REST probe above).
       // ----------------------------------------------------------
-      const sevDeduction: Record<string, number> = { critical: 10, high: 5, medium: 2, low: 0.5 };
-      const allFindings = [
-        ...(Array.isArray(claudeResult.gaps) ? claudeResult.gaps : []),
-        ...(Array.isArray(claudeResult.security_issues) ? claudeResult.security_issues : []),
-      ];
-      let deduction = 0;
-      let criticalCount = 0;
-      for (const f of allFindings) {
-        const sev = (f?.severity || "medium").toLowerCase();
-        deduction += sevDeduction[sev] ?? 1;
-        if (sev === "critical") criticalCount += 1;
-      }
-      // HARD FLOOR at 55 — never return a 0 or anything terrifying.
-      // Apps that shipped deserve credit even if they have bugs.
-      let recomputed = Math.max(55, 100 - deduction);
-      // Softer caps: a buggy app is still a real product
-      if (criticalCount >= 3) recomputed = Math.min(recomputed, 70);
-      else if (criticalCount >= 2) recomputed = Math.min(recomputed, 78);
-      else if (criticalCount >= 1) recomputed = Math.min(recomputed, 85);
-
-      // Only OVERRIDE the score if our deterministic overlay actually
-      // changed things. If Claude's score was already lower than our
-      // recompute, keep Claude's score (it knew about other context).
-      const claudeScore = typeof claudeResult.intent_match_score === "number"
-        ? claudeResult.intent_match_score : 100;
-      // Always enforce the floor of 55 even if Claude returned lower
-      const flooredClaudeScore = Math.max(55, claudeScore);
-      if (allDeterministic.length > 0 || recomputed < flooredClaudeScore) {
-        claudeResult.intent_match_score = Math.max(55, Math.min(flooredClaudeScore, recomputed));
-        claudeResult.scoring_overlay = {
-          deterministic_findings: allDeterministic.length,
-          critical_count: criticalCount,
-          original_claude_score: claudeScore,
-          recomputed_score: claudeResult.intent_match_score,
-        };
-      } else {
-        claudeResult.intent_match_score = flooredClaudeScore;
-      }
-
-      // Also lower the security_score field if we have new critical
-      // security findings (the UI uses this for the security badge).
-      if (detFromCode.length + detFromQuestions.filter((d) => d.category !== "business_logic").length > 0) {
-        let secDed = 0;
-        for (const f of (claudeResult.security_issues || [])) {
-          secDed += sevDeduction[(f?.severity || "medium").toLowerCase()] ?? 1;
+      const supabaseConnected = !!(appSupabaseUrl && appSupabaseAnonKey);
+      const DB_CATEGORIES = new Set([
+        "rls",
+        "user_data_isolation",
+        "data_isolation",
+        "database_security",
+        "missing_user_filter",
+        "admin_access",
+        "data_leak",
+      ]);
+      const isDbRelated = (f: any) => {
+        const cat = (f?.category || "").toString().toLowerCase();
+        if (DB_CATEGORIES.has(cat)) return true;
+        const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
+        return /\brls\b|row[- ]level\s+security|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation/.test(hay);
+      };
+      if (!supabaseConnected && Array.isArray(claudeResult.security_issues)) {
+        for (const f of claudeResult.security_issues) {
+          if (!f || !isDbRelated(f)) continue;
+          // Cap severity at "high" — never "critical" without DB proof.
+          const sev = (f.severity || "medium").toLowerCase();
+          if (sev === "critical") f.severity = "high";
+          // Force confidence to unverified.
+          f.confidence = "unverified";
+          f.confidence_reason =
+            "Detected from code patterns only — your Supabase project is not connected, so we could not verify the live database rules.";
+          f.verification_note =
+            "Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.";
+          f.requires_supabase_verification = true;
         }
-        let secRecomputed = Math.max(55, 100 - secDed);
-        if (criticalCount >= 3) secRecomputed = Math.min(secRecomputed, 70);
-        else if (criticalCount >= 2) secRecomputed = Math.min(secRecomputed, 78);
-        else if (criticalCount >= 1) secRecomputed = Math.min(secRecomputed, 85);
-        const currentSec = typeof claudeResult.security_score === "number"
-          ? Math.max(55, claudeResult.security_score) : 100;
-        claudeResult.security_score = Math.max(55, Math.min(currentSec, secRecomputed));
       }
+
+      // Override score with server-calculated value (new scoring system)
+      const resolvedScanType = scan_type || (userPlan === "free" ? "quick" : "deep");
+      const { score: finalScore, grade: finalGrade, launch_status: finalStatus } = calculateScore(
+        claudeResult.gaps || [],
+        claudeResult.security_issues || [],
+        claudeResult.false_promises || [],
+        !!claudeResult.verification_applied,
+        resolvedScanType
+      );
+      claudeResult.score = finalScore;
+      claudeResult.intent_match_score = finalScore;
+      claudeResult.grade = finalGrade;
+      claudeResult.launch_status = finalStatus;
 
       claudeResult.plan_at_scan = userPlan;
-      claudeResult.scan_type = scan_type || (userPlan === "free" ? "quick" : "deep");
+      claudeResult.scan_type = resolvedScanType;
       claudeResult.edge_functions_scanned = limits.edgeFunctionScan;
 
       // Deduct one deep_scan_credit for try_pro after successful scan
