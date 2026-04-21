@@ -113,24 +113,14 @@ function buildIntentQuestions(s: IntentSignals): AiQuestion[] {
 }
 
 export default function AiSmartQuestions({
-  questions,
+  signals,
   userCorrection,
   answers,
   setAnswers,
   onComplete,
 }: Props) {
-  // Merge Claude's questions with the always-ask ones, deduped by id.
-  const merged = useMemo(() => {
-    const all = [...ALWAYS_ASK, ...(questions || [])];
-    const seen = new Set<string>();
-    return all
-      .filter((q) => {
-        if (!q?.id || seen.has(q.id)) return false;
-        seen.add(q.id);
-        return true;
-      })
-      .slice(0, 10);
-  }, [questions]);
+  // Build the intent-questions list from the code signals.
+  const merged = useMemo(() => buildIntentQuestions(signals || {}), [signals]);
 
   const [step, setStep] = useState(0);
   const currentQ = merged[step];
