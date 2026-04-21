@@ -467,8 +467,9 @@ export default function Analyze() {
         if (!payload) {
           if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
           const msg = (error as any)?.message || 'Analysis failed. Please try again.';
-          toast.error(msg);
-          navigate('/dashboard');
+          setFailureMessage(msg);
+          setStage('failed');
+          readingStarted.current = false;
           return;
         }
 
@@ -506,8 +507,9 @@ export default function Analyze() {
         }
         if (payload.error) {
           if (newSession) await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', newSession.id);
-          toast.error(payload.error);
-          navigate('/dashboard');
+          setFailureMessage(payload.error);
+          setStage('failed');
+          readingStarted.current = false;
           return;
         }
         // Re-bind data to recovered payload for the success path below
