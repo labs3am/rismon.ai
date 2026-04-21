@@ -909,8 +909,9 @@ serve(async (req) => {
       gaps,
       security_issues,
       unknown_features,
-      supabase_url: appSupabaseUrl,
-      supabase_anon_key: appSupabaseAnonKey,
+      // NOTE: supabase_url / supabase_anon_key are intentionally NOT read from
+      // the request body. They are sensitive credentials and must never be sent
+      // from the browser. We look them up server-side from the apps table below.
       app_id,
       github_owner,
       github_repo_name,
@@ -964,6 +965,22 @@ serve(async (req) => {
       const totalBundle = (codeBundle || "") + (edgeFunctionBundle || "");
       const repoSizeBytes = new TextEncoder().encode(totalBundle).length;
 
+      // Server-side lookup of the app's Supabase credentials. RLS restricts the
+      // apps table to the authenticated owner, so this can only return rows the
+      // current user owns.
+      let appSupabaseUrl: string | null = null;
+      let appSupabaseAnonKey: string | null = null;
+      if (app_id) {
+        const { data: appCreds } = await supabase
+          .from("apps")
+          .select("supabase_url, supabase_anon_key")
+          .eq("id", app_id)
+          .eq("user_id", user.id)
+          .single();
+        appSupabaseUrl = appCreds?.supabase_url ?? null;
+        appSupabaseAnonKey = appCreds?.supabase_anon_key ?? null;
+      }
+
       // Enforce all abuse limits BEFORE any AI call (skipped for unlimited allowlist)
       if (!isUnlimited) {
         const limitCheck = await checkAbuseLimits(serviceClient, user.id, userPlan, repoName, repoSizeBytes, scan_session_id);
@@ -983,6 +1000,7 @@ serve(async (req) => {
 
       // Probe Supabase tables
       const rlsFindings: any[] = [];
+      let derivedTableNames = "";
       if (appSupabaseUrl && appSupabaseAnonKey) {
         try {
           const res = await fetch(`${appSupabaseUrl}/rest/v1/`, {
@@ -993,10 +1011,13 @@ serve(async (req) => {
             const tableList = typeof tables === "object" ? Object.keys(tables) : [];
             if (tableList.length > 0) {
               rlsFindings.push({ type: "tables_detected", tables: tableList, note: "Check if these tables have RLS enabled" });
+              derivedTableNames = tableList.join(", ");
             }
           }
         } catch { /* ignore */ }
       }
+      // Prefer the server-derived list; fall back to anything the client sent.
+      const effectiveTableNames = derivedTableNames || tableNames || "";
 
       const preCheckContext = (securityPreFound.length > 0 || rlsFindings.length > 0)
         ? `\n\nPre-scan findings already detected: ${JSON.stringify([...securityPreFound, ...rlsFindings])}\nInclude these in your response and add anything else you find.`
@@ -1031,14 +1052,14 @@ Return ONLY this JSON:
       let mergedFacts: any = null;
 
       if (chunks.length === 1) {
-        const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
+        const userContent = `Code:\n${chunks[0]}\n\nDatabase tables: ${effectiveTableNames || "unknown"}\nPlatform: ${platform || "unknown"}\nUser plan: ${userPlan}`;
         const text = await callClaudeWithFallback(systemPrompt, userContent);
         mergedFacts = parseJSON(text);
       } else {
         // Per-chunk extraction then merge
         const partials: any[] = [];
         for (let i = 0; i < chunks.length; i++) {
-          const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${tableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
+          const userContent = `Code chunk ${i + 1} of ${chunks.length}:\n${chunks[i]}\n\nDatabase tables: ${effectiveTableNames || "unknown"}\nPlatform: ${platform || "unknown"}`;
           const text = await callClaudeWithFallback(systemPrompt, userContent);
           try { partials.push(parseJSON(text)); } catch { /* skip bad chunk */ }
         }

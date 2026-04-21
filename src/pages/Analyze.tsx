@@ -120,7 +120,15 @@ export default function Analyze() {
   useEffect(() => {
     if (!user || !appId) return;
     const load = async () => {
-      const { data: appData } = await supabase.from('apps').select('*').eq('id', appId).single();
+      // Do NOT select supabase_url / supabase_anon_key on the client. The analyze
+      // edge function looks them up server-side using RLS-restricted access. This
+      // prevents these credentials from ever being exposed in browser memory or
+      // network responses.
+      const { data: appData } = await supabase
+        .from('apps')
+        .select('id,user_id,app_name,platform,status,live_url,app_description,github_repo_url,github_repo_name,github_owner,created_at')
+        .eq('id', appId)
+        .single();
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
 
@@ -418,13 +426,9 @@ export default function Analyze() {
         codeBundleRef.current = codeBundle;
         edgeBundleRef.current = edgeFunctionBundle;
 
-        let tableNames = '';
-        if (app.supabase_url && app.supabase_anon_key) {
-          try {
-            const r = await fetch(`${app.supabase_url}/rest/v1/`, { headers: { apikey: app.supabase_anon_key } });
-            if (r.ok) { const d = await r.json(); tableNames = Object.keys(d).join(', '); }
-          } catch {}
-        }
+        // Table-name discovery is done server-side inside the analyze edge
+        // function so the app's Supabase URL and anon key never reach the browser.
+        const tableNames = '';
 
         // Update scan_session with repo size
         const repoSize = new Blob([codeBundle + edgeFunctionBundle]).size;
@@ -443,8 +447,8 @@ export default function Analyze() {
             app_id: appId,
             github_owner: app.github_owner,
             github_repo_name: app.github_repo_name,
-            supabase_url: app.supabase_url,
-            supabase_anon_key: app.supabase_anon_key,
+            // supabase_url / supabase_anon_key are intentionally omitted —
+            // the edge function reads them from the apps table under RLS.
             scan_type: localScanType,
             scan_session_id: newSession?.id ?? null,
           }
