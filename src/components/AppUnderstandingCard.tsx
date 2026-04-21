@@ -130,11 +130,6 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
           </Section>
         )}
 
-        {roles.length > 0 && (
-          <Section label="Who uses it">
-            <PillList items={roles} />
-          </Section>
-        )}
         {tables.length > 0 && (
           <Section label="Data it stores">
             <PillList items={tables} muted />
