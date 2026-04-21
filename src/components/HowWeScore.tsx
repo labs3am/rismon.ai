@@ -4,14 +4,14 @@
  */
 
 const ZONES = [
-  { from: 55, to: 64, label: 'Significant work' },
-  { from: 65, to: 74, label: 'Needs work' },
+  { from: 40, to: 54, label: 'Needs work' },
+  { from: 55, to: 74, label: 'Needs work' },
   { from: 75, to: 88, label: 'Good' },
   { from: 89, to: 94, label: 'Strong' },
   { from: 95, to: 100, label: 'Excellent' },
 ];
 
-const RANGE_MIN = 55;
+const RANGE_MIN = 40;
 const RANGE_MAX = 100;
 const SPAN = RANGE_MAX - RANGE_MIN;
 

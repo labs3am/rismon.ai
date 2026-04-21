@@ -226,15 +226,39 @@
 
 /* ============ Vercel-style minimal homepage ============ */
 .vercel-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
   background: transparent;
-  border: 1px solid #333333;
   border-radius: 999px;
   padding: 6px 16px;
   font-size: 12px;
   color: #888888;
   margin-bottom: 24px;
+  isolation: isolate;
+}
+
+.vercel-pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  padding: 1px;
+  background: conic-gradient(from 0deg, rgba(255,255,255,0.15), rgba(255,255,255,0.02), rgba(255,255,255,0.15), rgba(255,255,255,0.02), rgba(255,255,255,0.15));
+  animation: silver-rotate 3s linear infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+@keyframes silver-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 .vercel-hero-h1 {
   font-size: clamp(40px, 6vw, 72px);
