@@ -769,6 +769,19 @@ export default function AdminDashboard() {
               <h3 className="text-foreground font-semibold mt-3">Reviews & disputes</h3>
               <p className="text-muted-foreground text-sm mt-1">User feedback and finding disputes.</p>
             </Link>
+            <Link
+              to="/admin/broadcast"
+              className="bg-card border border-border rounded-2xl p-5 hover:border-hover-border transition-colors group"
+            >
+              <Mail className="text-primary" size={20} />
+              <h3 className="text-foreground font-semibold mt-3 flex items-center gap-2">
+                Broadcast nudge
+                <span className="text-[10px] font-semibold tracking-wider text-primary uppercase px-1.5 py-0.5 rounded bg-primary/10">New</span>
+              </h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Send the founder note to inactive users (signed up 14+ days ago, never scanned). Test first, then broadcast.
+              </p>
+            </Link>
             <div className="bg-card border border-border rounded-2xl p-5">
               <Mail className="text-primary" size={20} />
               <h3 className="text-foreground font-semibold mt-3">Email notifications</h3>
