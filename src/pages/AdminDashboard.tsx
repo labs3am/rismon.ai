@@ -14,6 +14,7 @@ import {
   Mail,
   UserX,
   GitBranch,
+  Activity,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -30,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Tab = "overview" | "users" | "scans" | "inactive" | "no-github" | "tools";
+type ExtendedTab = Tab | "traffic";
 
 interface UserRow {
   id: string;
@@ -99,6 +101,31 @@ interface TimeseriesPoint {
 interface PlanRow {
   plan: string;
   user_count: number;
+}
+
+interface TrafficStats {
+  views_today: number;
+  views_7d: number;
+  views_30d: number;
+  unique_sessions_7d: number;
+  unique_visitors_7d: number;
+}
+
+interface TopPage {
+  path: string;
+  views: number;
+  unique_sessions: number;
+}
+
+interface TopReferrer {
+  referrer: string;
+  views: number;
+}
+
+interface TrafficPoint {
+  day: string;
+  views: number;
+  unique_sessions: number;
 }
 
 function formatDate(s: string | null) {
