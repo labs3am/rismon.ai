@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail } from "lucide-react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,15 @@ import { toast } from "sonner";
 // Hard-gated to admins (also enforced server-side).
 
 const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+
+const PRESETS: { label: string; days: number }[] = [
+  { label: "1 week", days: 7 },
+  { label: "2 weeks", days: 14 },
+  { label: "1 month", days: 30 },
+  { label: "3 months", days: 90 },
+  { label: "6 months", days: 180 },
+  { label: "1 year", days: 365 },
+];
 
 const AdminBroadcast = () => {
   const { user, loading } = useAuth();
@@ -23,6 +32,8 @@ const AdminBroadcast = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [lastResult, setLastResult] = useState<null | { sent: number; failed: number; errors: string[] }>(null);
+  const [inactiveDays, setInactiveDays] = useState<number>(14);
+  const [customMode, setCustomMode] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !user.email || !ADMIN_EMAILS.has(user.email))) {
@@ -34,7 +45,7 @@ const AdminBroadcast = () => {
     setLoadingCount(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast", dryRun: true },
+        body: { mode: "broadcast", dryRun: true, inactiveDays },
       });
       if (error) throw error;
       setEligibleCount(data?.eligibleCount ?? 0);
@@ -49,7 +60,7 @@ const AdminBroadcast = () => {
   useEffect(() => {
     if (user?.email && ADMIN_EMAILS.has(user.email)) fetchEligible();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email]);
+  }, [user?.email, inactiveDays]);
 
   const sendTest = async () => {
     setSendingTest(true);
@@ -74,7 +85,7 @@ const AdminBroadcast = () => {
     setBroadcasting(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast" },
+        body: { mode: "broadcast", inactiveDays },
       });
       if (error) throw error;
       setLastResult({ sent: data?.sent ?? 0, failed: data?.failed ?? 0, errors: data?.errors ?? [] });
