@@ -30,6 +30,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
+  // Resume-in-progress banner: surfaces an active scan_session so users
+  // who switched tabs (or got disconnected) can hop back into the live
+  // analysis screen without losing their slot.
+  const [activeScan, setActiveScan] = useState<{
+    sessionId: string;
+    appId: string | null;
+    appName: string | null;
+    startedAt: number;
+  } | null>(null);
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
   const navigate = useNavigate();
