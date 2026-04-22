@@ -147,8 +147,12 @@ export default function Analyze() {
         const startedAtMs = activeSession.created_at ? new Date(activeSession.created_at).getTime() : Date.now();
         const ageSec = Math.floor((Date.now() - startedAtMs) / 1000);
 
-        // Auto-cancel sessions older than 3 minutes (edge function dies at ~2.5min anyway)
-        if (ageSec > 180) {
+        // Auto-cancel sessions older than 12 minutes. Background analyze
+        // jobs typically complete in 2-3 minutes; anything past 12 minutes
+        // is almost certainly genuinely stuck (e.g. Gemini upstream outage).
+        // We deliberately do NOT auto-fail at 3 minutes anymore — that was
+        // killing healthy scans whenever the user switched tabs.
+        if (ageSec > 12 * 60) {
           await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', activeSession.id);
           localStorage.removeItem('rismon_active_analysis');
           localStorage.removeItem('rismon_analysis_stage');
@@ -182,15 +186,17 @@ export default function Analyze() {
               navigate('/dashboard');
               return;
             }
-            // Auto-fail sessions that exceed 3 minutes during polling
+            // Soft timeout: only mark failed after 12 minutes (was 3).
+            // The background job on the server controls the real outcome —
+            // we never decide "failed" purely from a stale wall clock.
             const elapsed = Math.floor((Date.now() - startedAtMs) / 1000);
-            if (elapsed > 180) {
+            if (elapsed > 12 * 60) {
               if (pollRef.current) clearInterval(pollRef.current);
               await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', activeSession.id);
               setResumingSession(false);
               localStorage.removeItem('rismon_active_analysis');
               localStorage.removeItem('rismon_analysis_stage');
-              toast.error('Scan timed out. Please try again.');
+              toast.error('Scan took too long. Please try again.');
               navigate('/dashboard');
             }
           }, 3000);
