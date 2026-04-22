@@ -773,7 +773,8 @@ export default function AdminDashboard() {
               <Mail className="text-primary" size={20} />
               <h3 className="text-foreground font-semibold mt-3">Email notifications</h3>
               <p className="text-muted-foreground text-sm mt-1">
-                You'll receive emails at <span className="text-foreground font-medium">hello@rismon.ai</span> when a new user signs up
+                Sent directly via <span className="text-foreground font-medium">Resend</span> to{" "}
+                <span className="text-foreground font-medium">hello@rismon.ai</span> when a new user signs up
                 or completes their first scan.
               </p>
               <div className="mt-3">
