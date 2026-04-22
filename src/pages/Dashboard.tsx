@@ -227,6 +227,45 @@ export default function Dashboard() {
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
+        {activeScan && (
+          <button
+            onClick={() => activeScan.appId ? navigate(`/analyze/${activeScan.appId}`) : null}
+            style={{
+              marginTop: 20,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '14px 18px',
+              borderRadius: 12,
+              background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
+              border: '1px solid rgba(129,140,248,0.35)',
+              color: '#ffffff',
+              cursor: activeScan.appId ? 'pointer' : 'default',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10 }}>
+                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
+                <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+              </span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>
+                  Scan in progress for {activeScan.appName}
+                </div>
+                <div style={{ fontSize: 12, color: '#a1a1aa', marginTop: 2 }}>
+                  Running in the background — you can leave this tab. {activeScan.appId ? 'Click to watch live progress.' : 'It will finish on its own.'}
+                </div>
+              </div>
+            </div>
+            {activeScan.appId && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#818cf8', whiteSpace: 'nowrap' }}>Resume →</span>
+            )}
+          </button>
+        )}
+
         <WelcomeGuide />
 
         {((profile?.plan || 'free').toLowerCase() !== 'pro') && (
