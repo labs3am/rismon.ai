@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Sparkles, ThumbsUp, ThumbsDown, HelpCircle } from 'lucide-react';
+import { Loader2, Sparkles, ThumbsUp, ThumbsDown, HelpCircle, Star } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
@@ -21,6 +21,29 @@ interface Review {
   created_at: string;
 }
 
+interface OverallFeedback {
+  id: string;
+  analysis_id: string;
+  user_id: string;
+  user_email: string | null;
+  rating: number;
+  comment: string | null;
+  scan_type: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FeedbackStats {
+  total: number;
+  avg_rating: number | null;
+  five_star: number;
+  four_star: number;
+  three_star: number;
+  two_star: number;
+  one_star: number;
+  with_comments: number;
+}
+
 export default function AdminReviews() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +52,10 @@ export default function AdminReviews() {
   const [filter, setFilter] = useState<'all' | 'wrong' | 'unclear' | 'accurate'>('all');
   const [digest, setDigest] = useState<string>('');
   const [generating, setGenerating] = useState(false);
+  const [view, setView] = useState<'findings' | 'overall'>('findings');
+  const [overall, setOverall] = useState<OverallFeedback[]>([]);
+  const [feedbackStats, setFeedbackStats] = useState<FeedbackStats | null>(null);
+  const [overallFilter, setOverallFilter] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -36,15 +63,20 @@ export default function AdminReviews() {
       navigate('/dashboard');
       return;
     }
-    supabase
-      .from('report_reviews')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(500)
-      .then(({ data }) => {
-        setReviews((data as Review[]) || []);
-        setLoading(false);
-      });
+    Promise.all([
+      supabase
+        .from('report_reviews')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      supabase.rpc('admin_list_report_feedback' as any, { _limit: 500 } as any),
+      supabase.rpc('admin_feedback_stats' as any),
+    ]).then(([revRes, fbRes, statsRes]) => {
+      setReviews((revRes.data as Review[]) || []);
+      setOverall((fbRes.data as OverallFeedback[]) || []);
+      setFeedbackStats(((statsRes.data as FeedbackStats[]) || [])[0] ?? null);
+      setLoading(false);
+    });
   }, [user, authLoading, navigate]);
 
   const filtered = reviews.filter(r => filter === 'all' || r.verdict === filter);
