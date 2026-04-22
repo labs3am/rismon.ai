@@ -3,6 +3,31 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Logo from './Logo';
 
+function ProductMenuItem({ label, desc, onClick }: { label: string; desc: string; onClick: () => void }) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      onMouseEnter={(e) => (e.currentTarget.style.background = '#ffffff08')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      style={{
+        display: 'block',
+        width: '100%',
+        textAlign: 'left',
+        padding: '10px 12px',
+        borderRadius: 6,
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        transition: 'background 0.12s ease',
+      }}
+    >
+      <div style={{ color: '#ffffff', fontSize: 13.5, fontWeight: 500, letterSpacing: '-0.005em' }}>{label}</div>
+      <div style={{ color: '#777777', fontSize: 12, marginTop: 2 }}>{desc}</div>
+    </button>
+  );
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
