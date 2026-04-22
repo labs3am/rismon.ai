@@ -118,6 +118,8 @@ export default function AdminReviews() {
     );
   };
 
+  const filteredOverall = overall.filter(o => overallFilter === 0 || o.rating === overallFilter);
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
