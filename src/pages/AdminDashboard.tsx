@@ -30,8 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Tab = "overview" | "users" | "scans" | "inactive" | "no-github" | "tools";
-type ExtendedTab = Tab | "traffic";
+type Tab = "overview" | "users" | "scans" | "traffic" | "inactive" | "no-github" | "tools";
 
 interface UserRow {
   id: string;
