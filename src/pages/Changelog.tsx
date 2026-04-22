@@ -2,84 +2,11 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
+import { parseChangelog, type Change } from '@/lib/changelog-parser';
+import { CHANGELOG_SOURCE } from '@/data/changelog';
 
-interface Change {
-  type: 'NEW' | 'IMPROVED' | 'FIXED';
-  text: string;
-}
-
-interface Entry {
-  version: string;
-  date: string; // ISO
-  title: string;
-  summary: string;
-  changes: Change[];
-}
-
-// Reverse-chronological order
-const ENTRIES: Entry[] = [
-  {
-    version: 'v2.3',
-    date: '2026-04-22',
-    title: 'Admin command center',
-    summary:
-      'A private admin dashboard for the Rismon team — privacy-safe overview of users, scans and growth, with email alerts on key events.',
-    changes: [
-      { type: 'NEW', text: 'Admin dashboard at /admin (gated to the Rismon team only).' },
-      { type: 'NEW', text: '30-day activity chart of signups & scans.' },
-      { type: 'NEW', text: 'Plan distribution, top scanners with last-scan time.' },
-      { type: 'NEW', text: 'Inactive users and "no GitHub connected" segments for outreach.' },
-      { type: 'NEW', text: 'Email alerts via Resend on every new signup and first completed scan.' },
-      { type: 'IMPROVED', text: 'Privacy: admins see metadata only — never user reports, code or scan content.' },
-    ],
-  },
-  {
-    version: 'v2.2',
-    date: '2026-04-10',
-    title: 'Smarter loading & resilience',
-    summary:
-      'Long scans no longer feel like waiting in the dark. Added live progress, tab-switch warnings and better error recovery.',
-    changes: [
-      { type: 'NEW', text: 'Live file-by-file progress during scans.' },
-      { type: 'NEW', text: 'Stage labels: Reading → Analyzing → Generating fixes.' },
-      { type: 'NEW', text: 'Warning when you switch tabs mid-scan (browser throttling kills in-flight work).' },
-      { type: 'IMPROVED', text: 'Cleaner indeterminate progress bar with brand accent.' },
-      { type: 'FIXED', text: 'Scans timing out silently when the tab was backgrounded.' },
-    ],
-  },
-  {
-    version: 'v2.1',
-    date: '2026-03-28',
-    title: 'Findings you can argue with',
-    summary:
-      'Every finding can now be reviewed, agreed with, or disputed. Your feedback trains the next scan.',
-    changes: [
-      { type: 'NEW', text: 'Agree / Disagree pills on every finding.' },
-      { type: 'NEW', text: 'Dispute a finding with a written reason — sent to the Rismon team for review.' },
-      { type: 'NEW', text: 'AI-summarized review highlights per report.' },
-      { type: 'IMPROVED', text: 'Finding cards redesigned for faster triage.' },
-    ],
-  },
-  {
-    version: 'v2.0',
-    date: '2026-03-15',
-    title: 'Rismon v2 — intent verification, not just security scans',
-    summary:
-      'A complete rewrite. v2 doesn\'t just scan your code for vulnerabilities — it verifies whether your app actually does what your landing page promises.',
-    changes: [
-      { type: 'NEW', text: 'Intent-match score: how well your code matches your stated product.' },
-      { type: 'NEW', text: 'Landing-page promise extraction — we read your site to learn what you sell.' },
-      { type: 'NEW', text: 'Smart questions: AI asks you what matters before scanning.' },
-      { type: 'NEW', text: 'Code understanding card — a plain-English summary of what your app actually is.' },
-      { type: 'NEW', text: 'Gaps section: features you sell but haven\'t built (or built but don\'t sell).' },
-      { type: 'NEW', text: 'Platform-aware fix prompts — copy/paste straight into Lovable, Cursor, or Bolt.' },
-      { type: 'NEW', text: 'Legal findings: missing privacy policy, terms, cookie consent.' },
-      { type: 'NEW', text: 'Pro plan with deeper scans, monitoring and unlimited prompts.' },
-      { type: 'IMPROVED', text: 'New dark editorial design across the entire app.' },
-      { type: 'IMPROVED', text: '5x faster scans on average.' },
-    ],
-  },
-];
+// Parsed once at module load. Edit src/data/changelog.ts to add a release.
+const ENTRIES = parseChangelog(CHANGELOG_SOURCE);
 
 const TYPE_STYLES: Record<Change['type'], { bg: string; color: string; border: string }> = {
   NEW: { bg: 'rgba(249,115,22,0.08)', color: '#f97316', border: 'rgba(249,115,22,0.25)' },
