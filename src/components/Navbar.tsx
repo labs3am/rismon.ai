@@ -242,6 +242,21 @@ export default function Navbar() {
           <Link to="/blog" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/contact" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Contact</Link>
           <div style={{ height: 1, background: '#ffffff10', margin: '8px 0' }} />
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#a3a3a3', fontSize: 14, padding: '10px 0' }}
+          >
+            <Github size={16} />
+            Star on GitHub
+            {stars !== null && (
+              <span style={{ color: '#666666', fontSize: 13 }}>
+                · {stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}
+              </span>
+            )}
+          </a>
           <Link to="/login" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Log in</Link>
           <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '12px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center', marginTop: 4 }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
