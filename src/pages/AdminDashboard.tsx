@@ -12,7 +12,18 @@ import {
   ArrowLeft,
   KeyRound,
   Mail,
+  UserX,
+  GitBranch,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +69,36 @@ interface TopScanner {
   email: string | null;
   full_name: string | null;
   scan_count: number;
+  last_scan_at: string | null;
+}
+
+interface InactiveUser {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  app_count: number;
+}
+
+interface NoGithubUser {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+  app_count: number;
+  scan_count: number;
+}
+
+interface TimeseriesPoint {
+  day: string;
+  signups: number;
+  scans: number;
+}
+
+interface PlanRow {
+  plan: string;
+  user_count: number;
 }
 
 function formatDate(s: string | null) {
