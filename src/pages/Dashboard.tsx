@@ -108,6 +108,39 @@ export default function Dashboard() {
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
 
+      // Look for an in-progress scan to surface in a "Resume" banner.
+      // We only consider sessions started within the last 12 minutes —
+      // anything older is almost certainly stuck and the analyze page
+      // will clean it up on entry.
+      const { data: liveSession } = await supabase
+        .from('scan_sessions')
+        .select('id, status, created_at, repo_name')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'analyzing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (liveSession) {
+        const startedAt = liveSession.created_at ? new Date(liveSession.created_at).getTime() : Date.now();
+        const ageMin = (Date.now() - startedAt) / 60000;
+        if (ageMin <= 12) {
+          // Match the session's repo_name back to one of the user's apps so
+          // we can deep-link the resume button to /analyze/:appId.
+          const owned = appsList.find((a) => `${a.github_owner}/${a.github_repo_name}` === liveSession.repo_name);
+          setActiveScan({
+            sessionId: liveSession.id,
+            appId: owned?.id ?? null,
+            appName: owned?.app_name ?? liveSession.repo_name ?? 'your app',
+            startedAt,
+          });
+        } else {
+          setActiveScan(null);
+        }
+      } else {
+        setActiveScan(null);
+      }
+
       setLoading(false);
     };
     load();
