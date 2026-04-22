@@ -28,6 +28,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Changelog = lazy(() => import("./pages/Changelog"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/changelog" element={<Changelog />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
               <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
