@@ -1096,6 +1096,10 @@ Return ONLY this JSON:
     // ACTION: analyze (stage 2 — Claude deep, then Gemini verifies)
     // ============================================================
     if (action === "analyze") {
+      // Note: this remains the synchronous path so older clients keep working.
+      // New clients should call action: "analyze_async" (defined just above
+      // the main handler return) which returns 202 immediately and runs this
+      // same pipeline in the background via EdgeRuntime.waitUntil.
       // Check deep_scan_credits for try_pro before calling Claude
       if (userPlan === "try_pro" && deepScanCredits <= 0) {
         return new Response(
