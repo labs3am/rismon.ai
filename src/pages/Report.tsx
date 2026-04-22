@@ -4,6 +4,7 @@ import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import FindingReviewPills from '@/components/FindingReviewPills';
+import ReportFeedbackCard from '@/components/ReportFeedbackCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1041,7 +1042,10 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 11, ACTIONS */}
+        {/* SECTION 11, FEEDBACK */}
+        {analysisId && <ReportFeedbackCard analysisId={analysisId} />}
+
+        {/* SECTION 12, ACTIONS */}
         <div
           className="report-actions"
           style={{

@@ -394,6 +394,36 @@ export type Database = {
         }
         Relationships: []
       }
+      report_feedback: {
+        Row: {
+          analysis_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_reviews: {
         Row: {
           analysis_id: string
@@ -609,6 +639,19 @@ export type Database = {
         Args: { _target_user_id: string }
         Returns: undefined
       }
+      admin_feedback_stats: {
+        Args: never
+        Returns: {
+          avg_rating: number
+          five_star: number
+          four_star: number
+          one_star: number
+          three_star: number
+          total: number
+          two_star: number
+          with_comments: number
+        }[]
+      }
       admin_inactive_users: {
         Args: { _limit?: number }
         Returns: {
@@ -618,6 +661,20 @@ export type Database = {
           full_name: string
           id: string
           last_sign_in_at: string
+        }[]
+      }
+      admin_list_report_feedback: {
+        Args: { _limit?: number }
+        Returns: {
+          analysis_id: string
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          scan_type: string
+          updated_at: string
+          user_email: string
+          user_id: string
         }[]
       }
       admin_list_users: {
