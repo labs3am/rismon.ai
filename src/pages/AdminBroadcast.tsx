@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail } from "lucide-react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,15 @@ import { toast } from "sonner";
 // Hard-gated to admins (also enforced server-side).
 
 const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+
+const PRESETS: { label: string; days: number }[] = [
+  { label: "1 week", days: 7 },
+  { label: "2 weeks", days: 14 },
+  { label: "1 month", days: 30 },
+  { label: "3 months", days: 90 },
+  { label: "6 months", days: 180 },
+  { label: "1 year", days: 365 },
+];
 
 const AdminBroadcast = () => {
   const { user, loading } = useAuth();
@@ -23,6 +32,8 @@ const AdminBroadcast = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [lastResult, setLastResult] = useState<null | { sent: number; failed: number; errors: string[] }>(null);
+  const [inactiveDays, setInactiveDays] = useState<number>(14);
+  const [customMode, setCustomMode] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !user.email || !ADMIN_EMAILS.has(user.email))) {
@@ -34,7 +45,7 @@ const AdminBroadcast = () => {
     setLoadingCount(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast", dryRun: true },
+        body: { mode: "broadcast", dryRun: true, inactiveDays },
       });
       if (error) throw error;
       setEligibleCount(data?.eligibleCount ?? 0);
@@ -49,7 +60,7 @@ const AdminBroadcast = () => {
   useEffect(() => {
     if (user?.email && ADMIN_EMAILS.has(user.email)) fetchEligible();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email]);
+  }, [user?.email, inactiveDays]);
 
   const sendTest = async () => {
     setSendingTest(true);
@@ -74,7 +85,7 @@ const AdminBroadcast = () => {
     setBroadcasting(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast" },
+        body: { mode: "broadcast", inactiveDays },
       });
       if (error) throw error;
       setLastResult({ sent: data?.sent ?? 0, failed: data?.failed ?? 0, errors: data?.errors ?? [] });
@@ -107,7 +118,7 @@ const AdminBroadcast = () => {
         </div>
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Founder note · scan nudge</h1>
         <p className="text-muted-foreground mb-10 leading-relaxed">
-          Sends a personal "haven't scanned yet?" email to inactive users (signed up 14+ days ago, never ran a scan). Each user gets it at most once.
+          Sends a personal "haven't scanned yet?" email to inactive users (signed up at least <strong className="text-foreground">{inactiveDays} day{inactiveDays === 1 ? "" : "s"}</strong> ago, never ran a scan). Each user gets it at most once.
         </p>
 
         {/* Step 1 — Audience */}
@@ -121,6 +132,61 @@ const AdminBroadcast = () => {
               {loadingCount ? "Counting…" : "Refresh"}
             </Button>
           </div>
+
+          {/* Inactivity window selector */}
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-2.5">
+              <CalendarClock className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground">Inactive for at least</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => {
+                const active = !customMode && inactiveDays === p.days;
+                return (
+                  <button
+                    key={p.days}
+                    onClick={() => { setCustomMode(false); setInactiveDays(p.days); }}
+                    disabled={loadingCount || broadcasting}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCustomMode(true)}
+                disabled={loadingCount || broadcasting}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                  customMode
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-foreground/30"
+                }`}
+              >
+                Custom
+              </button>
+            </div>
+            {customMode && (
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={730}
+                  value={inactiveDays}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    if (Number.isFinite(v)) setInactiveDays(Math.min(730, Math.max(1, v)));
+                  }}
+                  className="w-24 px-3 py-1.5 bg-background border border-border rounded-md text-sm font-mono focus:outline-none focus:border-primary"
+                />
+                <span className="text-xs text-muted-foreground">days (1–730)</span>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-baseline gap-3 mb-3">
             <span className="text-5xl font-bold text-primary tabular-nums">{eligibleCount ?? "—"}</span>
             <span className="text-sm text-muted-foreground">eligible users</span>
