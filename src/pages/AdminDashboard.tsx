@@ -273,8 +273,13 @@ export default function AdminDashboard() {
   const [noGithub, setNoGithub] = useState<NoGithubUser[]>([]);
   const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([]);
   const [planDist, setPlanDist] = useState<PlanRow[]>([]);
+  const [trafficStats, setTrafficStats] = useState<TrafficStats | null>(null);
+  const [topPages, setTopPages] = useState<TopPage[]>([]);
+  const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([]);
+  const [trafficSeries, setTrafficSeries] = useState<TrafficPoint[]>([]);
 
   const [search, setSearch] = useState("");
+  const [trafficWindow, setTrafficWindow] = useState<7 | 30>(7);
   const [loading, setLoading] = useState(true);
 
   // Admin gate — defense in depth.
@@ -304,7 +309,7 @@ export default function AdminDashboard() {
   // Load all data
   const loadAll = async () => {
     setLoading(true);
-    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes] = await Promise.all([
+    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes, trafRes, pagesRes, refRes, trafTsRes] = await Promise.all([
       supabase.rpc("admin_user_stats" as any),
       supabase.rpc("admin_list_users" as any),
       supabase.rpc("admin_recent_scans" as any, { _limit: 50 } as any),
@@ -313,6 +318,10 @@ export default function AdminDashboard() {
       supabase.rpc("admin_users_without_github" as any, { _limit: 100 } as any),
       supabase.rpc("admin_activity_timeseries" as any, { _days: 30 } as any),
       supabase.rpc("admin_plan_distribution" as any),
+      supabase.rpc("admin_traffic_stats" as any),
+      supabase.rpc("admin_top_pages" as any, { _days: trafficWindow, _limit: 20 } as any),
+      supabase.rpc("admin_top_referrers" as any, { _days: trafficWindow, _limit: 15 } as any),
+      supabase.rpc("admin_traffic_timeseries" as any, { _days: 30 } as any),
     ]);
     if (statsRes.data) setStats((statsRes.data as Stats[])[0] ?? null);
     if (usersRes.data) setUsers(usersRes.data as UserRow[]);
@@ -330,6 +339,18 @@ export default function AdminDashboard() {
       );
     }
     if (planRes.data) setPlanDist(planRes.data as PlanRow[]);
+    if (trafRes.data) setTrafficStats((trafRes.data as TrafficStats[])[0] ?? null);
+    if (pagesRes.data) setTopPages(pagesRes.data as TopPage[]);
+    if (refRes.data) setTopReferrers(refRes.data as TopReferrer[]);
+    if (trafTsRes.data) {
+      setTrafficSeries(
+        (trafTsRes.data as { day: string; views: number; unique_sessions: number }[]).map((r) => ({
+          day: new Date(r.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          views: Number(r.views),
+          unique_sessions: Number(r.unique_sessions),
+        }))
+      );
+    }
     setLoading(false);
 
     const { data: keyData } = await supabase.rpc("admin_notify_key_set" as any);
@@ -338,7 +359,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isAdmin) loadAll();
-  }, [isAdmin]);
+  }, [isAdmin, trafficWindow]);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
