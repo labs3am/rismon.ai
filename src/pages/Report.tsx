@@ -1042,7 +1042,10 @@ export default function Report() {
           </div>
         )}
 
-        {/* SECTION 11, ACTIONS */}
+        {/* SECTION 11, FEEDBACK */}
+        {analysisId && <ReportFeedbackCard analysisId={analysisId} />}
+
+        {/* SECTION 12, ACTIONS */}
         <div
           className="report-actions"
           style={{
