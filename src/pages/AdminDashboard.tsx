@@ -658,6 +658,90 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* INACTIVE USERS */}
+        {!loading && tab === "inactive" && (
+          <div className="mt-6 space-y-4">
+            <p className="text-subtle text-xs">
+              Users who signed up but never ran a single scan. Good candidates for activation outreach.
+            </p>
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30">
+                  <tr className="text-left text-muted-foreground text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium">User</th>
+                    <th className="px-4 py-3 font-medium text-right">Apps</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                    <th className="px-4 py-3 font-medium">Last sign-in</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inactive.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                        Everyone has scanned at least once 🎉
+                      </td>
+                    </tr>
+                  ) : (
+                    inactive.map((u) => (
+                      <tr key={u.id} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="text-foreground font-medium">{u.email || "(no email)"}</div>
+                          <div className="text-subtle text-xs">{u.full_name || "—"}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.app_count}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.last_sign_in_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* USERS WITHOUT GITHUB */}
+        {!loading && tab === "no-github" && (
+          <div className="mt-6 space-y-4">
+            <p className="text-subtle text-xs">
+              Users who haven't connected a GitHub repo to any of their apps yet.
+            </p>
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30">
+                  <tr className="text-left text-muted-foreground text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium">User</th>
+                    <th className="px-4 py-3 font-medium text-right">Apps</th>
+                    <th className="px-4 py-3 font-medium text-right">Scans</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {noGithub.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                        Everyone has connected GitHub 🎉
+                      </td>
+                    </tr>
+                  ) : (
+                    noGithub.map((u) => (
+                      <tr key={u.id} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="text-foreground font-medium">{u.email || "(no email)"}</div>
+                          <div className="text-subtle text-xs">{u.full_name || "—"}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.app_count}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.scan_count}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* TOOLS */}
         {!loading && tab === "tools" && (
           <div className="mt-6 grid sm:grid-cols-2 gap-4">
