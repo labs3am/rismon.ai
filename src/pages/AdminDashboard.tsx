@@ -194,18 +194,29 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Admin gate
+  // Admin gate — defense in depth.
+  // Even if ProtectedRoute is bypassed, this hard-redirects non-admins.
+  // 1. Not signed in → /login
+  // 2. Signed in but not admin → /dashboard with toast
+  // 3. RPC fails for any reason → /dashboard (fail closed)
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      setAdminChecking(false);
+      navigate("/login", { replace: true });
       return;
     }
-    supabase.rpc("is_blog_admin").then(({ data }) => {
-      setIsAdmin(data === true);
+    supabase.rpc("is_blog_admin").then(({ data, error }) => {
+      if (error || data !== true) {
+        setIsAdmin(false);
+        setAdminChecking(false);
+        toast.error("Admins only");
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+      setIsAdmin(true);
       setAdminChecking(false);
     });
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate]);
 
   // Load all data
   const loadAll = async () => {
