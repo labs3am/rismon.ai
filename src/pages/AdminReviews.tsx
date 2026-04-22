@@ -136,23 +136,144 @@ export default function AdminReviews() {
       <DashboardNavbar />
       <div className="max-w-[960px] mx-auto px-5 pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
-        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div>
-            <h1 className="text-foreground text-[28px] font-semibold">Report reviews</h1>
+            <h1 className="text-foreground text-[28px] font-semibold">Reviews & feedback</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {reviews.length} total · {counts.accurate} accurate · {counts.wrong} wrong · {counts.unclear} unclear
+              {view === 'findings'
+                ? `${reviews.length} per-finding reviews · ${counts.accurate} accurate · ${counts.wrong} wrong · ${counts.unclear} unclear`
+                : `${feedbackStats?.total ?? 0} overall ratings · avg ${feedbackStats?.avg_rating ?? '—'}★ · ${feedbackStats?.with_comments ?? 0} with comments`}
             </p>
           </div>
-          <button
+          {view === 'findings' && <button
             onClick={generateDigest}
             disabled={generating || reviews.length === 0}
             className="inline-flex items-center gap-2 bg-[#f97316] text-black px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#ea580c] disabled:opacity-50"
           >
             {generating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {generating ? 'Analysing…' : 'Generate AI digest'}
-          </button>
+          </button>}
         </div>
 
+        {/* View toggle */}
+        <div className="flex gap-1 mb-6 border-b border-border">
+          {([
+            ['overall', `Overall ratings (${feedbackStats?.total ?? 0})`, Star],
+            ['findings', `Per-finding (${reviews.length})`, ThumbsUp],
+          ] as const).map(([k, label, Icon]) => (
+            <button
+              key={k}
+              onClick={() => setView(k as 'findings' | 'overall')}
+              className={`px-4 py-2.5 text-sm flex items-center gap-2 border-b-2 -mb-px transition-colors ${
+                view === k
+                  ? 'border-[#f97316] text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon size={14} /> {label}
+            </button>
+          ))}
+        </div>
+
+        {/* OVERALL view */}
+        {view === 'overall' && (
+          <>
+            {feedbackStats && feedbackStats.total > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-6 mb-5">
+                <div className="flex items-baseline gap-3 mb-5">
+                  <span className="text-5xl font-bold text-foreground tabular-nums">
+                    {feedbackStats.avg_rating ?? '—'}
+                  </span>
+                  <Star size={20} fill="#f97316" stroke="#f97316" />
+                  <span className="text-sm text-muted-foreground">
+                    avg from {feedbackStats.total} ratings
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {([5, 4, 3, 2, 1] as const).map(stars => {
+                    const key = (
+                      stars === 5 ? 'five_star' :
+                      stars === 4 ? 'four_star' :
+                      stars === 3 ? 'three_star' :
+                      stars === 2 ? 'two_star' : 'one_star'
+                    ) as keyof FeedbackStats;
+                    const count = Number(feedbackStats[key]);
+                    const pct = feedbackStats.total > 0 ? (count / feedbackStats.total) * 100 : 0;
+                    return (
+                      <div key={stars} className="flex items-center gap-3 text-xs">
+                        <span className="text-muted-foreground w-8 tabular-nums">{stars}★</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-[#f97316]" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-muted-foreground w-12 tabular-nums text-right">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 mb-5 flex-wrap">
+              {([0, 5, 4, 3, 2, 1] as const).map(s => (
+                <button
+                  key={s}
+                  onClick={() => setOverallFilter(s)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    overallFilter === s
+                      ? 'bg-[#f97316] text-black border-[#f97316]'
+                      : 'bg-transparent text-muted-foreground border-border hover:border-[#444]'
+                  }`}
+                >
+                  {s === 0 ? `All (${overall.length})` : `${s}★`}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              {filteredOverall.length === 0 ? (
+                <div className="bg-card border border-border rounded-2xl p-8 text-center text-muted-foreground text-sm">
+                  {overall.length === 0
+                    ? "No feedback yet. Users will be prompted to rate after each scan."
+                    : "No feedback in this filter."}
+                </div>
+              ) : (
+                filteredOverall.map(o => (
+                  <div key={o.id} className="bg-card border border-border rounded-xl p-5">
+                    <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <Star
+                            key={n}
+                            size={14}
+                            fill={n <= o.rating ? '#f97316' : 'transparent'}
+                            stroke={n <= o.rating ? '#f97316' : '#444'}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                        <span className="text-foreground text-sm font-medium ml-2">{o.rating}/5</span>
+                      </div>
+                      <div className="text-[11px] text-[#555]">
+                        {o.scan_type && <span className="mr-2">{o.scan_type}</span>}
+                        <span>{new Date(o.created_at).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    {o.comment && (
+                      <div className="text-muted-foreground text-sm leading-relaxed mt-2 italic">
+                        "{o.comment}"
+                      </div>
+                    )}
+                    <div className="text-[11px] text-[#555] mt-3">
+                      {o.user_email || '(deleted user)'}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+
+        {/* FINDINGS view */}
+        {view === 'findings' && <>
         {digest && (
           <div className="bg-card border border-border rounded-2xl p-7 mb-8">
             <div className="text-[10px] uppercase tracking-wider text-[#f97316] font-semibold mb-3">AI Digest</div>
@@ -203,6 +324,7 @@ export default function AdminReviews() {
             ))
           )}
         </div>
+        </>}
       </div>
     </div>
   );
