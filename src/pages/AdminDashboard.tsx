@@ -376,6 +376,8 @@ export default function AdminDashboard() {
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
             ["scans", "Scans", FileText],
+            ["inactive", `Inactive (${inactive.length})`, UserX],
+            ["no-github", `No GitHub (${noGithub.length})`, GitBranch],
             ["tools", "Tools", Inbox],
           ] as const).map(([key, label, Icon]) => (
             <button
