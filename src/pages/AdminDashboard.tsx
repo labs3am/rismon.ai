@@ -717,6 +717,149 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TRAFFIC */}
+        {!loading && tab === "traffic" && (
+          <div className="mt-6 space-y-6">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-subtle text-xs">
+                Privacy-safe pageview tracking. We log path + referrer hostname only — no IPs, no cookies, no fingerprints.
+              </p>
+              <div className="flex gap-1 bg-muted rounded-lg p-1">
+                {([7, 30] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setTrafficWindow(d)}
+                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                      trafficWindow === d
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Last {d} days
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {trafficStats && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard label="Views today" value={trafficStats.views_today} />
+                <StatCard label="Views (7d)" value={trafficStats.views_7d} />
+                <StatCard
+                  label="Unique visitors (7d)"
+                  value={trafficStats.unique_visitors_7d}
+                  hint={`${trafficStats.unique_sessions_7d} sessions`}
+                />
+                <StatCard label="Views (30d)" value={trafficStats.views_30d} />
+              </div>
+            )}
+
+            {/* Traffic chart */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <h3 className="text-foreground font-semibold text-sm">Traffic — last 30 days</h3>
+                  <p className="text-subtle text-xs mt-1">Daily pageviews and unique sessions.</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Views
+                  </span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-success" /> Sessions
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trafficSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gSessions" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Area type="monotone" dataKey="views" stroke="hsl(var(--primary))" fill="url(#gViews)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="unique_sessions" stroke="hsl(var(--success))" fill="url(#gSessions)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Top pages + Top referrers */}
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-foreground font-semibold text-sm">Top pages</h3>
+                <p className="text-subtle text-xs mt-1">
+                  Where visitors spend their time. Compare to find drop-off points in your funnel.
+                </p>
+                <div className="mt-4 space-y-1">
+                  {topPages.length === 0 ? (
+                    <div className="text-muted-foreground text-sm py-4">No traffic yet.</div>
+                  ) : (
+                    topPages.map((p, i) => {
+                      const max = topPages[0]?.views || 1;
+                      const pct = (Number(p.views) / max) * 100;
+                      return (
+                        <div key={p.path} className="py-2 border-t border-border first:border-t-0">
+                          <div className="flex items-center justify-between gap-3 mb-1.5">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
+                              <span className="text-foreground text-sm font-mono truncate">{p.path}</span>
+                            </div>
+                            <div className="text-foreground text-sm tabular-nums font-medium shrink-0">
+                              {p.views}
+                              <span className="text-subtle text-xs font-normal ml-1">({p.unique_sessions} uniq)</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden ml-8">
+                            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-foreground font-semibold text-sm">Top referrers</h3>
+                <p className="text-subtle text-xs mt-1">External sources driving traffic to your site.</p>
+                <div className="mt-4 space-y-1">
+                  {topReferrers.length === 0 ? (
+                    <div className="text-muted-foreground text-sm py-4">No referrer data yet.</div>
+                  ) : (
+                    topReferrers.map((r, i) => (
+                      <div key={r.referrer} className="flex items-center justify-between py-2 border-t border-border first:border-t-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
+                          <span className="text-foreground text-sm truncate">{r.referrer}</span>
+                        </div>
+                        <div className="text-foreground text-sm tabular-nums font-medium">{r.views}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* INACTIVE USERS */}
         {!loading && tab === "inactive" && (
           <div className="mt-6 space-y-4">
