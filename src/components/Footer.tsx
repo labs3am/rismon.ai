@@ -82,7 +82,7 @@ export default function Footer() {
             <h3 className={headingCls}>Company</h3>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/blog" className={linkCls}>Blog</Link></li>
-              <li><Link to="/blog" className={linkCls}>Changelog</Link></li>
+              <li><Link to="/changelog" className={linkCls}>Changelog</Link></li>
               <li><Link to="/contact" className={linkCls}>Contact</Link></li>
             </ul>
           </div>
