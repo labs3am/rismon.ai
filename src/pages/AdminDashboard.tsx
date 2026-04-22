@@ -29,7 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Tab = "overview" | "users" | "scans" | "tools";
+type Tab = "overview" | "users" | "scans" | "inactive" | "no-github" | "tools";
 
 interface UserRow {
   id: string;
@@ -231,6 +231,10 @@ export default function AdminDashboard() {
   const [scans, setScans] = useState<ScanRow[]>([]);
   const [topScanners, setTopScanners] = useState<TopScanner[]>([]);
   const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
+  const [inactive, setInactive] = useState<InactiveUser[]>([]);
+  const [noGithub, setNoGithub] = useState<NoGithubUser[]>([]);
+  const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([]);
+  const [planDist, setPlanDist] = useState<PlanRow[]>([]);
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
