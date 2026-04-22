@@ -1,16 +1,23 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Settings, LogOut, LayoutDashboard, Plug, ChevronDown } from 'lucide-react';
+import { Settings, LogOut, LayoutDashboard, Plug, ChevronDown, Shield } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import Logo from './Logo';
 
 export default function DashboardNavbar() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase.rpc('is_blog_admin').then(({ data }) => setIsAdmin(data === true));
+  }, [user]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -172,6 +179,18 @@ export default function DashboardNavbar() {
                 >
                   <Settings size={14} /> Settings
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-md transition-colors"
+                    style={{ fontSize: 13.5, color: '#f97316' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#f9731614'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                    onClick={() => setOpen(false)}
+                  >
+                    <Shield size={14} /> Admin
+                  </Link>
+                )}
               </div>
               <div style={{ borderTop: '1px solid #ffffff10', padding: 6 }}>
                 <button
