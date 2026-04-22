@@ -266,23 +266,34 @@ export default function AdminDashboard() {
   // Load all data
   const loadAll = async () => {
     setLoading(true);
-    const [statsRes, usersRes, scansRes, topRes, keyRes] = await Promise.all([
+    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes] = await Promise.all([
       supabase.rpc("admin_user_stats" as any),
       supabase.rpc("admin_list_users" as any),
       supabase.rpc("admin_recent_scans" as any, { _limit: 50 } as any),
       supabase.rpc("admin_top_scanners" as any, { _limit: 10 } as any),
-      // probe whether the notify key is set by checking if a test call would work
-      // we just check by calling our settings via a side-channel: look at the signups trigger having any past success.
-      // Simpler: ask the user — but we'll auto-detect by attempting a no-op rpc.
-      Promise.resolve({ data: null, error: null }),
+      supabase.rpc("admin_inactive_users" as any, { _limit: 100 } as any),
+      supabase.rpc("admin_users_without_github" as any, { _limit: 100 } as any),
+      supabase.rpc("admin_activity_timeseries" as any, { _days: 30 } as any),
+      supabase.rpc("admin_plan_distribution" as any),
     ]);
     if (statsRes.data) setStats((statsRes.data as Stats[])[0] ?? null);
     if (usersRes.data) setUsers(usersRes.data as UserRow[]);
     if (scansRes.data) setScans(scansRes.data as ScanRow[]);
     if (topRes.data) setTopScanners(topRes.data as TopScanner[]);
+    if (inactiveRes.data) setInactive(inactiveRes.data as InactiveUser[]);
+    if (noGhRes.data) setNoGithub(noGhRes.data as NoGithubUser[]);
+    if (tsRes.data) {
+      setTimeseries(
+        (tsRes.data as { day: string; signups: number; scans: number }[]).map((r) => ({
+          day: new Date(r.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          signups: Number(r.signups),
+          scans: Number(r.scans),
+        }))
+      );
+    }
+    if (planRes.data) setPlanDist(planRes.data as PlanRow[]);
     setLoading(false);
 
-    // Key configured check via dedicated rpc — we use a tiny one
     const { data: keyData } = await supabase.rpc("admin_notify_key_set" as any);
     setKeyConfigured(keyData === true);
   };
