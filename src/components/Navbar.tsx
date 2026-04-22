@@ -1,7 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Github, Star } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Logo from './Logo';
+
+const GITHUB_REPO_URL = 'https://github.com/labs3am/rismon.ai';
+const GITHUB_API_URL = 'https://api.github.com/repos/labs3am/rismon.ai';
 
 function ProductMenuItem({ label, desc, onClick }: { label: string; desc: string; onClick: () => void }) {
   return (
@@ -32,6 +35,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
+  const [stars, setStars] = useState<number | null>(null);
   const closeTimer = useRef<number | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -41,6 +45,22 @@ export default function Navbar() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Fetch live star count (cached by GitHub for ~60s; fails silently)
+  useEffect(() => {
+    let cancelled = false;
+    fetch(GITHUB_API_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.stargazers_count === 'number') {
+          setStars(data.stargazers_count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Hover-intent: small delay before close so the cursor can travel into the menu
