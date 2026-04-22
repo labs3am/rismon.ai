@@ -43,15 +43,12 @@ export function emailFooter(): string {
   return `
     <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid ${BRAND.border};">
       <div style="margin:0 0 8px;">${wordmark(14)}</div>
-      <p style="margin:0 0 8px;font-family:${BRAND.font};font-size:12px;color:${BRAND.textFaint};">
+      <p style="margin:0;font-family:${BRAND.font};font-size:12px;color:${BRAND.textFaint};">
         <a href="${BRAND.privacyUrl}" style="color:${BRAND.textFaint};text-decoration:underline;">Privacy</a>
         &nbsp;·&nbsp;
         <a href="${BRAND.termsUrl}" style="color:${BRAND.textFaint};text-decoration:underline;">Terms</a>
         &nbsp;·&nbsp;
         <a href="${BRAND.sourceUrl}" style="color:${BRAND.textFaint};text-decoration:underline;">Source</a>
-      </p>
-      <p style="margin:0;font-family:${BRAND.font};font-size:11px;color:#3f3f46;">
-        Proudly built in India. From the house of Labs3am.
       </p>
     </td></tr>`;
 }
