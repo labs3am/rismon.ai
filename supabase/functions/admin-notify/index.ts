@@ -63,9 +63,8 @@ Deno.serve(async (req) => {
     }
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!RESEND_API_KEY || !LOVABLE_API_KEY) {
-      console.error("Missing RESEND_API_KEY or LOVABLE_API_KEY");
+    if (!RESEND_API_KEY) {
+      console.error("Missing RESEND_API_KEY");
       return new Response(JSON.stringify({ error: "email not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -74,12 +73,12 @@ Deno.serve(async (req) => {
 
     const { subject, html } = renderEmail(body.event, body.data ?? {});
 
-    const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    // Send directly via Resend API (no gateway).
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": RESEND_API_KEY,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
         from: FROM_EMAIL,

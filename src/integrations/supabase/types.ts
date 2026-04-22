@@ -567,9 +567,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_activity_timeseries: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          scans: number
+          signups: number
+        }[]
+      }
       admin_delete_user: {
         Args: { _target_user_id: string }
         Returns: undefined
+      }
+      admin_inactive_users: {
+        Args: { _limit?: number }
+        Returns: {
+          app_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+        }[]
       }
       admin_list_users: {
         Args: never
@@ -587,6 +606,13 @@ export type Database = {
         }[]
       }
       admin_notify_key_set: { Args: never; Returns: boolean }
+      admin_plan_distribution: {
+        Args: never
+        Returns: {
+          plan: string
+          user_count: number
+        }[]
+      }
       admin_recent_scans: {
         Args: { _limit?: number }
         Returns: {
@@ -614,6 +640,7 @@ export type Database = {
         Returns: {
           email: string
           full_name: string
+          last_scan_at: string
           scan_count: number
           user_id: string
         }[]
@@ -628,6 +655,17 @@ export type Database = {
           total_scans: number
           total_users: number
           waitlist_count: number
+        }[]
+      }
+      admin_users_without_github: {
+        Args: { _limit?: number }
+        Returns: {
+          app_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          scan_count: number
         }[]
       }
       app_has_backend: { Args: { _app_id: string }; Returns: boolean }
