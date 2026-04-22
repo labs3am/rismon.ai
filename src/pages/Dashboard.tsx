@@ -30,6 +30,15 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
+  // Resume-in-progress banner: surfaces an active scan_session so users
+  // who switched tabs (or got disconnected) can hop back into the live
+  // analysis screen without losing their slot.
+  const [activeScan, setActiveScan] = useState<{
+    sessionId: string;
+    appId: string | null;
+    appName: string | null;
+    startedAt: number;
+  } | null>(null);
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
   const navigate = useNavigate();
@@ -98,6 +107,39 @@ export default function Dashboard() {
       setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
+
+      // Look for an in-progress scan to surface in a "Resume" banner.
+      // We only consider sessions started within the last 12 minutes —
+      // anything older is almost certainly stuck and the analyze page
+      // will clean it up on entry.
+      const { data: liveSession } = await supabase
+        .from('scan_sessions')
+        .select('id, status, created_at, repo_name')
+        .eq('user_id', user.id)
+        .in('status', ['pending', 'analyzing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (liveSession) {
+        const startedAt = liveSession.created_at ? new Date(liveSession.created_at).getTime() : Date.now();
+        const ageMin = (Date.now() - startedAt) / 60000;
+        if (ageMin <= 12) {
+          // Match the session's repo_name back to one of the user's apps so
+          // we can deep-link the resume button to /analyze/:appId.
+          const owned = appsList.find((a) => `${a.github_owner}/${a.github_repo_name}` === liveSession.repo_name);
+          setActiveScan({
+            sessionId: liveSession.id,
+            appId: owned?.id ?? null,
+            appName: owned?.app_name ?? liveSession.repo_name ?? 'your app',
+            startedAt,
+          });
+        } else {
+          setActiveScan(null);
+        }
+      } else {
+        setActiveScan(null);
+      }
 
       setLoading(false);
     };
@@ -184,6 +226,45 @@ export default function Dashboard() {
       <div className="max-w-[1100px] mx-auto pt-24 pb-16" style={{ paddingLeft: 48, paddingRight: 48 }}>
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+
+        {activeScan && (
+          <button
+            onClick={() => activeScan.appId ? navigate(`/analyze/${activeScan.appId}`) : null}
+            style={{
+              marginTop: 20,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '14px 18px',
+              borderRadius: 12,
+              background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
+              border: '1px solid rgba(129,140,248,0.35)',
+              color: '#ffffff',
+              cursor: activeScan.appId ? 'pointer' : 'default',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10 }}>
+                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
+                <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+              </span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>
+                  Scan in progress for {activeScan.appName}
+                </div>
+                <div style={{ fontSize: 12, color: '#a1a1aa', marginTop: 2 }}>
+                  Running in the background — you can leave this tab. {activeScan.appId ? 'Click to watch live progress.' : 'It will finish on its own.'}
+                </div>
+              </div>
+            </div>
+            {activeScan.appId && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#818cf8', whiteSpace: 'nowrap' }}>Resume →</span>
+            )}
+          </button>
+        )}
 
         <WelcomeGuide />
 
