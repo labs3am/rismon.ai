@@ -58,23 +58,6 @@ export default function Connect() {
   useEffect(() => {
     if (searchParams.get('step') === '2') setStep(2);
     const checkGithub = async () => {
-      // Check for session conflict after OAuth redirect
-      const preId = sessionStorage.getItem('rismon_pre_oauth_id');
-      const preEmail = sessionStorage.getItem('rismon_pre_oauth_email');
-
-      if (preId) {
-        sessionStorage.removeItem('rismon_pre_oauth_id');
-        sessionStorage.removeItem('rismon_pre_oauth_email');
-
-        const { data: { user: current } } = await supabase.auth.getUser();
-        if (current && current.id !== preId) {
-          // Session switched to a different account — sign out and redirect
-          await supabase.auth.signOut();
-          navigate('/dashboard?github_conflict=true');
-          return;
-        }
-      }
-
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s?.provider_token) {
         setGithubToken(s.provider_token);
@@ -101,21 +84,52 @@ export default function Connect() {
   };
 
   const connectGithub = async () => {
-    // Store current user identity before OAuth redirect
+    // Use linkIdentity so GitHub attaches to the CURRENT Rismon account
+    // instead of replacing the session. This lets users connect any GitHub
+    // account regardless of which email they used to sign up.
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) {
-      sessionStorage.setItem('rismon_pre_oauth_id', currentUser.id);
-      sessionStorage.setItem('rismon_pre_oauth_email', currentUser.email || '');
+    if (!currentUser) {
+      toast.error('Please log in before connecting GitHub.');
+      navigate('/login');
+      return;
     }
-    const { data, error } = await supabase.auth.signInWithOAuth({
+
+    const alreadyLinked = currentUser.identities?.some(i => i.provider === 'github');
+
+    // If a GitHub identity is already linked, fall back to signInWithOAuth
+    // to refresh the provider_token (needed to list repos). This stays on
+    // the same account because the GitHub identity is already attached.
+    if (alreadyLinked) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          scopes: 'repo read:user user:email',
+          redirectTo: `${window.location.origin}/connect?step=2`,
+          skipBrowserRedirect: false,
+        },
+      });
+      if (error) toast.error('Failed to refresh GitHub access. Please try again.');
+      return;
+    }
+
+    // First-time link: attach GitHub to the current account.
+    const { error } = await (supabase.auth as any).linkIdentity({
       provider: 'github',
       options: {
         scopes: 'repo read:user user:email',
         redirectTo: `${window.location.origin}/connect?step=2`,
-        skipBrowserRedirect: false
-      }
+      },
     });
-    if (error) toast.error('Failed to connect GitHub');
+    if (error) {
+      const msg = (error.message || '').toLowerCase();
+      if (msg.includes('already') || msg.includes('linked') || msg.includes('exists')) {
+        toast.error('This GitHub account is already linked to a different Rismon account. Please use a different GitHub account or contact support.');
+      } else if (msg.includes('manual linking')) {
+        toast.error('GitHub linking is not enabled on the Supabase project. Please enable Manual Linking in Supabase → Authentication → Settings.');
+      } else {
+        toast.error(error.message || 'Failed to connect GitHub');
+      }
+    }
   };
 
   const handleSupabaseKeyChange = (val: string) => {
