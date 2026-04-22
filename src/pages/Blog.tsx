@@ -25,6 +25,15 @@ function formatDate(d: string | null) {
 }
 
 const TAGS = ['GUIDE', 'UPDATE', 'FEATURE'] as const;
+type Tag = typeof TAGS[number];
+type Filter = 'ALL' | Tag;
+
+const FILTER_LABELS: Record<Filter, string> = {
+  ALL: 'All articles',
+  GUIDE: 'Guides',
+  UPDATE: "What's new",
+  FEATURE: 'Features',
+};
 
 function readingTime(text: string | null | undefined, fallbackExcerpt: string | null) {
   const source = (text && text.length > 0 ? text : fallbackExcerpt || '').trim();
@@ -38,6 +47,7 @@ export default function Blog() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>('ALL');
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); return; }
@@ -127,6 +137,58 @@ export default function Blog() {
         {/* Divider */}
         <div style={{ height: 1, background: '#1a1a1a', margin: '48px 0' }} />
 
+        {/* Filter chips */}
+        {!loading && posts.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              marginBottom: 40,
+            }}
+            role="tablist"
+            aria-label="Filter articles by type"
+          >
+            {(Object.keys(FILTER_LABELS) as Filter[]).map((f) => {
+              const active = filter === f;
+              return (
+                <button
+                  key={f}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setFilter(f)}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    letterSpacing: '0.02em',
+                    cursor: 'pointer',
+                    background: active ? '#ffffff' : 'transparent',
+                    color: active ? '#000000' : '#888888',
+                    border: active ? '1px solid #ffffff' : '1px solid #222222',
+                    transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.color = '#ffffff';
+                      e.currentTarget.style.borderColor = '#333333';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.color = '#888888';
+                      e.currentTarget.style.borderColor = '#222222';
+                    }
+                  }}
+                >
+                  {FILTER_LABELS[f]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Posts */}
         {loading ? (
           <div style={{ color: '#555555', fontSize: 14 }}>Loading…</div>
@@ -143,8 +205,17 @@ export default function Blog() {
           </div>
         ) : (
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {posts.map((p, idx) => {
-              const tag = TAGS[idx % TAGS.length];
+            {(() => {
+              const tagged = posts.map((p, idx) => ({ p, tag: TAGS[idx % TAGS.length] as Tag }));
+              const visible = filter === 'ALL' ? tagged : tagged.filter((t) => t.tag === filter);
+              if (visible.length === 0) {
+                return (
+                  <li style={{ color: '#555555', fontSize: 14, padding: '40px 0', textAlign: 'center' }}>
+                    No articles in this category yet.
+                  </li>
+                );
+              }
+              return visible.map(({ p, tag }, idx) => {
               const minutes = readingTime(p.body_markdown ?? null, p.excerpt);
               return (
                 <li
@@ -254,7 +325,8 @@ export default function Blog() {
                   </div>
                 </li>
               );
-            })}
+            });
+            })()}
           </ul>
         )}
 
