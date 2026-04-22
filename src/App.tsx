@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import { usePageTracker } from "@/hooks/usePageTracker";
 
 // Code-split every non-landing route so the initial bundle stays small.
 const Signup = lazy(() => import("./pages/Signup"));
@@ -50,12 +51,19 @@ const RouteFallback = () => (
   </div>
 );
 
+// Tracks page views on route change. Lives inside <BrowserRouter>.
+const PageTracker = () => {
+  usePageTracker();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Sonner />
         <BrowserRouter>
+          <PageTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />

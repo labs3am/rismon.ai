@@ -286,6 +286,36 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+          session_id: string | null
+          user_id: string | null
+          viewport: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number
@@ -635,6 +665,21 @@ export type Database = {
         }[]
       }
       admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
+      admin_top_pages: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          path: string
+          unique_sessions: number
+          views: number
+        }[]
+      }
+      admin_top_referrers: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          referrer: string
+          views: number
+        }[]
+      }
       admin_top_scanners: {
         Args: { _limit?: number }
         Returns: {
@@ -643,6 +688,24 @@ export type Database = {
           last_scan_at: string
           scan_count: number
           user_id: string
+        }[]
+      }
+      admin_traffic_stats: {
+        Args: never
+        Returns: {
+          unique_sessions_7d: number
+          unique_visitors_7d: number
+          views_30d: number
+          views_7d: number
+          views_today: number
+        }[]
+      }
+      admin_traffic_timeseries: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          unique_sessions: number
+          views: number
         }[]
       }
       admin_user_stats: {
