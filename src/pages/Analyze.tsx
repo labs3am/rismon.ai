@@ -558,6 +558,11 @@ export default function Analyze() {
     if (analysisStarted.current) return;
     analysisStarted.current = true;
     setStage('analyzing');
+    // Switch the loader UI into "scan running" mode immediately so the
+    // user sees the resume-style timer (and the "you can leave this tab"
+    // copy) as soon as the background job is dispatched.
+    setResumingSession(true);
+    setResumeStartedAt(Date.now());
 
     // Update scan_session with intent data
     if (scanSessionId) {
@@ -570,10 +575,17 @@ export default function Analyze() {
     }
 
     try {
+      // Dispatch the heavy analysis as a background job. The edge function
+      // returns 202 immediately and runs Gemini/Claude inside
+      // EdgeRuntime.waitUntil. The browser then only needs to poll the
+      // scan_sessions row — so tab switches, network drops, and fetch
+      // throttling can no longer kill an in-flight scan.
       const { data: rawData, error } = await supabase.functions.invoke('analyze', {
         body: {
-          action: 'analyze',
+          action: 'analyze_async',
           app_id: appId,
+          scan_session_id: scanSessionId,
+          analysis_id: analysisId,
           code_understanding: codeUnderstanding,
           founder_description: description,
           user_answers: answers,
@@ -600,97 +612,151 @@ export default function Analyze() {
         } catch { /* ignore */ }
       }
       if (!payload) {
+        // We could not even kick the job off — that's a real failure.
+        // (If the kickoff succeeded we never reach this branch.)
         if (scanSessionId) {
           await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
         }
-        setFailureMessage((error as any)?.message || 'Analysis failed. The scan may have been interrupted.');
+        setFailureMessage((error as any)?.message || 'Could not start the scan. Please try again.');
         setStage('failed');
+        setResumingSession(false);
         analysisStarted.current = false;
         return;
       }
       if (payload.code && ['WEEKLY_LIMIT','MONTHLY_LIMIT','DUPLICATE_SCAN','SCAN_IN_PROGRESS','REPO_TOO_LARGE','RATE_LIMITED','CREDITS_EXHAUSTED'].includes(payload.code)) {
         toast.error(payload.error || 'Scan blocked.');
+        setResumingSession(false);
         analysisStarted.current = false;
         return;
       }
-      if (payload.error) {
+      if (payload.error && !payload.background) {
+        // The server rejected the kickoff with a real error (not a 202).
         if (scanSessionId) {
           await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
         }
         setFailureMessage(payload.error);
         setStage('failed');
+        setResumingSession(false);
         analysisStarted.current = false;
         return;
       }
-      // Use recovered payload as the result data from here on.
-      const data: any = payload;
 
-      const durationSeconds = scanStartedAtRef.current
-        ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)
-        : null;
+      // SUCCESS PATH: server accepted the job (HTTP 202). The result is now
+      // being computed in the background; we poll scan_sessions for status.
+      // The browser tab can be backgrounded, the laptop can sleep briefly,
+      // network can blip — none of it kills the scan anymore.
+      if (pollRef.current) clearInterval(pollRef.current);
+      const startedAt = Date.now();
+      pollRef.current = setInterval(async () => {
+        try {
+          const { data: updatedSession } = await supabase
+            .from('scan_sessions')
+            .select('status, report_id')
+            .eq('id', scanSessionId)
+            .single();
+          if (!updatedSession) return;
 
-      await supabase.from('analyses').update({
-        user_answers: answers, gaps: data.gaps, unknown_features: data.unknown_features,
-        security_issues: data.security_issues, what_works: data.what_works,
-        intent_match_score: data.intent_match_score, summary: data.summary,
-        legal_findings: data.legal_findings || [],
-        landing_page_promises: data.landing_page_promises || [],
-        homepage_signals: data.homepage_signals || null,
-        security_score: typeof data.security_score === 'number' ? data.security_score : null,
-        scan_type: scanType,
-        files_scanned: filesScanned,
-        scan_duration_seconds: durationSeconds,
-        status: 'review_pending'
-      }).eq('id', analysisId);
+          if (updatedSession.status === 'complete' && updatedSession.report_id) {
+            if (pollRef.current) clearInterval(pollRef.current);
 
-      // Try Pro: deduct 1 deep-scan credit (stored in profiles.pro_credits).
-      // If this drops to 0, reset plan back to free so the next visit shows the free state.
-      if (scanType === 'deep' && user) {
-        const { data: planRow } = await supabase
-          .from('profiles').select('plan, pro_credits').eq('id', user.id).single();
-        if (planRow?.plan === 'try_pro') {
-          const remaining = Math.max(0, (planRow.pro_credits ?? 0) - 1);
-          await supabase.from('profiles').update({
-            pro_credits: remaining,
-            ...(remaining === 0 ? { plan: 'free' } : {}),
-          }).eq('id', user.id);
+            // Fire-and-forget: usage increment + scan-ready email.
+            // We deliberately do NOT await these — the user has already
+            // earned their report and we don't want to block the redirect.
+            supabase.functions.invoke('analyze', { body: { action: 'increment_usage' } }).catch(() => {});
+            supabase.functions.invoke('send-scan-ready-email', {
+              body: { report_id: updatedSession.report_id, app_name: app?.app_name },
+            }).catch(() => {});
+
+            // Try Pro: deduct 1 deep-scan credit on the client side too,
+            // so the dashboard reflects the new credit balance immediately.
+            if (scanType === 'deep' && user) {
+              const { data: planRow } = await supabase
+                .from('profiles').select('plan, pro_credits').eq('id', user.id).single();
+              if (planRow?.plan === 'try_pro') {
+                const remaining = Math.max(0, (planRow.pro_credits ?? 0) - 1);
+                await supabase.from('profiles').update({
+                  pro_credits: remaining,
+                  ...(remaining === 0 ? { plan: 'free' } : {}),
+                }).eq('id', user.id);
+              }
+            }
+
+            // Stamp scan_duration on the analyses row using our local clock
+            // (server doesn't know exactly when the user started reading).
+            const durationSeconds = scanStartedAtRef.current
+              ? Math.round((Date.now() - scanStartedAtRef.current) / 1000)
+              : null;
+            if (durationSeconds && analysisId) {
+              await supabase.from('analyses').update({
+                scan_duration_seconds: durationSeconds,
+                files_scanned: filesScanned,
+              }).eq('id', analysisId);
+            }
+
+            localStorage.removeItem('rismon_active_analysis');
+            localStorage.removeItem('rismon_analysis_stage');
+            navigate(`/report/${updatedSession.report_id}`);
+            return;
+          }
+
+          if (updatedSession.status === 'failed' || updatedSession.status === 'cancelled') {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setResumingSession(false);
+            const failed = updatedSession.status === 'failed';
+            setFailureMessage(failed
+              ? 'The analysis ran into an error on the server. Please try again.'
+              : 'Scan was cancelled.');
+            setStage('failed');
+            analysisStarted.current = false;
+            return;
+          }
+
+          // Soft cap: 12 minutes. Anything past this is genuinely stuck.
+          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          if (elapsed > 12 * 60) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+            setResumingSession(false);
+            setFailureMessage('Scan is taking too long. Please try again.');
+            setStage('failed');
+            analysisStarted.current = false;
+          }
+        } catch {
+          // Network blip while polling — just try again on the next tick.
         }
-        // plan === 'pro' → never deduct, unlimited.
-      }
-
-      // Update scan_session to complete
-      if (scanSessionId) {
-        await supabase.from('scan_sessions').update({
-          status: 'complete',
-          report_id: analysisId,
-        }).eq('id', scanSessionId);
-      }
-
-      // Server-side usage increment (handles weekly + monthly atomically)
-      try {
-        await supabase.functions.invoke('analyze', { body: { action: 'increment_usage' } });
-      } catch {}
-
-      // Email notification (server checks plan internally; safe to call always)
-      try {
-        await supabase.functions.invoke('send-scan-ready-email', {
-          body: { report_id: analysisId, app_name: app?.app_name, score: data.intent_match_score }
-        });
-      } catch {}
-
-      setAnalysisResult(data);
-      setStage('review');
-      localStorage.removeItem('rismon_active_analysis');
-      localStorage.removeItem('rismon_analysis_stage');
+      }, 3000);
     } catch (e: any) {
-      if (scanSessionId) {
-        await supabase.from('scan_sessions').update({ status: 'failed' }).eq('id', scanSessionId);
+      // We only land here if the *kickoff fetch* itself threw. The
+      // background job on the server may or may not be running, so we
+      // do NOT mark the scan failed from here. Instead we tell the user
+      // we'll keep watching, and the visibility-resync effect (or the
+      // polling we just installed) will pick up the real outcome.
+      console.warn('[analyze] Kickoff fetch threw, waiting for server status:', e);
+      // Make sure we're polling even if the catch happened before we set up the interval.
+      if (!pollRef.current && scanSessionId) {
+        const startedAt = Date.now();
+        pollRef.current = setInterval(async () => {
+          const { data: s } = await supabase
+            .from('scan_sessions').select('status, report_id').eq('id', scanSessionId).single();
+          if (!s) return;
+          if (s.status === 'complete' && s.report_id) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            navigate(`/report/${s.report_id}`);
+          } else if (s.status === 'failed' || s.status === 'cancelled') {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setResumingSession(false);
+            setFailureMessage('Scan failed. Please try again.');
+            setStage('failed');
+          } else if (Date.now() - startedAt > 12 * 60 * 1000) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setResumingSession(false);
+            setFailureMessage('Scan took too long. Please try again.');
+            setStage('failed');
+          }
+        }, 3000);
       }
-      setFailureMessage(e?.message || 'Analysis failed. The scan may have been interrupted by a tab switch or network drop.');
-      setStage('failed');
-      analysisStarted.current = false;
     }
-  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId, scanType, filesScanned, app]);
+  }, [codeUnderstanding, description, answers, analysisId, user, concern, intentMeta, scanSessionId, scanType, filesScanned, app, navigate, questions]);
 
   const handleAnswer = (qId: string, val: any) => setAnswers(prev => ({ ...prev, [qId]: val }));
 
