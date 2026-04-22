@@ -435,6 +435,7 @@ export default function AdminDashboard() {
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
             ["scans", "Scans", FileText],
+            ["traffic", `Traffic${trafficStats ? ` (${trafficStats.views_7d})` : ""}`, Activity],
             ["inactive", `Inactive (${inactive.length})`, UserX],
             ["no-github", `No GitHub (${noGithub.length})`, GitBranch],
             ["tools", "Tools", Inbox],
