@@ -1,0 +1,237 @@
+import { useEffect, useState } from "react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+// Founder-note broadcast: test → confirm → broadcast.
+// Hard-gated to admins (also enforced server-side).
+
+const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+
+const AdminBroadcast = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const [eligibleCount, setEligibleCount] = useState<number | null>(null);
+  const [sample, setSample] = useState<string[]>([]);
+  const [loadingCount, setLoadingCount] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [lastResult, setLastResult] = useState<null | { sent: number; failed: number; errors: string[] }>(null);
+
+  useEffect(() => {
+    if (!loading && (!user || !user.email || !ADMIN_EMAILS.has(user.email))) {
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate]);
+
+  const fetchEligible = async () => {
+    setLoadingCount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
+        body: { mode: "broadcast", dryRun: true },
+      });
+      if (error) throw error;
+      setEligibleCount(data?.eligibleCount ?? 0);
+      setSample(data?.sample ?? []);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to load count");
+    } finally {
+      setLoadingCount(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email && ADMIN_EMAILS.has(user.email)) fetchEligible();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
+
+  const sendTest = async () => {
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
+        body: { mode: "test" },
+      });
+      if (error) throw error;
+      toast.success(`Test sent to ${data?.sentTo || "hello@rismon.ai"} — check your inbox.`);
+    } catch (e: any) {
+      toast.error(e?.message || "Test send failed");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const broadcast = async () => {
+    if (confirmText !== "SEND") {
+      toast.error("Type SEND to confirm");
+      return;
+    }
+    setBroadcasting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
+        body: { mode: "broadcast" },
+      });
+      if (error) throw error;
+      setLastResult({ sent: data?.sent ?? 0, failed: data?.failed ?? 0, errors: data?.errors ?? [] });
+      toast.success(`Broadcast complete: ${data?.sent ?? 0} sent, ${data?.failed ?? 0} failed`);
+      setConfirmOpen(false);
+      setConfirmText("");
+      fetchEligible();
+    } catch (e: any) {
+      toast.error(e?.message || "Broadcast failed");
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
+  if (loading || !user) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to admin
+        </Link>
+
+        <div className="mb-2">
+          <span className="inline-block text-[10px] font-semibold tracking-[0.18em] text-primary uppercase">
+            Broadcast · One-time
+          </span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Founder note · scan nudge</h1>
+        <p className="text-muted-foreground mb-10 leading-relaxed">
+          Sends a personal "haven't scanned yet?" email to inactive users (signed up 14+ days ago, never ran a scan). Each user gets it at most once.
+        </p>
+
+        {/* Step 1 — Audience */}
+        <section className="rounded-2xl border border-border bg-card p-6 mb-5">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase mb-1">Step 1</p>
+              <h2 className="text-lg font-semibold">Audience</h2>
+            </div>
+            <Button variant="outline" size="sm" onClick={fetchEligible} disabled={loadingCount}>
+              {loadingCount ? "Counting…" : "Refresh"}
+            </Button>
+          </div>
+          <div className="flex items-baseline gap-3 mb-3">
+            <span className="text-5xl font-bold text-primary tabular-nums">{eligibleCount ?? "—"}</span>
+            <span className="text-sm text-muted-foreground">eligible users</span>
+          </div>
+          {sample.length > 0 && (
+            <p className="text-xs text-muted-foreground/80 font-mono leading-relaxed">
+              e.g. {sample.join(", ")}
+              {eligibleCount && eligibleCount > sample.length ? " …" : ""}
+            </p>
+          )}
+        </section>
+
+        {/* Step 2 — Test */}
+        <section className="rounded-2xl border border-border bg-card p-6 mb-5">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase mb-1">Step 2</p>
+          <h2 className="text-lg font-semibold mb-2">Send test to yourself first</h2>
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+            Sends the live email <strong className="text-foreground">only to hello@rismon.ai</strong>. Open it in Gmail, check rendering on mobile, then come back.
+          </p>
+          <Button onClick={sendTest} disabled={sendingTest} className="gap-2">
+            <Eye className="w-4 h-4" />
+            {sendingTest ? "Sending…" : "Send test to hello@rismon.ai"}
+          </Button>
+        </section>
+
+        {/* Step 3 — Broadcast */}
+        <section className="rounded-2xl border border-primary/30 bg-card p-6">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-primary uppercase mb-1">Step 3 · Final</p>
+          <h2 className="text-lg font-semibold mb-2">Broadcast to all eligible users</h2>
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            Only run this <strong className="text-foreground">after</strong> you've confirmed the test email looks right. This cannot be undone.
+          </p>
+
+          {!confirmOpen ? (
+            <Button
+              variant="default"
+              onClick={() => setConfirmOpen(true)}
+              disabled={!eligibleCount || eligibleCount === 0}
+              className="gap-2"
+            >
+              <Send className="w-4 h-4" />
+              Broadcast to {eligibleCount ?? 0} users
+            </Button>
+          ) : (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+              <div className="flex items-start gap-2 mb-3">
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground">
+                  About to email <strong>{eligibleCount}</strong> users. Type <code className="px-1.5 py-0.5 rounded bg-background border border-border text-xs">SEND</code> to confirm.
+                </p>
+              </div>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="Type SEND"
+                className="w-full px-3 py-2 mb-3 bg-background border border-border rounded-md text-sm font-mono focus:outline-none focus:border-primary"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  onClick={broadcast}
+                  disabled={broadcasting || confirmText !== "SEND"}
+                  className="gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  {broadcasting ? "Sending…" : "Confirm broadcast"}
+                </Button>
+                <Button variant="ghost" onClick={() => { setConfirmOpen(false); setConfirmText(""); }} disabled={broadcasting}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {lastResult && (
+          <section className="rounded-2xl border border-border bg-card p-6 mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold">Last broadcast result</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-3">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Sent</p>
+                <p className="text-2xl font-bold tabular-nums">{lastResult.sent}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Failed</p>
+                <p className="text-2xl font-bold tabular-nums text-muted-foreground">{lastResult.failed}</p>
+              </div>
+            </div>
+            {lastResult.errors.length > 0 && (
+              <details className="mt-3">
+                <summary className="text-xs text-muted-foreground cursor-pointer">Show first errors</summary>
+                <pre className="text-xs mt-2 p-3 bg-background rounded border border-border overflow-x-auto">
+                  {lastResult.errors.join("\n")}
+                </pre>
+              </details>
+            )}
+          </section>
+        )}
+
+        <p className="text-xs text-muted-foreground/70 mt-10 flex items-center gap-2">
+          <Mail className="w-3 h-3" />
+          Sender: hello@rismon.ai · Reply-to: hello@rismon.ai · Throttled to ~4/sec
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default AdminBroadcast;
