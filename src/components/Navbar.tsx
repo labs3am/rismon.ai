@@ -170,6 +170,45 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="View Rismon on GitHub"
+            title="Rismon is open source on GitHub"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              color: '#a3a3a3',
+              fontSize: 12.5,
+              fontWeight: 500,
+              padding: '6px 10px',
+              borderRadius: 6,
+              border: '1px solid #ffffff14',
+              background: 'rgba(255,255,255,0.02)',
+              transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.borderColor = '#ffffff26';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#a3a3a3';
+              e.currentTarget.style.borderColor = '#ffffff14';
+              e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+            }}
+          >
+            <Github size={14} />
+            <span style={{ letterSpacing: '-0.005em' }}>Star</span>
+            {stars !== null && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#888888', borderLeft: '1px solid #ffffff14', paddingLeft: 6, marginLeft: 1 }}>
+                <Star size={11} style={{ fill: '#888888' }} />
+                {stars >= 1000 ? `${(stars / 1000).toFixed(1)}k` : stars}
+              </span>
+            )}
+          </a>
           <Link to="/login" style={{ color: '#888888', fontSize: 13.5, transition: 'color 0.15s ease', fontWeight: 450 }} onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')} onMouseLeave={e => (e.currentTarget.style.color = '#888888')}>Log in</Link>
           <Link
             to="/signup"
