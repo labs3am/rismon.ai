@@ -416,6 +416,86 @@ export default function AdminDashboard() {
               <StatCard label="Waitlist" value={stats.waitlist_count} />
             </div>
 
+            {/* Activity chart */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <h3 className="text-foreground font-semibold text-sm">Activity — last 30 days</h3>
+                  <p className="text-subtle text-xs mt-1">Daily signups and scans.</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Signups
+                  </span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-success" /> Scans
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeseries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gSignups" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gScans" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Area type="monotone" dataKey="signups" stroke="hsl(var(--primary))" fill="url(#gSignups)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="scans" stroke="hsl(var(--success))" fill="url(#gScans)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Plan distribution */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-foreground font-semibold text-sm">Plan distribution</h3>
+              <p className="text-subtle text-xs mt-1">How users are split across plans.</p>
+              <div className="mt-4 space-y-3">
+                {planDist.length === 0 ? (
+                  <div className="text-muted-foreground text-sm">No data.</div>
+                ) : (
+                  planDist.map((p) => {
+                    const total = planDist.reduce((s, r) => s + Number(r.user_count), 0) || 1;
+                    const pct = (Number(p.user_count) / total) * 100;
+                    const isPro = p.plan === "pro";
+                    return (
+                      <div key={p.plan}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="capitalize text-foreground font-medium">{p.plan}</span>
+                          <span className="text-muted-foreground tabular-nums">
+                            {p.user_count} <span className="text-subtle">({pct.toFixed(0)}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={isPro ? "h-full bg-amber-500" : "h-full bg-primary"}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <h3 className="text-foreground font-semibold text-sm">Top scanners</h3>
@@ -430,7 +510,9 @@ export default function AdminDashboard() {
                           <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
                           <div className="min-w-0">
                             <div className="text-foreground text-sm truncate">{u.email || "(no email)"}</div>
-                            {u.full_name && <div className="text-subtle text-xs truncate">{u.full_name}</div>}
+                            <div className="text-subtle text-xs truncate">
+                              Last scan: {formatDate(u.last_scan_at)}
+                            </div>
                           </div>
                         </div>
                         <div className="text-foreground text-sm tabular-nums font-medium">{u.scan_count}</div>
