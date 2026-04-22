@@ -191,24 +191,35 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
               <KeyRound size={12} /> Configure
             </button>
           ) : (
-            <div className="mt-3 flex gap-2">
-              <input
-                type="password"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder="eyJhbGci..."
-                className="flex-1 bg-input-bg border border-input rounded-md px-3 py-1.5 text-sm font-mono"
-              />
-              <button
-                onClick={save}
-                disabled={saving}
-                className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
-              <button onClick={() => setOpen(false)} className="text-muted-foreground text-sm px-2">
-                Cancel
-              </button>
+            <div className="mt-3">
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  placeholder="eyJhbGci..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  data-1p-ignore
+                  data-lpignore="true"
+                  className="flex-1 bg-input-bg border border-input rounded-md px-3 py-1.5 text-sm font-mono"
+                />
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save"}
+                </button>
+                <button onClick={() => setOpen(false)} className="text-muted-foreground text-sm px-2">
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground/80 mt-2 leading-relaxed">
+                🔒 Stored encrypted. Once saved, the value can't be read back — not by you, not by any client.
+                Only the database itself uses it server-side to call the notification function.
+              </p>
             </div>
           )}
         </div>
