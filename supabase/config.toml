@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-v2-announcement]
 verify_jwt = false
+
+[functions.admin-notify]
+verify_jwt = false

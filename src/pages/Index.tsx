@@ -20,17 +20,54 @@ import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
 
 const faqs = [
-  { q: "What does Rismon.ai actually do?", a: "It reads your app and tells you what was built, what works, and what is broken, written for founders, not engineers. You also get copy-paste prompts to fix every issue." },
-  { q: "Do I need to know how to code?", a: "No. Findings are written for founders, with a real-world example and a ready-to-use fix. If you can read this sentence, you can use Rismon.ai." },
-  { q: "How accurate is the report?", a: "Every finding includes the exact file, line number, and code snippet as proof. Claims we cannot verify directly are clearly marked Unverified, never guessed. Connecting Supabase is optional — when you do, we read your real database rules instead of guessing from frontend code." },
-  { q: "How long does a scan take?", a: "About 60 seconds for a Quick Scan. A Deep Scan takes 2 to 4 minutes depending on your app size." },
-  { q: "Which AI tools do you support?", a: "All of them. Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot, Claude Code, and more. If your code is on GitHub, we can scan it." },
-  { q: "What does the free plan include?", a: "One app, three scans per week, the full founder-friendly report, and fix prompts. No credit card needed." },
-  { q: "What is the difference between Free and Try Pro?", a: "Free does a Quick Scan of your frontend. Try Pro ($8.99 one time, launching soon) does a Deep Scan of your full app including backend and edge functions, with two AI models verifying every finding." },
-  { q: "Will Rismon.ai change my code?", a: "No. We only have read access to your GitHub. We can never edit, delete, or push anything." },
-  { q: "Is my code stored anywhere?", a: "No. Your code is read in memory, scanned, and immediately discarded. Only your report is kept in your account." },
-  { q: "What if I do not understand my report?", a: "Every finding is written for non-technical founders, with a real-world example and a ready-to-use fix prompt." },
-  { q: "Can I cancel anytime?", a: "Yes. Try Pro is a one-time payment. Pro Monthly can be cancelled anytime from your settings." },
+  {
+    q: "What does Rismon do that a normal security scanner doesn't?",
+    a: "Rismon verifies intent, not just code. It reads your landing page to learn what you promise, reads your code to see what you actually built, and tells you the gap — features you sell but haven't built, features you built but don't sell, and security holes a generic scanner would miss because they only matter in your specific product context.",
+  },
+  {
+    q: "What's the intent-match score?",
+    a: "A 0–100 score that grades how well your shipped code matches the product you advertise. We extract concrete promises from your landing page (e.g. \"sign in with Google\", \"export to PDF\", \"Stripe checkout\") and check whether each one actually exists in your codebase. The score drops for missing promises and for unannounced features that may confuse users or expose risk.",
+  },
+  {
+    q: "How does the scan work, end to end?",
+    a: "1) You paste your live URL and connect your GitHub repo. 2) We extract promises from your landing page. 3) Smart Questions: an AI asks you 3–5 things only you can answer (who pays, what's gated, what data is sensitive). 4) We scan your code, cross-reference everything, and produce a report with intent score, security findings, gaps, and copy-paste fix prompts. Most scans finish in under 2 minutes.",
+  },
+  {
+    q: "Do I need to know how to code?",
+    a: "No. Every finding is written in plain English with a real-world example, why it matters for your business, and a ready-to-paste fix prompt for Lovable, Cursor, Bolt or whatever AI tool you use. The Code Understanding card also gives you a one-paragraph summary of what your app actually is.",
+  },
+  {
+    q: "How accurate are the findings? Can I push back?",
+    a: "Every finding includes the exact file, line number and code snippet as proof. If you disagree, hit the Disagree pill on the finding and tell us why — your dispute goes to the Rismon team for review, and your feedback trains the next scan. You can also Agree on findings you've confirmed, so they're easy to track.",
+  },
+  {
+    q: "What's checked beyond security?",
+    a: "Intent gaps (promises vs. reality), legal basics (privacy policy, terms, cookie consent), database rules if you connect Supabase, auth and access control, secrets in code, and platform-specific footguns. You also get a plain-English summary of what your app does and what it depends on.",
+  },
+  {
+    q: "Which AI builders and stacks do you support?",
+    a: "Any code on GitHub. We're optimised for Lovable, Bolt, Cursor, Replit, Windsurf, v0, GitHub Copilot and Claude Code — fix prompts are tailored to each platform's syntax so you can paste them straight in.",
+  },
+  {
+    q: "What does the free plan include?",
+    a: "One app, three scans per week, full intent-match report, security findings, gaps, legal checks, fix prompts and the dispute system. No credit card.",
+  },
+  {
+    q: "What do I get on Pro?",
+    a: "Deeper scans of your full stack (backend, edge functions, database rules), unlimited fix prompts, ongoing monitoring of your repo so you're alerted when a new commit breaks something, and priority dispute review. See the Pricing page for the current rate.",
+  },
+  {
+    q: "Will Rismon ever change my code?",
+    a: "No. GitHub access is read-only. We can never edit, delete, push or open PRs. Fixes are delivered as prompts you paste yourself — you stay in control of every change.",
+  },
+  {
+    q: "Is my code stored anywhere?",
+    a: "No. Your code is read in memory, scanned, and discarded immediately after the report is generated. Only the report (findings, scores, summaries) is saved to your account. The Rismon team can see scan metadata for support but never your code or report contents.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. Pro is a monthly subscription you can cancel from Settings at any time — you keep access until the end of the period. One-time scan packs never expire and don't auto-renew.",
+  },
 ];
 
 const personas = [
@@ -390,6 +427,9 @@ export default function Index() {
             <p className="mb-4">But most founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
             <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong, with proof. We give you the fix. Every time.</p>
           </div>
+          <Link to="/about" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 32, color: '#f97316', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            Read our story →
+          </Link>
         </div>
       </section>
 

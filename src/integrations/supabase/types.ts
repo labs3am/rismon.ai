@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notify_settings: {
+        Row: {
+          function_url: string
+          id: number
+          service_role_key: string
+        }
+        Insert: {
+          function_url: string
+          id?: number
+          service_role_key: string
+        }
+        Update: {
+          function_url?: string
+          id?: number
+          service_role_key?: string
+        }
+        Relationships: []
+      }
       analyses: {
         Row: {
           app_id: string | null
@@ -549,12 +567,117 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_activity_timeseries: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          scans: number
+          signups: number
+        }[]
+      }
+      admin_delete_user: {
+        Args: { _target_user_id: string }
+        Returns: undefined
+      }
+      admin_inactive_users: {
+        Args: { _limit?: number }
+        Returns: {
+          app_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          app_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          plan: string
+          pro_credits: number
+          pro_until: string
+          scan_count: number
+        }[]
+      }
+      admin_notify_key_set: { Args: never; Returns: boolean }
+      admin_plan_distribution: {
+        Args: never
+        Returns: {
+          plan: string
+          user_count: number
+        }[]
+      }
+      admin_recent_scans: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          files_scanned: number
+          id: string
+          scan_duration_seconds: number
+          scan_type: string
+          status: string
+          user_email: string
+        }[]
+      }
+      admin_recent_signups: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }[]
+      }
+      admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
+      admin_top_scanners: {
+        Args: { _limit?: number }
+        Returns: {
+          email: string
+          full_name: string
+          last_scan_at: string
+          scan_count: number
+          user_id: string
+        }[]
+      }
+      admin_user_stats: {
+        Args: never
+        Returns: {
+          pro_users: number
+          scans_this_week: number
+          signups_this_week: number
+          total_apps: number
+          total_scans: number
+          total_users: number
+          waitlist_count: number
+        }[]
+      }
+      admin_users_without_github: {
+        Args: { _limit?: number }
+        Returns: {
+          app_count: number
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          scan_count: number
+        }[]
+      }
       app_has_backend: { Args: { _app_id: string }; Returns: boolean }
       consume_pro_credit: { Args: { _user_id: string }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
       is_blog_admin: { Args: never; Returns: boolean }
+      notify_admin_event: {
+        Args: { _event: string; _payload: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
