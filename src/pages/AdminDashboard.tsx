@@ -14,6 +14,7 @@ import {
   Mail,
   UserX,
   GitBranch,
+  Activity,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -29,7 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Tab = "overview" | "users" | "scans" | "inactive" | "no-github" | "tools";
+type Tab = "overview" | "users" | "scans" | "traffic" | "inactive" | "no-github" | "tools";
 
 interface UserRow {
   id: string;
@@ -99,6 +100,31 @@ interface TimeseriesPoint {
 interface PlanRow {
   plan: string;
   user_count: number;
+}
+
+interface TrafficStats {
+  views_today: number;
+  views_7d: number;
+  views_30d: number;
+  unique_sessions_7d: number;
+  unique_visitors_7d: number;
+}
+
+interface TopPage {
+  path: string;
+  views: number;
+  unique_sessions: number;
+}
+
+interface TopReferrer {
+  referrer: string;
+  views: number;
+}
+
+interface TrafficPoint {
+  day: string;
+  views: number;
+  unique_sessions: number;
 }
 
 function formatDate(s: string | null) {
@@ -191,24 +217,35 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
               <KeyRound size={12} /> Configure
             </button>
           ) : (
-            <div className="mt-3 flex gap-2">
-              <input
-                type="password"
-                value={key}
-                onChange={(e) => setKey(e.target.value)}
-                placeholder="eyJhbGci..."
-                className="flex-1 bg-input-bg border border-input rounded-md px-3 py-1.5 text-sm font-mono"
-              />
-              <button
-                onClick={save}
-                disabled={saving}
-                className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50"
-              >
-                {saving ? "Saving…" : "Save"}
-              </button>
-              <button onClick={() => setOpen(false)} className="text-muted-foreground text-sm px-2">
-                Cancel
-              </button>
+            <div className="mt-3">
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  placeholder="eyJhbGci..."
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  data-1p-ignore
+                  data-lpignore="true"
+                  className="flex-1 bg-input-bg border border-input rounded-md px-3 py-1.5 text-sm font-mono"
+                />
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save"}
+                </button>
+                <button onClick={() => setOpen(false)} className="text-muted-foreground text-sm px-2">
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground/80 mt-2 leading-relaxed">
+                🔒 Stored encrypted. Once saved, the value can't be read back — not by you, not by any client.
+                Only the database itself uses it server-side to call the notification function.
+              </p>
             </div>
           )}
         </div>
@@ -235,8 +272,13 @@ export default function AdminDashboard() {
   const [noGithub, setNoGithub] = useState<NoGithubUser[]>([]);
   const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([]);
   const [planDist, setPlanDist] = useState<PlanRow[]>([]);
+  const [trafficStats, setTrafficStats] = useState<TrafficStats | null>(null);
+  const [topPages, setTopPages] = useState<TopPage[]>([]);
+  const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([]);
+  const [trafficSeries, setTrafficSeries] = useState<TrafficPoint[]>([]);
 
   const [search, setSearch] = useState("");
+  const [trafficWindow, setTrafficWindow] = useState<7 | 30>(7);
   const [loading, setLoading] = useState(true);
 
   // Admin gate — defense in depth.
@@ -266,7 +308,7 @@ export default function AdminDashboard() {
   // Load all data
   const loadAll = async () => {
     setLoading(true);
-    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes] = await Promise.all([
+    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes, trafRes, pagesRes, refRes, trafTsRes] = await Promise.all([
       supabase.rpc("admin_user_stats" as any),
       supabase.rpc("admin_list_users" as any),
       supabase.rpc("admin_recent_scans" as any, { _limit: 50 } as any),
@@ -275,6 +317,10 @@ export default function AdminDashboard() {
       supabase.rpc("admin_users_without_github" as any, { _limit: 100 } as any),
       supabase.rpc("admin_activity_timeseries" as any, { _days: 30 } as any),
       supabase.rpc("admin_plan_distribution" as any),
+      supabase.rpc("admin_traffic_stats" as any),
+      supabase.rpc("admin_top_pages" as any, { _days: trafficWindow, _limit: 20 } as any),
+      supabase.rpc("admin_top_referrers" as any, { _days: trafficWindow, _limit: 15 } as any),
+      supabase.rpc("admin_traffic_timeseries" as any, { _days: 30 } as any),
     ]);
     if (statsRes.data) setStats((statsRes.data as Stats[])[0] ?? null);
     if (usersRes.data) setUsers(usersRes.data as UserRow[]);
@@ -292,6 +338,18 @@ export default function AdminDashboard() {
       );
     }
     if (planRes.data) setPlanDist(planRes.data as PlanRow[]);
+    if (trafRes.data) setTrafficStats((trafRes.data as TrafficStats[])[0] ?? null);
+    if (pagesRes.data) setTopPages(pagesRes.data as TopPage[]);
+    if (refRes.data) setTopReferrers(refRes.data as TopReferrer[]);
+    if (trafTsRes.data) {
+      setTrafficSeries(
+        (trafTsRes.data as { day: string; views: number; unique_sessions: number }[]).map((r) => ({
+          day: new Date(r.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          views: Number(r.views),
+          unique_sessions: Number(r.unique_sessions),
+        }))
+      );
+    }
     setLoading(false);
 
     const { data: keyData } = await supabase.rpc("admin_notify_key_set" as any);
@@ -300,7 +358,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isAdmin) loadAll();
-  }, [isAdmin]);
+  }, [isAdmin, trafficWindow]);
 
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return users;
@@ -376,6 +434,7 @@ export default function AdminDashboard() {
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
             ["scans", "Scans", FileText],
+            ["traffic", `Traffic${trafficStats ? ` (${trafficStats.views_7d})` : ""}`, Activity],
             ["inactive", `Inactive (${inactive.length})`, UserX],
             ["no-github", `No GitHub (${noGithub.length})`, GitBranch],
             ["tools", "Tools", Inbox],
@@ -658,6 +717,149 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TRAFFIC */}
+        {!loading && tab === "traffic" && (
+          <div className="mt-6 space-y-6">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-subtle text-xs">
+                Privacy-safe pageview tracking. We log path + referrer hostname only — no IPs, no cookies, no fingerprints.
+              </p>
+              <div className="flex gap-1 bg-muted rounded-lg p-1">
+                {([7, 30] as const).map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setTrafficWindow(d)}
+                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                      trafficWindow === d
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Last {d} days
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {trafficStats && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard label="Views today" value={trafficStats.views_today} />
+                <StatCard label="Views (7d)" value={trafficStats.views_7d} />
+                <StatCard
+                  label="Unique visitors (7d)"
+                  value={trafficStats.unique_visitors_7d}
+                  hint={`${trafficStats.unique_sessions_7d} sessions`}
+                />
+                <StatCard label="Views (30d)" value={trafficStats.views_30d} />
+              </div>
+            )}
+
+            {/* Traffic chart */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <h3 className="text-foreground font-semibold text-sm">Traffic — last 30 days</h3>
+                  <p className="text-subtle text-xs mt-1">Daily pageviews and unique sessions.</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Views
+                  </span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-success" /> Sessions
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trafficSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gViews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gSessions" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Area type="monotone" dataKey="views" stroke="hsl(var(--primary))" fill="url(#gViews)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="unique_sessions" stroke="hsl(var(--success))" fill="url(#gSessions)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Top pages + Top referrers */}
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-foreground font-semibold text-sm">Top pages</h3>
+                <p className="text-subtle text-xs mt-1">
+                  Where visitors spend their time. Compare to find drop-off points in your funnel.
+                </p>
+                <div className="mt-4 space-y-1">
+                  {topPages.length === 0 ? (
+                    <div className="text-muted-foreground text-sm py-4">No traffic yet.</div>
+                  ) : (
+                    topPages.map((p, i) => {
+                      const max = topPages[0]?.views || 1;
+                      const pct = (Number(p.views) / max) * 100;
+                      return (
+                        <div key={p.path} className="py-2 border-t border-border first:border-t-0">
+                          <div className="flex items-center justify-between gap-3 mb-1.5">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
+                              <span className="text-foreground text-sm font-mono truncate">{p.path}</span>
+                            </div>
+                            <div className="text-foreground text-sm tabular-nums font-medium shrink-0">
+                              {p.views}
+                              <span className="text-subtle text-xs font-normal ml-1">({p.unique_sessions} uniq)</span>
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden ml-8">
+                            <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-foreground font-semibold text-sm">Top referrers</h3>
+                <p className="text-subtle text-xs mt-1">External sources driving traffic to your site.</p>
+                <div className="mt-4 space-y-1">
+                  {topReferrers.length === 0 ? (
+                    <div className="text-muted-foreground text-sm py-4">No referrer data yet.</div>
+                  ) : (
+                    topReferrers.map((r, i) => (
+                      <div key={r.referrer} className="flex items-center justify-between py-2 border-t border-border first:border-t-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
+                          <span className="text-foreground text-sm truncate">{r.referrer}</span>
+                        </div>
+                        <div className="text-foreground text-sm tabular-nums font-medium">{r.views}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* INACTIVE USERS */}
         {!loading && tab === "inactive" && (
           <div className="mt-6 space-y-4">
@@ -768,6 +970,19 @@ export default function AdminDashboard() {
               <MessageSquare className="text-primary" size={20} />
               <h3 className="text-foreground font-semibold mt-3">Reviews & disputes</h3>
               <p className="text-muted-foreground text-sm mt-1">User feedback and finding disputes.</p>
+            </Link>
+            <Link
+              to="/admin/broadcast"
+              className="bg-card border border-border rounded-2xl p-5 hover:border-hover-border transition-colors group"
+            >
+              <Mail className="text-primary" size={20} />
+              <h3 className="text-foreground font-semibold mt-3 flex items-center gap-2">
+                Broadcast nudge
+                <span className="text-[10px] font-semibold tracking-wider text-primary uppercase px-1.5 py-0.5 rounded bg-primary/10">New</span>
+              </h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Send the founder note to inactive users (signed up 14+ days ago, never scanned). Test first, then broadcast.
+              </p>
             </Link>
             <div className="bg-card border border-border rounded-2xl p-5">
               <Mail className="text-primary" size={20} />

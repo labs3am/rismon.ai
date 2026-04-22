@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import { usePageTracker } from "@/hooks/usePageTracker";
 
 // Code-split every non-landing route so the initial bundle stays small.
 const Signup = lazy(() => import("./pages/Signup"));
@@ -28,6 +29,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminBroadcast = lazy(() => import("./pages/AdminBroadcast"));
 const Changelog = lazy(() => import("./pages/Changelog"));
 const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
@@ -49,12 +51,19 @@ const RouteFallback = () => (
   </div>
 );
 
+// Tracks page views on route change. Lives inside <BrowserRouter>.
+const PageTracker = () => {
+  usePageTracker();
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
         <Sonner />
         <BrowserRouter>
+          <PageTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -77,6 +86,7 @@ const App = () => (
               <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
               <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
               <Route path="/admin/reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
+              <Route path="/admin/broadcast" element={<ProtectedRoute><AdminBroadcast /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />

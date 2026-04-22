@@ -18,17 +18,14 @@ export type Database = {
         Row: {
           function_url: string
           id: number
-          service_role_key: string
         }
         Insert: {
           function_url: string
           id?: number
-          service_role_key: string
         }
         Update: {
           function_url?: string
           id?: number
-          service_role_key?: string
         }
         Relationships: []
       }
@@ -286,6 +283,36 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+          session_id: string | null
+          user_id: string | null
+          viewport: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_cents: number
@@ -361,6 +388,36 @@ export type Database = {
           pro_credits?: number
           pro_until?: string | null
           stripe_customer_id?: string | null
+        }
+        Relationships: []
+      }
+      report_feedback: {
+        Row: {
+          analysis_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -579,6 +636,19 @@ export type Database = {
         Args: { _target_user_id: string }
         Returns: undefined
       }
+      admin_feedback_stats: {
+        Args: never
+        Returns: {
+          avg_rating: number
+          five_star: number
+          four_star: number
+          one_star: number
+          three_star: number
+          total: number
+          two_star: number
+          with_comments: number
+        }[]
+      }
       admin_inactive_users: {
         Args: { _limit?: number }
         Returns: {
@@ -588,6 +658,20 @@ export type Database = {
           full_name: string
           id: string
           last_sign_in_at: string
+        }[]
+      }
+      admin_list_report_feedback: {
+        Args: { _limit?: number }
+        Returns: {
+          analysis_id: string
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          scan_type: string
+          updated_at: string
+          user_email: string
+          user_id: string
         }[]
       }
       admin_list_users: {
@@ -635,6 +719,21 @@ export type Database = {
         }[]
       }
       admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
+      admin_top_pages: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          path: string
+          unique_sessions: number
+          views: number
+        }[]
+      }
+      admin_top_referrers: {
+        Args: { _days?: number; _limit?: number }
+        Returns: {
+          referrer: string
+          views: number
+        }[]
+      }
       admin_top_scanners: {
         Args: { _limit?: number }
         Returns: {
@@ -643,6 +742,24 @@ export type Database = {
           last_scan_at: string
           scan_count: number
           user_id: string
+        }[]
+      }
+      admin_traffic_stats: {
+        Args: never
+        Returns: {
+          unique_sessions_7d: number
+          unique_visitors_7d: number
+          views_30d: number
+          views_7d: number
+          views_today: number
+        }[]
+      }
+      admin_traffic_timeseries: {
+        Args: { _days?: number }
+        Returns: {
+          day: string
+          unique_sessions: number
+          views: number
         }[]
       }
       admin_user_stats: {

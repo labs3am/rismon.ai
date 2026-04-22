@@ -1095,7 +1095,165 @@ Return ONLY this JSON:
     // ============================================================
     // ACTION: analyze (stage 2 — Claude deep, then Gemini verifies)
     // ============================================================
+    // ============================================================
+    // ACTION: analyze_async (tab-safe background analysis)
+    //
+    // Returns 202 immediately, then runs the existing "analyze" pipeline
+    // in the background using EdgeRuntime.waitUntil. The browser stops
+    // awaiting the slow Gemini/Claude work — it only polls the
+    // scan_sessions + analyses tables for status updates. This survives
+    // tab switches, network drops, and browser fetch throttling.
+    //
+    // Required body fields (same as "analyze" plus):
+    //   scan_session_id  – row in scan_sessions to flip to complete/failed
+    //   analysis_id      – row in analyses to write final results into
+    // ============================================================
+    if (action === "analyze_async") {
+      const scanSessionId: string | null = body.scan_session_id ?? null;
+      const analysisId: string | null = body.analysis_id ?? null;
+      if (!scanSessionId || !analysisId) {
+        return new Response(
+          JSON.stringify({ error: "scan_session_id and analysis_id are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Cheap synchronous pre-checks. We mirror the gate-keeping that the
+      // sync "analyze" action does so the user gets immediate feedback
+      // for limit/credit errors instead of polling and timing out.
+      if (userPlan === "try_pro" && deepScanCredits <= 0) {
+        return new Response(
+          JSON.stringify({ error: "No deep scan credits remaining", code: "no_credits" }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (userPlan === "free") {
+        const now = new Date();
+        const day = now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - ((day + 6) % 7));
+        monday.setHours(0, 0, 0, 0);
+        const mondayStr = monday.toISOString().split("T")[0];
+        const { data: weekUsage } = await serviceClient
+          .from("scan_usage")
+          .select("scan_count")
+          .eq("user_id", user.id)
+          .eq("week_start", mondayStr);
+        const weekTotal = (weekUsage || []).reduce((s: number, l: any) => s + (l.scan_count || 0), 0);
+        if (weekTotal >= PLAN_LIMITS.free.weeklyScans) {
+          return new Response(
+            JSON.stringify({ error: "You've used your 3 free scans this week. Try Pro for $8.99 to run a Deep Scan now, or wait until Monday.", code: "WEEKLY_LIMIT" }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
+
+      // Mark the scan as analyzing right away so the dashboard / poller
+      // sees it as in-progress even before the background task spins up.
+      await serviceClient.from("scan_sessions").update({ status: "analyzing" }).eq("id", scanSessionId);
+      await serviceClient.from("analyses").update({ status: "analyzing" }).eq("id", analysisId);
+
+      // Build a request that re-invokes this same function with the
+      // synchronous "analyze" action. We forward the user's JWT so all
+      // RLS-scoped reads (apps, profiles) keep working as the right user.
+      const fnUrl = `${supabaseUrl}/functions/v1/analyze`;
+      const forwardedAuth = authHeader;
+      const innerBody = { ...body, action: "analyze" };
+
+      const backgroundJob = (async () => {
+        try {
+          const res = await fetch(fnUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": forwardedAuth,
+              "apikey": supabaseAnonKey,
+            },
+            body: JSON.stringify(innerBody),
+          });
+          const text = await res.text();
+          let data: any = null;
+          try { data = JSON.parse(text); } catch { /* non-JSON */ }
+
+          if (!res.ok || !data || data.error) {
+            const errMsg = data?.error || `Background analyze failed (${res.status})`;
+            await serviceClient.from("scan_sessions").update({
+              status: "failed",
+            }).eq("id", scanSessionId);
+            await serviceClient.from("analyses").update({
+              status: "failed",
+              summary: errMsg.slice(0, 500),
+            }).eq("id", analysisId);
+            return;
+          }
+
+          // Persist the result into the analyses row (mirrors what the
+          // client used to do after awaiting the response).
+          const durationSeconds = (() => {
+            // Best-effort: scan_sessions.created_at gives us a reliable wall-clock start.
+            return null; // client will compute and update on transition; safe to leave null here.
+          })();
+
+          await serviceClient.from("analyses").update({
+            user_answers: body.user_answers ?? null,
+            gaps: data.gaps ?? [],
+            unknown_features: data.unknown_features ?? [],
+            security_issues: data.security_issues ?? [],
+            what_works: data.what_works ?? [],
+            intent_match_score: typeof data.intent_match_score === "number" ? data.intent_match_score : null,
+            summary: data.summary ?? null,
+            legal_findings: data.legal_findings ?? [],
+            landing_page_promises: data.landing_page_promises ?? [],
+            homepage_signals: data.homepage_signals ?? null,
+            security_score: typeof data.security_score === "number" ? data.security_score : null,
+            scan_type: body.scan_type === "deep" ? "deep" : "quick",
+            scan_duration_seconds: durationSeconds,
+            status: "review_pending",
+          }).eq("id", analysisId);
+
+          await serviceClient.from("scan_sessions").update({
+            status: "complete",
+            report_id: analysisId,
+          }).eq("id", scanSessionId);
+        } catch (err) {
+          const msg = (err as any)?.message || "Unknown error in background analyze";
+          try {
+            await serviceClient.from("scan_sessions").update({ status: "failed" }).eq("id", scanSessionId);
+            await serviceClient.from("analyses").update({
+              status: "failed",
+              summary: msg.slice(0, 500),
+            }).eq("id", analysisId);
+          } catch { /* swallow */ }
+        }
+      })();
+
+      // Keep the function alive until the background task finishes,
+      // even though we already returned the response.
+      // @ts-ignore — EdgeRuntime is a Deno Deploy global, not in the Deno types.
+      if (typeof EdgeRuntime !== "undefined" && typeof (EdgeRuntime as any).waitUntil === "function") {
+        // @ts-ignore
+        (EdgeRuntime as any).waitUntil(backgroundJob);
+      } else {
+        // Local dev fallback: just let it run unawaited.
+        backgroundJob.catch(() => {});
+      }
+
+      return new Response(
+        JSON.stringify({
+          background: true,
+          scan_session_id: scanSessionId,
+          analysis_id: analysisId,
+          message: "Analysis started in background. Poll scan_sessions for status.",
+        }),
+        { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     if (action === "analyze") {
+      // Note: this remains the synchronous path so older clients keep working.
+      // New clients should call action: "analyze_async" (defined just above
+      // the main handler return) which returns 202 immediately and runs this
+      // same pipeline in the background via EdgeRuntime.waitUntil.
       // Check deep_scan_credits for try_pro before calling Claude
       if (userPlan === "try_pro" && deepScanCredits <= 0) {
         return new Response(

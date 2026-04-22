@@ -50,23 +50,75 @@ serve(async (req) => {
 
     const reportUrl = `https://rismon.ai/report/${report_id}`;
     const safeApp = String(app_name || "your app").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" } as any)[c]);
-    const scoreRow = (score !== undefined && score !== null)
-      ? `<div style="margin:0 0 24px;padding:18px 22px;background:${BRAND.cardInner};border:1px solid ${BRAND.border};border-radius:10px;">
-           <p style="margin:0 0 4px;font-family:${BRAND.font};font-size:12px;color:${BRAND.textMuted};letter-spacing:0.5px;text-transform:uppercase;">Intent match score</p>
-           <p style="margin:0;font-family:${BRAND.font};font-size:36px;font-weight:700;color:${BRAND.accent};line-height:1;">${score}<span style="font-size:18px;color:${BRAND.textMuted};">/100</span></p>
-         </div>`
+
+    // Score band: tonal accent strip based on the number.
+    const numericScore = (typeof score === "number") ? score : (score ? Number(score) : null);
+    const scoreLabel = numericScore === null
+      ? ""
+      : numericScore >= 85 ? "Strong" : numericScore >= 70 ? "Solid" : numericScore >= 50 ? "Needs work" : "Critical gaps";
+
+    const scoreBlock = (numericScore !== null && !Number.isNaN(numericScore))
+      ? `
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;background:linear-gradient(180deg,${BRAND.cardInner} 0%,${BRAND.card} 100%);border:1px solid ${BRAND.borderSubtle};border-radius:14px;">
+          <tr><td style="padding:26px 28px;">
+            <p style="margin:0 0 10px;font-family:${BRAND.font};font-size:10px;font-weight:600;color:${BRAND.textMuted};letter-spacing:1.4px;text-transform:uppercase;">Intent match score</p>
+            <table cellpadding="0" cellspacing="0"><tr>
+              <td valign="bottom" style="font-family:${BRAND.font};font-size:56px;font-weight:700;color:${BRAND.accent};line-height:0.95;letter-spacing:-0.04em;">${numericScore}</td>
+              <td valign="bottom" style="padding:0 0 8px 6px;font-family:${BRAND.font};font-size:18px;font-weight:500;color:${BRAND.textDim};line-height:1;">/100</td>
+              <td valign="bottom" style="padding:0 0 10px 16px;font-family:${BRAND.font};font-size:12px;font-weight:600;color:${BRAND.text};letter-spacing:0.4px;text-transform:uppercase;">
+                <span style="display:inline-block;padding:5px 10px;border:1px solid ${BRAND.borderSubtle};border-radius:999px;background:${BRAND.bg};">${scoreLabel}</span>
+              </td>
+            </tr></table>
+          </td></tr>
+        </table>`
       : "";
+
     const body = `
-      <tr><td style="padding:36px 40px;">
-        <h2 style="margin:0 0 18px;font-family:${BRAND.font};font-size:24px;font-weight:700;color:${BRAND.text};line-height:1.3;">Your scan is ready.</h2>
-        <p style="margin:0 0 22px;font-family:${BRAND.font};font-size:15px;line-height:1.7;color:${BRAND.textMuted};">
-          We finished analyzing <strong style="color:${BRAND.text};">${safeApp}</strong>. Your founder-friendly report is waiting — open it to see what was built, what works, and the gaps to close before users find them.
+      <tr><td style="padding:44px 44px 8px;">
+        <p style="margin:0 0 14px;font-family:${BRAND.font};font-size:11px;font-weight:600;color:${BRAND.accent};letter-spacing:1.6px;text-transform:uppercase;">Scan complete</p>
+        <h1 style="margin:0 0 14px;font-family:${BRAND.font};font-size:30px;font-weight:700;color:${BRAND.text};line-height:1.18;letter-spacing:-0.02em;">
+          Your report for <span style="color:${BRAND.accent};">${safeApp}</span> is ready.
+        </h1>
+        <p style="margin:0 0 30px;font-family:${BRAND.font};font-size:15px;line-height:1.7;color:${BRAND.textMuted};">
+          Two models reviewed your code — independently — and we kept only the findings they agreed on. No noise, no false alarms, no jargon.
         </p>
-        ${scoreRow}
-        ${ctaButton("View my report →", reportUrl)}
-        <p style="margin:22px 0 0;font-family:${BRAND.font};font-size:12px;line-height:1.6;color:${BRAND.textDim};">
-          AI-assisted review (Claude + Gemini cross-check), not a guaranteed audit. Verify findings before deploying.
+
+        ${scoreBlock}
+
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+          <tr>
+            <td width="33%" valign="top" style="padding:14px 14px 14px 0;border-top:1px solid ${BRAND.border};">
+              <p style="margin:0 0 6px;font-family:${BRAND.font};font-size:11px;font-weight:600;color:${BRAND.textDim};letter-spacing:1px;text-transform:uppercase;">Built</p>
+              <p style="margin:0;font-family:${BRAND.font};font-size:14px;color:${BRAND.text};line-height:1.4;">What's actually in your code</p>
+            </td>
+            <td width="33%" valign="top" style="padding:14px;border-top:1px solid ${BRAND.border};">
+              <p style="margin:0 0 6px;font-family:${BRAND.font};font-size:11px;font-weight:600;color:${BRAND.textDim};letter-spacing:1px;text-transform:uppercase;">Working</p>
+              <p style="margin:0;font-family:${BRAND.font};font-size:14px;color:${BRAND.text};line-height:1.4;">Verified end-to-end</p>
+            </td>
+            <td width="34%" valign="top" style="padding:14px 0 14px 14px;border-top:1px solid ${BRAND.border};">
+              <p style="margin:0 0 6px;font-family:${BRAND.font};font-size:11px;font-weight:600;color:${BRAND.textDim};letter-spacing:1px;text-transform:uppercase;">Gaps</p>
+              <p style="margin:0;font-family:${BRAND.font};font-size:14px;color:${BRAND.text};line-height:1.4;">Fix before users find them</p>
+            </td>
+          </tr>
+        </table>
+
+        ${ctaButton("Open my report  →", reportUrl)}
+
+        <p style="margin:28px 0 0;font-family:${BRAND.font};font-size:13px;line-height:1.7;color:${BRAND.textMuted};text-align:center;">
+          Or paste this link into your browser:<br/>
+          <a href="${reportUrl}" style="color:${BRAND.accent};text-decoration:none;word-break:break-all;">${reportUrl}</a>
         </p>
+      </td></tr>
+
+      <tr><td style="padding:32px 44px 36px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.cardInner};border:1px solid ${BRAND.border};border-radius:12px;">
+          <tr><td style="padding:18px 22px;">
+            <p style="margin:0 0 4px;font-family:${BRAND.font};font-size:12px;font-weight:600;color:${BRAND.text};">A quiet note on accuracy.</p>
+            <p style="margin:0;font-family:${BRAND.font};font-size:12px;line-height:1.65;color:${BRAND.textDim};">
+              Rismon is an AI-assisted review (Claude + Gemini cross-check), not a certified audit. Verify the high-impact findings before shipping changes — and reply to this email if anything looks off. We read every message.
+            </p>
+          </td></tr>
+        </table>
       </td></tr>`;
     const html = emailShell(body);
 
