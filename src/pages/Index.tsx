@@ -427,6 +427,9 @@ export default function Index() {
             <p className="mb-4">But most founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
             <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong, with proof. We give you the fix. Every time.</p>
           </div>
+          <Link to="/about" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 32, color: '#f97316', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            Read our story →
+          </Link>
         </div>
       </section>
 
