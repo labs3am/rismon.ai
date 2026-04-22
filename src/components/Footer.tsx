@@ -91,6 +91,7 @@ export default function Footer() {
           <div className="md:col-span-3">
             <h3 className={headingCls}>Legal</h3>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
+              <li><Link to="/security" className={linkCls}>Security</Link></li>
               <li><Link to="/privacy" className={linkCls}>Privacy Policy</Link></li>
               <li><Link to="/terms" className={linkCls}>Terms of Service</Link></li>
             </ul>
