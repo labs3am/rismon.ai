@@ -28,6 +28,7 @@ const Pricing = lazy(() => import("./pages/Pricing"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminBroadcast = lazy(() => import("./pages/AdminBroadcast"));
 const Changelog = lazy(() => import("./pages/Changelog"));
 const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
               <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
               <Route path="/admin/reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
+              <Route path="/admin/broadcast" element={<ProtectedRoute><AdminBroadcast /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
