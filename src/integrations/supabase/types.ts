@@ -18,17 +18,14 @@ export type Database = {
         Row: {
           function_url: string
           id: number
-          service_role_key: string
         }
         Insert: {
           function_url: string
           id?: number
-          service_role_key: string
         }
         Update: {
           function_url?: string
           id?: number
-          service_role_key?: string
         }
         Relationships: []
       }
