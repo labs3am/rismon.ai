@@ -27,6 +27,7 @@ const AdminBlog = lazy(() => import("./pages/AdminBlog"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const Contact = lazy(() => import("./pages/Contact"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
               <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
               <Route path="/admin/reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
               <Route path="/analyze/:appId" element={<ProtectedRoute><Analyze /></ProtectedRoute>} />

@@ -586,6 +586,7 @@ export type Database = {
           scan_count: number
         }[]
       }
+      admin_notify_key_set: { Args: never; Returns: boolean }
       admin_recent_scans: {
         Args: { _limit?: number }
         Returns: {
