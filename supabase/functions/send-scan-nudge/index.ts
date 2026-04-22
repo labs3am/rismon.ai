@@ -106,7 +106,17 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Email not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { mode, dryRun } = await req.json().catch(() => ({ mode: "test" }));
+    const { mode, dryRun, inactiveDays: rawInactiveDays } = await req.json().catch(() => ({ mode: "test" }));
+
+    // Validate inactiveDays: integer 1..730. Default 14.
+    let inactiveDays = 14;
+    if (rawInactiveDays !== undefined && rawInactiveDays !== null) {
+      const n = Number(rawInactiveDays);
+      if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 730) {
+        return new Response(JSON.stringify({ error: "inactiveDays must be an integer between 1 and 730" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      inactiveDays = n;
+    }
 
     // Service-role client for cross-user reads/writes
     const admin = createClient(supabaseUrl, serviceKey);
@@ -149,8 +159,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Invalid mode" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Find candidates: profile created 14+ days ago, with no analyses, with email
-    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    // Find candidates: profile created `inactiveDays`+ days ago, with no analyses, with email
+    const cutoff = new Date(Date.now() - inactiveDays * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: profiles, error: profErr } = await admin
       .from("profiles")
@@ -183,7 +193,7 @@ Deno.serve(async (req) => {
     }
 
     if (dryRun) {
-      return new Response(JSON.stringify({ ok: true, dryRun: true, eligibleCount: eligible.length, sample: eligible.slice(0, 5).map((e) => e.email) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ ok: true, dryRun: true, inactiveDays, eligibleCount: eligible.length, sample: eligible.slice(0, 5).map((e) => e.email) }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let sent = 0;
@@ -208,7 +218,7 @@ Deno.serve(async (req) => {
       await new Promise((res) => setTimeout(res, 250));
     }
 
-    return new Response(JSON.stringify({ ok: true, eligibleCount: eligible.length, sent, failed, errors }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, inactiveDays, eligibleCount: eligible.length, sent, failed, errors }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     console.error("send-scan-nudge error", e?.message || e);
     return new Response(JSON.stringify({ error: String(e?.message || e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
