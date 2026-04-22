@@ -12,13 +12,24 @@ import {
   ArrowLeft,
   KeyRound,
   Mail,
+  UserX,
+  GitBranch,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-type Tab = "overview" | "users" | "scans" | "tools";
+type Tab = "overview" | "users" | "scans" | "inactive" | "no-github" | "tools";
 
 interface UserRow {
   id: string;
@@ -58,6 +69,36 @@ interface TopScanner {
   email: string | null;
   full_name: string | null;
   scan_count: number;
+  last_scan_at: string | null;
+}
+
+interface InactiveUser {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  app_count: number;
+}
+
+interface NoGithubUser {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  created_at: string;
+  app_count: number;
+  scan_count: number;
+}
+
+interface TimeseriesPoint {
+  day: string;
+  signups: number;
+  scans: number;
+}
+
+interface PlanRow {
+  plan: string;
+  user_count: number;
 }
 
 function formatDate(s: string | null) {
@@ -190,6 +231,10 @@ export default function AdminDashboard() {
   const [scans, setScans] = useState<ScanRow[]>([]);
   const [topScanners, setTopScanners] = useState<TopScanner[]>([]);
   const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
+  const [inactive, setInactive] = useState<InactiveUser[]>([]);
+  const [noGithub, setNoGithub] = useState<NoGithubUser[]>([]);
+  const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([]);
+  const [planDist, setPlanDist] = useState<PlanRow[]>([]);
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -221,23 +266,34 @@ export default function AdminDashboard() {
   // Load all data
   const loadAll = async () => {
     setLoading(true);
-    const [statsRes, usersRes, scansRes, topRes, keyRes] = await Promise.all([
+    const [statsRes, usersRes, scansRes, topRes, inactiveRes, noGhRes, tsRes, planRes] = await Promise.all([
       supabase.rpc("admin_user_stats" as any),
       supabase.rpc("admin_list_users" as any),
       supabase.rpc("admin_recent_scans" as any, { _limit: 50 } as any),
       supabase.rpc("admin_top_scanners" as any, { _limit: 10 } as any),
-      // probe whether the notify key is set by checking if a test call would work
-      // we just check by calling our settings via a side-channel: look at the signups trigger having any past success.
-      // Simpler: ask the user — but we'll auto-detect by attempting a no-op rpc.
-      Promise.resolve({ data: null, error: null }),
+      supabase.rpc("admin_inactive_users" as any, { _limit: 100 } as any),
+      supabase.rpc("admin_users_without_github" as any, { _limit: 100 } as any),
+      supabase.rpc("admin_activity_timeseries" as any, { _days: 30 } as any),
+      supabase.rpc("admin_plan_distribution" as any),
     ]);
     if (statsRes.data) setStats((statsRes.data as Stats[])[0] ?? null);
     if (usersRes.data) setUsers(usersRes.data as UserRow[]);
     if (scansRes.data) setScans(scansRes.data as ScanRow[]);
     if (topRes.data) setTopScanners(topRes.data as TopScanner[]);
+    if (inactiveRes.data) setInactive(inactiveRes.data as InactiveUser[]);
+    if (noGhRes.data) setNoGithub(noGhRes.data as NoGithubUser[]);
+    if (tsRes.data) {
+      setTimeseries(
+        (tsRes.data as { day: string; signups: number; scans: number }[]).map((r) => ({
+          day: new Date(r.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          signups: Number(r.signups),
+          scans: Number(r.scans),
+        }))
+      );
+    }
+    if (planRes.data) setPlanDist(planRes.data as PlanRow[]);
     setLoading(false);
 
-    // Key configured check via dedicated rpc — we use a tiny one
     const { data: keyData } = await supabase.rpc("admin_notify_key_set" as any);
     setKeyConfigured(keyData === true);
   };
@@ -320,6 +376,8 @@ export default function AdminDashboard() {
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
             ["scans", "Scans", FileText],
+            ["inactive", `Inactive (${inactive.length})`, UserX],
+            ["no-github", `No GitHub (${noGithub.length})`, GitBranch],
             ["tools", "Tools", Inbox],
           ] as const).map(([key, label, Icon]) => (
             <button
@@ -358,6 +416,86 @@ export default function AdminDashboard() {
               <StatCard label="Waitlist" value={stats.waitlist_count} />
             </div>
 
+            {/* Activity chart */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <h3 className="text-foreground font-semibold text-sm">Activity — last 30 days</h3>
+                  <p className="text-subtle text-xs mt-1">Daily signups and scans.</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-primary" /> Signups
+                  </span>
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="w-2.5 h-2.5 rounded-full bg-success" /> Scans
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeseries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gSignups" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gScans" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Area type="monotone" dataKey="signups" stroke="hsl(var(--primary))" fill="url(#gSignups)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="scans" stroke="hsl(var(--success))" fill="url(#gScans)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Plan distribution */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h3 className="text-foreground font-semibold text-sm">Plan distribution</h3>
+              <p className="text-subtle text-xs mt-1">How users are split across plans.</p>
+              <div className="mt-4 space-y-3">
+                {planDist.length === 0 ? (
+                  <div className="text-muted-foreground text-sm">No data.</div>
+                ) : (
+                  planDist.map((p) => {
+                    const total = planDist.reduce((s, r) => s + Number(r.user_count), 0) || 1;
+                    const pct = (Number(p.user_count) / total) * 100;
+                    const isPro = p.plan === "pro";
+                    return (
+                      <div key={p.plan}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="capitalize text-foreground font-medium">{p.plan}</span>
+                          <span className="text-muted-foreground tabular-nums">
+                            {p.user_count} <span className="text-subtle">({pct.toFixed(0)}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={isPro ? "h-full bg-amber-500" : "h-full bg-primary"}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             <div className="grid lg:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
                 <h3 className="text-foreground font-semibold text-sm">Top scanners</h3>
@@ -372,7 +510,9 @@ export default function AdminDashboard() {
                           <span className="text-subtle text-xs w-5 tabular-nums">{i + 1}</span>
                           <div className="min-w-0">
                             <div className="text-foreground text-sm truncate">{u.email || "(no email)"}</div>
-                            {u.full_name && <div className="text-subtle text-xs truncate">{u.full_name}</div>}
+                            <div className="text-subtle text-xs truncate">
+                              Last scan: {formatDate(u.last_scan_at)}
+                            </div>
                           </div>
                         </div>
                         <div className="text-foreground text-sm tabular-nums font-medium">{u.scan_count}</div>
@@ -518,6 +658,90 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* INACTIVE USERS */}
+        {!loading && tab === "inactive" && (
+          <div className="mt-6 space-y-4">
+            <p className="text-subtle text-xs">
+              Users who signed up but never ran a single scan. Good candidates for activation outreach.
+            </p>
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30">
+                  <tr className="text-left text-muted-foreground text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium">User</th>
+                    <th className="px-4 py-3 font-medium text-right">Apps</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                    <th className="px-4 py-3 font-medium">Last sign-in</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inactive.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                        Everyone has scanned at least once 🎉
+                      </td>
+                    </tr>
+                  ) : (
+                    inactive.map((u) => (
+                      <tr key={u.id} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="text-foreground font-medium">{u.email || "(no email)"}</div>
+                          <div className="text-subtle text-xs">{u.full_name || "—"}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.app_count}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.last_sign_in_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* USERS WITHOUT GITHUB */}
+        {!loading && tab === "no-github" && (
+          <div className="mt-6 space-y-4">
+            <p className="text-subtle text-xs">
+              Users who haven't connected a GitHub repo to any of their apps yet.
+            </p>
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/30">
+                  <tr className="text-left text-muted-foreground text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium">User</th>
+                    <th className="px-4 py-3 font-medium text-right">Apps</th>
+                    <th className="px-4 py-3 font-medium text-right">Scans</th>
+                    <th className="px-4 py-3 font-medium">Joined</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {noGithub.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-12 text-center text-muted-foreground">
+                        Everyone has connected GitHub 🎉
+                      </td>
+                    </tr>
+                  ) : (
+                    noGithub.map((u) => (
+                      <tr key={u.id} className="border-t border-border hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="text-foreground font-medium">{u.email || "(no email)"}</div>
+                          <div className="text-subtle text-xs">{u.full_name || "—"}</div>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.app_count}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{u.scan_count}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* TOOLS */}
         {!loading && tab === "tools" && (
           <div className="mt-6 grid sm:grid-cols-2 gap-4">
@@ -549,7 +773,8 @@ export default function AdminDashboard() {
               <Mail className="text-primary" size={20} />
               <h3 className="text-foreground font-semibold mt-3">Email notifications</h3>
               <p className="text-muted-foreground text-sm mt-1">
-                You'll receive emails at <span className="text-foreground font-medium">hello@rismon.ai</span> when a new user signs up
+                Sent directly via <span className="text-foreground font-medium">Resend</span> to{" "}
+                <span className="text-foreground font-medium">hello@rismon.ai</span> when a new user signs up
                 or completes their first scan.
               </p>
               <div className="mt-3">
