@@ -607,6 +607,7 @@ export type Database = {
           id: string
         }[]
       }
+      admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
       admin_top_scanners: {
         Args: { _limit?: number }
         Returns: {
