@@ -154,7 +154,7 @@ export default function Navbar() {
                 >
                   <ProductMenuItem label="How it works" desc="The 3-step scan flow" onClick={() => goToSection('how-it-works')} />
                   <ProductMenuItem label="What we find" desc="Security, intent & legal checks" onClick={() => goToSection('what-we-check')} />
-                  <ProductMenuItem label="Security" desc="How we handle your code" onClick={() => goToSection('security-privacy')} />
+                  <ProductMenuItem label="Security" desc="How we handle your code" onClick={() => { setProductOpen(false); navigate('/security'); }} />
                 </div>
               )}
             </div>
@@ -237,7 +237,7 @@ export default function Navbar() {
         <div className="md:hidden flex flex-col gap-2" style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
           <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>How it works</button>
           <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>What we find</button>
-          <button onClick={() => goToSection('security-privacy')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Security</button>
+          <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }}>Security</Link>
           <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Pricing</button>
           <Link to="/blog" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Blog</Link>
           <Link to="/contact" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Contact</Link>
