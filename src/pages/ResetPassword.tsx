@@ -11,9 +11,20 @@ export default function ResetPassword() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Surface errors Supabase returns in the URL hash (expired/invalid link).
+    const rawHash = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    const hashParams = new URLSearchParams(rawHash);
+    const errDesc = hashParams.get('error_description') || hashParams.get('error');
+    if (errDesc) {
+      setErrorMsg(decodeURIComponent(errDesc.replace(/\+/g, ' ')));
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
@@ -28,10 +39,22 @@ export default function ResetPassword() {
     if (password !== confirmPassword) { toast.error('Passwords do not match'); return; }
     if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setLoading(false);
+      toast.error('Reset link expired or invalid. Please request a new one.');
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) toast.error(error.message || 'Failed to update password');
-    else { toast.success('Password updated successfully'); navigate('/dashboard'); }
+    if (error) {
+      toast.error(error.message || 'Failed to update password');
+    } else {
+      // Sign out so the user must log in with the new password (clearer UX).
+      await supabase.auth.signOut();
+      toast.success('Password updated. Please log in with your new password.');
+      navigate('/login');
+    }
   };
 
   return (
@@ -41,9 +64,11 @@ export default function ResetPassword() {
         <div className="auth-glass-card">
           <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Set new password</h1>
           <p style={{ color: '#888888', fontSize: 14, marginTop: 6, marginBottom: 32 }}>
-            {ready ? 'Choose a new password for your account.' : 'Verifying your reset link...'}
+            {errorMsg ? errorMsg : ready ? 'Choose a new password for your account.' : 'Verifying your reset link...'}
           </p>
-          {ready ? (
+          {errorMsg ? (
+            <button onClick={() => navigate('/login')} className="btn-cyber-primary w-full">Back to login</button>
+          ) : ready ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>New password</label>

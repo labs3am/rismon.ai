@@ -129,7 +129,7 @@ const freeFeatures = ['1 app', '3 scans per week', 'Founder-friendly report', 'B
 const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Two AI models verify findings', 'Investor-ready PDF report', 'Priority queue', 'Priority support'];
 const proFeatures = ['Everything in Try Pro', 'Unlimited apps', '25 deep scans per month', 'Scan on every new commit', 'CVE alerts', 'Email + WhatsApp alerts', 'Score history', 'Priority support'];
 
-const SECTION = 'py-[120px] px-6';
+const SECTION = 'py-16 sm:py-20 md:py-[100px] lg:py-[120px] px-5 sm:px-6';
 const CONTAINER = 'max-w-[1100px] mx-auto';
 const LABEL = 'vercel-label';
 const HEADLINE = 'vercel-headline';
@@ -149,16 +149,21 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-center" style={{ padding: '80px 24px 120px', background: '#000000' }}>
+      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
           <p className="vercel-hero-sub">
             Most AI-built apps ship with gaps the founder never knew about.
             <br />
-            Rismon.ai finds them before your users do.
+            Rismon.ai reads your code, checks it against your intent — and catches the security leaks your AI left behind.
           </p>
-          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '32px' }}>Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span></p>
+          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '8px' }}>
+            Not a dev tool. Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span> who build with AI.
+          </p>
+          <p style={{ fontSize: '12px', color: '#666666', marginBottom: '32px', letterSpacing: '0.02em' }}>
+            Intent gaps · Broken promises · Security leaks — explained in plain English.
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
@@ -347,6 +352,60 @@ export default function Index() {
                 <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{item.text}</p>
               </div>
             ))}
+          </div>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-10">
+            <Link
+              to="/security"
+              className="inline-flex items-center gap-2"
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#ffffff',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #ffffff20',
+                background: 'rgba(255,255,255,0.03)',
+                transition: 'background 0.15s ease, border-color 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                e.currentTarget.style.borderColor = '#ffffff33';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                e.currentTarget.style.borderColor = '#ffffff20';
+              }}
+            >
+              Learn more about our security
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              to="/open-source"
+              className="inline-flex items-center gap-2"
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#888888',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid transparent',
+                background: 'transparent',
+                transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = '#ffffff20';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              We're open source
+              <span aria-hidden>→</span>
+            </Link>
           </div>
         </div>
       </section>

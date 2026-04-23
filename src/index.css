@@ -300,7 +300,7 @@
   background: #0a0a0a;
   border: 1px solid #ffffff0f;
   border-radius: 12px;
-  padding: 28px;
+  padding: 20px;
   transition: border-color 0.2s ease;
 }
 .vercel-card:hover { border-color: #ffffff20; }
@@ -332,7 +332,7 @@
   background: #000000;
   border: 1px solid #ffffff0f;
   border-radius: 12px;
-  padding: 32px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
 }
@@ -371,3 +371,38 @@
   padding: 0 !important;
   margin: 0 !important;
 }
+
+/* ============ Responsive helpers ============ */
+@media (min-width: 640px) {
+  .vercel-card { padding: 28px; }
+  .vercel-pricing-card { padding: 32px; }
+}
+
+/* Tighten hero copy on small phones so it never feels cramped */
+@media (max-width: 480px) {
+  .vercel-hero-h1 { font-size: 36px; line-height: 1.12; margin-bottom: 18px; }
+  .vercel-hero-sub { font-size: 16px; margin-bottom: 28px; }
+  .vercel-pill { padding: 5px 14px; font-size: 11.5px; margin-bottom: 18px; }
+  .vercel-headline { font-size: 26px; }
+}
+
+/* Make CTAs full-width on small phones for easy tapping */
+@media (max-width: 480px) {
+  .vercel-btn-primary,
+  .vercel-btn-secondary,
+  .btn-cyber-primary,
+  .btn-cyber-secondary,
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    padding: 12px 20px;
+    font-size: 14.5px;
+  }
+}
+
+/* Auth card breathes on phones */
+@media (max-width: 480px) {
+  .auth-glass-card { padding: 24px; border-radius: 14px; }
+}
+
+/* Avoid horizontal scroll caused by long words / inline code */
+html, body { overflow-x: hidden; }
