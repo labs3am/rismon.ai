@@ -129,7 +129,7 @@ const freeFeatures = ['1 app', '3 scans per week', 'Founder-friendly report', 'B
 const tryProFeatures = ['Everything in Free', 'One Deep Scan (frontend + backend)', 'Two AI models verify findings', 'Investor-ready PDF report', 'Priority queue', 'Priority support'];
 const proFeatures = ['Everything in Try Pro', 'Unlimited apps', '25 deep scans per month', 'Scan on every new commit', 'CVE alerts', 'Email + WhatsApp alerts', 'Score history', 'Priority support'];
 
-const SECTION = 'py-[120px] px-6';
+const SECTION = 'py-16 sm:py-20 md:py-[100px] lg:py-[120px] px-5 sm:px-6';
 const CONTAINER = 'max-w-[1100px] mx-auto';
 const LABEL = 'vercel-label';
 const HEADLINE = 'vercel-headline';
@@ -149,7 +149,7 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-center" style={{ padding: '80px 24px 120px', background: '#000000' }}>
+      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
