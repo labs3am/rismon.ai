@@ -235,8 +235,8 @@ export default function Dashboard() {
       )}
 
       <div className="max-w-[1100px] mx-auto pt-20 sm:pt-24 pb-16 px-4 sm:px-6 md:px-12">
-        <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
-        <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+        <h1 className="text-[24px] sm:text-[28px]" style={{ color: '#ffffff', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>{getGreeting()}</h1>
+        <p className="text-[14px] sm:text-[15px]" style={{ color: '#555555', marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {activeScan && (
           <div
@@ -436,9 +436,9 @@ export default function Dashboard() {
             { v: stats.totalGaps, l: 'Total gaps found' },
             { v: stats.totalSecurity, l: 'Security issues found' },
           ].map((s, i) => (
-            <div key={i} style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: 24 }}>
-              <p style={{ color: '#ffffff', fontSize: 40, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
-              <p style={{ color: '#555555', fontSize: 13, marginTop: 8 }}>{s.l}</p>
+            <div key={i} className="p-4 sm:p-6" style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8 }}>
+              <p className="text-[28px] sm:text-[40px]" style={{ color: '#ffffff', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
+              <p className="text-[12px] sm:text-[13px]" style={{ color: '#555555', marginTop: 8 }}>{s.l}</p>
             </div>
           ))}
         </div>
@@ -470,8 +470,8 @@ export default function Dashboard() {
               {apps.map(app => {
                 const isPro = (profile?.plan || 'free').toLowerCase() === 'pro';
                 return (
-                  <div key={app.id} style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: '20px 24px' }}>
-                    <div className="flex items-start justify-between gap-6 flex-wrap">
+                  <div key={app.id} className="p-4 sm:p-6" style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8 }}>
+                    <div className="flex items-start justify-between gap-4 sm:gap-6 flex-wrap">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           {app.github_repo_name && <Github size={15} style={{ color: '#ffffff' }} />}
@@ -503,17 +503,19 @@ export default function Dashboard() {
                         </div>
                       )}
 
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 w-full sm:w-auto">
                         <button
                           onClick={() => handleAnalyzeNow(app)}
-                          style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                          className="w-full sm:w-auto"
+                          style={{ background: '#ffffff', color: '#000000', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
                         >
                           Analyze now
                         </button>
                         {app.has_analyses && app.latest_analysis_id && (
                           <Link
                             to={`/report/${app.latest_analysis_id}`}
-                            style={{ border: '1px solid #333333', color: '#ffffff', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent', textAlign: 'center' }}
+                            className="w-full sm:w-auto"
+                            style={{ border: '1px solid #333333', color: '#ffffff', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent', textAlign: 'center' }}
                           >
                             View report
                           </Link>
