@@ -1087,6 +1087,8 @@ export default function Report() {
           .report-actions { flex-direction: column; align-items: stretch; }
           .report-actions a, .report-actions button { text-align: center; justify-content: center; }
           .quick-scan-banner { flex-direction: column; align-items: flex-start; }
+          .quick-scan-banner button,
+          .quick-scan-banner a { width: 100%; text-align: center; }
         }
       `}</style>
     </div>
