@@ -622,50 +622,7 @@ export default function Report() {
   }
 
   if (loading || generating) {
-    return (
-      <div className="min-h-screen bg-background">
-        <DashboardNavbar />
-        <div className="max-w-[520px] mx-auto px-5 pt-24 pb-16">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="relative flex h-2 w-2">
-              <span
-                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                style={{ background: '#22c55e' }}
-              />
-              <span
-                className="relative inline-flex rounded-full h-2 w-2"
-                style={{ background: '#22c55e' }}
-              />
-            </span>
-            <span
-              className="text-[12px] font-medium tracking-wide"
-              style={{ color: '#22c55e', letterSpacing: '0.05em' }}
-            >
-              {generating ? 'FINALIZING' : 'LOADING REPORT'}
-            </span>
-          </div>
-
-          <h2 className="text-foreground text-[24px] font-semibold text-center">
-            {generating ? 'Preparing your fix prompts' : 'Loading your report'}
-          </h2>
-          <p className="text-center mt-3 text-[14px] leading-relaxed" style={{ color: '#71717a' }}>
-            {generating
-              ? 'Crafting platform-specific fixes tailored to your code. This takes a few seconds.'
-              : 'Just a moment while we open your report.'}
-          </p>
-
-          <div
-            className="rounded-2xl p-6 mt-8 flex items-center justify-center"
-            style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', minHeight: 96 }}
-          >
-            <span
-              className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: '#818cf8', borderTopColor: 'transparent' }}
-            />
-          </div>
-        </div>
-      </div>
-    );
+    return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
   }
 
   if (!analysis) return null;
