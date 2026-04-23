@@ -4,6 +4,7 @@ import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import FindingReviewPills from '@/components/FindingReviewPills';
 import ReportFeedbackCard from '@/components/ReportFeedbackCard';
+import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
