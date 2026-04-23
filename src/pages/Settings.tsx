@@ -41,6 +41,18 @@ export default function Settings() {
   };
 
   const removeApp = async (id: string) => {
+    const app = apps.find(a => a.id === id);
+    // Cancel any in-flight scan sessions tied to this app's repo so the
+    // dashboard doesn't surface a stale "scan in progress" banner pointing
+    // at an app that no longer exists.
+    if (app?.github_owner && app?.github_repo_name && user) {
+      await supabase
+        .from('scan_sessions')
+        .update({ status: 'cancelled' })
+        .eq('user_id', user.id)
+        .eq('repo_name', `${app.github_owner}/${app.github_repo_name}`)
+        .in('status', ['pending', 'analyzing']);
+    }
     const { error: analysesError } = await supabase.from('analyses').delete().eq('app_id', id);
     if (analysesError) { toast.error('Failed to remove app. Please try again.'); return; }
     const { error: appError } = await supabase.from('apps').delete().eq('id', id);

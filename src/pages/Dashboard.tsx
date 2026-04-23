@@ -128,12 +128,23 @@ export default function Dashboard() {
           // Match the session's repo_name back to one of the user's apps so
           // we can deep-link the resume button to /analyze/:appId.
           const owned = appsList.find((a) => `${a.github_owner}/${a.github_repo_name}` === liveSession.repo_name);
-          setActiveScan({
-            sessionId: liveSession.id,
-            appId: owned?.id ?? null,
-            appName: owned?.app_name ?? liveSession.repo_name ?? 'your app',
-            startedAt,
-          });
+          if (!owned) {
+            // The app this scan was running against has been deleted.
+            // Cancel the orphaned session so we never surface a broken
+            // "resume" CTA that would just error out.
+            await supabase
+              .from('scan_sessions')
+              .update({ status: 'cancelled' })
+              .eq('id', liveSession.id);
+            setActiveScan(null);
+          } else {
+            setActiveScan({
+              sessionId: liveSession.id,
+              appId: owned.id,
+              appName: owned.app_name ?? liveSession.repo_name ?? 'your app',
+              startedAt,
+            });
+          }
         } else {
           setActiveScan(null);
         }
@@ -228,8 +239,7 @@ export default function Dashboard() {
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {activeScan && (
-          <button
-            onClick={() => activeScan.appId ? navigate(`/analyze/${activeScan.appId}`) : null}
+          <div
             style={{
               marginTop: 20,
               width: '100%',
@@ -242,7 +252,6 @@ export default function Dashboard() {
               background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
               border: '1px solid rgba(129,140,248,0.35)',
               color: '#ffffff',
-              cursor: activeScan.appId ? 'pointer' : 'default',
               textAlign: 'left',
             }}
           >
@@ -260,10 +269,47 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            {activeScan.appId && (
-              <span style={{ fontSize: 12, fontWeight: 500, color: '#818cf8', whiteSpace: 'nowrap' }}>Resume →</span>
-            )}
-          </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap' }}>
+              <button
+                onClick={async () => {
+                  await supabase
+                    .from('scan_sessions')
+                    .update({ status: 'cancelled' })
+                    .eq('id', activeScan.sessionId);
+                  setActiveScan(null);
+                }}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: '#a1a1aa',
+                  background: 'transparent',
+                  border: '1px solid #2a2a2a',
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel scan
+              </button>
+              {activeScan.appId && (
+                <button
+                  onClick={() => navigate(`/analyze/${activeScan.appId}`)}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#ffffff',
+                    background: 'rgba(129,140,248,0.18)',
+                    border: '1px solid rgba(129,140,248,0.5)',
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Resume →
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
         <WelcomeGuide />
