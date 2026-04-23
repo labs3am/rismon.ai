@@ -11,9 +11,20 @@ export default function ResetPassword() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Surface errors Supabase returns in the URL hash (expired/invalid link).
+    const rawHash = window.location.hash.startsWith('#')
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    const hashParams = new URLSearchParams(rawHash);
+    const errDesc = hashParams.get('error_description') || hashParams.get('error');
+    if (errDesc) {
+      setErrorMsg(decodeURIComponent(errDesc.replace(/\+/g, ' ')));
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
@@ -28,10 +39,22 @@ export default function ResetPassword() {
     if (password !== confirmPassword) { toast.error('Passwords do not match'); return; }
     if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setLoading(false);
+      toast.error('Reset link expired or invalid. Please request a new one.');
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
-    if (error) toast.error(error.message || 'Failed to update password');
-    else { toast.success('Password updated successfully'); navigate('/dashboard'); }
+    if (error) {
+      toast.error(error.message || 'Failed to update password');
+    } else {
+      // Sign out so the user must log in with the new password (clearer UX).
+      await supabase.auth.signOut();
+      toast.success('Password updated. Please log in with your new password.');
+      navigate('/login');
+    }
   };
 
   return (
