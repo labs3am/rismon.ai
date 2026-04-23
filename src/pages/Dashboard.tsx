@@ -234,20 +234,21 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="max-w-[1100px] mx-auto pt-24 pb-16" style={{ paddingLeft: 48, paddingRight: 48 }}>
+      <div className="max-w-[1100px] mx-auto pt-20 sm:pt-24 pb-16 px-4 sm:px-6 md:px-12">
         <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{getGreeting()}</h1>
         <p style={{ color: '#555555', fontSize: 15, marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
 
         {activeScan && (
           <div
+            className="flex-col sm:flex-row sm:items-center"
             style={{
               marginTop: 20,
               width: '100%',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'space-between',
               gap: 12,
-              padding: '14px 18px',
+              padding: '14px 16px',
               borderRadius: 12,
               background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
               border: '1px solid rgba(129,140,248,0.35)',
@@ -255,12 +256,12 @@ export default function Dashboard() {
               textAlign: 'left',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0, flex: 1 }}>
               <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10 }}>
                 <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
                 <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
               </span>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>
                   Scan in progress for {activeScan.appName}
                 </div>
@@ -269,7 +270,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap' }}>
+            <div className="self-stretch sm:self-auto" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <button
                 onClick={async () => {
                   await supabase
@@ -278,13 +279,14 @@ export default function Dashboard() {
                     .eq('id', activeScan.sessionId);
                   setActiveScan(null);
                 }}
+                className="flex-1 sm:flex-none"
                 style={{
                   fontSize: 12,
                   fontWeight: 500,
                   color: '#a1a1aa',
                   background: 'transparent',
                   border: '1px solid #2a2a2a',
-                  padding: '6px 12px',
+                  padding: '8px 14px',
                   borderRadius: 8,
                   cursor: 'pointer',
                 }}
@@ -294,13 +296,14 @@ export default function Dashboard() {
               {activeScan.appId && (
                 <button
                   onClick={() => navigate(`/analyze/${activeScan.appId}`)}
+                  className="flex-1 sm:flex-none"
                   style={{
                     fontSize: 12,
                     fontWeight: 600,
                     color: '#ffffff',
                     background: 'rgba(129,140,248,0.18)',
                     border: '1px solid rgba(129,140,248,0.5)',
-                    padding: '6px 12px',
+                    padding: '8px 14px',
                     borderRadius: 8,
                     cursor: 'pointer',
                   }}
