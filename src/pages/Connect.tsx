@@ -209,16 +209,16 @@ export default function Connect() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
-      <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
+      <div className="max-w-[640px] mx-auto px-4 sm:px-5 pt-20 sm:pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
-        <h1 className="text-foreground text-[28px] font-semibold">Connect an app</h1>
+        <h1 className="text-foreground text-[24px] sm:text-[28px] font-semibold">Connect an app</h1>
 
         <div className="mt-4">
           <RisGuide pageKey="connect" message={"Built with Lovable or Bolt?\nYou already have a GitHub repo — you just need to find it.\nOpen Lovable → click the GitHub icon top right → your repo is there.\nCome back and connect it here."} />
         </div>
 
         {/* Progress */}
-        <div className="flex items-center gap-2 mt-6">
+        <div className="flex items-center gap-2 mt-6 flex-wrap">
           {[1, 2, 3].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${step > s ? 'bg-primary text-primary-foreground' : step === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -227,16 +227,19 @@ export default function Connect() {
               {s < 3 && <div className={`w-8 h-px ${step > s ? 'bg-primary' : 'bg-border'}`} />}
             </div>
           ))}
-          <div className="flex gap-4 ml-4 text-xs text-muted-foreground">
+          <div className="hidden sm:flex gap-4 ml-4 text-xs text-muted-foreground">
             <span className={step >= 1 ? 'text-foreground' : ''}>Details</span>
             <span className={step >= 2 ? 'text-foreground' : ''}>GitHub</span>
             <span className={step >= 3 ? 'text-foreground' : ''}>Database</span>
           </div>
+          <span className="sm:hidden ml-2 text-xs text-foreground">
+            Step {step} of 3 · {step === 1 ? 'Details' : step === 2 ? 'GitHub' : 'Database'}
+          </span>
         </div>
 
         {/* Step 1 */}
         {step === 1 && (
-          <div className="bg-card border border-border rounded-2xl p-8 mt-8">
+          <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
             <h2 className="text-foreground text-lg font-semibold">About your app</h2>
             <div className="mt-6">
               <label className="text-foreground text-sm font-medium block mb-1.5">What is this app called?</label>
@@ -291,7 +294,7 @@ export default function Connect() {
 
         {/* Step 2 */}
         {step === 2 && (
-          <div className="bg-card border border-border rounded-2xl p-8 mt-8">
+          <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
             <h2 className="text-foreground text-lg font-semibold">Connect your GitHub</h2>
             <div className="rounded-xl p-4 mt-4" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.18)' }}>
               <div className="flex items-center gap-2"><ShieldCheck size={20} style={{ color: '#f97316' }} /><span className="text-foreground text-sm font-semibold">Read only. Always.</span></div>
@@ -423,7 +426,7 @@ export default function Connect() {
 
         {/* Step 3 */}
         {step === 3 && (
-          <div className="bg-card border border-border rounded-2xl p-8 mt-8">
+          <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
             <div className="flex items-center justify-between">
               <h2 className="text-foreground text-lg font-semibold">Connect your backend</h2>
               <span className="text-foreground text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full">STRONGLY RECOMMENDED</span>
