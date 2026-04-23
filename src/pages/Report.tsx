@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Check, ShieldAlert, FileText, AlertCircle, Lock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
-import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import FindingReviewPills from '@/components/FindingReviewPills';
 import ReportFeedbackCard from '@/components/ReportFeedbackCard';
 import { supabase } from '@/integrations/supabase/client';
