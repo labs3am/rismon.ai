@@ -798,9 +798,15 @@ export default function Analyze() {
     );
   }
 
-  // Loading screens with animated visuals
+  // Loading screens with animated visuals.
+  //
+  // We intentionally show the calmer "scan running, you can close this tab"
+  // UI for ANY analyzing state — whether it's a fresh scan we just kicked
+  // off or a session we resumed after a tab refocus. Previously this branch
+  // was gated on `resumingSession`, which caused the UI to flash back to
+  // the default Rismon AnalysisLoadingScreen at the tail end of a scan.
   if (stage === 'checking' || stage === 'reading' || stage === 'analyzing') {
-    if (resumingSession) {
+    if (resumingSession || stage === 'analyzing') {
       const mm = String(Math.floor(resumeElapsed / 60)).padStart(2, '0');
       const ss = String(resumeElapsed % 60).padStart(2, '0');
       const ETA_SECONDS = 180; // typical scan completion target
