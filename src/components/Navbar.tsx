@@ -116,7 +116,7 @@ export default function Navbar() {
         transition: 'background 0.25s ease, border-color 0.25s ease',
       }}
     >
-      <div className="flex h-full items-center justify-between max-w-[1200px] mx-auto" style={{ padding: '0 24px' }}>
+      <div className="flex h-full items-center justify-between max-w-[1200px] mx-auto px-4 sm:px-6">
         <div className="hidden md:flex items-center gap-6">
           <Logo />
           <div className="flex items-center gap-5">
@@ -228,26 +228,42 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <button className="md:hidden" style={{ color: '#ffffff', background: 'transparent', border: 'none' }} onClick={() => setOpen(!open)} aria-label="Toggle menu">
-          {open ? <X size={22} /> : <Menu size={22} />}
+        <button
+          className="md:hidden inline-flex items-center justify-center"
+          style={{ width: 44, height: 44, color: '#ffffff', background: 'transparent', border: 'none', cursor: 'pointer', marginRight: -8 }}
+          onClick={() => setOpen(!open)}
+          aria-label="Toggle menu"
+          aria-expanded={open}
+        >
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden flex flex-col gap-2" style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(16px)', borderTop: '1px solid #ffffff10', padding: '16px 24px' }}>
-          <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>How it works</button>
-          <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#888888', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>What we find</button>
-          <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }}>Security</Link>
-          <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0', background: 'transparent', border: 'none' }}>Pricing</button>
-          <Link to="/blog" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Blog</Link>
-          <Link to="/contact" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Contact</Link>
-          <div style={{ height: 1, background: '#ffffff10', margin: '8px 0' }} />
+        <div
+          className="md:hidden flex flex-col"
+          style={{
+            background: 'rgba(0,0,0,0.96)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderTop: '1px solid #ffffff10',
+            padding: '8px 16px 20px',
+            maxHeight: 'calc(100vh - 64px)',
+            overflowY: 'auto',
+          }}
+        >
+          <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>How it works</button>
+          <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>What we find</button>
+          <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }}>Security</Link>
+          <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>Pricing</button>
+          <Link to="/blog" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }} onClick={() => setOpen(false)}>Blog</Link>
+          <Link to="/contact" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }} onClick={() => setOpen(false)}>Contact</Link>
           <a
             href={GITHUB_REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#a3a3a3', fontSize: 14, padding: '10px 0' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#a3a3a3', fontSize: 14, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }}
           >
             <Github size={16} />
             Star on GitHub
@@ -257,8 +273,8 @@ export default function Navbar() {
               </span>
             )}
           </a>
-          <Link to="/login" style={{ color: '#a3a3a3', fontSize: 14, padding: '10px 0' }} onClick={() => setOpen(false)}>Log in</Link>
-          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '12px 16px', borderRadius: 6, fontSize: 14, fontWeight: 500, textAlign: 'center', marginTop: 4 }} onClick={() => setOpen(false)}>Get Started</Link>
+          <Link to="/login" style={{ color: '#a3a3a3', fontSize: 15, padding: '14px 4px' }} onClick={() => setOpen(false)}>Log in</Link>
+          <Link to="/signup" style={{ background: '#ffffff', color: '#000000', padding: '14px 16px', borderRadius: 8, fontSize: 15, fontWeight: 500, textAlign: 'center', marginTop: 12 }} onClick={() => setOpen(false)}>Get Started</Link>
         </div>
       )}
     </nav>

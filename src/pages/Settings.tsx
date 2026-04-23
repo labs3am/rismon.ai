@@ -83,12 +83,12 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
-      <div className="max-w-[640px] mx-auto px-5 pt-24 pb-16">
+      <div className="max-w-[640px] mx-auto px-4 sm:px-5 pt-20 sm:pt-24 pb-16">
         <BackButton to="/dashboard" label="Dashboard" />
-        <h1 className="text-foreground text-[28px] font-semibold">Settings</h1>
+        <h1 className="text-foreground text-[24px] sm:text-[28px] font-semibold">Settings</h1>
 
         {/* Profile */}
-        <div className="bg-card border border-border rounded-2xl p-8 mt-8">
+        <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
           <h2 className="text-foreground text-lg font-semibold">Profile</h2>
           <div className="mt-6 space-y-4">
             <div>
@@ -110,23 +110,23 @@ export default function Settings() {
         </div>
 
         {/* Apps */}
-        <div className="bg-card border border-border rounded-2xl p-8 mt-6">
+        <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6">
           <h2 className="text-foreground text-lg font-semibold">Connected apps</h2>
           {apps.length === 0 ? <p className="text-muted-foreground text-sm mt-4">No apps connected yet.</p> : (
             <div className="mt-4 space-y-3">
               {apps.map(app => (
-                <div key={app.id} className="flex items-center justify-between py-2">
-                  <div>
+                <div key={app.id} className="flex items-start justify-between gap-3 py-2">
+                  <div className="min-w-0 flex-1">
                     <p className="text-foreground text-[15px]">{app.app_name}</p>
-                    <p className="text-muted-foreground text-[13px]">{app.github_repo_name}</p>
+                    <p className="text-muted-foreground text-[13px] truncate">{app.github_repo_name}</p>
                   </div>
                   {confirmApp === app.id ? (
-                    <div className="flex gap-2">
-                      <button onClick={() => removeApp(app.id)} className="text-destructive text-xs font-medium">Confirm</button>
-                      <button onClick={() => setConfirmApp(null)} className="text-muted-foreground text-xs">Cancel</button>
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => removeApp(app.id)} className="text-destructive text-xs font-medium px-2 py-1">Confirm</button>
+                      <button onClick={() => setConfirmApp(null)} className="text-muted-foreground text-xs px-2 py-1">Cancel</button>
                     </div>
                   ) : (
-                    <button onClick={() => setConfirmApp(app.id)} className="text-destructive text-sm hover:underline">Remove</button>
+                    <button onClick={() => setConfirmApp(app.id)} className="text-destructive text-sm hover:underline shrink-0">Remove</button>
                   )}
                 </div>
               ))}
@@ -135,7 +135,7 @@ export default function Settings() {
         </div>
 
         {/* Account */}
-        <div className="bg-card border border-border rounded-2xl p-8 mt-6">
+        <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6">
           <h2 className="text-foreground text-lg font-semibold">Account</h2>
           {confirmDelete ? (
             <div className="mt-4">
