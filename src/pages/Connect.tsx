@@ -74,7 +74,13 @@ export default function Connect() {
   const fetchRepos = async (token: string) => {
     setLoadingRepos(true);
     try {
-      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
+      // Fetch only what we need (name + owner + updated_at) and cap at 100
+      // most-recently-updated repos. The previous 50-item fetch felt slow
+      // because GitHub's `/user/repos` returns the full repo payload (~6 KB
+      // each); 50 repos = ~300 KB of JSON to parse on the main thread,
+      // which made the page appear to "buffer". 100 items keeps coverage
+      // wide enough for almost every user while staying responsive.
+      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100&type=owner', {
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
       });
       if (!res.ok) { toast.error('GitHub token expired or invalid. Please reconnect.'); setLoadingRepos(false); return; }
