@@ -156,13 +156,13 @@ export default function Index() {
           <p className="vercel-hero-sub">
             Most AI-built apps ship with gaps the founder never knew about.
             <br />
-            Rismon.ai reads your code, checks it against your intent — and catches the security leaks your AI left behind.
+            Rismon.ai reads your code, checks it against your intent  and catches the security leaks your AI left behind.
           </p>
           <p style={{ fontSize: '13px', color: '#555555', marginBottom: '8px' }}>
             Not a dev tool. Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span> who build with AI.
           </p>
           <p style={{ fontSize: '12px', color: '#666666', marginBottom: '32px', letterSpacing: '0.02em' }}>
-            Intent gaps · Broken promises · Security leaks — explained in plain English.
+            Intent gaps · Broken promises · Security leaks explained in plain English.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
