@@ -353,7 +353,7 @@ export default function Index() {
               </div>
             ))}
           </div>
-          <div className="flex justify-center mt-10">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-10">
             <Link
               to="/security"
               className="inline-flex items-center gap-2"
@@ -377,6 +377,33 @@ export default function Index() {
               }}
             >
               Learn more about our security
+              <span aria-hidden>→</span>
+            </Link>
+            <Link
+              to="/open-source"
+              className="inline-flex items-center gap-2"
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#888888',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid transparent',
+                background: 'transparent',
+                transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.borderColor = '#ffffff20';
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = '#888888';
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              We're open source
               <span aria-hidden>→</span>
             </Link>
           </div>
