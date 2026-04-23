@@ -64,9 +64,11 @@ export default function ResetPassword() {
         <div className="auth-glass-card">
           <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Set new password</h1>
           <p style={{ color: '#888888', fontSize: 14, marginTop: 6, marginBottom: 32 }}>
-            {ready ? 'Choose a new password for your account.' : 'Verifying your reset link...'}
+            {errorMsg ? errorMsg : ready ? 'Choose a new password for your account.' : 'Verifying your reset link...'}
           </p>
-          {ready ? (
+          {errorMsg ? (
+            <button onClick={() => navigate('/login')} className="btn-cyber-primary w-full">Back to login</button>
+          ) : ready ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>New password</label>
