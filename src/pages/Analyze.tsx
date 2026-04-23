@@ -1191,12 +1191,20 @@ export default function Analyze() {
         </div>
 
         {/* Bottom bar */}
-        <div className="fixed bottom-0 left-0 right-0 px-6 py-4" style={{ background: '#000000', borderTop: '1px solid #1a1a1a' }}>
-          <div className="max-w-[800px] mx-auto flex items-center justify-between">
-            <p className="text-sm" style={{ color: '#888888' }}>{fixCount} fixes selected</p>
-            <button onClick={generatePrompts} disabled={fixCount === 0}
-              className="text-[14px] font-medium transition-opacity disabled:opacity-50"
-              style={{ background: '#ffffff', color: '#000000', borderRadius: 6, padding: '10px 20px', fontWeight: 500 }}>Generate fix prompts →</button>
+        <div
+          className="fixed bottom-0 left-0 right-0 px-4 sm:px-6 py-3 sm:py-4"
+          style={{ background: '#000000', borderTop: '1px solid #1a1a1a', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+        >
+          <div className="max-w-[800px] mx-auto flex items-center justify-between gap-3">
+            <p className="text-[13px] sm:text-sm shrink-0" style={{ color: '#888888' }}>{fixCount} <span className="hidden sm:inline">fixes selected</span><span className="sm:hidden">selected</span></p>
+            <button
+              onClick={generatePrompts}
+              disabled={fixCount === 0}
+              className="text-[13px] sm:text-[14px] font-medium transition-opacity disabled:opacity-50"
+              style={{ background: '#ffffff', color: '#000000', borderRadius: 6, padding: '10px 16px', fontWeight: 500 }}
+            >
+              Generate fix prompts →
+            </button>
           </div>
         </div>
       </div>
