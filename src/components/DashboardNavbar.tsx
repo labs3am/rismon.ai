@@ -84,8 +84,8 @@ export default function DashboardNavbar() {
         transition: 'background 0.25s ease, border-color 0.25s ease',
       }}
     >
-      <div className="flex h-full items-center justify-between max-w-[1400px] mx-auto" style={{ padding: '0 24px' }}>
-        <div className="flex items-center gap-8">
+      <div className="flex h-full items-center justify-between max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="flex items-center gap-4 md:gap-8">
           <Logo to="/dashboard" />
           <div className="hidden md:flex items-center gap-7">
             {navLink('/dashboard', 'Dashboard')}
