@@ -353,6 +353,33 @@ export default function Index() {
               </div>
             ))}
           </div>
+          <div className="flex justify-center mt-10">
+            <Link
+              to="/security"
+              className="inline-flex items-center gap-2"
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#ffffff',
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: '1px solid #ffffff20',
+                background: 'rgba(255,255,255,0.03)',
+                transition: 'background 0.15s ease, border-color 0.15s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                e.currentTarget.style.borderColor = '#ffffff33';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                e.currentTarget.style.borderColor = '#ffffff20';
+              }}
+            >
+              Learn more about our security
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
         </div>
       </section>
 
