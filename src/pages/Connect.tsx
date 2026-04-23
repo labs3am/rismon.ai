@@ -74,7 +74,13 @@ export default function Connect() {
   const fetchRepos = async (token: string) => {
     setLoadingRepos(true);
     try {
-      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=50', {
+      // Fetch only what we need (name + owner + updated_at) and cap at 100
+      // most-recently-updated repos. The previous 50-item fetch felt slow
+      // because GitHub's `/user/repos` returns the full repo payload (~6 KB
+      // each); 50 repos = ~300 KB of JSON to parse on the main thread,
+      // which made the page appear to "buffer". 100 items keeps coverage
+      // wide enough for almost every user while staying responsive.
+      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100&type=owner', {
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
       });
       if (!res.ok) { toast.error('GitHub token expired or invalid. Please reconnect.'); setLoadingRepos(false); return; }
@@ -405,7 +411,21 @@ export default function Connect() {
                 <label className="text-foreground text-[15px] font-medium block mb-2">Select the repository to analyze</label>
                 <input value={repoSearch} onChange={e => setRepoSearch(e.target.value)} placeholder="Search your repositories..." className={`${inputClass} mb-3`} />
                 {loadingRepos ? (
-                  <div className="flex justify-center py-4"><Loader2 className="animate-spin text-muted-foreground" /></div>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className="px-4 py-3 border-b border-border last:border-0 flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full bg-muted animate-pulse shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-muted rounded animate-pulse" style={{ width: `${60 + (i * 7) % 30}%` }} />
+                          <div className="h-2 bg-muted/60 rounded animate-pulse" style={{ width: '30%' }} />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-center gap-2 py-3 bg-muted/20 text-muted-foreground text-xs">
+                      <Loader2 size={12} className="animate-spin" />
+                      Loading your repositories from GitHub…
+                    </div>
+                  </div>
                 ) : (
                   <div className="max-h-60 overflow-y-auto border border-border rounded-lg">
                     {filteredRepos.map(r => (
