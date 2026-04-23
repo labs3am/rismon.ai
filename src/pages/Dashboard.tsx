@@ -128,12 +128,23 @@ export default function Dashboard() {
           // Match the session's repo_name back to one of the user's apps so
           // we can deep-link the resume button to /analyze/:appId.
           const owned = appsList.find((a) => `${a.github_owner}/${a.github_repo_name}` === liveSession.repo_name);
-          setActiveScan({
-            sessionId: liveSession.id,
-            appId: owned?.id ?? null,
-            appName: owned?.app_name ?? liveSession.repo_name ?? 'your app',
-            startedAt,
-          });
+          if (!owned) {
+            // The app this scan was running against has been deleted.
+            // Cancel the orphaned session so we never surface a broken
+            // "resume" CTA that would just error out.
+            await supabase
+              .from('scan_sessions')
+              .update({ status: 'cancelled' })
+              .eq('id', liveSession.id);
+            setActiveScan(null);
+          } else {
+            setActiveScan({
+              sessionId: liveSession.id,
+              appId: owned.id,
+              appName: owned.app_name ?? liveSession.repo_name ?? 'your app',
+              startedAt,
+            });
+          }
         } else {
           setActiveScan(null);
         }
