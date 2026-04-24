@@ -719,6 +719,10 @@ export type Database = {
         }[]
       }
       admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
+      admin_set_user_plan: {
+        Args: { _plan: string; _target_user_id: string }
+        Returns: undefined
+      }
       admin_top_pages: {
         Args: { _days?: number; _limit?: number }
         Returns: {
