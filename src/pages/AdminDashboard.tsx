@@ -675,13 +675,31 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(u.last_sign_in_at)}</td>
                           <td className="px-4 py-3 text-right">
-                            <button
-                              onClick={() => deleteUser(u)}
-                              className="text-destructive hover:bg-destructive/10 p-2 rounded-md transition-colors"
-                              title="Delete user"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              {(() => {
+                                const isPro = (u.pro_until && new Date(u.pro_until) > new Date()) || u.pro_credits > 0;
+                                return (
+                                  <button
+                                    onClick={() => toggleUserPlan(u)}
+                                    className={`px-2 py-1 rounded-md text-[11px] font-medium uppercase tracking-wider transition-colors ${
+                                      isPro
+                                        ? "bg-muted text-muted-foreground hover:bg-muted/70"
+                                        : "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                    }`}
+                                    title={isPro ? "Downgrade to Free" : "Upgrade to Pro"}
+                                  >
+                                    {isPro ? "Make Free" : "Make Pro"}
+                                  </button>
+                                );
+                              })()}
+                              <button
+                                onClick={() => deleteUser(u)}
+                                className="text-destructive hover:bg-destructive/10 p-2 rounded-md transition-colors"
+                                title="Delete user"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
