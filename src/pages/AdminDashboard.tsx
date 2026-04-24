@@ -380,6 +380,30 @@ export default function AdminDashboard() {
     loadAll();
   };
 
+  const toggleUserPlan = async (u: UserRow) => {
+    const isPro = (u.pro_until && new Date(u.pro_until) > new Date()) || u.pro_credits > 0;
+    const nextPlan = isPro ? "free" : "pro";
+    const { error } = await supabase.rpc(
+      "admin_set_user_plan" as any,
+      { _target_user_id: u.id, _plan: nextPlan } as any,
+    );
+    if (error) return toast.error(error.message);
+    toast.success(`${u.email} is now ${nextPlan === "pro" ? "Pro" : "Free"}`);
+    // Optimistic local update so the badge flips immediately
+    setUsers((prev) =>
+      prev.map((row) =>
+        row.id === u.id
+          ? {
+              ...row,
+              plan: nextPlan,
+              pro_until: nextPlan === "pro" ? new Date(Date.now() + 100 * 365 * 864e5).toISOString() : null,
+              pro_credits: nextPlan === "pro" ? row.pro_credits : 0,
+            }
+          : row,
+      ),
+    );
+  };
+
   // ─── Gating ───
   if (authLoading || adminChecking) {
     return (
