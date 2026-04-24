@@ -971,7 +971,10 @@ serve(async (req) => {
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
       if (app_id) {
-        const { data: appCreds } = await supabase
+        // Use the service-role client: column-level SELECT on the credential
+        // columns is revoked from the `authenticated` role. We still scope the
+        // lookup to the current user's id so only their own credentials are read.
+        const { data: appCreds } = await serviceClient
           .from("apps")
           .select("supabase_url, supabase_anon_key")
           .eq("id", app_id)
@@ -1269,7 +1272,10 @@ Return ONLY this JSON:
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
       if (app_id) {
-        const { data: appCreds } = await supabase
+        // Use the service-role client: column-level SELECT on the credential
+        // columns is revoked from the `authenticated` role. We still scope the
+        // lookup to the current user's id so only their own credentials are read.
+        const { data: appCreds } = await serviceClient
           .from("apps")
           .select("supabase_url, supabase_anon_key")
           .eq("id", app_id)
