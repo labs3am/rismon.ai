@@ -30,7 +30,6 @@ const AdminReviews = lazy(() => import("./pages/AdminReviews"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminBroadcast = lazy(() => import("./pages/AdminBroadcast"));
-const Changelog = lazy(() => import("./pages/Changelog"));
 const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
 const OpenSource = lazy(() => import("./pages/OpenSource"));
@@ -76,7 +75,6 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route path="/changelog" element={<Changelog />} />
               <Route path="/security" element={<Security />} />
               <Route path="/about" element={<About />} />
               <Route path="/open-source" element={<OpenSource />} />
