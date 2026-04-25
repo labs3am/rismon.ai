@@ -1135,23 +1135,30 @@ serve(async (req) => {
       const securityPreFound = runSecurityPreChecks(totalBundle);
       const preAnalysis = runPreAnalysis(totalBundle);
 
-      // Probe Supabase tables
+      // Probe Supabase backend live: list tables AND test each one for
+      // anonymous reads. Publicly-readable tables become hard-evidence
+      // findings the AI cannot downgrade.
       const rlsFindings: any[] = [];
       let derivedTableNames = "";
       if (appSupabaseUrl && appSupabaseAnonKey) {
-        try {
-          const res = await fetch(`${appSupabaseUrl}/rest/v1/`, {
-            headers: { apikey: appSupabaseAnonKey, Authorization: `Bearer ${appSupabaseAnonKey}` },
+        const probe = await probeSupabaseBackend(appSupabaseUrl, appSupabaseAnonKey);
+        if (probe.tables.length > 0) {
+          derivedTableNames = probe.tables.join(", ");
+          rlsFindings.push({
+            type: "tables_detected",
+            tables: probe.tables,
+            note: "Tables enumerated live from the founder's Supabase project.",
           });
-          if (res.ok) {
-            const tables = await res.json();
-            const tableList = typeof tables === "object" ? Object.keys(tables) : [];
-            if (tableList.length > 0) {
-              rlsFindings.push({ type: "tables_detected", tables: tableList, note: "Check if these tables have RLS enabled" });
-              derivedTableNames = tableList.join(", ");
-            }
-          }
-        } catch { /* ignore */ }
+        }
+        if (probe.publiclyReadable.length > 0) {
+          rlsFindings.push({
+            type: "live_rls_leak",
+            severity: "critical",
+            tables: probe.publiclyReadable.map((p) => p.table),
+            note:
+              "These tables returned rows to an anonymous caller using only the public anon key. Treat as a verified data leak.",
+          });
+        }
       }
       // Prefer the server-derived list; fall back to anything the client sent.
       const effectiveTableNames = derivedTableNames || tableNames || "";
