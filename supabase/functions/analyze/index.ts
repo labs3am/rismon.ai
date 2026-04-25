@@ -1763,7 +1763,21 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         edgeFunctionBundle || "",
       );
       const detFromQuestions = harvestFindingsFromQuestions(smart_questions || []);
-      const allDeterministic = [...detFromCode, ...detFromQuestions];
+
+      // Live backend probe — re-run here so the deterministic overlay
+      // gets the freshest result. This is the highest-value evidence:
+      // a real HTTP call against the founder's DB came back with data.
+      let detFromBackend: DetectorFinding[] = [];
+      if (appSupabaseUrl && appSupabaseAnonKey) {
+        try {
+          const probe = await probeSupabaseBackend(appSupabaseUrl, appSupabaseAnonKey);
+          detFromBackend = findingsFromBackendProbe(probe);
+        } catch (e) {
+          console.error("Live backend probe failed (non-fatal):", e);
+        }
+      }
+
+      const allDeterministic = [...detFromBackend, ...detFromCode, ...detFromQuestions];
 
       // Map each deterministic finding into the legacy shape the UI uses,
       // then merge with what Claude returned (deterministic wins on dedupe).
