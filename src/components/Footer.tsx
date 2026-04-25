@@ -107,7 +107,6 @@ export default function Footer() {
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/about" className={linkCls}>About</Link></li>
               <li><Link to="/blog" className={linkCls}>Blog</Link></li>
-              <li><Link to="/changelog" className={linkCls}>Changelog</Link></li>
               <li><Link to="/open-source" className={linkCls}>Open Source</Link></li>
               <li><Link to="/contact" className={linkCls}>Contact</Link></li>
             </ul>
