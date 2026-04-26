@@ -62,7 +62,11 @@ export default function Connect() {
       if (s?.provider_token) {
         setGithubToken(s.provider_token);
         setGithubConnected(true);
-        fetchRepos(s.provider_token);
+        // Silent on initial load: if the cached provider_token is stale
+        // we don't want to greet the user with a red error toast before
+        // they've done anything. Just fall back to the "Connect GitHub"
+        // state instead.
+        fetchRepos(s.provider_token, { silent: true });
       } else {
         const ghId = s?.user?.identities?.find(i => i.provider === 'github');
         if (ghId) setGithubConnected(true);
@@ -71,7 +75,7 @@ export default function Connect() {
     checkGithub();
   }, [searchParams, navigate]);
 
-  const fetchRepos = async (token: string) => {
+  const fetchRepos = async (token: string, opts: { silent?: boolean } = {}) => {
     setLoadingRepos(true);
     try {
       // Fetch only what we need (name + owner + updated_at) and cap at 100
@@ -83,9 +87,19 @@ export default function Connect() {
       const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100&type=owner', {
         headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
       });
-      if (!res.ok) { toast.error('GitHub token expired or invalid. Please reconnect.'); setLoadingRepos(false); return; }
+      if (!res.ok) {
+        // Stale/expired GitHub token. Reset to the "Connect GitHub" state
+        // so the user can re-authorize with one click.
+        setGithubToken('');
+        setGithubConnected(false);
+        if (!opts.silent) toast.error('GitHub token expired or invalid. Please reconnect.');
+        setLoadingRepos(false);
+        return;
+      }
       setRepos(await res.json());
-    } catch { toast.error('Failed to fetch repos'); }
+    } catch {
+      if (!opts.silent) toast.error('Failed to fetch repos');
+    }
     setLoadingRepos(false);
   };
 
