@@ -16,14 +16,17 @@ export type Database = {
     Tables: {
       admin_notify_settings: {
         Row: {
+          broadcast_secret: string | null
           function_url: string
           id: number
         }
         Insert: {
+          broadcast_secret?: string | null
           function_url: string
           id?: number
         }
         Update: {
+          broadcast_secret?: string | null
           function_url?: string
           id?: number
         }
@@ -636,6 +639,7 @@ export type Database = {
           signups: number
         }[]
       }
+      admin_broadcast_secret_set: { Args: never; Returns: boolean }
       admin_delete_user: {
         Args: { _target_user_id: string }
         Returns: undefined
@@ -721,6 +725,10 @@ export type Database = {
           full_name: string
           id: string
         }[]
+      }
+      admin_set_broadcast_secret: {
+        Args: { _secret: string }
+        Returns: undefined
       }
       admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
       admin_set_user_plan: {
