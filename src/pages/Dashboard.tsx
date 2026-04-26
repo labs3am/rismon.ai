@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import RisGuide from '@/components/RisGuide';
 import { UpgradeBanner } from '@/components/ui/upgrade-banner';
 import WelcomeGuide from '@/components/WelcomeGuide';
+import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
 
 interface App {
   id: string;
@@ -173,28 +174,27 @@ export default function Dashboard() {
   };
 
   const handleAnalyzeNow = async (app: App) => {
-    // Check if GitHub token is available
-    const { data: { session: s } } = await supabase.auth.getSession();
-    const token = s?.provider_token;
+    // Check if GitHub token is available. If a refresh recovers it we skip
+    // the reconnect modal entirely.
+    let token = await getGithubToken();
+    if (!token) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      token = refreshed.session?.provider_token ?? null;
+    }
 
     if (token) {
-      // Token available — go directly to analyze with saved repo
       navigate(`/analyze/${app.id}`);
     } else {
-      // Token expired — show reconnect modal
+      // Still no token — show reconnect modal so the user can re-authorize.
       setReconnectModal(app);
     }
   };
 
   const handleReconnectGithub = async () => {
     if (!reconnectModal) return;
-    await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        scopes: 'repo read:user user:email',
-        redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
-        skipBrowserRedirect: false
-      }
+    await reauthenticateGithub({
+      redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
+      notify: false,
     });
   };
 

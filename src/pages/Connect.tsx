@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
+import { githubFetch, GithubAuthRequiredError, clearReauthFlag } from '@/lib/github-auth';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
 
@@ -78,27 +79,29 @@ export default function Connect() {
   const fetchRepos = async (token: string, opts: { silent?: boolean } = {}) => {
     setLoadingRepos(true);
     try {
-      // Fetch only what we need (name + owner + updated_at) and cap at 100
-      // most-recently-updated repos. The previous 50-item fetch felt slow
-      // because GitHub's `/user/repos` returns the full repo payload (~6 KB
-      // each); 50 repos = ~300 KB of JSON to parse on the main thread,
-      // which made the page appear to "buffer". 100 items keeps coverage
-      // wide enough for almost every user while staying responsive.
-      const res = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100&type=owner', {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-      });
+      // githubFetch handles token refresh + re-auth automatically. If silent
+      // mode is on we suppress the redirect/toast so the page can quietly
+      // fall back to the "Connect GitHub" CTA.
+      const res = await githubFetch(
+        'https://api.github.com/user/repos?sort=updated&per_page=100&type=owner',
+        { autoReauth: !opts.silent, notifyOnReauth: !opts.silent, reauthRedirectTo: `${window.location.origin}/connect?step=2` }
+      );
       if (!res.ok) {
-        // Stale/expired GitHub token. Reset to the "Connect GitHub" state
-        // so the user can re-authorize with one click.
-        setGithubToken('');
-        setGithubConnected(false);
-        if (!opts.silent) toast.error('GitHub token expired or invalid. Please reconnect.');
+        if (!opts.silent) toast.error('Failed to load your GitHub repos.');
         setLoadingRepos(false);
         return;
       }
       setRepos(await res.json());
-    } catch {
-      if (!opts.silent) toast.error('Failed to fetch repos');
+      clearReauthFlag();
+    } catch (err) {
+      if (err instanceof GithubAuthRequiredError) {
+        // Stale/missing token. Reset UI to the "Connect GitHub" state. When
+        // not silent, githubFetch has already kicked off the OAuth redirect.
+        setGithubToken('');
+        setGithubConnected(false);
+      } else if (!opts.silent) {
+        toast.error('Failed to fetch repos');
+      }
     }
     setLoadingRepos(false);
   };
