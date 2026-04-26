@@ -12,6 +12,7 @@ import RisGuide from '@/components/RisGuide';
 import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
 import AiSmartQuestions from '@/components/AiSmartQuestions';
+import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub } from '@/lib/github-auth';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -270,9 +271,16 @@ export default function Analyze() {
     const run = async () => {
       scanStartedAtRef.current = Date.now();
       try {
-        const { data: { session: s } } = await supabase.auth.getSession();
-        const token = s?.provider_token;
-        if (!token) { toast.error('GitHub token expired. Please reconnect GitHub from the connect page.'); navigate('/dashboard'); return; }
+        const token = await getGithubToken();
+        if (!token) {
+          // No provider_token cached. Kick the user through OAuth and bring
+          // them back to this exact analyze URL so the scan resumes.
+          await reauthenticateGithub({
+            redirectTo: `${window.location.origin}/analyze/${appId}`,
+            message: 'Reconnecting to GitHub to read your repo…',
+          });
+          return;
+        }
 
         // Plan check — determines scan depth
         const { data: planRow } = await supabase
@@ -312,10 +320,17 @@ export default function Analyze() {
         }).select().single();
         if (newSession) setScanSessionId(newSession.id);
 
-        // Fetch file tree
-        const treeRes = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/git/trees/HEAD?recursive=1`, {
-          headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-        });
+        // Fetch file tree (githubFetch auto-refreshes the token on 401/403)
+        let treeRes: Response;
+        try {
+          treeRes = await githubFetch(
+            `https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/git/trees/HEAD?recursive=1`,
+            { reauthRedirectTo: `${window.location.origin}/analyze/${appId}` }
+          );
+        } catch (err) {
+          if (err instanceof GithubAuthRequiredError) return; // OAuth redirect already kicked off
+          throw err;
+        }
         if (!treeRes.ok) { toast.error('Failed to read repository'); navigate('/dashboard'); return; }
         const tree = await treeRes.json();
 
