@@ -186,11 +186,11 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    if (!key.trim().startsWith("eyJ")) {
-      return toast.error("That doesn't look like a service role key");
+    if (key.trim().length < 16) {
+      return toast.error("Secret must be at least 16 characters");
     }
     setSaving(true);
-    const { error } = await supabase.rpc("admin_set_notify_key" as any, { _key: key.trim() } as any);
+    const { error } = await supabase.rpc("admin_set_broadcast_secret" as any, { _secret: key.trim() } as any);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Email notifications enabled");
@@ -206,8 +206,10 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
         <div className="flex-1">
           <div className="text-foreground font-medium text-sm">Email notifications not configured</div>
           <p className="text-muted-foreground text-xs mt-1">
-            To receive email alerts when users sign up or complete their first scan, paste your Supabase
-            service-role key once. Find it at <span className="font-mono">Lovable Cloud → Settings → API → service_role secret</span>.
+            To receive email alerts when users sign up or complete their first scan, paste the
+            value of the <span className="font-mono">BROADCAST_FUNCTION_SECRET</span> edge-function
+            secret once. This lets the database authenticate itself when calling the notification
+            function. Use the exact same value you saved in Lovable Cloud → Edge Function Secrets.
           </p>
           {!open ? (
             <button
@@ -223,7 +225,7 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
                   type="password"
                   value={key}
                   onChange={(e) => setKey(e.target.value)}
-                  placeholder="eyJhbGci..."
+                  placeholder="paste BROADCAST_FUNCTION_SECRET value"
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
@@ -243,8 +245,8 @@ function NotifyKeyBanner({ onSet }: { onSet: () => void }) {
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground/80 mt-2 leading-relaxed">
-                🔒 Stored encrypted. Once saved, the value can't be read back — not by you, not by any client.
-                Only the database itself uses it server-side to call the notification function.
+                🔒 Stored server-side only. The value is never returned to any client and is only
+                used by the database trigger as an internal authentication header.
               </p>
             </div>
           )}
@@ -352,7 +354,7 @@ export default function AdminDashboard() {
     }
     setLoading(false);
 
-    const { data: keyData } = await supabase.rpc("admin_notify_key_set" as any);
+    const { data: keyData } = await supabase.rpc("admin_broadcast_secret_set" as any);
     setKeyConfigured(keyData === true);
   };
 

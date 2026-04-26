@@ -42,6 +42,23 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Report not found" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Atomic "send-once" guard. claim_scan_ready_email() flips
+    // scan_sessions.scan_ready_email_sent_at from NULL -> now() in a single
+    // UPDATE and returns true only for the caller that won the race.
+    // Every other tab / reload / overlapping poll tick gets `false` and
+    // exits before any email is dispatched.
+    const { data: claimed, error: claimErr } = await supabase
+      .rpc("claim_scan_ready_email", { _report_id: report_id });
+    if (claimErr) {
+      console.error("claim_scan_ready_email failed:", claimErr.message);
+      return new Response(JSON.stringify({ error: "Could not claim email send" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!claimed) {
+      // Already sent for this report (or scan_session not in 'complete' yet).
+      // Treat as a successful no-op so the client never retries.
+      return new Response(JSON.stringify({ ok: true, skipped: "already_sent" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!RESEND_API_KEY || !LOVABLE_API_KEY) {

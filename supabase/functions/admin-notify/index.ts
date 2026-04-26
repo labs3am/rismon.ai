@@ -1,12 +1,19 @@
 // Sends admin notification emails for key user events.
 // Triggered server-side from Postgres triggers via pg_net.
+//
+// SECURITY: Requires BROADCAST_FUNCTION_SECRET. Public callers without
+// the secret receive 401. The Postgres trigger that calls this function
+// must include the header `x-broadcast-secret: <secret>` (configured in
+// public.admin_notify_settings or via the trigger's headers).
+
+import { requireBroadcastSecret, escapeHtml } from "../_shared/broadcast-auth.ts";
 
 const ADMIN_EMAIL = "hello@rismon.ai";
 const FROM_EMAIL = "Rismon Admin <notify@rismon.ai>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-broadcast-secret",
 };
 
 interface Payload {
@@ -16,11 +23,11 @@ interface Payload {
 
 function renderEmail(event: string, data: Record<string, unknown>): { subject: string; html: string } {
   if (event === "new_signup") {
-    const email = String(data.email ?? "(unknown)");
-    const userId = String(data.user_id ?? "");
-    const createdAt = String(data.created_at ?? new Date().toISOString());
+    const email = escapeHtml(data.email ?? "(unknown)");
+    const userId = escapeHtml(data.user_id ?? "");
+    const createdAt = escapeHtml(data.created_at ?? new Date().toISOString());
     return {
-      subject: `🎉 New Rismon signup: ${email}`,
+      subject: `🎉 New Rismon signup: ${String(data.email ?? "(unknown)")}`,
       html: `
         <div style="font-family:-apple-system,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0a0a0a">
           <h2 style="margin:0 0 8px;font-size:20px">New user signed up</h2>
@@ -35,10 +42,10 @@ function renderEmail(event: string, data: Record<string, unknown>): { subject: s
     };
   }
   if (event === "first_scan") {
-    const email = String(data.email ?? "(unknown)");
-    const scanType = String(data.scan_type ?? "scan");
+    const email = escapeHtml(data.email ?? "(unknown)");
+    const scanType = escapeHtml(data.scan_type ?? "scan");
     return {
-      subject: `🚀 ${email} ran their first scan`,
+      subject: `🚀 ${String(data.email ?? "(unknown)")} ran their first scan`,
       html: `
         <div style="font-family:-apple-system,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#0a0a0a">
           <h2 style="margin:0 0 8px;font-size:20px">First scan completed!</h2>
@@ -47,11 +54,19 @@ function renderEmail(event: string, data: Record<string, unknown>): { subject: s
         </div>`,
     };
   }
-  return { subject: `Rismon admin event: ${event}`, html: `<pre>${JSON.stringify(data, null, 2)}</pre>` };
+  return {
+    subject: `Rismon admin event: ${String(event)}`,
+    html: `<pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`,
+  };
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // Reject anonymous callers — only the Postgres trigger (which includes
+  // the shared secret header) may invoke this function.
+  const denied = requireBroadcastSecret(req);
+  if (denied) return denied;
 
   try {
     const body = (await req.json()) as Payload;

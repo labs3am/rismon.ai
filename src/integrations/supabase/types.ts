@@ -16,14 +16,17 @@ export type Database = {
     Tables: {
       admin_notify_settings: {
         Row: {
+          broadcast_secret: string | null
           function_url: string
           id: number
         }
         Insert: {
+          broadcast_secret?: string | null
           function_url: string
           id?: number
         }
         Update: {
+          broadcast_secret?: string | null
           function_url?: string
           id?: number
         }
@@ -124,8 +127,8 @@ export type Database = {
           live_url: string | null
           platform: string | null
           status: string | null
-          supabase_anon_key: string | null
-          supabase_url: string | null
+          supabase_anon_key_enc: string | null
+          supabase_url_enc: string | null
           user_id: string | null
         }
         Insert: {
@@ -139,8 +142,8 @@ export type Database = {
           live_url?: string | null
           platform?: string | null
           status?: string | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
+          supabase_anon_key_enc?: string | null
+          supabase_url_enc?: string | null
           user_id?: string | null
         }
         Update: {
@@ -154,8 +157,8 @@ export type Database = {
           live_url?: string | null
           platform?: string | null
           status?: string | null
-          supabase_anon_key?: string | null
-          supabase_url?: string | null
+          supabase_anon_key_enc?: string | null
+          supabase_url_enc?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -520,6 +523,7 @@ export type Database = {
           repo_name: string | null
           repo_size_bytes: number | null
           report_id: string | null
+          scan_ready_email_sent_at: string | null
           status: string
           user_id: string
         }
@@ -534,6 +538,7 @@ export type Database = {
           repo_name?: string | null
           repo_size_bytes?: number | null
           report_id?: string | null
+          scan_ready_email_sent_at?: string | null
           status?: string
           user_id: string
         }
@@ -548,6 +553,7 @@ export type Database = {
           repo_name?: string | null
           repo_size_bytes?: number | null
           report_id?: string | null
+          scan_ready_email_sent_at?: string | null
           status?: string
           user_id?: string
         }
@@ -624,6 +630,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _apps_credentials_key: { Args: never; Returns: string }
       admin_activity_timeseries: {
         Args: { _days?: number }
         Returns: {
@@ -632,6 +639,7 @@ export type Database = {
           signups: number
         }[]
       }
+      admin_broadcast_secret_set: { Args: never; Returns: boolean }
       admin_delete_user: {
         Args: { _target_user_id: string }
         Returns: undefined
@@ -718,6 +726,10 @@ export type Database = {
           id: string
         }[]
       }
+      admin_set_broadcast_secret: {
+        Args: { _secret: string }
+        Returns: undefined
+      }
       admin_set_notify_key: { Args: { _key: string }; Returns: undefined }
       admin_set_user_plan: {
         Args: { _plan: string; _target_user_id: string }
@@ -790,13 +802,29 @@ export type Database = {
         }[]
       }
       app_has_backend: { Args: { _app_id: string }; Returns: boolean }
+      claim_scan_ready_email: { Args: { _report_id: string }; Returns: boolean }
       consume_pro_credit: { Args: { _user_id: string }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
+      get_app_supabase_credentials: {
+        Args: { _app_id: string }
+        Returns: {
+          supabase_anon_key: string
+          supabase_url: string
+        }[]
+      }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
       is_blog_admin: { Args: never; Returns: boolean }
       notify_admin_event: {
         Args: { _event: string; _payload: Json }
+        Returns: undefined
+      }
+      set_app_supabase_credentials: {
+        Args: {
+          _app_id: string
+          _supabase_anon_key: string
+          _supabase_url: string
+        }
         Returns: undefined
       }
     }
