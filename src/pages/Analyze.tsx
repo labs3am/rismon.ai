@@ -414,9 +414,12 @@ export default function Analyze() {
           setFileCount(i + 1);
           setCurrentFile(f.path);
           try {
-            const res = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`, {
-              headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-            });
+            // Use githubFetch so a mid-scan token expiry triggers a single
+            // session refresh rather than silently emptying the bundle.
+            const res = await githubFetch(
+              `https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`,
+              { autoReauth: false }
+            );
             const d = await res.json();
             if (d.content) {
               let content = atob(d.content.replace(/\n/g, ''));
@@ -434,9 +437,10 @@ export default function Analyze() {
           setFileCount(frontendFiles.length + i + 1);
           setCurrentFile(f.path);
           try {
-            const res = await fetch(`https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`, {
-              headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-            });
+            const res = await githubFetch(
+              `https://api.github.com/repos/${app.github_owner}/${app.github_repo_name}/contents/${f.path}`,
+              { autoReauth: false }
+            );
             const d = await res.json();
             if (d.content) {
               let content = atob(d.content.replace(/\n/g, ''));
