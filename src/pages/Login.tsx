@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import SEO from '@/components/SEO';
 import Logo from '@/components/Logo';
+import OAuthButtons from '@/components/OAuthButtons';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -45,6 +46,9 @@ export default function Login() {
           </div>
           <h1 style={{ color: '#ffffff', fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', textAlign: 'center' }}>Welcome back</h1>
           <p style={{ color: '#888888', fontSize: 15, marginTop: 8, marginBottom: 32, textAlign: 'center' }}>Good to see you again</p>
+          <div style={{ marginBottom: 24 }}>
+            <OAuthButtons />
+          </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Email address</label>
