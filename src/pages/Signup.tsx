@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import SEO from '@/components/SEO';
 import Logo from '@/components/Logo';
+import OAuthButtons from '@/components/OAuthButtons';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -50,6 +51,9 @@ export default function Signup() {
           </div>
           <h1 style={{ color: '#ffffff', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', textAlign: 'center' }}>Create your account</h1>
           <p style={{ color: '#888888', fontSize: 14, marginTop: 8, marginBottom: 32, textAlign: 'center' }}>Free to start. No credit card.</p>
+          <div style={{ marginBottom: 24 }}>
+            <OAuthButtons />
+          </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label style={{ color: '#ffffff', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6 }}>Full name</label>
