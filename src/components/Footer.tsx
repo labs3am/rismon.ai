@@ -132,19 +132,38 @@ export default function Footer() {
           }}
         >
           <p style={{ fontSize: 13, color: '#333333' }}>© 2026 Rismon.ai. All rights reserved.</p>
-          <p style={{ fontSize: 13, color: '#333333', whiteSpace: 'nowrap', overflow: 'visible' }}>
-            From the house of{' '}
+          <div className="flex items-center gap-5 sm:justify-end" style={{ flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 13, color: '#333333', whiteSpace: 'nowrap' }}>
+              From the house of{' '}
+              <a
+                href="https://labs3am.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#f97316', transition: 'color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#ea580c')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#f97316')}
+              >
+                Labs3am
+              </a>
+            </p>
             <a
-              href="https://labs3am.com"
+              href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: '#f97316', transition: 'color 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#ea580c')}
-              onMouseLeave={e => (e.currentTarget.style.color = '#f97316')}
+              aria-label="Rismon on Product Hunt"
+              style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
             >
-              Labs3am
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1131680&theme=neutral&t=1777220069245"
+                alt="Rismon - Did your AI build what you meant? | Product Hunt"
+                width={180}
+                height={39}
+                style={{ width: 180, height: 39, display: 'block' }}
+              />
             </a>
-          </p>
+          </div>
         </div>
       </div>
     </footer>
