@@ -4,6 +4,16 @@
 
 User-agent: *
 
+# --- Allow build assets (Googlebot needs CSS/JS to render the page) ---
+Allow: /assets/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.svg$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.webp$
+Allow: /*.woff2$
+
 # --- Public pages (explicit allow) ---
 Allow: /$
 Allow: /pricing
@@ -43,8 +53,7 @@ Disallow: /*?*fbclid=
 Disallow: /*?*ref=
 Disallow: /*?*sessionid=
 Disallow: /*?*sid=
-# Trailing-slash and hash-fragment duplicates of canonical URLs.
-Disallow: /*/$
+# Hash-fragment duplicates of canonical URLs (canonical tags handle the rest).
 Disallow: /*#*
 
 # --- Block aggressive AI training scrapers (optional, polite) ---
