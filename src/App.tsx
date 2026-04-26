@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import { usePageTracker } from "@/hooks/usePageTracker";
 
@@ -80,12 +81,12 @@ const App = () => (
               <Route path="/open-source" element={<OpenSource />} />
               <Route path="/for/:platform" element={<ForPlatform />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
-              <Route path="/admin/blog/:id" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
-              <Route path="/admin/waitlist" element={<ProtectedRoute><AdminWaitlist /></ProtectedRoute>} />
-              <Route path="/admin/reviews" element={<ProtectedRoute><AdminReviews /></ProtectedRoute>} />
-              <Route path="/admin/broadcast" element={<ProtectedRoute><AdminBroadcast /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
+              <Route path="/admin/blog/:id" element={<AdminRoute><AdminBlog /></AdminRoute>} />
+              <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
+              <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
+              <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcast /></AdminRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
               <Route path="/analyze/:appId" element={<ProtectedRoute><Analyze /></ProtectedRoute>} />
