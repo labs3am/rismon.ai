@@ -169,6 +169,22 @@ export default function Index() {
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free forever. No credit card required.</p>
+          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+            <a
+              href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rismon on Product Hunt"
+            >
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1131680&theme=light&t=1777220069245"
+                alt="Rismon - Did your AI build what you meant? | Product Hunt"
+                width={250}
+                height={54}
+                style={{ width: 250, height: 54 }}
+              />
+            </a>
+          </div>
         </div>
       </section>
 
