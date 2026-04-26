@@ -520,6 +520,7 @@ export type Database = {
           repo_name: string | null
           repo_size_bytes: number | null
           report_id: string | null
+          scan_ready_email_sent_at: string | null
           status: string
           user_id: string
         }
@@ -534,6 +535,7 @@ export type Database = {
           repo_name?: string | null
           repo_size_bytes?: number | null
           report_id?: string | null
+          scan_ready_email_sent_at?: string | null
           status?: string
           user_id: string
         }
@@ -548,6 +550,7 @@ export type Database = {
           repo_name?: string | null
           repo_size_bytes?: number | null
           report_id?: string | null
+          scan_ready_email_sent_at?: string | null
           status?: string
           user_id?: string
         }
@@ -790,6 +793,7 @@ export type Database = {
         }[]
       }
       app_has_backend: { Args: { _app_id: string }; Returns: boolean }
+      claim_scan_ready_email: { Args: { _report_id: string }; Returns: boolean }
       consume_pro_credit: { Args: { _user_id: string }; Returns: boolean }
       delete_my_account: { Args: never; Returns: undefined }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
