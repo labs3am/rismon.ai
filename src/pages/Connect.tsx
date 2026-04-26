@@ -163,12 +163,26 @@ export default function Connect() {
     const { data, error } = await supabase.from('apps').insert({
       user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
       github_repo_name: selectedRepo.name, github_owner: selectedRepo.owner.login,
-      supabase_url: supabaseUrl || null, supabase_anon_key: supabaseKey || null,
       platform: platform === 'Other AI' ? otherPlatform : platform, status: 'active',
       live_url: liveUrl.trim() || null,
       app_description: appDescription.trim() || null,
     }).select().single();
     if (error) { toast.error('Failed to connect app'); setSaving(false); return; }
+    // Save Supabase credentials encrypted, via SECURITY DEFINER RPC. The
+    // plaintext never lands in a regular column the client could read back.
+    if (supabaseUrl || supabaseKey) {
+      const { error: credErr } = await supabase.rpc('set_app_supabase_credentials', {
+        _app_id: data.id,
+        _supabase_url: supabaseUrl || null,
+        _supabase_anon_key: supabaseKey || null,
+      });
+      if (credErr) {
+        toast.error(credErr.message || 'App connected, but credentials could not be saved.');
+        setSaving(false);
+        navigate(`/analyze/${data.id}`);
+        return;
+      }
+    }
     toast.success('App connected');
     navigate(`/analyze/${data.id}`);
   };
