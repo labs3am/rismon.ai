@@ -56,6 +56,10 @@ export default function Analyze() {
   const [filesScanned, setFilesScanned] = useState(0);
   const scanStartedAtRef = useRef<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guard: ensure the scan-ready email is fired exactly once per report,
+  // even if multiple poll ticks land in flight or the user reloads /analyze
+  // after the session is already complete.
+  const scanReadyHandledRef = useRef<Set<string>>(new Set());
 
   // Persist stage to localStorage
   useEffect(() => {
