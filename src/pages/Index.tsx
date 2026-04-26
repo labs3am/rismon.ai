@@ -152,39 +152,19 @@ export default function Index() {
       <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
-          <h1 className="vercel-hero-h1">Do you know what your<br />AI actually built?</h1>
+          <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
           <p className="vercel-hero-sub">
-            Most AI-built apps ship with gaps the founder never knew about.
+            Connect your GitHub. Tell us what your app should do.
             <br />
-            Rismon.ai reads your code, checks it against your intent  and catches the security leaks your AI left behind.
-          </p>
-          <p style={{ fontSize: '13px', color: '#555555', marginBottom: '8px' }}>
-            Not a dev tool. Made for <span style={{ background: '#f97316', color: '#000000', padding: '1px 6px', borderRadius: '3px', fontWeight: 600 }}>non-technical founders</span> who build with AI.
-          </p>
-          <p style={{ fontSize: '12px', color: '#666666', marginBottom: '32px', letterSpacing: '0.02em' }}>
-            Intent gaps · Broken promises · Security leaks explained in plain English.
+            We tell you what it actually does.
+            <br />
+            Plain English. No code knowledge needed. Takes 90 seconds.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free forever. No credit card required.</p>
-          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
-            <a
-              href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Rismon on Product Hunt"
-            >
-              <img
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1131680&theme=light&t=1777220069245"
-                alt="Rismon - Did your AI build what you meant? | Product Hunt"
-                width={250}
-                height={54}
-                style={{ width: 250, height: 54 }}
-              />
-            </a>
-          </div>
         </div>
       </section>
 
