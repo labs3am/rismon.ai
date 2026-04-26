@@ -666,10 +666,25 @@ export default function Analyze() {
             // Fire-and-forget: usage increment + scan-ready email.
             // We deliberately do NOT await these — the user has already
             // earned their report and we don't want to block the redirect.
-            supabase.functions.invoke('analyze', { body: { action: 'increment_usage' } }).catch(() => {});
-            supabase.functions.invoke('send-scan-ready-email', {
-              body: { report_id: updatedSession.report_id, app_name: app?.app_name },
-            }).catch(() => {});
+            //
+            // Guard against duplicate sends: multiple poll ticks can land
+            // before clearInterval takes effect, and a page reload while the
+            // session is already 'complete' would otherwise re-fire the email
+            // on every mount. We dedupe per report_id using both an in-memory
+            // ref (covers same-tab races) and sessionStorage (covers reloads).
+            const reportId = updatedSession.report_id;
+            const storageKey = `rismon_scan_ready_sent_${reportId}`;
+            const alreadySent =
+              scanReadyHandledRef.current.has(reportId) ||
+              sessionStorage.getItem(storageKey) === '1';
+            if (!alreadySent) {
+              scanReadyHandledRef.current.add(reportId);
+              try { sessionStorage.setItem(storageKey, '1'); } catch {}
+              supabase.functions.invoke('analyze', { body: { action: 'increment_usage' } }).catch(() => {});
+              supabase.functions.invoke('send-scan-ready-email', {
+                body: { report_id: reportId, app_name: app?.app_name },
+              }).catch(() => {});
+            }
 
             // Try Pro: deduct 1 deep-scan credit on the client side too,
             // so the dashboard reflects the new credit balance immediately.
