@@ -1,13 +1,27 @@
+# Rismon.ai — robots.txt
+# Public, SEO-indexable routes are listed explicitly for clarity.
+# Private app routes and duplicate-content sources are blocked.
+
 User-agent: *
-Allow: /
+
+# --- Public pages (explicit allow) ---
+Allow: /$
+Allow: /pricing
 Allow: /blog
 Allow: /blog/
 Allow: /sample-report
-Allow: /pricing
+Allow: /contact
+Allow: /about
+Allow: /security
+Allow: /open-source
+Allow: /for/
 Allow: /privacy
 Allow: /terms
 Allow: /sitemap.xml
+Allow: /favicon.png
+Allow: /manifest.json
 
+# --- Private app routes (no SEO value, keep out of index) ---
 Disallow: /dashboard
 Disallow: /connect
 Disallow: /analyze
@@ -16,4 +30,31 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /api
 
+# --- Auth + utility routes (no SEO value) ---
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+
+# --- Block duplicate-content crawl paths ---
+# Tracking and session params create duplicate URLs of the same page.
+Disallow: /*?*utm_
+Disallow: /*?*gclid=
+Disallow: /*?*fbclid=
+Disallow: /*?*ref=
+Disallow: /*?*sessionid=
+Disallow: /*?*sid=
+# Trailing-slash and hash-fragment duplicates of canonical URLs.
+Disallow: /*/$
+Disallow: /*#*
+
+# --- Block aggressive AI training scrapers (optional, polite) ---
+User-agent: GPTBot
+Disallow: /dashboard
+Disallow: /admin
+
+User-agent: CCBot
+Disallow: /dashboard
+Disallow: /admin
+
+# --- Sitemap ---
 Sitemap: https://rismon.ai/sitemap.xml
