@@ -1105,17 +1105,22 @@ serve(async (req) => {
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
       if (app_id) {
-        // Use the service-role client: column-level SELECT on the credential
-        // columns is revoked from the `authenticated` role. We still scope the
-        // lookup to the current user's id so only their own credentials are read.
-        const { data: appCreds } = await serviceClient
+        // Credentials are stored encrypted on public.apps. Decrypt server-side
+        // via the service-role-only RPC. Ownership is enforced by re-checking
+        // user_id against the row before calling the decrypt function.
+        const { data: ownerCheck } = await serviceClient
           .from("apps")
-          .select("supabase_url, supabase_anon_key")
+          .select("user_id")
           .eq("id", app_id)
           .eq("user_id", user.id)
-          .single();
-        appSupabaseUrl = appCreds?.supabase_url ?? null;
-        appSupabaseAnonKey = appCreds?.supabase_anon_key ?? null;
+          .maybeSingle();
+        if (ownerCheck) {
+          const { data: appCreds } = await serviceClient
+            .rpc("get_app_supabase_credentials", { _app_id: app_id })
+            .maybeSingle();
+          appSupabaseUrl = (appCreds as any)?.supabase_url ?? null;
+          appSupabaseAnonKey = (appCreds as any)?.supabase_anon_key ?? null;
+        }
       }
 
       // Enforce all abuse limits BEFORE any AI call (skipped for unlimited allowlist)
