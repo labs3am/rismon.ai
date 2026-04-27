@@ -1,27 +1,13 @@
 // One-off broadcast: announce Rismon.ai Product Hunt launch.
 //
-// HOW TO TRIGGER (manual, one-time):
-//
-// Preview (no emails sent — returns recipient list + sample HTML):
-//   curl -X POST \
-//     "<SUPABASE_URL>/functions/v1/send-producthunt-launch?preview=true" \
-//     -H "x-broadcast-secret: <BROADCAST_FUNCTION_SECRET>"
-//
-// Send to a single test address first (recommended):
-//   curl -X POST "<SUPABASE_URL>/functions/v1/send-producthunt-launch" \
-//     -H "x-broadcast-secret: <BROADCAST_FUNCTION_SECRET>" \
-//     -H "Content-Type: application/json" \
-//     -d '{"only_emails":["you@example.com"]}'
-//
-// Send to everyone:
-//   curl -X POST "<SUPABASE_URL>/functions/v1/send-producthunt-launch" \
-//     -H "x-broadcast-secret: <BROADCAST_FUNCTION_SECRET>"
-//
-// This is intentionally NOT scheduled. Run it once for the launch.
+// Admin-gated. Three modes (matches send-scan-nudge contract so the
+// AdminBroadcast UI can drive it via supabase.functions.invoke):
+//   { mode: "test" }                  -> sends only to ADMIN_EMAIL
+//   { mode: "broadcast", dryRun: true } -> returns eligibleCount + sample
+//   { mode: "broadcast" }             -> sends to all profiles
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { BRAND, emailShell } from "../_shared/email-brand.ts";
-import { requireBroadcastSecret } from "../_shared/broadcast-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,6 +17,7 @@ const corsHeaders = {
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 const SUBJECT = "We're live on Product Hunt 🚀";
+const ADMIN_EMAIL = "hello@rismon.ai";
 
 const PRODUCT_HUNT_URL =
   "https://www.producthunt.com/products/rismon?utm_source=email&utm_medium=launch&utm_campaign=ph-launch";
@@ -115,121 +102,152 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const denied = requireBroadcastSecret(req);
-  if (denied) return denied;
-
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // ---------- Auth: admin only ----------
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const adminEmails = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+    if (!user.email || !adminEmails.has(user.email)) {
+      return new Response(JSON.stringify({ error: "Admin only" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Parse body
+    const { mode, dryRun } = await req.json().catch(() => ({ mode: "test" }));
 
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .not("email", "is", null);
-
-    if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
-      throw new Error("Failed to fetch profiles");
-    }
-
-    const allUsers = (profiles || []).filter((p) => p.email);
-
-    // Optional filter: only_emails in body
-    let onlyEmails: string[] | null = null;
-    try {
-      const body = await req.json();
-      if (body?.only_emails && Array.isArray(body.only_emails)) {
-        onlyEmails = body.only_emails.map((e: string) => e.toLowerCase());
+    async function sendOne(
+      toEmail: string,
+      firstName: string | null
+    ): Promise<{ ok: boolean; err?: string }> {
+      const html = buildHtml(firstName || "");
+      const res = await fetch(`${GATEWAY_URL}/emails`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "X-Connection-Api-Key": RESEND_API_KEY,
+        },
+        body: JSON.stringify({
+          from: BRAND.fromAddress,
+          to: [toEmail],
+          subject: SUBJECT,
+          html,
+          reply_to: BRAND.replyTo,
+        }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        return { ok: false, err: `${res.status} ${t.slice(0, 200)}` };
       }
-    } catch {
-      /* no body or invalid JSON, fine */
+      return { ok: true };
     }
 
-    const finalList = onlyEmails
-      ? allUsers.filter((u) =>
-          onlyEmails!.includes(String(u.email).toLowerCase())
-        )
-      : allUsers;
-
-    const url = new URL(req.url);
-    const isPreview = url.searchParams.get("preview") === "true";
-
-    if (isPreview) {
-      return new Response(
-        JSON.stringify(
+    // ---------- TEST MODE ----------
+    if (mode === "test") {
+      const result = await sendOne(ADMIN_EMAIL, "Risvan");
+      if (!result.ok) {
+        return new Response(
+          JSON.stringify({ error: "Send failed", detail: result.err }),
           {
-            preview: true,
-            subject: SUBJECT,
-            recipients: finalList.map((u) => ({
-              name: u.full_name,
-              email: u.email,
-            })),
-            total: finalList.length,
-            sample_html: buildHtml(finalList[0]?.full_name || "Founder"),
-          },
-          null,
-          2
-        ),
+            status: 502,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      return new Response(
+        JSON.stringify({ ok: true, sentTo: ADMIN_EMAIL }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (finalList.length === 0) {
+    if (mode !== "broadcast") {
+      return new Response(JSON.stringify({ error: "Invalid mode" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---------- BROADCAST MODE ----------
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data: profiles, error: profErr } = await admin
+      .from("profiles")
+      .select("id, full_name, email")
+      .not("email", "is", null);
+
+    if (profErr) {
       return new Response(
-        JSON.stringify({ message: "No recipients matched", sent: 0 }),
+        JSON.stringify({ error: "Query failed", detail: profErr.message }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const eligible = (profiles || []).filter((p) => p.email);
+
+    if (dryRun) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          dryRun: true,
+          eligibleCount: eligible.length,
+          sample: eligible.slice(0, 5).map((e) => e.email),
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     let sent = 0;
+    let failed = 0;
     const errors: string[] = [];
-
-    for (const user of finalList) {
-      // 600ms gap between sends to stay well under provider rate limits
-      await new Promise((r) => setTimeout(r, 600));
-      try {
-        const res = await fetch(`${GATEWAY_URL}/emails`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "X-Connection-Api-Key": RESEND_API_KEY,
-          },
-          body: JSON.stringify({
-            from: BRAND.fromAddress,
-            to: [user.email],
-            subject: SUBJECT,
-            html: buildHtml(user.full_name || ""),
-            reply_to: BRAND.replyTo,
-          }),
-        });
-
-        if (res.ok) {
-          sent++;
-        } else {
-          const errBody = await res.text();
-          console.error(
-            `Failed to send to ${user.email}: ${res.status} ${errBody}`
-          );
-          errors.push(`${user.email}: ${res.status}`);
-        }
-      } catch (e) {
-        console.error(`Error sending to ${user.email}:`, e);
-        errors.push(
-          `${user.email}: ${e instanceof Error ? e.message : "unknown"}`
-        );
+    for (const u of eligible) {
+      await new Promise((r) => setTimeout(r, 250)); // ~4/sec
+      const r = await sendOne(u.email!, (u.full_name || "").split(" ")[0] || null);
+      if (r.ok) sent++;
+      else {
+        failed++;
+        if (errors.length < 10) errors.push(`${u.email}: ${r.err}`);
       }
     }
 
     return new Response(
-      JSON.stringify({ sent, total: finalList.length, errors }),
+      JSON.stringify({
+        ok: true,
+        eligibleCount: eligible.length,
+        sent,
+        failed,
+        errors,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
