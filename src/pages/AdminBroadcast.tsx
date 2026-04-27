@@ -1,15 +1,51 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock } from "lucide-react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock, Rocket, Bell } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// Founder-note broadcast: test → confirm → broadcast.
+// Admin broadcast hub: pick a campaign → test → confirm → broadcast.
 // Hard-gated to admins (also enforced server-side).
 
 const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
+
+type CampaignId = "scan-nudge" | "producthunt-launch";
+
+interface Campaign {
+  id: CampaignId;
+  fn: string; // edge function name
+  label: string;
+  subject: string;
+  description: string;
+  audience: string;
+  icon: typeof Bell;
+  supportsInactiveDays: boolean;
+}
+
+const CAMPAIGNS: Campaign[] = [
+  {
+    id: "scan-nudge",
+    fn: "send-scan-nudge",
+    label: "Scan nudge",
+    subject: "A quick note before you decide Rismon isn't for you",
+    description: "Personal \"haven't scanned yet?\" note to inactive users who never ran a scan. Each user gets it at most once.",
+    audience: "Inactive signups (configurable window) who never scanned",
+    icon: Bell,
+    supportsInactiveDays: true,
+  },
+  {
+    id: "producthunt-launch",
+    fn: "send-producthunt-launch",
+    label: "Product Hunt launch",
+    subject: "We're live on Product Hunt 🚀",
+    description: "Launch-day note asking users to upvote on Product Hunt and star the GitHub repo.",
+    audience: "All users with an email in profiles",
+    icon: Rocket,
+    supportsInactiveDays: false,
+  },
+];
 
 const PRESETS: { label: string; days: number }[] = [
   { label: "1 week", days: 7 },
@@ -24,6 +60,7 @@ const AdminBroadcast = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  const [campaign, setCampaign] = useState<Campaign>(CAMPAIGNS[0]);
   const [eligibleCount, setEligibleCount] = useState<number | null>(null);
   const [sample, setSample] = useState<string[]>([]);
   const [loadingCount, setLoadingCount] = useState(false);
@@ -44,8 +81,10 @@ const AdminBroadcast = () => {
   const fetchEligible = async () => {
     setLoadingCount(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast", dryRun: true, inactiveDays },
+      const body: Record<string, unknown> = { mode: "broadcast", dryRun: true };
+      if (campaign.supportsInactiveDays) body.inactiveDays = inactiveDays;
+      const { data, error } = await supabase.functions.invoke(campaign.fn, {
+        body,
       });
       if (error) throw error;
       setEligibleCount(data?.eligibleCount ?? 0);
@@ -58,14 +97,22 @@ const AdminBroadcast = () => {
   };
 
   useEffect(() => {
-    if (user?.email && ADMIN_EMAILS.has(user.email)) fetchEligible();
+    if (user?.email && ADMIN_EMAILS.has(user.email)) {
+      // Reset state on campaign switch and re-fetch.
+      setEligibleCount(null);
+      setSample([]);
+      setLastResult(null);
+      setConfirmOpen(false);
+      setConfirmText("");
+      fetchEligible();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email, inactiveDays]);
+  }, [user?.email, inactiveDays, campaign.id]);
 
   const sendTest = async () => {
     setSendingTest(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
+      const { data, error } = await supabase.functions.invoke(campaign.fn, {
         body: { mode: "test" },
       });
       if (error) throw error;
@@ -84,8 +131,10 @@ const AdminBroadcast = () => {
     }
     setBroadcasting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-scan-nudge", {
-        body: { mode: "broadcast", inactiveDays },
+      const body: Record<string, unknown> = { mode: "broadcast" };
+      if (campaign.supportsInactiveDays) body.inactiveDays = inactiveDays;
+      const { data, error } = await supabase.functions.invoke(campaign.fn, {
+        body,
       });
       if (error) throw error;
       setLastResult({ sent: data?.sent ?? 0, failed: data?.failed ?? 0, errors: data?.errors ?? [] });
@@ -113,27 +162,61 @@ const AdminBroadcast = () => {
 
         <div className="mb-2">
           <span className="inline-block text-[10px] font-semibold tracking-[0.18em] text-primary uppercase">
-            Broadcast · One-time
+            Broadcast hub
           </span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Founder note · scan nudge</h1>
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Email campaigns</h1>
         <p className="text-muted-foreground mb-10 leading-relaxed">
-          Sends a personal "haven't scanned yet?" email to inactive users (signed up at least <strong className="text-foreground">{inactiveDays} day{inactiveDays === 1 ? "" : "s"}</strong> ago, never ran a scan). Each user gets it at most once.
+          Pick a campaign, send yourself a test, then broadcast to your users.
         </p>
+
+        {/* Campaign picker */}
+        <section className="rounded-2xl border border-border bg-card p-6 mb-5">
+          <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase mb-3">Campaign</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {CAMPAIGNS.map((c) => {
+              const Icon = c.icon;
+              const active = campaign.id === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setCampaign(c)}
+                  disabled={loadingCount || broadcasting || sendingTest}
+                  className={`text-left p-4 rounded-xl border transition-all ${
+                    active
+                      ? "bg-primary/5 border-primary/40"
+                      : "bg-background border-border hover:border-foreground/30"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Icon className={`w-4 h-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className={`text-sm font-semibold ${active ? "text-foreground" : "text-foreground"}`}>{c.label}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-2 line-clamp-2">{c.description}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground/70 truncate">"{c.subject}"</p>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+            <strong className="text-foreground">Audience:</strong> {campaign.audience}
+          </p>
+        </section>
 
         {/* Step 1 — Audience */}
         <section className="rounded-2xl border border-border bg-card p-6 mb-5">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <p className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase mb-1">Step 1</p>
-              <h2 className="text-lg font-semibold">Audience</h2>
+              <h2 className="text-lg font-semibold">Eligible users</h2>
             </div>
             <Button variant="outline" size="sm" onClick={fetchEligible} disabled={loadingCount}>
               {loadingCount ? "Counting…" : "Refresh"}
             </Button>
           </div>
 
-          {/* Inactivity window selector */}
+          {/* Inactivity window selector — only for campaigns that support it */}
+          {campaign.supportsInactiveDays && (
           <div className="mb-5">
             <div className="flex items-center gap-2 mb-2.5">
               <CalendarClock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -186,6 +269,7 @@ const AdminBroadcast = () => {
               </div>
             )}
           </div>
+          )}
 
           <div className="flex items-baseline gap-3 mb-3">
             <span className="text-5xl font-bold text-primary tabular-nums">{eligibleCount ?? "—"}</span>
@@ -235,7 +319,7 @@ const AdminBroadcast = () => {
               <div className="flex items-start gap-2 mb-3">
                 <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-foreground">
-                  About to email <strong>{eligibleCount}</strong> users. Type <code className="px-1.5 py-0.5 rounded bg-background border border-border text-xs">SEND</code> to confirm.
+                  About to email <strong>{eligibleCount}</strong> users with <strong>"{campaign.label}"</strong>. Type <code className="px-1.5 py-0.5 rounded bg-background border border-border text-xs">SEND</code> to confirm.
                 </p>
               </div>
               <input
