@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock, Rocket, Bell } from "lucide-react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock, Rocket, Bell, Sparkles, GitBranch } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
 
-type CampaignId = "scan-nudge" | "producthunt-launch";
+type CampaignId = "scan-nudge" | "producthunt-launch" | "first-scan-reminder" | "complete-your-scan";
 
 interface Campaign {
   id: CampaignId;
@@ -43,6 +43,26 @@ const CAMPAIGNS: Campaign[] = [
     description: "Launch-day note asking users to upvote on Product Hunt and star the GitHub repo.",
     audience: "All users with an email in profiles",
     icon: Rocket,
+    supportsInactiveDays: false,
+  },
+  {
+    id: "first-scan-reminder",
+    fn: "send-first-scan-reminder",
+    label: "First scan reminder",
+    subject: "Your app is waiting to be scanned",
+    description: "Nudge for users who signed up but never ran a scan. Walks them through the 3-step flow.",
+    audience: "Users with zero analyses",
+    icon: Sparkles,
+    supportsInactiveDays: false,
+  },
+  {
+    id: "complete-your-scan",
+    fn: "send-complete-your-scan",
+    label: "Complete your scan",
+    subject: "You are one step away from your first report",
+    description: "Reminder for users who connected a repo but never ran a scan. Lists the most common findings.",
+    audience: "Users with at least one connected app and zero analyses",
+    icon: GitBranch,
     supportsInactiveDays: false,
   },
 ];
