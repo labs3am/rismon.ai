@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PostListItem {
   id: string;
@@ -191,7 +192,29 @@ export default function Blog() {
 
         {/* Posts */}
         {loading ? (
-          <div style={{ color: '#555555', fontSize: 14 }}>Loading…</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }} aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <li
+                key={i}
+                className="blog-row"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid #1a1a1a' }}
+              >
+                <div className="blog-row-grid">
+                  <div className="space-y-2">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-5 w-14 rounded-full mt-3" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-6 w-11/12" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-10/12" />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : posts.length === 0 ? (
           <div
             style={{

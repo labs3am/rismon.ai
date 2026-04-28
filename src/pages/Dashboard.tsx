@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PlusCircle, Github, Clock, Zap, AlertTriangle, Rocket } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -202,7 +203,29 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="pt-24 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+        <div className="max-w-[1100px] mx-auto pt-20 sm:pt-24 pb-16 px-4 sm:px-6 md:px-12">
+          {/* Greeting */}
+          <Skeleton className="h-7 sm:h-8 w-56 max-w-full" />
+          <Skeleton className="h-4 w-72 max-w-full mt-3" />
+
+          {/* Plan card */}
+          <Skeleton className="h-24 w-full rounded-lg mt-6" />
+
+          {/* Stats: 2x2 on mobile, 4 across on desktop — matches real layout */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-[88px] sm:h-[112px] rounded-lg" />
+            ))}
+          </div>
+
+          {/* App rows */}
+          <Skeleton className="h-5 w-32 mt-12" />
+          <div className="mt-4 space-y-4">
+            {[0, 1].map((i) => (
+              <Skeleton key={i} className="h-[120px] sm:h-[96px] rounded-lg" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

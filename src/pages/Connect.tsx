@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
+import { Skeleton } from '@/components/ui/skeleton';
 import { githubFetch, GithubAuthRequiredError, clearReauthFlag } from '@/lib/github-auth';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
@@ -213,7 +214,12 @@ export default function Connect() {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="pt-24 flex justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+        <div className="max-w-[640px] mx-auto px-4 sm:px-5 pt-20 sm:pt-24 pb-16">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-48 mt-4" />
+          <Skeleton className="h-16 w-full rounded-lg mt-6" />
+          <Skeleton className="h-[420px] w-full rounded-2xl mt-8" />
+        </div>
       </div>
     );
   }

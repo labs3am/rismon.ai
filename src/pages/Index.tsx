@@ -160,7 +160,7 @@ export default function Index() {
             <br />
             Plain English. No code knowledge needed. Takes 90 seconds.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
+          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
             <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
           </div>
