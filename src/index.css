@@ -142,6 +142,43 @@
   border-color: #f97316;
 }
 
+/* ---------------------------------------------------------------
+   Mobile: prevent iOS zoom-on-focus and make tap targets
+   comfortable. iOS zooms when an input's font-size < 16px.
+   We also bump shared input/textarea/select sizing on small
+   screens without changing their desktop look.
+---------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .auth-input,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Respect users who prefer reduced motion (smoother on low-end phones). */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Tap-highlight + safer min tap targets for hamburger/close icons */
+@media (max-width: 640px) {
+  button, a {
+    -webkit-tap-highlight-color: rgba(255,255,255,0.06);
+  }
+}
+
 /* Hero CTAs (light variant) */
 .btn-hero-primary {
   background: #ffffff;
@@ -396,6 +433,15 @@
   .btn-hero-secondary {
     padding: 12px 20px;
     font-size: 14.5px;
+  }
+}
+
+/* On phones, hero CTAs span full width when stacked, so the tap
+   target matches the headline width instead of hugging the text. */
+@media (max-width: 640px) {
+  .vercel-hero-cta-group .vercel-btn-primary,
+  .vercel-hero-cta-group .vercel-btn-secondary {
+    width: 100%;
   }
 }
 
