@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.send-scan-nudge]
 verify_jwt = false
+
+[functions.send-first-scan-reminder]
+verify_jwt = false
+
+[functions.send-complete-your-scan]
+verify_jwt = false
