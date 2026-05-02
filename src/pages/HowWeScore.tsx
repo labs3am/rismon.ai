@@ -10,7 +10,6 @@ export default function HowWeScorePage() {
       <SEO
         title="How we score | Rismon"
         description="The exact math behind every Rismon score. Same input, same score, every time."
-        canonical="https://rismon.ai/how-we-score"
       />
       <Navbar />
       <main>
