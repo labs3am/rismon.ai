@@ -134,6 +134,7 @@ export default function Navbar() {
                 >
                   <ProductMenuItem label="How it works" desc="The 3-step scan flow" onClick={() => goToSection('how-it-works')} />
                   <ProductMenuItem label="What we find" desc="Security, intent & legal checks" onClick={() => goToSection('what-we-check')} />
+                  <ProductMenuItem label="How we score" desc="The math behind every score" onClick={() => { setProductOpen(false); navigate('/how-we-score'); }} />
                   <ProductMenuItem label="Security" desc="How we handle your code" onClick={() => { setProductOpen(false); navigate('/security'); }} />
                 </div>
               )}
