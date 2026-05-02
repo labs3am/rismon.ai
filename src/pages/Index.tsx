@@ -18,9 +18,15 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
-import intentConfirmScreen from '@/assets/screenshots/intent-confirm.png';
-import smartQuestionsScreen from '@/assets/screenshots/smart-questions.png';
-import intentReportScreen from '@/assets/screenshots/intent-report.png';
+import intentConfirmScreen from '@/assets/screenshots/intent-confirm.webp';
+import intentConfirmScreenSm from '@/assets/screenshots/intent-confirm-800.webp';
+import intentConfirmScreenFull from '@/assets/screenshots/intent-confirm.png';
+import smartQuestionsScreen from '@/assets/screenshots/smart-questions.webp';
+import smartQuestionsScreenSm from '@/assets/screenshots/smart-questions-800.webp';
+import smartQuestionsScreenFull from '@/assets/screenshots/smart-questions.png';
+import intentReportScreen from '@/assets/screenshots/intent-report.webp';
+import intentReportScreenSm from '@/assets/screenshots/intent-report-800.webp';
+import intentReportScreenFull from '@/assets/screenshots/intent-report.png';
 
 const faqs = [
   {
@@ -107,9 +113,9 @@ const securityProblems = [
 ];
 
 const screenshots = [
-  { src: intentConfirmScreen, alt: "What we read in your code", caption: "We read your code and confirm what we found" },
-  { src: smartQuestionsScreen, alt: "Smart questions about your app", caption: "A few questions only you can answer" },
-  { src: intentReportScreen, alt: "Your Intent Match report", caption: "Your Intent Match score with plain-English verdict" },
+  { src: intentConfirmScreen, srcSm: intentConfirmScreenSm, full: intentConfirmScreenFull, alt: "What we read in your code", caption: "We read your code and confirm what we found" },
+  { src: smartQuestionsScreen, srcSm: smartQuestionsScreenSm, full: smartQuestionsScreenFull, alt: "Smart questions about your app", caption: "A few questions only you can answer" },
+  { src: intentReportScreen, srcSm: intentReportScreenSm, full: intentReportScreenFull, alt: "Your Intent Match report", caption: "Your Intent Match score with plain-English verdict" },
 ];
 
 const platforms = [
@@ -259,7 +265,7 @@ export default function Index() {
               <div key={i}>
                 <button
                   type="button"
-                  onClick={() => setZoomedImg(s.src)}
+                  onClick={() => setZoomedImg(s.full)}
                   aria-label={`Zoom ${s.alt}`}
                   className="group relative block w-full"
                   style={{
@@ -273,12 +279,19 @@ export default function Index() {
                     padding: 0,
                   }}
                 >
-                  <img
-                    src={s.src}
-                    alt={s.alt}
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', imageRendering: 'crisp-edges' as any }}
-                  />
+                  <picture>
+                    <source media="(max-width: 768px)" srcSet={s.srcSm} type="image/webp" />
+                    <source srcSet={s.src} type="image/webp" />
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      loading="lazy"
+                      decoding="async"
+                      width={1200}
+                      height={900}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                    />
+                  </picture>
                   <span
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '6px 8px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#fff' }}
