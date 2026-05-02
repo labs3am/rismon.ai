@@ -440,7 +440,20 @@ export default function Index() {
         >
           {zoomedImg && (
             <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <img src={zoomedImg} alt="Zoomed screenshot" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <img
+                  src={zoomedImg.placeholder}
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: '100%', height: 'auto', display: 'block', filter: 'blur(8px)' }}
+                />
+                <img
+                  src={zoomedImg.full}
+                  alt="Zoomed screenshot"
+                  decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: 'auto', display: 'block' }}
+                />
+              </div>
             </div>
           )}
         </DialogContent>
