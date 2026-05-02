@@ -143,7 +143,7 @@ const HEADLINE = 'vercel-headline';
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [zoomedImg, setZoomedImg] = useState<string | null>(null);
+  const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
 
   const securityItems = [
     { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
@@ -247,7 +247,8 @@ export default function Index() {
               <div key={i}>
                 <button
                   type="button"
-                  onClick={() => setZoomedImg(s.full)}
+                  onClick={() => setZoomedImg({ full: s.src, placeholder: s.srcSm })}
+                  onMouseEnter={() => { const i = new Image(); i.src = s.src; }}
                   aria-label={`Zoom ${s.alt}`}
                   className="group relative block w-full"
                   style={{
