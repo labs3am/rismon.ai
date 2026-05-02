@@ -417,6 +417,19 @@ export default function Index() {
       </section>
 
       <Footer />
+
+      <Dialog open={!!zoomedImg} onOpenChange={(o) => !o && setZoomedImg(null)}>
+        <DialogContent
+          className="border-0 p-0 bg-transparent shadow-none max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] w-auto"
+          style={{ background: 'transparent' }}
+        >
+          {zoomedImg && (
+            <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <img src={zoomedImg} alt="Zoomed screenshot" style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
