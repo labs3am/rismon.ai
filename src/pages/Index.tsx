@@ -185,30 +185,28 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12">
+          <div className="flex flex-col gap-16 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
+                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginBottom: 16, lineHeight: 1.5, letterSpacing: '0.02em' }}>
+                  <span style={{ color: '#555' }}>0{i + 1} — </span>{s.caption}
+                </p>
                 <div
                   style={{
-                    background: '#0a0a0a',
+                    background: '#000',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 12,
                     overflow: 'hidden',
-                    aspectRatio: '4 / 3',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0,
+                    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6)',
                   }}
                 >
                   <img
                     src={s.src}
                     alt={s.alt}
                     loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
                   />
                 </div>
-                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{s.caption}</p>
               </div>
             ))}
           </div>
