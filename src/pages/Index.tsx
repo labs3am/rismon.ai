@@ -91,8 +91,8 @@ const steps = [
 ];
 
 const businessProblems = [
-  { title: "Paid features that anyone can access", text: "Your payment exists. The check does not." },
-  { title: "Admin pages open to every user", text: "Any user can reach your admin panel right now." },
+  { title: "Paid features that anyone can access", text: "Premium features that may not be enforced properly in the logic." },
+  { title: "Admin pages open to every user", text: "Admin routes that may not require proper authentication." },
   { title: "Wrong users doing wrong things", text: "Sellers accessing buyer data. Free users in paid sections." },
   { title: "Features you never asked for", text: "Your AI built extra things. Do you know what they are?" },
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
@@ -100,7 +100,7 @@ const businessProblems = [
 
 const securityProblems = [
   { title: "API keys exposed in your code", text: "Your OpenAI or Stripe key is visible to anyone who looks." },
-  { title: "User data readable by anyone", text: "Your database has no protection. All records publicly accessible." },
+  { title: "User data readable by anyone", text: "Database tables that may be accessible without proper rules." },
   { title: "Private pages with no login check", text: "Pages that should need login are open to everyone." },
   { title: "Secrets hardcoded in code", text: "Passwords and keys written directly in your files." },
   { title: "API routes anyone can call", text: "Your backend has no protection from direct requests." },
