@@ -228,25 +228,6 @@ export default function Index() {
               </div>
             </div>
           </div>
-
-          <div
-            className="mt-10 mx-auto max-w-[560px] rounded-xl px-5 py-5 text-center relative overflow-hidden"
-            style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))',
-              border: '1px solid rgba(255,255,255,0.14)',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px -15px rgba(192,192,192,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
-            }}
-          >
-            <p style={{ fontSize: '10.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>
-              And the worst one
-            </p>
-            <p style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', lineHeight: 1.3, marginBottom: 8 }}>
-              Issues your users find before you do
-            </p>
-            <p style={{ fontSize: '13.5px', color: '#ffffff', lineHeight: 1.6, maxWidth: 460, margin: '0 auto', opacity: 0.8 }}>
-              Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
-            </p>
-          </div>
         </div>
       </section>
 
