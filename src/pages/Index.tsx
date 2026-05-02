@@ -167,7 +167,7 @@ export default function Index() {
       {/* HERO */}
       <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
-          <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
+          <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
           <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
           <p className="vercel-hero-sub">
             Connect your repo, answer 3 quick questions, and get a plain-English report
