@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ZoomIn, X, Lock, Eye, Github, Database, FileCode, ShieldCheck } from 'lucide-react';
+import { Check, ZoomIn, Lock, Eye, Github, Database, FileCode, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
