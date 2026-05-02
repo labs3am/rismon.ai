@@ -98,7 +98,6 @@ const businessProblems = [
 
 const screenshots = [
   { src: questionsScreen, alt: "Smart questions screen", caption: "Smart questions based on your actual code" },
-  { src: null, alt: "Finding card", caption: "Every issue with file path and fix prompt included" },
   { src: scoreScreen, alt: "Score card", caption: "Your Intent Score with plain English verdict" },
 ];
 
@@ -184,7 +183,7 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
                 <div
@@ -197,27 +196,15 @@ export default function Index() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: s.src ? 0 : 16,
+                    padding: 0,
                   }}
                 >
-                  {s.src ? (
-                    <img
-                      src={s.src}
-                      alt={s.alt}
-                      loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  ) : (
-                    <div style={{ width: '100%', textAlign: 'left' }}>
-                      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '3px 8px', borderRadius: 4, letterSpacing: '0.08em' }}>HIGH</span>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', padding: '3px 8px', borderRadius: 4, letterSpacing: '0.08em' }}>VERIFIED</span>
-                      </div>
-                      <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 600, marginBottom: 8, lineHeight: 1.3 }}>Paywall not enforced in logic</p>
-                      <p style={{ color: '#888888', fontSize: 12.5, lineHeight: 1.55, marginBottom: 12 }}>Premium check is set to true permanently. Every user gets Pro features without paying.</p>
-                      <p style={{ color: '#f97316', fontSize: 11, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>src/components/Dashboard.tsx:47</p>
-                    </div>
-                  )}
+                  <img
+                    src={s.src}
+                    alt={s.alt}
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
                 </div>
                 <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{s.caption}</p>
               </div>
@@ -230,35 +217,11 @@ export default function Index() {
       <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
         <div className="max-w-[720px] mx-auto">
           <p className={LABEL}>SAMPLE</p>
-          <h2 className={HEADLINE}>See a real finding</h2>
-          <div style={{ position: 'relative', marginTop: 40 }}>
-            <div style={{ background: '#000000', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 24 }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: 4, letterSpacing: '0.08em' }}>HIGH</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', padding: '4px 10px', borderRadius: 4, letterSpacing: '0.08em' }}>VERIFIED</span>
-              </div>
-              <p style={{ color: '#ffffff', fontSize: 18, fontWeight: 600, marginBottom: 10 }}>Paywall not enforced in logic</p>
-              <p style={{ color: '#888888', fontSize: 14.5, lineHeight: 1.65, marginBottom: 16 }}>
-                Premium check is set to true permanently. Every user gets Pro features without paying.
-              </p>
-              <p style={{ color: '#f97316', fontSize: 13, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                src/components/Dashboard.tsx:47
-              </p>
-            </div>
-            <div
-              aria-hidden
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                bottom: -1,
-                height: 120,
-                background: 'linear-gradient(to bottom, rgba(10,10,10,0) 0%, #0a0a0a 85%)',
-                pointerEvents: 'none',
-              }}
-            />
-          </div>
-          <div className="text-center" style={{ marginTop: 24 }}>
+          <h2 className={HEADLINE}>See a real Rismon report</h2>
+          <p style={{ fontSize: 15, color: '#888888', textAlign: 'center', lineHeight: 1.65, maxWidth: 540, margin: '24px auto 0' }}>
+            Walk through a full sample report — intent score, security findings, and copy-paste fix prompts.
+          </p>
+          <div className="text-center" style={{ marginTop: 28 }}>
             <Link to="/sample-report" className="vercel-btn-primary">See the full sample report →</Link>
           </div>
         </div>
