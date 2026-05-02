@@ -136,6 +136,16 @@ const HEADLINE = 'vercel-headline';
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [zoomedImg, setZoomedImg] = useState<string | null>(null);
+
+  const securityItems = [
+    { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
+    { icon: Github, title: 'Read-only GitHub access', text: 'We cannot modify, delete, or push anything to your repository. Read-only. Always.' },
+    { icon: Eye, title: 'No IP logging', text: 'We do not log or store IP addresses. Our analytics are aggregated country-level only.' },
+    { icon: FileCode, title: 'Fully open source', text: 'Every line of Rismon is on GitHub. Verify our claims yourself. Nothing is hidden.' },
+    { icon: ShieldCheck, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens.' },
+    { icon: Database, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data.' },
+  ];
 
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
