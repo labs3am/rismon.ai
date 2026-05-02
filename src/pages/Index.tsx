@@ -102,6 +102,7 @@ const businessProblems = [
   { title: "Wrong users doing wrong things", text: "Sellers accessing buyer data. Free users in paid sections." },
   { title: "Features you never asked for", text: "Your AI built extra things. Do you know what they are?" },
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
+  { title: "Issues your users find before you do", text: "Most founders only discover broken logic or security gaps after a user hits them. Catch them first." },
 ];
 
 const securityProblems = [
