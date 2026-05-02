@@ -177,6 +177,10 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
   const fixPrompt = f.fix_prompt || '';
   const techRef = f.technical_reference || '';
   const googleQuery = f.google_query || '';
+  const filePath = f.file_path || '';
+  const lineNumber = f.line_number;
+  const codeSnippet = f.code_snippet || '';
+  const evidence = f.evidence || '';
 
   const onCopy = () => {
     if (!fixPrompt) return;
@@ -253,6 +257,42 @@ function FindingCard({ f, idx, analysisId }: { f: any; idx: number; analysisId?:
           <div style={{ fontSize: 14, color: '#ffffff', lineHeight: 1.6, marginBottom: 16 }}>
             {whatThisMeans}
           </div>
+        </>
+      )}
+
+      {(filePath || codeSnippet || evidence) && (
+        <>
+          <div style={{ fontSize: 10, color: '#555555', letterSpacing: '0.08em', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>
+            Evidence
+          </div>
+          {filePath && (
+            <div style={{
+              fontSize: 12, color: '#9ca3af', marginBottom: 8,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#000', border: '1px solid #1f1f1f', borderRadius: 4,
+              padding: '4px 8px',
+            }}>
+              <FileText size={11} style={{ color: '#555' }} />
+              {filePath}{lineNumber ? `:${lineNumber}` : ''}
+            </div>
+          )}
+          {codeSnippet && (
+            <pre style={{
+              background: '#000', border: '1px solid #1f1f1f', borderRadius: 6,
+              padding: 12, fontSize: 12, color: '#d4d4d4', lineHeight: 1.55,
+              overflowX: 'auto', margin: '0 0 8px 0',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            }}>
+              <code>{codeSnippet}</code>
+            </pre>
+          )}
+          {evidence && (
+            <div style={{ fontSize: 13, color: '#888', lineHeight: 1.55, marginBottom: 16, fontStyle: 'italic' }}>
+              {evidence}
+            </div>
+          )}
         </>
       )}
 
