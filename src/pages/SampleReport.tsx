@@ -38,7 +38,7 @@ function scoreLabelFor(score: number) {
   if (score >= 85) return 'Strong';
   if (score >= 70) return 'Good';
   if (score >= 55) return 'Getting there';
-  if (score >= 40) return 'Needs work';
+  if (score >= 40) return 'Significant work needed';
   return 'Critical issues';
 }
 
