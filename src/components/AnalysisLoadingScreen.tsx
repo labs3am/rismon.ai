@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Logo from './Logo';
 
 const readingMessages = [
@@ -35,10 +35,47 @@ interface Props {
   totalPrompts?: number;
 }
 
+// Each stage owns a slice of the bar. The bar moves continuously inside its
+// slice using real signals when we have them, and a smooth time-based easing
+// otherwise. This makes the scan feel honest and alive instead of stalling
+// at an arbitrary number while the AI thinks.
+const STAGE_BOUNDS: Record<Props['stage'], [number, number]> = {
+  reading: [0, 35],
+  analyzing: [35, 75],
+  generating: [75, 98],
+};
+
+// Rough expected duration per stage (ms). Used only when we have no real
+// signal — generates a smooth crawl that asymptotically approaches the upper
+// bound but never reaches it, so the bar feels like progress without ever
+// "lying" by claiming completion early.
+const STAGE_EXPECTED_MS: Record<Props['stage'], number> = {
+  reading: 18000,
+  analyzing: 35000,
+  generating: 22000,
+};
+
 export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles = 0, currentFile = '', promptCount = 0, totalPrompts = 0 }: Props) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [fade, setFade] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
+  const [tick, setTick] = useState(0);
+  const stageStartRef = useRef<number>(Date.now());
+  const lastStageRef = useRef<Props['stage']>(stage);
+
+  // Reset the per-stage timer whenever we move to a new stage.
+  useEffect(() => {
+    if (lastStageRef.current !== stage) {
+      lastStageRef.current = stage;
+      stageStartRef.current = Date.now();
+    }
+  }, [stage]);
+
+  // Drive a smooth, frequent re-render so the time-based easing animates.
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 250);
+    return () => clearInterval(id);
+  }, []);
 
   const messages = stage === 'reading' ? readingMessages : stage === 'analyzing' ? analyzingMessages : generatingMessages;
 
@@ -73,12 +110,30 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
   const stageLabel =
     stage === 'reading' ? 'Reading' : stage === 'analyzing' ? 'Analyzing' : 'Generating fixes';
 
-  const progressPct =
-    stage === 'reading' && totalFiles > 0
-      ? Math.max(2, (fileCount / totalFiles) * 100)
-      : stage === 'generating' && totalPrompts > 0
-        ? Math.max(2, (promptCount / totalPrompts) * 100)
-        : null;
+  // ---- Compute a single, continuous percentage across all three stages ----
+  const [lo, hi] = STAGE_BOUNDS[stage];
+  const range = hi - lo;
+
+  // Real-signal portion (0..1) within the current stage, when available.
+  let signalRatio: number | null = null;
+  if (stage === 'reading' && totalFiles > 0) {
+    signalRatio = Math.min(1, fileCount / totalFiles);
+  } else if (stage === 'generating' && totalPrompts > 0) {
+    signalRatio = Math.min(1, promptCount / totalPrompts);
+  }
+
+  // Time-based easing portion (0..1). Approaches 1 asymptotically so it
+  // never claims the stage is done before it actually is.
+  const elapsed = Date.now() - stageStartRef.current;
+  const expected = STAGE_EXPECTED_MS[stage];
+  const timeRatio = 1 - Math.exp(-elapsed / (expected * 0.6));
+
+  // Use whichever is further along — real signal beats easing, but easing
+  // keeps the bar moving when no signal is reported.
+  const innerRatio = Math.max(signalRatio ?? 0, timeRatio * 0.95);
+  const progressPct = Math.min(hi - 0.5, lo + range * innerRatio);
+  // Suppress unused-variable lint for the render tick.
+  void tick;
 
   return (
     <div
@@ -143,28 +198,41 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
             position: 'relative',
           }}
         >
-          {progressPct !== null ? (
-            <div
-              style={{
-                height: '100%',
-                width: `${progressPct}%`,
-                background: '#f97316',
-                borderRadius: 999,
-                transition: 'width 0.5s ease',
-              }}
-            />
-          ) : (
+          <div
+            style={{
+              height: '100%',
+              width: `${progressPct}%`,
+              background: 'linear-gradient(90deg, #f97316, #fb923c)',
+              borderRadius: 999,
+              transition: 'width 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
+              boxShadow: '0 0 12px rgba(249,115,22,0.45)',
+            }}
+          />
+          {/* Subtle shimmer on top of the filled bar to keep it feeling alive */}
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: `${progressPct}%`,
+              overflow: 'hidden',
+              borderRadius: 999,
+              pointerEvents: 'none',
+            }}
+          >
             <div
               style={{
                 position: 'absolute',
                 top: 0,
                 bottom: 0,
-                width: '35%',
-                background: 'linear-gradient(90deg, transparent, #f97316, transparent)',
-                animation: 'rismonIndeterminate 1.6s ease-in-out infinite',
+                width: '40%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                animation: 'rismonShimmer 2.2s ease-in-out infinite',
               }}
             />
-          )}
+          </div>
         </div>
 
         {/* Counter */}
@@ -225,9 +293,9 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
       </div>
 
       <style>{`
-        @keyframes rismonIndeterminate {
-          0% { left: -35%; }
-          100% { left: 100%; }
+        @keyframes rismonShimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(250%); }
         }
       `}</style>
     </div>
