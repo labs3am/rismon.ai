@@ -265,7 +265,7 @@ export default function Index() {
               <div key={i}>
                 <button
                   type="button"
-                  onClick={() => setZoomedImg(s.src)}
+                  onClick={() => setZoomedImg(s.full)}
                   aria-label={`Zoom ${s.alt}`}
                   className="group relative block w-full"
                   style={{
@@ -279,12 +279,19 @@ export default function Index() {
                     padding: 0,
                   }}
                 >
-                  <img
-                    src={s.src}
-                    alt={s.alt}
-                    loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', imageRendering: 'crisp-edges' as any }}
-                  />
+                  <picture>
+                    <source media="(max-width: 768px)" srcSet={s.srcSm} type="image/webp" />
+                    <source srcSet={s.src} type="image/webp" />
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      loading="lazy"
+                      decoding="async"
+                      width={1200}
+                      height={900}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                    />
+                  </picture>
                   <span
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '6px 8px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#fff' }}
