@@ -205,21 +205,6 @@ export default function Index() {
           <p className={LABEL}>WHAT WE FIND</p>
           <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
 
-          <div
-            className="mt-6 mx-auto max-w-[760px] rounded-xl px-5 py-4 sm:px-6 sm:py-5"
-            style={{
-              background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
-              border: '1px solid rgba(99,102,241,0.35)',
-            }}
-          >
-            <p style={{ fontSize: '15px', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Issues your users find before you do
-            </p>
-            <p style={{ fontSize: '16px', color: '#e5e7eb', lineHeight: 1.65 }}>
-              Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
             <div>
               <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
@@ -244,6 +229,25 @@ export default function Index() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div
+            className="mt-12 mx-auto max-w-[720px] rounded-2xl px-6 py-7 sm:px-8 sm:py-8 text-center relative overflow-hidden"
+            style={{
+              background: 'linear-gradient(180deg, rgba(99,102,241,0.12), rgba(99,102,241,0.03))',
+              border: '1px solid rgba(99,102,241,0.4)',
+              boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 20px 60px -20px rgba(99,102,241,0.35)',
+            }}
+          >
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
+              And the worst one
+            </p>
+            <p style={{ fontSize: '22px', fontWeight: 600, color: '#ffffff', lineHeight: 1.3, marginBottom: 10 }}>
+              Issues your users find before you do
+            </p>
+            <p style={{ fontSize: '15px', color: '#a1a1aa', lineHeight: 1.65, maxWidth: 540, margin: '0 auto' }}>
+              Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
+            </p>
           </div>
         </div>
       </section>
