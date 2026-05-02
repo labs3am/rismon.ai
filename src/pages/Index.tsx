@@ -169,10 +169,8 @@ export default function Index() {
         <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
           <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
-          <p className="vercel-hero-sub">
-            Connect your repo, answer 3 quick questions, and get a plain-English report
-            of every gap between what you promised and what your AI actually built —
-            with copy-paste fix prompts.
+          <p className="vercel-hero-sub text-center rounded-sm">
+            Most founders only discover broken logic, business gaps, or security holes after a real user hits them. Scan with Rismon.ai before shipping to real users.
           </p>
           <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
