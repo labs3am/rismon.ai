@@ -165,18 +165,18 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-left px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
-        <div className="max-w-[800px] mx-auto text-left">
+      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
+        <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
-          <h1 className="vercel-hero-h1 text-left">Did your AI build<br />what you meant?</h1>
-          <p className="vercel-hero-sub text-left rounded-sm">
+          <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
+          <p className="vercel-hero-sub text-center rounded-sm">
             Most founders only discover broken logic, business gaps, or security holes after a real user hits them. Scan with Rismon.ai before shipping to real users.
           </p>
-          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-start" style={{ marginTop: '8px' }}>
+          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
-          <p className="text-left" style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
+          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
         </div>
       </section>
 
