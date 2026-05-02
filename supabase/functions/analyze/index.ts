@@ -552,6 +552,202 @@ function runDeterministicSecurityScan(
 }
 
 // ============================================================
+// SECTION 1c-ter: Deterministic LEGAL scanner
+//
+// We do not produce legal advice. We check whether the founder's
+// codebase contains the *artifacts* every consumer-facing app needs:
+//
+//   L1  Privacy Policy page or route
+//   L2  Terms of Service page or route
+//   L3  Cookie / GDPR consent UI (only flagged when EU users likely)
+//   L4  Account / data deletion path (route, button, or RPC)
+//
+// Confidence rules:
+//   - "verified"   : we definitely scanned the router/App entry AND
+//                    the artifact is missing from every scanned file.
+//   - "unverified" : router not in scanned slice — we cannot rule out
+//                    that the page exists in code we did not read.
+//
+// Findings are SOFT (severity "medium"). This is a checklist nudge,
+// not a security alert.
+// ============================================================
+function runDeterministicLegalScan(
+  codeBundle: string,
+  edgeFunctionBundle: string,
+): DetectorFinding[] {
+  const findings: DetectorFinding[] = [];
+  const frontendFiles = splitBundleByFile(codeBundle);
+  const edgeFiles = splitBundleByFile(edgeFunctionBundle);
+  const allText = (codeBundle || "") + "\n" + (edgeFunctionBundle || "");
+  const allTextLower = allText.toLowerCase();
+
+  // Did we scan the app's router? If not, absence is inconclusive.
+  const routerFile = frontendFiles.find((f) =>
+    /(^|\/)App\.(t|j)sx?$/.test(f.path) ||
+    /(^|\/)router\.(t|j)sx?$/i.test(f.path) ||
+    /(^|\/)routes?\.(t|j)sx?$/i.test(f.path) ||
+    /(^|\/)main\.(t|j)sx?$/.test(f.path),
+  );
+  const routerText = routerFile ? routerFile.lines.join("\n") : "";
+  const baseConfidence: "verified" | "unverified" = routerFile ? "verified" : "unverified";
+  const baseReason = routerFile
+    ? `Scanned ${routerFile.path} and the rest of your code — no matching page or component was found.`
+    : "We could not find your router file in the scanned slice, so this is based on the partial code we read.";
+  const verifyNote = routerFile
+    ? undefined
+    : "We only scanned a portion of your code. If you already added this page, ignore — otherwise, the recommendation still applies.";
+
+  // Helper: does any scanned file mention the artifact in code or routes?
+  const hasRoute = (rx: RegExp) =>
+    rx.test(routerText) || frontendFiles.some((f) => rx.test(f.path) || rx.test(f.lines.join("\n")));
+
+  // ---------- L1: Privacy Policy ----------
+  const hasPrivacy =
+    hasRoute(/\/privacy(-policy)?\b/i) ||
+    frontendFiles.some((f) => /privacy/i.test(f.path)) ||
+    /privacy[-_ ]?policy|privacypolicy/i.test(allText);
+  if (!hasPrivacy) {
+    findings.push({
+      id: `det-legal-privacy-${findings.length + 1}`,
+      severity: "medium",
+      category: "legal_privacy_policy",
+      title: "No privacy policy page in your app",
+      what_we_found:
+        "We could not find a /privacy route, a Privacy.tsx page, or any link to a privacy policy in the scanned code.",
+      what_this_means:
+        "Most app stores, payment providers, OAuth providers (Google, GitHub, Apple), and ad networks require a public privacy policy. Without one you can be removed from these platforms and you are exposed to GDPR/CCPA fines.",
+      how_to_fix:
+        "Add a public /privacy page that describes what data you collect, why, who you share it with, how long you keep it, and how users can delete it. Link to it from your footer and from your signup form.",
+      fix_prompt:
+        "Create a new route /privacy with a Privacy.tsx page that explains: (1) what data you collect (email, name, app code, payment info), (2) why you collect it, (3) third parties you share it with (Supabase, Stripe, OpenAI/Anthropic if used, analytics), (4) data retention period, (5) the user's rights to access/correct/delete their data, (6) a contact email. Add a link to /privacy in the Footer component and on the signup page near the submit button.",
+      technical_reference: "missing-privacy-policy",
+      google_query: "react privacy policy page template saas",
+      confidence: baseConfidence,
+      confidence_reason: baseReason,
+      ...(verifyNote ? { verification_note: verifyNote } : {}),
+      file_path: routerFile?.path || "router not scanned",
+      line_number: 1,
+      code_snippet: "",
+      evidence: "No /privacy route or Privacy page found in scanned files.",
+      source: "deterministic",
+    });
+  }
+
+  // ---------- L2: Terms of Service ----------
+  const hasTerms =
+    hasRoute(/\/(terms|tos|terms-of-service)\b/i) ||
+    frontendFiles.some((f) => /(^|\/)Terms\.|(^|\/)Tos\./i.test(f.path)) ||
+    /terms[-_ ]?of[-_ ]?(service|use)|terms\.tsx|tos\.tsx/i.test(allText);
+  if (!hasTerms) {
+    findings.push({
+      id: `det-legal-terms-${findings.length + 1}`,
+      severity: "medium",
+      category: "legal_terms",
+      title: "No terms of service page in your app",
+      what_we_found:
+        "We could not find a /terms or /tos route, a Terms.tsx page, or any link to terms of service in the scanned code.",
+      what_this_means:
+        "Without terms you have no contract with your users. You cannot enforce acceptable use, suspend abusive accounts cleanly, limit your liability, or set the rules for refunds and account closure. Stripe, Apple, and Google all require this for paid apps.",
+      how_to_fix:
+        "Add a /terms page covering acceptable use, account termination, your liability limits, refunds, and the governing law. Link it from your footer and require checkbox consent on signup.",
+      fix_prompt:
+        "Create a /terms route with a Terms.tsx page that covers: (1) eligibility, (2) acceptable use and prohibited behavior, (3) your right to suspend or terminate accounts, (4) limitation of liability, (5) refund policy, (6) governing law and dispute resolution. Add the link to /terms in Footer.tsx and add a required checkbox on the signup form: 'I agree to the Terms and Privacy Policy' with links to both.",
+      technical_reference: "missing-terms-of-service",
+      google_query: "react terms of service template saas",
+      confidence: baseConfidence,
+      confidence_reason: baseReason,
+      ...(verifyNote ? { verification_note: verifyNote } : {}),
+      file_path: routerFile?.path || "router not scanned",
+      line_number: 1,
+      code_snippet: "",
+      evidence: "No /terms route or Terms page found in scanned files.",
+      source: "deterministic",
+    });
+  }
+
+  // ---------- L3: Cookie / GDPR consent ----------
+  // Only relevant if the app likely serves EU traffic OR uses tracking
+  // cookies / analytics / advertising pixels. We conservatively trigger
+  // when ANY tracking/marketing dependency is detected.
+  const usesTracking =
+    /google-analytics|gtag\(|googletagmanager|posthog|mixpanel|amplitude|segment\.com|hotjar|clarity\.ms|facebook\.net\/[^\/]+\/fbevents|fbq\(|tiktok.*pixel|linkedin.*insight/i.test(
+      allText,
+    );
+  const hasConsentUi =
+    /cookie[-_ ]?consent|cookie[-_ ]?banner|cookieconsent|cookiebot|onetrust|usercentrics|klaro|gdpr[-_ ]?consent|consent[-_ ]?manager/i.test(
+      allText,
+    );
+  if (usesTracking && !hasConsentUi) {
+    findings.push({
+      id: `det-legal-consent-${findings.length + 1}`,
+      severity: "medium",
+      category: "legal_cookie_consent",
+      title: "Tracking is loaded with no cookie consent",
+      what_we_found:
+        "Your code loads at least one tracking or analytics script (Google Analytics / GTM / Meta Pixel / PostHog / Mixpanel / similar) but we did not find a cookie consent banner or consent manager.",
+      what_this_means:
+        "Under GDPR (EU/UK) and similar laws, you must collect explicit consent BEFORE non-essential trackers fire. Loading them on page load with no opt-in is a direct violation and can trigger fines from data protection authorities.",
+      how_to_fix:
+        "Add a cookie consent banner that loads BEFORE any tracker. Only fire analytics, ads, and marketing scripts after the user accepts. Provide a way to change the choice later.",
+      fix_prompt:
+        "Add a cookie consent banner. Step 1: install a small consent component (or a library like react-cookie-consent / klaro). Step 2: store the user's choice in localStorage as a JSON blob: { necessary: true, analytics: bool, marketing: bool }. Step 3: gate every non-essential tracker (Google Analytics, Meta Pixel, PostHog, Mixpanel, etc.) behind a check on that flag — do not initialize them on page load. Step 4: add a 'Cookie settings' link in the Footer that re-opens the banner so users can change their choice.",
+      technical_reference: "missing-cookie-consent",
+      google_query: "react cookie consent banner gdpr",
+      confidence: "verified",
+      confidence_reason:
+        "Direct read from the file: a tracking script reference is present and no consent banner / consent manager string was found in the scanned files.",
+      file_path: routerFile?.path || "scanned files",
+      line_number: 1,
+      code_snippet: "",
+      evidence: "Tracking script present, no consent UI detected.",
+      source: "deterministic",
+    });
+  }
+
+  // ---------- L4: Account / data deletion path ----------
+  // We look for: a delete-account route, a button labeled "delete
+  // account", a delete_my_account RPC, or an edge function that
+  // removes the user.
+  const hasDeleteRoute = hasRoute(/\/(delete-account|account\/delete|settings\/delete)/i);
+  const hasDeleteButton =
+    /(delete|close|remove)\s+(my\s+)?(account|profile|data)/i.test(allText) ||
+    /deleteAccount|deleteMyAccount|deleteProfile/i.test(allText);
+  const hasDeleteRpc =
+    /delete_my_account|admin_delete_user/.test(allTextLower) ||
+    edgeFiles.some((f) => /delete[-_]?(account|user)/i.test(f.path));
+  const hasDeletion = hasDeleteRoute || hasDeleteButton || hasDeleteRpc;
+
+  if (!hasDeletion) {
+    findings.push({
+      id: `det-legal-deletion-${findings.length + 1}`,
+      severity: "medium",
+      category: "legal_data_deletion",
+      title: "No way for users to delete their account or data",
+      what_we_found:
+        "We did not find a Delete Account button, a /delete-account route, a delete_my_account database function, or an edge function that removes a user's data.",
+      what_this_means:
+        "GDPR Article 17 (right to erasure), CCPA (California), and most modern privacy laws require you to give users a self-serve way to delete their account and personal data. Without it, every deletion request becomes manual support work and you are technically non-compliant.",
+      how_to_fix:
+        "Add a 'Delete account' option in the user's settings page that calls a server-side function. The function should remove the user from auth.users and clean up related rows the user owns.",
+      fix_prompt:
+        "Add account deletion. Step 1: in your Supabase database, create a SECURITY DEFINER function delete_my_account() that deletes the caller's rows from your custom tables (analyses, apps, etc.) and then deletes their row from auth.users. Step 2: in Settings.tsx, add a 'Danger zone' section with a 'Delete my account' button that opens a confirmation modal asking the user to type their email to confirm. Step 3: on confirm, call supabase.rpc('delete_my_account') and then sign the user out and redirect to /. Step 4: link to this option from your privacy policy.",
+      technical_reference: "missing-data-deletion",
+      google_query: "supabase delete account user gdpr right to erasure",
+      confidence: baseConfidence,
+      confidence_reason: baseReason,
+      ...(verifyNote ? { verification_note: verifyNote } : {}),
+      file_path: "scanned files",
+      line_number: 1,
+      code_snippet: "",
+      evidence: "No deletion route, button, RPC, or edge function found.",
+      source: "deterministic",
+    });
+  }
+
+  return findings;
+}
+
+// ============================================================
 // SECTION 1d: Smart-question evidence harvester
 // When the read_code stage generates a question whose `context` field
 // cites a specific file + line + a damning phrase (e.g. "INTENTIONAL
