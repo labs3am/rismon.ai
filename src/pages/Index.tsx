@@ -6,7 +6,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
-import HowWeScore from '@/components/HowWeScore';
 import SEO from '@/components/SEO';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
@@ -299,9 +298,6 @@ export default function Index() {
           </div>
         </div>
       </section>
-
-      {/* HOW WE SCORE, animated diagram */}
-      <HowWeScore />
 
       {/* WHAT WE FIND */}
       <section id="what-we-check" className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
