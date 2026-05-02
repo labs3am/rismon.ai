@@ -1718,14 +1718,31 @@ Can users see each other's data?
 5. SECURITY ISSUES
 Run ALL five checks below on every scan. These checks are MANDATORY and independent of what the founder described. If a pattern exists in the code, flag it. No benefit of the doubt. No assumptions of safety.
 
-CHECK A — EXPOSED SECRET KEYS:
-Scan every frontend file for these exact patterns:
-  - sk- (OpenAI key pattern)
-  - const.*key.*= (any hardcoded key assignment)
-  - VITE_ prefix variables assigned key values
-  - apiKey = "..." (any hardcoded value in quotes)
-  - Authorization.*Bearer.*" (hardcoded Bearer tokens)
-If ANY of these patterns exist in a frontend file: CRITICAL severity. Always flag. Never skip.
+CHECK A — EXPOSED SECRET KEYS (be precise — do not invent):
+Only flag a real secret. A "secret" means a private credential that must never reach the browser.
+
+These are PUBLIC keys and MUST NEVER be flagged as secrets — they are designed to live in the browser:
+  - VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_ID
+  - Any constant whose name contains PUBLISHABLE_KEY, ANON_KEY, PUBLIC_KEY, PUBLIC_API_KEY
+  - Stripe publishable keys (pk_live_, pk_test_), Paddle client tokens, Google Maps browser keys, reCAPTCHA site keys, Mapbox public tokens, PostHog public keys, Sentry DSNs
+  - Anything named SITE_KEY, CLIENT_ID
+
+Only flag CRITICAL when you can quote an actual exposed PRIVATE secret in a frontend file:
+  - OpenAI key matching sk-[A-Za-z0-9]{20,} (must start with literal "sk-")
+  - Anthropic key matching sk-ant-[A-Za-z0-9_-]{20,}
+  - Stripe secret/restricted keys: sk_live_, sk_test_, rk_live_, rk_test_
+  - Supabase service role JWT (the literal string "service_role" inside a JWT-looking value)
+  - AWS keys: AKIA[0-9A-Z]{16}
+  - GitHub tokens: ghp_, gho_, ghs_, ghu_, github_pat_
+  - Any literal string assigned in frontend code that looks like a private API key (long opaque value with no env-var indirection)
+
+Hard rules — DO NOT FLAG if:
+  - The key only appears as a name on the right side of an env lookup (e.g. import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) — that is the value being read, not exposed.
+  - The key name contains PUBLISHABLE, ANON, PUBLIC, SITE_KEY, CLIENT_ID.
+  - The value is a placeholder like "YOUR_KEY_HERE", "xxxx", "...", or empty.
+  - You cannot quote the actual file path AND line number AND the offending characters.
+
+If you cannot meet the evidence bar above, do not include this finding at all. A false alarm here destroys trust.
 
 CHECK B — DATA LEAK (missing user filter):
 Look for Supabase queries like .from('tableName').select('*') that do NOT have .eq('user_id', ...) or any equivalent user-scoping filter.
@@ -1745,9 +1762,15 @@ Look for patterns like:
   - Any boolean flag hardcoded to true inside auth or payment logic
 If found: CRITICAL severity. "Your payment or permission check is permanently bypassed."
 
-CHECK E — MISSING DATABASE PROTECTION:
-If Supabase tables appear in the code (via .from() calls) but NO migration files contain any policy definitions (CREATE POLICY, ENABLE ROW LEVEL SECURITY, ALTER TABLE ... ENABLE ROW LEVEL SECURITY):
-HIGH severity. "Your database tables may be completely open — anyone could read or delete all your users' data directly."
+CHECK E — MISSING DATABASE PROTECTION (only flag with proof):
+On a QUICK scan, migration files and the database schema are NOT in the file bundle — only ~20 prioritized frontend files are fetched. You cannot conclude that database protection is missing from frontend code alone.
+
+Hard rules:
+  - On a quick scan: DO NOT flag missing database protection. The evidence simply is not in the bundle. Mention it only as a thing to verify in a deep scan, never as a finding.
+  - On a deep scan: only flag if you have actually inspected files under supabase/migrations/ or a schema.sql file AND found zero "CREATE POLICY" / "ENABLE ROW LEVEL SECURITY" lines anywhere. Quote the directory you checked.
+  - Never assume "no SQL files visible" means "no protection exists" — Lovable/Supabase projects manage schema outside the repo by default.
+
+If you cannot meet this bar, omit the finding entirely.
 
 6. FALSE PROMISE DETECTION
 These checks are MANDATORY on every scan. Search the homepage (index.html, landing page components, marketing copy in any component) for these exact claims. Then verify the claim against the actual code. If the code does not back up the claim, flag it as a false promise. No benefit of the doubt — if the code evidence is absent, flag it.
@@ -1764,6 +1787,7 @@ PROMISE C — "AI-powered" or "powered by AI":
 Search backend/edge functions for AI API calls (openai, anthropic, @anthropic-ai, gemini, googleapis/ai, cohere, replicate).
   - If AI calls exist ONLY in frontend files with a hardcoded or VITE_-prefixed key: flag as BOTH a false promise AND a security issue (Critical). "Your AI key is exposed to anyone who opens your app."
   - If NO AI API calls exist anywhere: flag as false promise. Medium severity. "Your homepage claims AI features but no AI service is connected."
+  - On a QUICK scan when backend/edge function code was NOT included in the bundle: do NOT flag this — backend AI calls cannot be verified from frontend files alone. Skip the finding rather than guess.
 
 PROMISE D — "sync with [ServiceName]" or "integrates with [ServiceName]":
 For each named third-party service in the homepage copy (e.g. Slack, Notion, Google Sheets, Zapier, HubSpot, Salesforce), search the codebase for that service's API domain or SDK import.
@@ -1772,6 +1796,16 @@ If the named integration is not found in the code: flag as false promise. Medium
 PROMISE E — "team collaboration", "invite your team", or "invite members":
 Search for team/organisation logic: org_id, team_id, organization, invite, member_role, workspace.
 If the homepage mentions team features but NO such logic exists in the code: flag as false promise. Medium severity. "Your homepage promises team features but there is no team logic in the app."
+
+UNIVERSAL ANTI-HALLUCINATION RULE (overrides every check above):
+Every finding you emit MUST include a real file_path that exists in the scanned bundle and a real line_number that points to the offending line. If you cannot quote a specific file and line that proves the issue, DROP the finding entirely. Do not generalize. Do not flag "may be" or "might be" issues — only flag what you can prove from code that was actually shown to you.
+
+Specifically, NEVER fabricate findings about:
+  - Missing payment system / Stripe (you cannot see backend or Supabase secrets — payments may be enforced in edge functions you did not scan).
+  - Missing account-deletion (it can live in a SQL function, an edge function, or a settings page route you did not see).
+  - Missing rate limiting, missing email verification, missing audit logs, or any other backend control — unless you can point to a frontend call that bypasses it.
+
+When in doubt: omit. A short, accurate report beats a long, wrong one.
 
 FOR EVERY FINDING USE THIS EXACT FORMAT:
 Plain English title (max 8 words)
