@@ -232,20 +232,20 @@ export default function Index() {
           </div>
 
           <div
-            className="mt-12 mx-auto max-w-[720px] rounded-2xl px-6 py-7 sm:px-8 sm:py-8 text-center relative overflow-hidden"
+            className="mt-10 mx-auto max-w-[560px] rounded-xl px-5 py-5 text-center relative overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015))',
-              border: '1px solid rgba(255,255,255,0.18)',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(192,192,192,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))',
+              border: '1px solid rgba(255,255,255,0.14)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px -15px rgba(192,192,192,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
           >
-            <p style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
+            <p style={{ fontSize: '10.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>
               And the worst one
             </p>
-            <p style={{ fontSize: '22px', fontWeight: 600, color: '#ffffff', lineHeight: 1.3, marginBottom: 10 }}>
+            <p style={{ fontSize: '17px', fontWeight: 600, color: '#ffffff', lineHeight: 1.3, marginBottom: 8 }}>
               Issues your users find before you do
             </p>
-            <p style={{ fontSize: '15px', color: '#ffffff', lineHeight: 1.65, maxWidth: 540, margin: '0 auto', opacity: 0.85 }}>
+            <p style={{ fontSize: '13.5px', color: '#ffffff', lineHeight: 1.6, maxWidth: 460, margin: '0 auto', opacity: 0.8 }}>
               Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
             </p>
           </div>
@@ -307,9 +307,8 @@ export default function Index() {
             ))}
           </div>
           <p style={{ fontSize: 14, color: '#888888', textAlign: 'center', marginTop: 40, lineHeight: 1.6 }}>
-            Want to see the full thing?{' '}
             <Link to="/sample-report" style={{ color: '#ffffff', textDecoration: 'underline' }}>
-              See a real Rismon report →
+              See the full sample report →
             </Link>
           </p>
         </div>
