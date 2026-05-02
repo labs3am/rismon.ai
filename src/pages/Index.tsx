@@ -113,9 +113,9 @@ const securityProblems = [
 ];
 
 const screenshots = [
-  { src: intentConfirmScreen, srcSm: intentConfirmScreenSm, full: intentConfirmScreenFull, alt: "What we read in your code", caption: "We read your code and confirm what we found" },
-  { src: smartQuestionsScreen, srcSm: smartQuestionsScreenSm, full: smartQuestionsScreenFull, alt: "Smart questions about your app", caption: "A few questions only you can answer" },
-  { src: intentReportScreen, srcSm: intentReportScreenSm, full: intentReportScreenFull, alt: "Your Intent Match report", caption: "Your Intent Match score with plain-English verdict" },
+  { src: intentConfirmScreen, srcSm: intentConfirmScreenSm, full: intentConfirmScreenFull, alt: "What we read in your code", caption: "See exactly what your AI built — in plain English" },
+  { src: smartQuestionsScreen, srcSm: smartQuestionsScreenSm, full: smartQuestionsScreenFull, alt: "Smart questions about your app", caption: "Answer 3 quick questions only you can answer" },
+  { src: intentReportScreen, srcSm: intentReportScreenSm, full: intentReportScreenFull, alt: "Your Intent Match report", caption: "Get an Intent Match score with copy-paste fix prompts" },
 ];
 
 const platforms = [
@@ -170,8 +170,9 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
           <p className="vercel-hero-sub">
-            Most AI-built apps have hidden bugs, broken logic, or missing protections.
-            Rismon shows you what your AI actually built and what needs fixing.
+            Connect your repo, answer 3 quick questions, and get a plain-English report
+            of every gap between what you promised and what your AI actually built —
+            with copy-paste fix prompts.
           </p>
           <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
@@ -198,31 +199,8 @@ export default function Index() {
         </div>
       </section>
 
-      {/* 3-STEP HOW IT WORKS LINE */}
-      <section style={{ background: '#000000', padding: '32px 20px' }}>
-        <p style={{ fontSize: '14px', color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 720, margin: '0 auto' }}>
-          Connect your repo → Answer 3 questions about your app → Get a report with fix prompts
-        </p>
-      </section>
-
-      {/* PERSONAS */}
-      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>WHO IT'S FOR</p>
-          <h2 className={HEADLINE}>Built for founders who build with AI</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-            {personas.map((p, i) => (
-              <div key={i} className="vercel-card">
-                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{p.title}</p>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.q}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* WHAT WE FIND */}
-      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>WHAT WE FIND</p>
           <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
@@ -256,10 +234,13 @@ export default function Index() {
       </section>
 
       {/* SCREENSHOTS */}
-      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+            Three steps. Under 2 minutes. Click any screenshot to zoom in.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
@@ -311,6 +292,25 @@ export default function Index() {
               See a real Rismon report →
             </Link>
           </p>
+        </div>
+      </section>
+
+      {/* PERSONAS */}
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>WHO IT'S FOR</p>
+          <h2 className={HEADLINE}>Built for founders who build with AI</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+            If you ship products built with AI tools, one of these is probably you.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
+            {personas.map((p, i) => (
+              <div key={i} className="vercel-card">
+                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{p.title}</p>
+                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.q}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
