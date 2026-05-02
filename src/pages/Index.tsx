@@ -234,18 +234,18 @@ export default function Index() {
           <div
             className="mt-12 mx-auto max-w-[720px] rounded-2xl px-6 py-7 sm:px-8 sm:py-8 text-center relative overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, rgba(99,102,241,0.12), rgba(99,102,241,0.03))',
-              border: '1px solid rgba(99,102,241,0.4)',
-              boxShadow: '0 0 0 1px rgba(99,102,241,0.08), 0 20px 60px -20px rgba(99,102,241,0.35)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015))',
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 20px 60px -20px rgba(192,192,192,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
             }}
           >
-            <p style={{ fontSize: '11px', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 12 }}>
               And the worst one
             </p>
             <p style={{ fontSize: '22px', fontWeight: 600, color: '#ffffff', lineHeight: 1.3, marginBottom: 10 }}>
               Issues your users find before you do
             </p>
-            <p style={{ fontSize: '15px', color: '#a1a1aa', lineHeight: 1.65, maxWidth: 540, margin: '0 auto' }}>
+            <p style={{ fontSize: '15px', color: '#ffffff', lineHeight: 1.65, maxWidth: 540, margin: '0 auto', opacity: 0.85 }}>
               Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
             </p>
           </div>
