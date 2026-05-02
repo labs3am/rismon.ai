@@ -17,8 +17,9 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
-import questionsScreen from '@/assets/screenshots/questions-screen.jpg';
-import scoreScreen from '@/assets/screenshots/score-screen.jpg';
+import intentConfirmScreen from '@/assets/screenshots/intent-confirm.png';
+import smartQuestionsScreen from '@/assets/screenshots/smart-questions.png';
+import intentReportScreen from '@/assets/screenshots/intent-report.png';
 
 const faqs = [
   {
@@ -97,8 +98,9 @@ const businessProblems = [
 ];
 
 const screenshots = [
-  { src: questionsScreen, alt: "Smart questions screen", caption: "Smart questions based on your actual code" },
-  { src: scoreScreen, alt: "Score card", caption: "Your Intent Score with plain English verdict" },
+  { src: intentConfirmScreen, alt: "What we read in your code", caption: "We read your code and confirm what we found" },
+  { src: smartQuestionsScreen, alt: "Smart questions about your app", caption: "A few questions only you can answer" },
+  { src: intentReportScreen, alt: "Your Intent Match report", caption: "Your Intent Match score with plain-English verdict" },
 ];
 
 const platforms = [
@@ -183,7 +185,7 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
                 <div
