@@ -102,6 +102,7 @@ const businessProblems = [
   { title: "Wrong users doing wrong things", text: "Sellers accessing buyer data. Free users in paid sections." },
   { title: "Features you never asked for", text: "Your AI built extra things. Do you know what they are?" },
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
+  { title: "Issues your users find before you do", text: "Most founders only discover broken logic or security gaps after a user hits them. Catch them first." },
 ];
 
 const securityProblems = [
@@ -142,7 +143,7 @@ const HEADLINE = 'vercel-headline';
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
-  const [zoomedImg, setZoomedImg] = useState<string | null>(null);
+  const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
 
   const securityItems = [
     { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
@@ -246,7 +247,8 @@ export default function Index() {
               <div key={i}>
                 <button
                   type="button"
-                  onClick={() => setZoomedImg(s.full)}
+                  onClick={() => setZoomedImg({ full: s.src, placeholder: s.srcSm })}
+                  onMouseEnter={() => { const i = new Image(); i.src = s.src; }}
                   aria-label={`Zoom ${s.alt}`}
                   className="group relative block w-full"
                   style={{
@@ -438,7 +440,20 @@ export default function Index() {
         >
           {zoomedImg && (
             <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <img src={zoomedImg} alt="Zoomed screenshot" style={{ width: '100%', height: 'auto', display: 'block' }} />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <img
+                  src={zoomedImg.placeholder}
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: '100%', height: 'auto', display: 'block', filter: 'blur(8px)' }}
+                />
+                <img
+                  src={zoomedImg.full}
+                  alt="Zoomed screenshot"
+                  decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: 'auto', display: 'block' }}
+                />
+              </div>
             </div>
           )}
         </DialogContent>
