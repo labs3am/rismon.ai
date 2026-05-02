@@ -17,6 +17,8 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
+import questionsScreen from '@/assets/screenshots/questions-screen.jpg';
+import scoreScreen from '@/assets/screenshots/score-screen.jpg';
 
 const faqs = [
   {
@@ -94,21 +96,10 @@ const businessProblems = [
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
 ];
 
-const securityProblems = [
-  { title: "API keys exposed in your code", text: "Your OpenAI or Stripe key is visible to anyone who looks." },
-  { title: "User data readable by anyone", text: "Your database has no protection. All records publicly accessible." },
-  { title: "Private pages with no login check", text: "Pages that should need login are open to everyone." },
-  { title: "Secrets hardcoded in code", text: "Passwords and keys written directly in your files." },
-  { title: "API routes anyone can call", text: "Your backend has no protection from direct requests." },
-];
-
-const trustItems = [
-  { title: "Your code is never stored", text: "Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database." },
-  { title: "Read-only GitHub access", text: "We cannot modify, delete, or push anything to your repository. Read-only. Always." },
-  { title: "No IP logging", text: "We do not log or store IP addresses. Our analytics are aggregated country-level only." },
-  { title: "Fully open source", text: "Every line of Rismon is on GitHub. Verify our claims yourself. Nothing is hidden." },
-  { title: "Session-only tokens", text: "Your GitHub token expires when you close the tab. We never store tokens." },
-  { title: "No third-party data sharing", text: "Your analysis results stay in your account. We do not sell or share your data." },
+const screenshots = [
+  { src: questionsScreen, alt: "Smart questions screen", caption: "Smart questions based on your actual code" },
+  { src: null, alt: "Finding card", caption: "Every issue with file path and fix prompt included" },
+  { src: scoreScreen, alt: "Score card", caption: "Your Intent Score with plain English verdict" },
 ];
 
 const platforms = [
@@ -153,17 +144,14 @@ export default function Index() {
           <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
           <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
           <p className="vercel-hero-sub">
-            Connect your GitHub. Tell us what your app should do.
-            <br />
-            We tell you what it actually does.
-            <br />
-            Plain English. No code knowledge needed. Takes 90 seconds.
+            Most AI-built apps have hidden bugs, broken logic, or missing protections.
+            Rismon shows you what your AI actually built and what needs fixing.
           </p>
           <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
-            <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
-            <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
+            <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
+            <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
-          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free forever. No credit card required.</p>
+          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
         </div>
       </section>
 
@@ -184,6 +172,98 @@ export default function Index() {
         </div>
       </section>
 
+      {/* 3-STEP HOW IT WORKS LINE */}
+      <section style={{ background: '#000000', padding: '32px 20px' }}>
+        <p style={{ fontSize: '14px', color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 720, margin: '0 auto' }}>
+          Connect your repo → Answer 3 questions about your app → Get a report with fix prompts
+        </p>
+      </section>
+
+      {/* SCREENSHOTS */}
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>PREVIEW</p>
+          <h2 className={HEADLINE}>What you will see</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-12">
+            {screenshots.map((s, i) => (
+              <div key={i}>
+                <div
+                  style={{
+                    background: '#0a0a0a',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    aspectRatio: '4 / 3',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: s.src ? 0 : 16,
+                  }}
+                >
+                  {s.src ? (
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', textAlign: 'left' }}>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '3px 8px', borderRadius: 4, letterSpacing: '0.08em' }}>HIGH</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', padding: '3px 8px', borderRadius: 4, letterSpacing: '0.08em' }}>VERIFIED</span>
+                      </div>
+                      <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 600, marginBottom: 8, lineHeight: 1.3 }}>Paywall not enforced in logic</p>
+                      <p style={{ color: '#888888', fontSize: 12.5, lineHeight: 1.55, marginBottom: 12 }}>Premium check is set to true permanently. Every user gets Pro features without paying.</p>
+                      <p style={{ color: '#f97316', fontSize: 11, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>src/components/Dashboard.tsx:47</p>
+                    </div>
+                  )}
+                </div>
+                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{s.caption}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SAMPLE REPORT PREVIEW */}
+      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
+        <div className="max-w-[720px] mx-auto">
+          <p className={LABEL}>SAMPLE</p>
+          <h2 className={HEADLINE}>See a real finding</h2>
+          <div style={{ position: 'relative', marginTop: 40 }}>
+            <div style={{ background: '#000000', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 24 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: 4, letterSpacing: '0.08em' }}>HIGH</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', padding: '4px 10px', borderRadius: 4, letterSpacing: '0.08em' }}>VERIFIED</span>
+              </div>
+              <p style={{ color: '#ffffff', fontSize: 18, fontWeight: 600, marginBottom: 10 }}>Paywall not enforced in logic</p>
+              <p style={{ color: '#888888', fontSize: 14.5, lineHeight: 1.65, marginBottom: 16 }}>
+                Premium check is set to true permanently. Every user gets Pro features without paying.
+              </p>
+              <p style={{ color: '#f97316', fontSize: 13, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                src/components/Dashboard.tsx:47
+              </p>
+            </div>
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: -1,
+                height: 120,
+                background: 'linear-gradient(to bottom, rgba(10,10,10,0) 0%, #0a0a0a 85%)',
+                pointerEvents: 'none',
+              }}
+            />
+          </div>
+          <div className="text-center" style={{ marginTop: 24 }}>
+            <Link to="/sample-report" className="vercel-btn-primary">See the full sample report →</Link>
+          </div>
+        </div>
+      </section>
+
       {/* PERSONAS */}
       <section className={SECTION} style={{ background: '#000000' }}>
         <div className={CONTAINER}>
@@ -196,208 +276,6 @@ export default function Index() {
                 <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.q}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>HOW IT WORKS</p>
-          <h2 className={HEADLINE}>Five steps to know your app completely</h2>
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden">
-            {steps.map((s, i) => (
-              <div
-                key={i}
-                className="relative group p-8 bg-[#000000] hover:bg-[#0a0a0a] transition-colors duration-300"
-                style={{ minHeight: '220px' }}
-              >
-                {/* Step number — large, ghosted background */}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '20px',
-                    fontSize: '64px',
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: '#ffffff',
-                    opacity: 0.04,
-                    letterSpacing: '-0.04em',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {s.n}
-                </span>
-
-                {/* Top accent badge */}
-                <div className="flex items-center gap-2 mb-6">
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      background: '#f97316',
-                      borderRadius: '50%',
-                      boxShadow: '0 0 12px #f97316',
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: '#f97316',
-                      fontWeight: 600,
-                      letterSpacing: '0.14em',
-                    }}
-                  >
-                    STEP {s.n}
-                  </span>
-                </div>
-
-                <h3
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    marginBottom: '10px',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {s.title}
-                </h3>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.65 }}>
-                  {s.text}
-                </p>
-
-                {/* Bottom hover bar */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 bottom-0 h-[2px] bg-[#f97316] transition-all duration-500 ease-out w-0 group-hover:w-full"
-                />
-              </div>
-            ))}
-
-            {/* Filler tile to balance the 5-step grid on lg (3 cols) */}
-            <div className="hidden lg:flex p-8 bg-[#000000] items-center justify-center">
-              <div className="text-center">
-                <p style={{ fontSize: '11px', color: '#f97316', fontWeight: 600, letterSpacing: '0.14em', marginBottom: '12px' }}>
-                  READY?
-                </p>
-                <Link
-                  to="/signup"
-                  className="vercel-btn-primary inline-block"
-                  style={{ fontSize: '13px' }}
-                >
-                  Start free scan
-                </Link>
-                <p style={{ fontSize: '12px', color: '#555555', marginTop: '12px' }}>
-                  Takes about 60 seconds
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* WHAT WE FIND */}
-      <section id="what-we-check" className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>WHAT WE FIND</p>
-          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-12">
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>BUSINESS PROBLEMS</p>
-              {businessProblems.map((f, i) => (
-                <div key={i} className="vercel-find-item">
-                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
-                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
-                </div>
-              ))}
-            </div>
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>SECURITY PROBLEMS</p>
-              {securityProblems.map((f, i) => (
-                <div key={i} className="vercel-find-item">
-                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
-                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="text-center" style={{ marginTop: '48px' }}>
-            <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>Rismon.ai checks all of these. In 60 seconds.</p>
-            <p style={{ fontSize: '14px', color: '#555555' }}>For free. No card needed.</p>
-          </div>
-        </div>
-      </section>
-
-
-      {/* SECURITY */}
-      <section id="security-privacy" className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>SECURITY AND PRIVACY</p>
-          <h2 className={HEADLINE}>Your code is yours. We just read it once.</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-            {trustItems.map((item, i) => (
-              <div key={i} className="vercel-card">
-                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{item.title}</p>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{item.text}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-10">
-            <Link
-              to="/security"
-              className="inline-flex items-center gap-2"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#ffffff',
-                padding: '10px 20px',
-                borderRadius: '6px',
-                border: '1px solid #ffffff20',
-                background: 'rgba(255,255,255,0.03)',
-                transition: 'background 0.15s ease, border-color 0.15s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                e.currentTarget.style.borderColor = '#ffffff33';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                e.currentTarget.style.borderColor = '#ffffff20';
-              }}
-            >
-              Learn more about our security
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              to="/open-source"
-              className="inline-flex items-center gap-2"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#888888',
-                padding: '10px 20px',
-                borderRadius: '6px',
-                border: '1px solid transparent',
-                background: 'transparent',
-                transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.borderColor = '#ffffff20';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              We're open source
-              <span aria-hidden>→</span>
-            </Link>
           </div>
         </div>
       </section>
@@ -466,22 +344,14 @@ export default function Index() {
         </div>
       </section>
 
-      {/* WHY WE BUILT THIS */}
-      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className="max-w-[800px] mx-auto text-center">
-          <p className={LABEL}>WHY WE BUILT THIS</p>
-          <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: '32px', lineHeight: 1.2 }}>
-            Every founder deserves to understand what they built.
-          </h2>
-          <div className="max-w-[640px] mx-auto" style={{ fontSize: '16px', color: '#888888', lineHeight: 1.8 }}>
-            <p className="mb-4">AI tools have made building software accessible to everyone. Anyone can describe an idea and have a working app in hours.</p>
-            <p className="mb-4">But most founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
-            <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong, with proof. We give you the fix. Every time.</p>
-          </div>
-          <Link to="/about" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 32, color: '#f97316', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-            Read our story →
+      {/* HOW WE SCORE LINK */}
+      <section style={{ background: '#000000', padding: '24px 20px', borderTop: '1px solid #ffffff14' }}>
+        <p style={{ fontSize: 13, color: '#555555', textAlign: 'center', lineHeight: 1.6 }}>
+          Want to understand how we score?{' '}
+          <Link to="/how-we-score" style={{ color: '#888888', textDecoration: 'underline' }}>
+            Read our scoring methodology →
           </Link>
-        </div>
+        </p>
       </section>
 
       {/* FAQ */}
