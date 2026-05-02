@@ -246,11 +246,8 @@ export default function Index() {
               Issues your users find before you do
             </p>
             <p style={{ fontSize: '15px', color: '#ffffff', lineHeight: 1.65, maxWidth: 540, margin: '0 auto', opacity: 0.85 }}>
-              It's easy to miss broken logic, business gaps, or security holes until a real user runs into them. Rismon helps you catch these early — so you can ship with confidence.
+              Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
             </p>
-            <div style={{ marginTop: 20 }}>
-              <Link to="/sample-report" className="vercel-btn-secondary">Check the full sample report →</Link>
-            </div>
           </div>
         </div>
       </section>
