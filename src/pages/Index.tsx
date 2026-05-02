@@ -234,7 +234,7 @@ export default function Index() {
       </section>
 
       {/* SCREENSHOTS */}
-      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
+      <section id="how-it-works" className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
