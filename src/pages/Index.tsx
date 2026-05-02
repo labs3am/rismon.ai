@@ -199,6 +199,56 @@ export default function Index() {
         </p>
       </section>
 
+      {/* PERSONAS */}
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>WHO IT'S FOR</p>
+          <h2 className={HEADLINE}>Built for founders who build with AI</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
+            {personas.map((p, i) => (
+              <div key={i} className="vercel-card">
+                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{p.title}</p>
+                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.q}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT WE FIND */}
+      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>WHAT WE FIND</p>
+          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {businessProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {securityProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* SCREENSHOTS */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
@@ -207,7 +257,11 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
-                <div
+                <button
+                  type="button"
+                  onClick={() => setZoomedImg(s.src)}
+                  aria-label={`Zoom ${s.alt}`}
+                  className="group relative block w-full"
                   style={{
                     background: '#000',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -215,15 +269,23 @@ export default function Index() {
                     overflow: 'hidden',
                     boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6)',
                     aspectRatio: '4 / 3',
+                    cursor: 'zoom-in',
+                    padding: 0,
                   }}
                 >
                   <img
                     src={s.src}
                     alt={s.alt}
                     loading="lazy"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', imageRendering: 'crisp-edges' as any }}
                   />
-                </div>
+                  <span
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '6px 8px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#fff' }}
+                  >
+                    <ZoomIn size={12} /> Zoom
+                  </span>
+                </button>
                 <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 14, lineHeight: 1.5, letterSpacing: '0.02em' }}>
                   <span style={{ color: '#555' }}>0{i + 1} — </span>{s.caption}
                 </p>
@@ -239,50 +301,23 @@ export default function Index() {
         </div>
       </section>
 
-      {/* WHAT WE FIND */}
+      {/* SECURITY AND PRIVACY */}
       <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
-          <p className={LABEL}>WHAT WE FIND</p>
-          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
-
-          <div className="mt-12">
-            <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {businessProblems.map((p, i) => (
-                <div key={i} className="vercel-card">
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{p.title}</p>
-                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-12">
-            <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {securityProblems.map((p, i) => (
-                <div key={i} className="vercel-card">
-                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{p.title}</p>
-                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PERSONAS */}
-      <section className={SECTION} style={{ background: '#000000' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>WHO IT'S FOR</p>
-          <h2 className={HEADLINE}>Built for founders who build with AI</h2>
+          <p className={LABEL}>SECURITY AND PRIVACY</p>
+          <h2 className={HEADLINE}>Your code is yours.<br />We just read it once.</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-            {personas.map((p, i) => (
+            {securityItems.map((s, i) => (
               <div key={i} className="vercel-card">
-                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{p.title}</p>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.q}</p>
+                <s.icon size={18} style={{ color: '#f97316', marginBottom: 12 }} />
+                <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{s.title}</p>
+                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{s.text}</p>
               </div>
             ))}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
+            <Link to="/security" className="vercel-btn-secondary">Learn more about our security →</Link>
+            <Link to="/open-source" className="vercel-btn-secondary" style={{ border: 'none', background: 'transparent' }}>We're open source →</Link>
           </div>
         </div>
       </section>
