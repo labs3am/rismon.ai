@@ -102,7 +102,6 @@ const businessProblems = [
   { title: "Wrong users doing wrong things", text: "Sellers accessing buyer data. Free users in paid sections." },
   { title: "Features you never asked for", text: "Your AI built extra things. Do you know what they are?" },
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
-  { title: "Issues your users find before you do", text: "Most founders only discover broken logic or security gaps after a user hits them. Catch them first." },
 ];
 
 const securityProblems = [
@@ -205,6 +204,21 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>WHAT WE FIND</p>
           <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
+
+          <div
+            className="mt-6 mx-auto max-w-[760px] rounded-xl px-5 py-4 sm:px-6 sm:py-5"
+            style={{
+              background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
+              border: '1px solid rgba(99,102,241,0.35)',
+            }}
+          >
+            <p style={{ fontSize: '15px', fontWeight: 700, color: '#a5b4fc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>
+              Issues your users find before you do
+            </p>
+            <p style={{ fontSize: '16px', color: '#e5e7eb', lineHeight: 1.65 }}>
+              Most founders only discover broken logic, business gaps, or security holes <em>after</em> a real user hits them. Scan with Rismon before shipping to real users.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
             <div>
