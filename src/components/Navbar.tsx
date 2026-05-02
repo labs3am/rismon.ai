@@ -196,6 +196,7 @@ export default function Navbar() {
         >
           <button onClick={() => goToSection('how-it-works')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>How it works</button>
           <button onClick={() => goToSection('what-we-check')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>What we find</button>
+          <Link to="/how-we-score" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>How we score</Link>
           <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }}>Security</Link>
           <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>Pricing</button>
           <Link to="/blog" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }} onClick={() => setOpen(false)}>Blog</Link>
