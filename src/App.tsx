@@ -35,6 +35,7 @@ const Security = lazy(() => import("./pages/Security"));
 const About = lazy(() => import("./pages/About"));
 const OpenSource = lazy(() => import("./pages/OpenSource"));
 const ForPlatform = lazy(() => import("./pages/ForPlatform"));
+const HowWeScore = lazy(() => import("./pages/HowWeScore"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/security" element={<Security />} />
               <Route path="/about" element={<About />} />
               <Route path="/open-source" element={<OpenSource />} />
+              <Route path="/how-we-score" element={<HowWeScore />} />
               <Route path="/for/:platform" element={<ForPlatform />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
