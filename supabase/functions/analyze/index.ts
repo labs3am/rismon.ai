@@ -2011,6 +2011,42 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       );
 
       // ----------------------------------------------------------
+      // LEGAL OVERLAY — privacy/terms/consent/deletion checks.
+      // These are NOT security issues; they live in their own
+      // legal_findings array that the Report renders as a soft
+      // "legal gap" section.
+      // ----------------------------------------------------------
+      try {
+        const detLegal = runDeterministicLegalScan(
+          codeBundle || "",
+          edgeFunctionBundle || "",
+        );
+        const mappedLegal = detLegal.map((f, i) => {
+          const m = mapFinding(f, i, "l");
+          return Object.assign(m, {
+            confidence: f.confidence,
+            confidence_reason: f.confidence_reason,
+            verification_note: (f as any).verification_note,
+            file_path: f.file_path,
+            line_number: f.line_number,
+            code_snippet: f.code_snippet,
+            evidence: f.evidence,
+            category: f.category,
+            source: f.source,
+            severity: f.severity,
+          });
+        });
+        // Merge with anything Claude returned (deterministic wins on dedupe by category).
+        const claudeLegal = Array.isArray(claudeResult.legal_findings) ? claudeResult.legal_findings : [];
+        const seenCats = new Set(mappedLegal.map((f: any) => f.category));
+        const extraLegal = claudeLegal.filter((f: any) => !seenCats.has(f?.category));
+        claudeResult.legal_findings = [...mappedLegal, ...extraLegal];
+      } catch (e) {
+        console.error("Legal scanner failed (non-fatal):", e);
+        if (!Array.isArray(claudeResult.legal_findings)) claudeResult.legal_findings = [];
+      }
+
+      // ----------------------------------------------------------
       // DB-VERIFICATION OVERLAY (added 2026-04)
       //
       // Findings about database security (RLS, user data isolation,
