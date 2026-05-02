@@ -38,64 +38,103 @@ function scoreLabelFor(score: number) {
   if (score >= 85) return 'Strong';
   if (score >= 70) return 'Good';
   if (score >= 55) return 'Getting there';
-  if (score >= 40) return 'Needs work';
+  if (score >= 40) return 'Significant work needed';
   return 'Critical issues';
 }
 
 const sample = {
-  appName: 'team-notes-sync.lovable',
+  appName: 'noted-ai.lovable',
   platform: 'Lovable',
   scanType: 'quick',
-  // Quick scan ceiling = 90. One high-severity verified finding (-5) and
-  // one medium verified (-2) and a few unverified at half-weight bring this
-  // to 81.
-  score: 81,
+  score: 45,
   summary:
-    'team-notes-sync.lovable cleanly delivers on its core promise: weekly meal planning with shopping-list generation. Authentication, recipe storage, and the Stripe checkout flow are wired up correctly. The biggest concern is that the Stripe webhook does not verify signatures, and the homepage advertises AI-powered nutrition coaching but no AI integration was found in the scanned code.',
-  verdict: 'Fix the webhook signature check before your first paying user signs up.',
+    'Your app has good user management and note-taking features with proper authentication flow.',
+  verdict:
+    'However, critical security flaws make it unsafe to launch — anyone can access your admin panel without permission and potentially see all user data.',
   gaps: [
     {
       id: 'g-1',
       severity: 'high',
       confidence: 'verified',
       category: 'payments',
-      title: 'Stripe webhook accepts unsigned events',
+      title: 'No payment system for pro plans',
       what_we_found:
-        'The /stripe-webhook edge function reads the request body and updates user plans without calling stripe.webhooks.constructEvent.',
+        'Your homepage advertises a Pro plan with AI summaries and team features, but no Stripe (or any payment) integration was found in the codebase. There is no checkout route, no webhook handler, and no plan upgrade logic.',
       what_this_means:
-        'Anyone who knows your webhook URL can send a fake "payment succeeded" event and upgrade themselves to Pro for free. This is a direct revenue leak.',
+        'You have zero revenue because users cannot pay you even if they want to upgrade to pro features.',
       how_to_fix:
-        'Read the stripe-signature header, verify it with your STRIPE_WEBHOOK_SECRET, and reject the request with 400 if verification fails.',
+        'Wire up Stripe Checkout with a server-verified webhook that updates the user\'s plan after successful payment.',
       fix_prompt:
-        'In my team-notes-sync.lovable app, the supabase/functions/stripe-webhook/index.ts edge function processes Stripe events without verifying signatures. Update it to:\n\n1. Read the "stripe-signature" header from the incoming request\n2. Use the STRIPE_WEBHOOK_SECRET env var to verify the signature with stripe.webhooks.constructEventAsync\n3. Return a 400 response if verification fails\n4. Only then process checkout.session.completed and customer.subscription.updated events\n5. Add a console.error log for failed verifications so I can monitor abuse',
-      technical_reference: 'stripe-webhook-signature-verification',
-      file_path: 'supabase/functions/stripe-webhook/index.ts',
-      line_number: 42,
-      code_snippet: 'const event = JSON.parse(await req.text()); // no signature check',
+        'In my noted-ai.lovable app I advertise a Pro plan but have no payment system. Add Stripe:\n\n1. Create a Stripe product + price in test mode and store the price id\n2. Add a supabase edge function "create-checkout" that takes the user id, creates a Stripe checkout session, and returns the URL\n3. Add a supabase edge function "stripe-webhook" that verifies the signature with STRIPE_WEBHOOK_SECRET and handles checkout.session.completed and customer.subscription.deleted\n4. On checkout.session.completed, update profiles.plan = "pro" for that user\n5. On customer.subscription.deleted, set profiles.plan = "free"\n6. Add an "Upgrade to Pro" button on the dashboard that calls create-checkout and redirects to the Stripe URL',
+      technical_reference: 'missing-stripe-integration',
+      file_path: 'src/pages/Pricing.tsx',
+      line_number: 12,
+      code_snippet: '// "Upgrade to Pro" button — no onClick handler, no Stripe',
     },
     {
       id: 'g-2',
-      severity: 'medium',
+      severity: 'high',
       confidence: 'verified',
-      category: 'payments',
-      title: 'Plan downgrade not handled on subscription cancel',
+      category: 'features',
+      title: 'Real-time collaboration is advertised but not built',
       what_we_found:
-        'The webhook handles checkout.session.completed but no handler exists for customer.subscription.deleted in the scanned code.',
+        'Your homepage shows "Collaborate with your team in real time" but no realtime channel, presence, or shared-document logic exists in the scanned code. Notes are single-user only.',
       what_this_means:
-        'When a Pro user cancels in Stripe, their plan stays Pro forever. They keep premium features without paying.',
+        'Visitors who sign up expecting team collaboration will churn the moment they realise the feature does not exist. This is a trust problem, not just a feature gap.',
       how_to_fix:
-        'Add a customer.subscription.deleted branch in the webhook that sets the user plan back to "free" and clears pro_until.',
+        'Either remove the claim from your homepage, or implement Supabase Realtime channels on the notes table with shared access controlled by a workspace_members table.',
       fix_prompt:
-        'In supabase/functions/stripe-webhook/index.ts, add a handler for the customer.subscription.deleted event:\n\n1. Look up the user by stripe_customer_id from the event\n2. Update their profiles row: plan = "free", pro_until = null\n3. Log the downgrade with the user_id and event_id\n4. Test with the Stripe CLI: stripe trigger customer.subscription.deleted',
-      technical_reference: 'stripe-subscription-deleted-handler',
-      file_path: 'supabase/functions/stripe-webhook/index.ts',
-      line_number: 78,
-      code_snippet: "if (event.type === 'checkout.session.completed') { /* upgrade */ }",
+        'My noted-ai.lovable homepage promises real-time team collaboration on notes, but the code does not implement it. Add it:\n\n1. Create a workspaces table and a workspace_members table (user_id, workspace_id, role)\n2. Add workspace_id to the notes table and update RLS so members of the workspace can read/write\n3. In the note editor, subscribe to a Supabase Realtime channel scoped to that note id\n4. Broadcast cursor position + content patches on edit\n5. Show other members\' avatars and live cursors in the editor',
+      technical_reference: 'missing-feature-realtime-collab',
+      file_path: 'src/pages/Notes.tsx',
+      line_number: 1,
+      code_snippet: '// no realtime subscription, no shared workspace logic',
     },
   ],
   security_issues: [
     {
       id: 's-1',
+      severity: 'critical',
+      confidence: 'verified',
+      category: 'access-control',
+      title: 'Admin panel reachable by any signed-in user',
+      what_we_found:
+        'The /admin route in src/App.tsx is wrapped in <ProtectedRoute> (any logged-in user) instead of an admin-only guard. There is no server-side role check on the admin actions.',
+      what_this_means:
+        'Anyone who creates a free account can open /admin, list every user, and trigger admin actions. This is the single biggest risk in your app right now.',
+      how_to_fix:
+        'Add a user_roles table with an enum (admin, user), a SECURITY DEFINER has_role() function, and an <AdminRoute> guard that checks it. Also enforce the role check inside every admin edge function.',
+      fix_prompt:
+        'In my noted-ai.lovable app, the /admin route is open to any logged-in user. Lock it down:\n\n1. Create a public.app_role enum (admin, user) and a public.user_roles table (user_id, role)\n2. Enable RLS on user_roles and add a SECURITY DEFINER function public.has_role(_user_id uuid, _role app_role)\n3. Create an <AdminRoute> component that calls has_role(auth.uid(), \'admin\') and redirects to / if false\n4. Wrap every /admin/* route with <AdminRoute>\n5. In every admin edge function, re-check has_role server-side before doing anything',
+      technical_reference: 'broken-access-control-admin',
+      file_path: 'src/App.tsx',
+      line_number: 87,
+      code_snippet: '<Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />',
+    },
+    {
+      id: 's-2',
+      severity: 'critical',
+      confidence: 'unverified',
+      category: 'database',
+      requires_supabase_verification: true,
+      verification_note:
+        'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.',
+      title: 'Notes table likely missing row-level security',
+      what_we_found:
+        'src/lib/notes.ts queries public.notes with the anon key and no .eq("user_id", user.id) filter. We did not detect an RLS policy in the scanned migrations.',
+      what_this_means:
+        'If RLS is off, any signed-in user can read, edit, or delete every other user\'s notes. We could not confirm directly without a live Supabase connection.',
+      how_to_fix:
+        'Enable RLS on public.notes and add owner-scoped SELECT, INSERT, UPDATE, DELETE policies that compare auth.uid() to user_id.',
+      fix_prompt:
+        'In my Supabase project, enable RLS on public.notes and add owner-scoped policies:\n\n1. ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;\n2. CREATE POLICY "owner reads" ON public.notes FOR SELECT USING (auth.uid() = user_id);\n3. CREATE POLICY "owner writes" ON public.notes FOR INSERT WITH CHECK (auth.uid() = user_id);\n4. CREATE POLICY "owner updates" ON public.notes FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);\n5. CREATE POLICY "owner deletes" ON public.notes FOR DELETE USING (auth.uid() = user_id);\n6. Verify with two accounts: account A must never see account B\'s notes.',
+      technical_reference: 'supabase-rls-owner-policy',
+      file_path: 'src/lib/notes.ts',
+      line_number: 14,
+      code_snippet: "supabase.from('notes').select('*')",
+    },
+    {
+      id: 's-3',
       severity: 'high',
       confidence: 'unverified',
       category: 'secrets',
@@ -103,91 +142,158 @@ const sample = {
       what_we_found:
         'src/lib/ai.ts reads VITE_OPENAI_API_KEY. Anything prefixed VITE_ is bundled into the browser and visible in DevTools.',
       what_this_means:
-        'Anyone visiting your live site can extract this key from the JavaScript bundle and run their own OpenAI requests on your bill. Costs can run into thousands of dollars in hours.',
+        'Anyone visiting your live site can extract this key from the JS bundle and run OpenAI requests on your bill. Costs can hit thousands of dollars within hours.',
       how_to_fix:
-        'Move the OpenAI call into a Supabase edge function. Store the key as OPENAI_API_KEY (no VITE_ prefix). Call the edge function from the client instead.',
+        'Move the OpenAI call into a Supabase edge function. Store the key as OPENAI_API_KEY (no VITE_ prefix). Call the edge function from the client.',
       fix_prompt:
-        'My team-notes-sync.lovable app has the OpenAI API key exposed in client code via VITE_OPENAI_API_KEY in src/lib/ai.ts. Fix this by:\n\n1. Create a new edge function at supabase/functions/ai-suggest/index.ts that takes a "prompt" in the body and calls OpenAI server-side\n2. Use Deno.env.get("OPENAI_API_KEY") on the server (no VITE_ prefix)\n3. In src/lib/ai.ts, replace the direct OpenAI call with supabase.functions.invoke("ai-suggest", { body: { prompt } })\n4. Delete VITE_OPENAI_API_KEY from .env\n5. Add OPENAI_API_KEY as a secret to your Supabase project',
+        'My noted-ai.lovable app exposes the OpenAI API key in client code via VITE_OPENAI_API_KEY in src/lib/ai.ts. Fix it:\n\n1. Create supabase/functions/ai-summarize/index.ts that takes a note id, fetches the note server-side, and calls OpenAI\n2. Use Deno.env.get("OPENAI_API_KEY") on the server (no VITE_ prefix)\n3. In src/lib/ai.ts, replace the direct OpenAI call with supabase.functions.invoke("ai-summarize", { body: { noteId } })\n4. Delete VITE_OPENAI_API_KEY from .env\n5. Add OPENAI_API_KEY as a secret to your Supabase project',
       technical_reference: 'client-side-api-key-exposure',
       file_path: 'src/lib/ai.ts',
       line_number: 8,
       code_snippet: 'const apiKey = import.meta.env.VITE_OPENAI_API_KEY;',
     },
     {
-      // Database-pattern finding. Confidence is forced to "unverified" because
-      // we did not have a live Supabase connection during this scan. The card
-      // shows the "Connect Supabase to verify" note.
-      id: 's-2',
+      id: 's-4',
       severity: 'high',
+      confidence: 'verified',
+      category: 'access-control',
+      title: 'Auth checks only happen on the client',
+      what_we_found:
+        '/dashboard, /notes and /settings rely on a useEffect redirect in React. There is no server-side guard, and the protected components mount before the check resolves.',
+      what_this_means:
+        'A user can briefly see other users\' data flash on screen, and a tech-savvy visitor can disable JS or hit the API directly to bypass the check entirely.',
+      how_to_fix:
+        'Move auth gating to RLS at the database layer and use Supabase auth getUser() server-side in every edge function. Keep the client redirect only for UX.',
+      fix_prompt:
+        'In my noted-ai.lovable app, /dashboard /notes and /settings only check auth client-side. Harden them:\n\n1. Confirm RLS is enabled on every table that holds user data and policies use auth.uid()\n2. In every edge function, call supabaseClient.auth.getUser() and return 401 if no user\n3. In ProtectedRoute, render a loading state until the session is hydrated, then redirect — never render the child first\n4. Add an integration test that hits /dashboard with no session and asserts a redirect',
+      technical_reference: 'client-side-only-auth',
+      file_path: 'src/components/ProtectedRoute.tsx',
+      line_number: 22,
+      code_snippet: 'useEffect(() => { if (!user) navigate("/login"); }, [user]);',
+    },
+    {
+      id: 's-5',
+      severity: 'medium',
+      confidence: 'verified',
+      category: 'auth',
+      title: 'Password reset emails are not rate-limited',
+      what_we_found:
+        'The forgot-password form calls supabase.auth.resetPasswordForEmail directly with no debounce, captcha or rate limit.',
+      what_this_means:
+        'An attacker can spam thousands of reset emails to any address, getting your domain flagged as spam and burning your email quota.',
+      how_to_fix:
+        'Add a captcha (Cloudflare Turnstile) on the form and an edge function that rate-limits per IP and per email.',
+      fix_prompt:
+        'In my noted-ai.lovable app, the forgot-password flow has no rate limiting. Fix it:\n\n1. Add Cloudflare Turnstile on the forgot-password form\n2. Create a supabase edge function "request-password-reset" that verifies the Turnstile token, checks an in-memory rate limit (max 3 per email per hour, max 10 per IP per hour) and only then calls supabase.auth.admin.generateLink\n3. Replace the direct client call with this edge function',
+      technical_reference: 'auth-no-rate-limit',
+      file_path: 'src/components/ForgotPasswordModal.tsx',
+      line_number: 31,
+      code_snippet: 'await supabase.auth.resetPasswordForEmail(email);',
+    },
+    {
+      id: 's-6',
+      severity: 'medium',
+      confidence: 'verified',
+      category: 'data-exposure',
+      title: 'User profiles table is publicly readable',
+      what_we_found:
+        'public.profiles has a SELECT policy of USING (true). Anyone with the anon key can list every user\'s email and full name.',
+      what_this_means:
+        'Your entire user list (emails included) can be scraped by anyone, exposing your customers to phishing and competitors.',
+      how_to_fix:
+        'Restrict the SELECT policy to the row owner, or to authenticated users limited to non-PII columns.',
+      fix_prompt:
+        'In my Supabase project, public.profiles is readable by everyone. Lock it down:\n\n1. DROP POLICY IF EXISTS "Public profiles are viewable" ON public.profiles;\n2. CREATE POLICY "Users read own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);\n3. If you need to show display names elsewhere, create a SECURITY DEFINER function get_public_display_name(user_id) that returns only display_name and avatar_url',
+      technical_reference: 'pii-public-select-policy',
+      file_path: 'supabase/migrations/0001_init.sql',
+      line_number: 42,
+      code_snippet: 'CREATE POLICY "Public profiles are viewable" ON public.profiles FOR SELECT USING (true);',
+    },
+    {
+      id: 's-7',
+      severity: 'medium',
       confidence: 'unverified',
       category: 'database',
       requires_supabase_verification: true,
-      verification_note:
-        'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.',
-      title: 'Recipes table may be missing row-level security',
+      title: 'No usage cap on AI summaries — token cost can spiral',
       what_we_found:
-        'src/lib/recipes.ts queries the public.recipes table with the anon key but no .eq("user_id", user.id) filter. We did not detect an RLS policy in the scanned migrations.',
+        'The ai-summarize call has no per-user counter and no monthly cap. A free user can request unlimited summaries.',
       what_this_means:
-        'If RLS is not enabled on this table, any signed-in user could read or modify every other user\'s recipes. We could not verify this directly without a live Supabase connection.',
+        'A single user could rack up hundreds of dollars of OpenAI usage in a day. There is nothing currently stopping abuse.',
       how_to_fix:
-        'Enable RLS on public.recipes, then add owner-scoped SELECT, INSERT, UPDATE and DELETE policies that compare auth.uid() to the user_id column.',
+        'Add an ai_usage table that increments on every call, and reject the call past a free-tier monthly limit.',
       fix_prompt:
-        'In my Supabase project, enable row-level security on the public.recipes table and add owner-scoped policies:\n\n1. ALTER TABLE public.recipes ENABLE ROW LEVEL SECURITY;\n2. CREATE POLICY "owner reads" ON public.recipes FOR SELECT USING (auth.uid() = user_id);\n3. CREATE POLICY "owner writes" ON public.recipes FOR INSERT WITH CHECK (auth.uid() = user_id);\n4. CREATE POLICY "owner updates" ON public.recipes FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);\n5. CREATE POLICY "owner deletes" ON public.recipes FOR DELETE USING (auth.uid() = user_id);\n6. Test with two different accounts: account A should never see account B\'s rows.',
-      technical_reference: 'supabase-rls-owner-policy',
-      file_path: 'src/lib/recipes.ts',
-      line_number: 14,
-      code_snippet: "supabase.from('recipes').select('*')",
+        'In my noted-ai.lovable app, AI summaries have no usage cap. Add one:\n\n1. Create an ai_usage table (user_id, month, count) with a unique index on (user_id, month)\n2. In the ai-summarize edge function, upsert the row and increment count atomically\n3. If plan = free and count > 20 for the current month, return 429 with a clear message\n4. Show remaining quota on the dashboard',
+      technical_reference: 'no-ai-usage-cap',
+      file_path: 'supabase/functions/ai-summarize/index.ts',
+      line_number: 1,
+      code_snippet: '// no usage check, no rate limit, no plan gate',
     },
-  ],
-  legal_findings: [
     {
-      id: 'l-1',
-      title: 'No privacy policy found on your live site',
-      what_we_found:
-        'We checked team-notes-sync.lovable.app/privacy and the footer of your homepage. No privacy policy page was returned.',
-      what_this_means:
-        'Most app stores, payment providers, and ad platforms expect a privacy policy. Stripe, in particular, may flag your account if users complain.',
-      how_to_fix:
-        'Add a /privacy route with a real privacy policy. Even a short one (what data you collect, why, who you share it with) is enough to start.',
+      id: 's-8',
       severity: 'low',
+      confidence: 'verified',
+      category: 'logging',
+      title: 'Sensitive data logged to the browser console',
+      what_we_found:
+        'src/contexts/AuthContext.tsx contains console.log("session", session) which prints the full session including the access token on every render.',
+      what_this_means:
+        'Anyone with screen-share access (support call, demo, screen recording) can read a working access token directly from the console.',
+      how_to_fix:
+        'Remove the console.log, or guard it behind an explicit DEBUG flag that is off in production.',
+      fix_prompt:
+        'In src/contexts/AuthContext.tsx, remove the console.log("session", session) line. Also add an ESLint rule "no-console": ["warn", { allow: ["warn", "error"] }] so this does not happen again.',
+      technical_reference: 'token-leak-console',
+      file_path: 'src/contexts/AuthContext.tsx',
+      line_number: 54,
+      code_snippet: 'console.log("session", session);',
     },
   ],
+  legal_findings: [],
   landing_page_promises: [
     {
       id: 'p-1',
-      claim: 'AI-powered nutrition coaching',
+      claim: 'AI-powered note summaries',
       claim_source: 'homepage',
-      verdict: 'not_found',
+      verdict: 'partial',
       evidence:
-        'We searched the codebase for OpenAI, Anthropic, Gemini, and "coach". No nutrition-coaching logic was found in the scanned files.',
+        'src/lib/ai.ts calls OpenAI directly from the client, but the API key is exposed and there is no usage cap. The feature exists but is not production-safe.',
       severity: 'medium',
     },
     {
       id: 'p-2',
-      claim: 'Sync with Apple Health and Fitbit',
+      claim: 'Real-time team collaboration',
       claim_source: 'homepage',
       verdict: 'not_found',
-      evidence: 'No HealthKit or Fitbit OAuth code was found. No requests to api.fitbit.com.',
+      evidence: 'No realtime channel, presence, or shared workspace logic was found in the scanned code.',
       severity: 'medium',
     },
     {
       id: 'p-3',
-      claim: 'Weekly meal plans with shopping lists',
+      claim: 'Pro plan with advanced features',
+      claim_source: 'homepage',
+      verdict: 'not_found',
+      evidence: 'Pricing page lists a Pro plan, but no Stripe integration, checkout route, or plan upgrade logic exists.',
+      severity: 'high',
+    },
+    {
+      id: 'p-4',
+      claim: 'Sign up, log in and log out',
       claim_source: 'homepage',
       verdict: 'found',
-      evidence: 'src/pages/MealPlan.tsx and src/lib/shopping-list.ts implement this, confirmed.',
+      evidence: 'Supabase auth is wired up with email/password and Google OAuth, working end to end.',
       severity: 'info',
     },
   ],
   what_works: [
-    'Email and password authentication is wired correctly with Supabase auth and a working profiles table',
-    'Stripe checkout session creation includes the correct success and cancel URLs',
-    'Recipe storage uses a normalized schema (recipes, ingredients, recipe_ingredients), clean and scalable',
+    'Email/password and Google OAuth are wired up correctly with Supabase auth and a profiles table',
+    'Note creation, editing and deletion work with optimistic UI updates',
+    'The app has a clean schema with notes, profiles and user_roles tables',
     'Mobile responsive layout adapts cleanly down to 360px width',
   ],
   homepage_signals: {
     has_live_url: true,
-    privacy_page_found: false,
+    privacy_page_found: true,
     terms_page_found: true,
     readme_found: true,
   },

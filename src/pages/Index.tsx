@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, ZoomIn, Lock, Eye, Github, Database, FileCode, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
-import HowWeScore from '@/components/HowWeScore';
 import SEO from '@/components/SEO';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
@@ -18,6 +18,15 @@ import windsurfLogo from '@/assets/logos/windsurf.png';
 import copilotLogo from '@/assets/logos/copilot.png';
 import claudeLogo from '@/assets/logos/claude.png';
 import geminiLogo from '@/assets/logos/gemini.png';
+import intentConfirmScreen from '@/assets/screenshots/intent-confirm.webp';
+import intentConfirmScreenSm from '@/assets/screenshots/intent-confirm-800.webp';
+import intentConfirmScreenFull from '@/assets/screenshots/intent-confirm.png';
+import smartQuestionsScreen from '@/assets/screenshots/smart-questions.webp';
+import smartQuestionsScreenSm from '@/assets/screenshots/smart-questions-800.webp';
+import smartQuestionsScreenFull from '@/assets/screenshots/smart-questions.png';
+import intentReportScreen from '@/assets/screenshots/intent-report.webp';
+import intentReportScreenSm from '@/assets/screenshots/intent-report-800.webp';
+import intentReportScreenFull from '@/assets/screenshots/intent-report.png';
 
 const faqs = [
   {
@@ -88,8 +97,8 @@ const steps = [
 ];
 
 const businessProblems = [
-  { title: "Paid features that anyone can access", text: "Your payment exists. The check does not." },
-  { title: "Admin pages open to every user", text: "Any user can reach your admin panel right now." },
+  { title: "Paid features that anyone can access", text: "Premium features that may not be enforced properly in the logic." },
+  { title: "Admin pages open to every user", text: "Admin routes that may not require proper authentication." },
   { title: "Wrong users doing wrong things", text: "Sellers accessing buyer data. Free users in paid sections." },
   { title: "Features you never asked for", text: "Your AI built extra things. Do you know what they are?" },
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
@@ -97,19 +106,16 @@ const businessProblems = [
 
 const securityProblems = [
   { title: "API keys exposed in your code", text: "Your OpenAI or Stripe key is visible to anyone who looks." },
-  { title: "User data readable by anyone", text: "Your database has no protection. All records publicly accessible." },
+  { title: "User data readable by anyone", text: "Database tables that may be accessible without proper rules." },
   { title: "Private pages with no login check", text: "Pages that should need login are open to everyone." },
   { title: "Secrets hardcoded in code", text: "Passwords and keys written directly in your files." },
   { title: "API routes anyone can call", text: "Your backend has no protection from direct requests." },
 ];
 
-const trustItems = [
-  { title: "Your code is never stored", text: "Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database." },
-  { title: "Read-only GitHub access", text: "We cannot modify, delete, or push anything to your repository. Read-only. Always." },
-  { title: "No IP logging", text: "We do not log or store IP addresses. Our analytics are aggregated country-level only." },
-  { title: "Fully open source", text: "Every line of Rismon is on GitHub. Verify our claims yourself. Nothing is hidden." },
-  { title: "Session-only tokens", text: "Your GitHub token expires when you close the tab. We never store tokens." },
-  { title: "No third-party data sharing", text: "Your analysis results stay in your account. We do not sell or share your data." },
+const screenshots = [
+  { src: intentConfirmScreen, srcSm: intentConfirmScreenSm, full: intentConfirmScreenFull, alt: "What we read in your code", caption: "See exactly what your AI built — in plain English" },
+  { src: smartQuestionsScreen, srcSm: smartQuestionsScreenSm, full: smartQuestionsScreenFull, alt: "Smart questions about your app", caption: "Answer 3 quick questions only you can answer" },
+  { src: intentReportScreen, srcSm: intentReportScreenSm, full: intentReportScreenFull, alt: "Your Intent Match report", caption: "Get an Intent Match score with copy-paste fix prompts" },
 ];
 
 const platforms = [
@@ -136,6 +142,16 @@ const HEADLINE = 'vercel-headline';
 
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
+  const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
+
+  const securityItems = [
+    { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
+    { icon: Github, title: 'Read-only GitHub access', text: 'We cannot modify, delete, or push anything to your repository. Read-only. Always.' },
+    { icon: Eye, title: 'No IP logging', text: 'We do not log or store IP addresses. Our analytics are aggregated country-level only.' },
+    { icon: FileCode, title: 'Fully open source', text: 'Every line of Rismon is on GitHub. Verify our claims yourself. Nothing is hidden.' },
+    { icon: ShieldCheck, title: 'Session-only tokens', text: 'Your GitHub token expires when you close the tab. We never store tokens.' },
+    { icon: Database, title: 'No third-party data sharing', text: 'Your analysis results stay in your account. We do not sell or share your data.' },
+  ];
 
   return (
     <div className="min-h-screen" style={{ background: '#000000', color: '#ffffff' }}>
@@ -149,22 +165,18 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
-        <div className="max-w-[800px] mx-auto">
-          <span className="vercel-pill">Intent Verification for AI-Built Apps</span>
-          <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
-          <p className="vercel-hero-sub">
-            Connect your GitHub. Tell us what your app should do.
-            <br />
-            We tell you what it actually does.
-            <br />
-            Plain English. No code knowledge needed. Takes 90 seconds.
+      <section className="text-left px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
+        <div className="max-w-[800px] mx-auto text-left">
+          <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
+          <h1 className="vercel-hero-h1 text-left">Did your AI build<br />what you meant?</h1>
+          <p className="vercel-hero-sub text-left rounded-sm">
+            Most founders only discover broken logic, business gaps, or security holes after a real user hits them. Scan with Rismon.ai before shipping to real users.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
-            <Link to="/signup" className="vercel-btn-primary">Get started free</Link>
-            <Link to="/sample-report" className="vercel-btn-secondary">See a sample report</Link>
+          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-start" style={{ marginTop: '8px' }}>
+            <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
+            <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
-          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free forever. No credit card required.</p>
+          <p className="text-left" style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
         </div>
       </section>
 
@@ -185,11 +197,110 @@ export default function Index() {
         </div>
       </section>
 
+      {/* WHAT WE FIND */}
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>WHAT WE FIND</p>
+          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {businessProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {securityProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SCREENSHOTS */}
+      <section id="how-it-works" className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
+        <div className={CONTAINER}>
+          <p className={LABEL}>PREVIEW</p>
+          <h2 className={HEADLINE}>What you will see</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+            Three steps. Under 2 minutes. Click any screenshot to zoom in.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            {screenshots.map((s, i) => (
+              <div key={i}>
+                <button
+                  type="button"
+                  onClick={() => setZoomedImg({ full: s.src, placeholder: s.srcSm })}
+                  onMouseEnter={() => { const i = new Image(); i.src = s.src; }}
+                  aria-label={`Zoom ${s.alt}`}
+                  className="group relative block w-full"
+                  style={{
+                    background: '#000',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6)',
+                    aspectRatio: '4 / 3',
+                    cursor: 'zoom-in',
+                    padding: 0,
+                  }}
+                >
+                  <picture>
+                    <source media="(max-width: 768px)" srcSet={s.srcSm} type="image/webp" />
+                    <source srcSet={s.src} type="image/webp" />
+                    <img
+                      src={s.src}
+                      alt={s.alt}
+                      loading="lazy"
+                      decoding="async"
+                      width={1200}
+                      height={900}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+                    />
+                  </picture>
+                  <span
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.7)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, padding: '6px 8px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#fff' }}
+                  >
+                    <ZoomIn size={12} /> Zoom
+                  </span>
+                </button>
+                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 14, lineHeight: 1.5, letterSpacing: '0.02em' }}>
+                  <span style={{ color: '#555' }}>0{i + 1} — </span>{s.caption}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 14, color: '#888888', textAlign: 'center', marginTop: 40, lineHeight: 1.6 }}>
+            <Link to="/sample-report" style={{ color: '#ffffff', textDecoration: 'underline' }}>
+              See the full sample report →
+            </Link>
+          </p>
+        </div>
+      </section>
+
       {/* PERSONAS */}
-      <section className={SECTION} style={{ background: '#000000' }}>
+      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>WHO IT'S FOR</p>
           <h2 className={HEADLINE}>Built for founders who build with AI</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+            If you ship products built with AI tools, one of these is probably you.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
             {personas.map((p, i) => (
               <div key={i} className="vercel-card">
@@ -201,207 +312,23 @@ export default function Index() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>HOW IT WORKS</p>
-          <h2 className={HEADLINE}>Five steps to know your app completely</h2>
-          <div className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.06] border border-white/[0.06] rounded-xl overflow-hidden">
-            {steps.map((s, i) => (
-              <div
-                key={i}
-                className="relative group p-8 bg-[#000000] hover:bg-[#0a0a0a] transition-colors duration-300"
-                style={{ minHeight: '220px' }}
-              >
-                {/* Step number — large, ghosted background */}
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '20px',
-                    fontSize: '64px',
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    color: '#ffffff',
-                    opacity: 0.04,
-                    letterSpacing: '-0.04em',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {s.n}
-                </span>
-
-                {/* Top accent badge */}
-                <div className="flex items-center gap-2 mb-6">
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      background: '#f97316',
-                      borderRadius: '50%',
-                      boxShadow: '0 0 12px #f97316',
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: '#f97316',
-                      fontWeight: 600,
-                      letterSpacing: '0.14em',
-                    }}
-                  >
-                    STEP {s.n}
-                  </span>
-                </div>
-
-                <h3
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    marginBottom: '10px',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {s.title}
-                </h3>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.65 }}>
-                  {s.text}
-                </p>
-
-                {/* Bottom hover bar */}
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 bottom-0 h-[2px] bg-[#f97316] transition-all duration-500 ease-out w-0 group-hover:w-full"
-                />
-              </div>
-            ))}
-
-            {/* Filler tile to balance the 5-step grid on lg (3 cols) */}
-            <div className="hidden lg:flex p-8 bg-[#000000] items-center justify-center">
-              <div className="text-center">
-                <p style={{ fontSize: '11px', color: '#f97316', fontWeight: 600, letterSpacing: '0.14em', marginBottom: '12px' }}>
-                  READY?
-                </p>
-                <Link
-                  to="/signup"
-                  className="vercel-btn-primary inline-block"
-                  style={{ fontSize: '13px' }}
-                >
-                  Start free scan
-                </Link>
-                <p style={{ fontSize: '12px', color: '#555555', marginTop: '12px' }}>
-                  Takes about 60 seconds
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW WE SCORE, animated diagram */}
-      <HowWeScore />
-
-      {/* WHAT WE FIND */}
-      <section id="what-we-check" className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>WHAT WE FIND</p>
-          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-12">
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>BUSINESS PROBLEMS</p>
-              {businessProblems.map((f, i) => (
-                <div key={i} className="vercel-find-item">
-                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
-                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
-                </div>
-              ))}
-            </div>
-            <div>
-              <p style={{ fontSize: '11px', fontWeight: 600, color: '#f97316', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '24px' }}>SECURITY PROBLEMS</p>
-              {securityProblems.map((f, i) => (
-                <div key={i} className="vercel-find-item">
-                  <p style={{ color: '#ffffff', fontWeight: 500, marginBottom: '4px', fontSize: '15px' }}>{f.title}</p>
-                  <p style={{ color: '#555555', fontSize: '13px', lineHeight: 1.5 }}>{f.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="text-center" style={{ marginTop: '48px' }}>
-            <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>Rismon.ai checks all of these. In 60 seconds.</p>
-            <p style={{ fontSize: '14px', color: '#555555' }}>For free. No card needed.</p>
-          </div>
-        </div>
-      </section>
-
-
-      {/* SECURITY */}
-      <section id="security-privacy" className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
+      {/* SECURITY AND PRIVACY */}
+      <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>SECURITY AND PRIVACY</p>
-          <h2 className={HEADLINE}>Your code is yours. We just read it once.</h2>
+          <h2 className={HEADLINE}>Your code is yours.<br />We just read it once.</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-12">
-            {trustItems.map((item, i) => (
+            {securityItems.map((s, i) => (
               <div key={i} className="vercel-card">
-                <p style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff', marginBottom: '12px' }}>{item.title}</p>
-                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{item.text}</p>
+                <s.icon size={18} style={{ color: '#f97316', marginBottom: 12 }} />
+                <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{s.title}</p>
+                <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{s.text}</p>
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-10">
-            <Link
-              to="/security"
-              className="inline-flex items-center gap-2"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#ffffff',
-                padding: '10px 20px',
-                borderRadius: '6px',
-                border: '1px solid #ffffff20',
-                background: 'rgba(255,255,255,0.03)',
-                transition: 'background 0.15s ease, border-color 0.15s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                e.currentTarget.style.borderColor = '#ffffff33';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                e.currentTarget.style.borderColor = '#ffffff20';
-              }}
-            >
-              Learn more about our security
-              <span aria-hidden>→</span>
-            </Link>
-            <Link
-              to="/open-source"
-              className="inline-flex items-center gap-2"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#888888',
-                padding: '10px 20px',
-                borderRadius: '6px',
-                border: '1px solid transparent',
-                background: 'transparent',
-                transition: 'color 0.15s ease, border-color 0.15s ease, background 0.15s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = '#ffffff';
-                e.currentTarget.style.borderColor = '#ffffff20';
-                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = '#888888';
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              We're open source
-              <span aria-hidden>→</span>
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-10">
+            <Link to="/security" className="vercel-btn-secondary">Learn more about our security →</Link>
+            <Link to="/open-source" className="vercel-btn-secondary" style={{ border: 'none', background: 'transparent' }}>We're open source →</Link>
           </div>
         </div>
       </section>
@@ -470,22 +397,14 @@ export default function Index() {
         </div>
       </section>
 
-      {/* WHY WE BUILT THIS */}
-      <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className="max-w-[800px] mx-auto text-center">
-          <p className={LABEL}>WHY WE BUILT THIS</p>
-          <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: '32px', lineHeight: 1.2 }}>
-            Every founder deserves to understand what they built.
-          </h2>
-          <div className="max-w-[640px] mx-auto" style={{ fontSize: '16px', color: '#888888', lineHeight: 1.8 }}>
-            <p className="mb-4">AI tools have made building software accessible to everyone. Anyone can describe an idea and have a working app in hours.</p>
-            <p className="mb-4">But most founders have never seen the code their AI wrote. They do not know what it does. They do not know if it is safe.</p>
-            <p>Rismon exists to change that. We read your app. We explain it to you. We tell you what is wrong, with proof. We give you the fix. Every time.</p>
-          </div>
-          <Link to="/about" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 32, color: '#f97316', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-            Read our story →
+      {/* HOW WE SCORE LINK */}
+      <section style={{ background: '#000000', padding: '24px 20px', borderTop: '1px solid #ffffff14' }}>
+        <p style={{ fontSize: 13, color: '#555555', textAlign: 'center', lineHeight: 1.6 }}>
+          Want to understand how we score?{' '}
+          <Link to="/how-we-score" style={{ color: '#888888', textDecoration: 'underline' }}>
+            Read our scoring methodology →
           </Link>
-        </div>
+        </p>
       </section>
 
       {/* FAQ */}
@@ -509,6 +428,32 @@ export default function Index() {
       </section>
 
       <Footer />
+
+      <Dialog open={!!zoomedImg} onOpenChange={(o) => !o && setZoomedImg(null)}>
+        <DialogContent
+          className="border-0 p-0 bg-transparent shadow-none max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] w-auto"
+          style={{ background: 'transparent' }}
+        >
+          {zoomedImg && (
+            <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <img
+                  src={zoomedImg.placeholder}
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: '100%', height: 'auto', display: 'block', filter: 'blur(8px)' }}
+                />
+                <img
+                  src={zoomedImg.full}
+                  alt="Zoomed screenshot"
+                  decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: 'auto', display: 'block' }}
+                />
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
