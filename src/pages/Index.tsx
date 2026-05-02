@@ -97,6 +97,14 @@ const businessProblems = [
   { title: "Code that does not match your vision", text: "You described one thing. The AI built something slightly different." },
 ];
 
+const securityProblems = [
+  { title: "API keys exposed in your code", text: "Your OpenAI or Stripe key is visible to anyone who looks." },
+  { title: "User data readable by anyone", text: "Your database has no protection. All records publicly accessible." },
+  { title: "Private pages with no login check", text: "Pages that should need login are open to everyone." },
+  { title: "Secrets hardcoded in code", text: "Passwords and keys written directly in your files." },
+  { title: "API routes anyone can call", text: "Your backend has no protection from direct requests." },
+];
+
 const screenshots = [
   { src: intentConfirmScreen, alt: "What we read in your code", caption: "We read your code and confirm what we found" },
   { src: smartQuestionsScreen, alt: "Smart questions about your app", caption: "A few questions only you can answer" },
@@ -185,44 +193,69 @@ export default function Index() {
         <div className={CONTAINER}>
           <p className={LABEL}>PREVIEW</p>
           <h2 className={HEADLINE}>What you will see</h2>
-          <div className="flex flex-col gap-16 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             {screenshots.map((s, i) => (
               <div key={i}>
-                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginBottom: 16, lineHeight: 1.5, letterSpacing: '0.02em' }}>
-                  <span style={{ color: '#555' }}>0{i + 1} — </span>{s.caption}
-                </p>
                 <div
                   style={{
                     background: '#000',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 12,
                     overflow: 'hidden',
-                    boxShadow: '0 30px 80px -20px rgba(0,0,0,0.6)',
+                    boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6)',
+                    aspectRatio: '4 / 3',
                   }}
                 >
                   <img
                     src={s.src}
                     alt={s.alt}
                     loading="lazy"
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
                   />
                 </div>
+                <p style={{ fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 14, lineHeight: 1.5, letterSpacing: '0.02em' }}>
+                  <span style={{ color: '#555' }}>0{i + 1} — </span>{s.caption}
+                </p>
               </div>
             ))}
           </div>
+          <p style={{ fontSize: 14, color: '#888888', textAlign: 'center', marginTop: 40, lineHeight: 1.6 }}>
+            Want to see the full thing?{' '}
+            <Link to="/sample-report" style={{ color: '#ffffff', textDecoration: 'underline' }}>
+              See a real Rismon report →
+            </Link>
+          </p>
         </div>
       </section>
 
-      {/* SAMPLE REPORT PREVIEW */}
+      {/* WHAT WE FIND */}
       <section className={SECTION} style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
-        <div className="max-w-[720px] mx-auto">
-          <p className={LABEL}>SAMPLE</p>
-          <h2 className={HEADLINE}>See a real Rismon report</h2>
-          <p style={{ fontSize: 15, color: '#888888', textAlign: 'center', lineHeight: 1.65, maxWidth: 540, margin: '24px auto 0' }}>
-            Walk through a full sample report — intent score, security findings, and copy-paste fix prompts.
-          </p>
-          <div className="text-center" style={{ marginTop: 28 }}>
-            <Link to="/sample-report" className="vercel-btn-primary">See the full sample report →</Link>
+        <div className={CONTAINER}>
+          <p className={LABEL}>WHAT WE FIND</p>
+          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
+
+          <div className="mt-12">
+            <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {businessProblems.map((p, i) => (
+                <div key={i} className="vercel-card">
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{p.title}</p>
+                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-12">
+            <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {securityProblems.map((p, i) => (
+                <div key={i} className="vercel-card">
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '10px' }}>{p.title}</p>
+                  <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
