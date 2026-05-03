@@ -315,11 +315,28 @@ function runDeterministicSecurityScan(
   const edgeFiles = splitBundleByFile(edgeFunctionBundle);
 
   // ---------- D1: Open admin route ----------
+  // First, check if the app's router wraps admin routes in a guard
+  // component (e.g. <AdminRoute>, <RequireAdmin>, <ProtectedAdmin>).
+  // If yes, every admin page is already protected at the route layer
+  // and we must NOT flag the page component itself.
+  const routerFileForAdmin = frontendFiles.find((f) =>
+    /(^|\/)App\.(t|j)sx?$/.test(f.path) ||
+    /(^|\/)router\.(t|j)sx?$/i.test(f.path) ||
+    /(^|\/)routes?\.(t|j)sx?$/i.test(f.path),
+  );
+  const routerTextForAdmin = routerFileForAdmin ? routerFileForAdmin.lines.join("\n") : "";
+  // True if the router renders an admin guard wrapper around /admin paths.
+  const routerProtectsAdmin =
+    /<\s*(Admin(Route|Guard|Protected)|Require(Admin|Role)|ProtectedAdmin)\b/i.test(routerTextForAdmin) ||
+    /path=["']\/admin[^"']*["'][^>]*element=\{[^}]*<\s*(Admin(Route|Guard)|Require(Admin|Role))/i.test(routerTextForAdmin);
+
   for (const file of frontendFiles) {
     const isAdminFile = /\/admin|admin\.|adminpanel|admin-page|admindashboard/i.test(file.path);
     if (!isAdminFile) continue;
+    // If the router already wraps admin routes in a guard component, trust it.
+    if (routerProtectsAdmin) continue;
     const fullText = file.lines.join("\n");
-    const hasAuthCheck = /useauth\b|getuser\b|auth\.uid|isadmin|is_admin|user\?\.role|role\s*===?\s*['"]admin['"]|navigate\(['"]\/login|redirect\(['"]\/login|<protectedroute|requireauth/i.test(fullText);
+    const hasAuthCheck = /useauth\b|getuser\b|auth\.uid|isadmin|is_admin|is_blog_admin|has_role|user\?\.role|role\s*===?\s*['"]admin['"]|navigate\(['"]\/(login|$)|redirect\(['"]\/(login|$)|<protectedroute|<adminroute|requireauth|requireadmin/i.test(fullText);
     if (hasAuthCheck) continue;
     // Find the first meaningful line — component declaration or first JSX return
     let lineNo = 1;
