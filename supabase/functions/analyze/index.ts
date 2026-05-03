@@ -1809,6 +1809,13 @@ Look for page components where:
   - AND there is no auth check before rendering
 If found: CRITICAL severity. "Anyone who guesses the URL can access your admin panel."
 
+DO NOT FLAG admin pages when ANY of these are true:
+  - The router (App.tsx / router.tsx / routes.tsx) wraps the admin route in a guard component such as <AdminRoute>, <RequireAdmin>, <ProtectedAdmin>, <RequireRole role="admin">, or similar. The page itself does not need its own check in that case — the guard runs first.
+  - The page calls useAuth(), supabase.auth.getUser(), auth.uid(), checks user?.role / isAdmin / is_admin / has_role / is_blog_admin, or redirects unauthenticated users via navigate('/login') / Navigate to="/login".
+If you cannot read the router file, you cannot conclude the admin page is unprotected. Skip the finding.
+
+Specifically for THIS project: src/App.tsx wraps every /admin route in <AdminRoute>, which calls the is_blog_admin RPC server-side and redirects non-admins. Do not flag /admin pages as unprotected.
+
 CHECK D — HARDCODED BYPASS VALUES:
 Look for patterns like:
   - const isPro = true
