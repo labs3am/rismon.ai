@@ -763,7 +763,15 @@ function runDeterministicLegalScan(
     edgeFiles.some((f) => /delete[-_]?(account|user)/i.test(f.path));
   const hasDeletion = hasDeleteRoute || hasDeleteButton || hasDeleteRpc;
 
-  if (!hasDeletion) {
+  // Anti-hallucination: the Settings page (where Delete Account usually
+  // lives) often isn't in the prioritized quick-scan slice. If we did
+  // NOT scan a Settings/Account file, we can't conclude deletion is
+  // missing — skip the finding rather than guess.
+  const scannedSettings = frontendFiles.some((f) =>
+    /(^|\/)(Settings|Account|Profile)(Page)?\.(t|j)sx?$/i.test(f.path),
+  );
+
+  if (!hasDeletion && scannedSettings) {
     findings.push({
       id: `det-legal-deletion-${findings.length + 1}`,
       severity: "medium",
