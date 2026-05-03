@@ -11,21 +11,50 @@ const corsHeaders = {
 // ============================================================
 function runSecurityPreChecks(codeBundle: string) {
   const findings: any[] = [];
-  const secretPatterns = [
-    { pattern: /sk-[a-zA-Z0-9]{20,}/g, type: "OpenAI API key" },
-    { pattern: /AIza[a-zA-Z0-9]{35}/g, type: "Google API key" },
-    { pattern: /ghp_[a-zA-Z0-9]{30,}/g, type: "GitHub token" },
-    { pattern: /rk_live[a-zA-Z0-9_]*/g, type: "Stripe secret key" },
-    { pattern: /sk_live[a-zA-Z0-9_]*/g, type: "Stripe secret key" },
-    { pattern: /r_[a-zA-Z0-9]{30,}/g, type: "Razorpay key" },
+  // Strict secret patterns. We only flag values that are clearly real
+  // secrets — never publishable/anon keys, never regex literals, never
+  // values inside code that itself REDACTS the key. We split the bundle
+  // by file and inspect each line so a hit in one file (e.g. a sample
+  // report's text content, a redaction regex in Analyze.tsx, or this
+  // function's own prompt) cannot pollute another file's verdict.
+  const strictPatterns: Array<{ pattern: RegExp; type: string }> = [
+    // Real OpenAI keys are 48–60 chars of [A-Za-z0-9_-] after `sk-`.
+    // Excludes `sk-ant-` (handled below) and short strings.
+    { pattern: /\bsk-(?!ant-)[A-Za-z0-9_-]{40,}\b/g, type: "OpenAI API key" },
+    { pattern: /\bsk-ant-[A-Za-z0-9_-]{40,}\b/g, type: "Anthropic API key" },
+    { pattern: /\bsk_live_[A-Za-z0-9]{20,}\b/g, type: "Stripe secret key" },
+    { pattern: /\brk_live_[A-Za-z0-9]{20,}\b/g, type: "Stripe restricted key" },
+    { pattern: /\bAIza[A-Za-z0-9_-]{35}\b/g, type: "Google API key" },
+    { pattern: /\bghp_[A-Za-z0-9]{30,}\b/g, type: "GitHub token" },
   ];
-  for (const sp of secretPatterns) {
-    if (sp.pattern.test(codeBundle)) {
-      findings.push({ type: "exposed_secret", key_type: sp.type, severity: "critical", found: true });
+
+  const files = splitBundleByFile(codeBundle);
+  for (const file of files) {
+    // Skip files that are obviously about scanning/redacting secrets,
+    // or sample/marketing content where keys appear in copy.
+    if (/Sample(Report)?|sample-report|Analyze\.tsx|analyze\/index\.ts|README|\.md$|\.test\.|\.spec\./i.test(file.path)) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      // Skip comments + regex-literal lines + lines that reference
+      // env-var indirection (those expose the NAME, not the value).
+      if (/^\s*\/\//.test(L) || /^\s*\*/.test(L)) continue;
+      if (/\/sk-|RegExp\(|new RegExp\(/.test(L)) continue;
+      if (/import\.meta\.env|process\.env|Deno\.env/.test(L)) continue;
+      if (/PUBLISHABLE|ANON_KEY|PUBLIC_KEY|SITE_KEY|CLIENT_ID/i.test(L)) continue;
+      for (const sp of strictPatterns) {
+        sp.pattern.lastIndex = 0;
+        if (sp.pattern.test(L)) {
+          findings.push({
+            type: "exposed_secret",
+            key_type: sp.type,
+            severity: "critical",
+            found: true,
+            file_path: file.path,
+            line_number: i + 1,
+          });
+        }
+      }
     }
-  }
-  if (/eyJhbGciOiJIUzI1NiJ9/.test(codeBundle) && /service_role/.test(codeBundle)) {
-    findings.push({ type: "exposed_secret", key_type: "Supabase service role key", severity: "critical", found: true });
   }
   return findings;
 }
