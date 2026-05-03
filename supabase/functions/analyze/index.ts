@@ -1865,6 +1865,8 @@ Specifically, NEVER fabricate findings about:
   - Missing payment system / Stripe (you cannot see backend or Supabase secrets — payments may be enforced in edge functions you did not scan).
   - Missing account-deletion (it can live in a SQL function, an edge function, or a settings page route you did not see).
   - Missing rate limiting, missing email verification, missing audit logs, or any other backend control — unless you can point to a frontend call that bypasses it.
+  - Exposed API keys (OpenAI, Anthropic, Stripe, etc.) when the only "key" you can quote is (a) a regex literal that DETECTS keys, (b) example/marketing copy in a SampleReport / docs file, (c) a string that begins with a public/publishable prefix (pk_, anon, publishable), or (d) an env-var NAME (e.g. import.meta.env.VITE_OPENAI_KEY) rather than the actual key value. Real OpenAI keys are sk- followed by 40+ characters; real Anthropic keys are sk-ant- followed by 40+ characters.
+  - Unprotected admin pages when src/App.tsx (or the router file) wraps admin routes in a guard component like <AdminRoute>.
 
 When in doubt: omit. A short, accurate report beats a long, wrong one.
 
