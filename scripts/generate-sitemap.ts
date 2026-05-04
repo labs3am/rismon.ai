@@ -46,7 +46,7 @@ export async function generateSitemap(): Promise<void> {
         `${supabaseUrl}/rest/v1/blog_posts?select=slug,published_at,updated_at&published=eq.true&order=published_at.desc.nullslast`,
         { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } },
       );
-      if (res.ok) posts = await res.json();
+      if (res.ok) posts = (await res.json()) as typeof posts;
       else console.warn(`[sitemap] Supabase fetch failed: ${res.status}`);
     } catch (e) {
       console.warn(`[sitemap] Supabase fetch error: ${(e as Error).message}`);
