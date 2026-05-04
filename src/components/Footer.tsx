@@ -134,6 +134,45 @@ export default function Footer() {
         >
           <p style={{ fontSize: 13, color: '#333333' }}>© 2026 Rismon.ai. All rights reserved.</p>
           <div className="flex items-center gap-5 sm:justify-end" style={{ flexWrap: 'wrap' }}>
+            <Link
+              to="/status"
+              aria-label="System status: All systems operational"
+              className="inline-flex items-center gap-2 rounded-full transition-colors"
+              style={{
+                fontSize: 12,
+                color: '#9ca3af',
+                padding: '5px 10px 5px 9px',
+                border: '1px solid #1a1a1a',
+                background: '#0a0a0a',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#262626'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#9ca3af'; e.currentTarget.style.borderColor = '#1a1a1a'; }}
+            >
+              <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
+                <span
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '9999px',
+                    background: '#22c55e',
+                    opacity: 0.6,
+                    animation: 'ping 1.8s cubic-bezier(0,0,0.2,1) infinite',
+                  }}
+                />
+                <span
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '9999px',
+                    background: '#22c55e',
+                  }}
+                />
+              </span>
+              All systems operational
+            </Link>
             <p style={{ fontSize: 13, color: '#333333', whiteSpace: 'nowrap' }}>
               From the house of{' '}
               <a
