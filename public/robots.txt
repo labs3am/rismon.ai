@@ -66,4 +66,4 @@ Disallow: /dashboard
 Disallow: /admin
 
 # --- Sitemap ---
-Sitemap: https://ljvoahftcmyckgqkigrs.supabase.co/functions/v1/sitemap
+Sitemap: https://rismon.ai/sitemap.xml
