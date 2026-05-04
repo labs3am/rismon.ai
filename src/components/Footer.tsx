@@ -9,9 +9,9 @@ const XLogo = ({ size = 18 }: { size?: number }) => (
 );
 
 const linkCls =
-  'text-[14px] text-[#555555] hover:text-white transition-colors duration-150 w-fit';
+  'text-[14px] text-[#a3a3a3] hover:text-white transition-colors duration-150 w-fit';
 const headingCls =
-  'text-[11px] font-semibold tracking-[0.1em] uppercase text-[#333333] mb-5';
+  'text-[11px] font-semibold tracking-[0.1em] uppercase text-[#e5e5e5] mb-5';
 
 export default function Footer() {
   const location = useLocation();
@@ -41,7 +41,7 @@ export default function Footer() {
               className="mt-4"
               style={{
                 fontSize: 14,
-                color: '#555555',
+                color: '#a3a3a3',
                 lineHeight: 1.6,
                 maxWidth: 260,
               }}
@@ -54,9 +54,9 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                style={{ color: '#444444', transition: 'color 0.15s' }}
+                style={{ color: '#888888', transition: 'color 0.15s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#444444')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#888888')}
               >
                 <Github size={18} />
               </a>
@@ -65,18 +65,18 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="X"
-                style={{ color: '#444444', transition: 'color 0.15s' }}
+                style={{ color: '#888888', transition: 'color 0.15s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#444444')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#888888')}
               >
                 <XLogo size={18} />
               </a>
               <a
                 href="mailto:hello@rismon.ai"
                 aria-label="Email"
-                style={{ color: '#444444', transition: 'color 0.15s' }}
+                style={{ color: '#888888', transition: 'color 0.15s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#444444')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#888888')}
               >
                 <Mail size={18} />
               </a>
@@ -132,7 +132,7 @@ export default function Footer() {
             borderTop: '1px solid #111111',
           }}
         >
-          <p style={{ fontSize: 13, color: '#333333' }}>© 2026 Rismon.ai. All rights reserved.</p>
+          <p style={{ fontSize: 13, color: '#888888' }}>© 2026 Rismon.ai. All rights reserved.</p>
           <div className="flex items-center gap-5 sm:justify-end" style={{ flexWrap: 'wrap' }}>
             <Link
               to="/status"
@@ -173,7 +173,7 @@ export default function Footer() {
               </span>
               All systems operational
             </Link>
-            <p style={{ fontSize: 13, color: '#333333', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 13, color: '#888888', whiteSpace: 'nowrap' }}>
               From the house of{' '}
               <a
                 href="https://labs3am.com"
