@@ -36,6 +36,7 @@ const About = lazy(() => import("./pages/About"));
 const OpenSource = lazy(() => import("./pages/OpenSource"));
 const ForPlatform = lazy(() => import("./pages/ForPlatform"));
 const HowWeScore = lazy(() => import("./pages/HowWeScore"));
+const Status = lazy(() => import("./pages/Status"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/status" element={<Status />} />
               <Route path="/about" element={<About />} />
               <Route path="/open-source" element={<OpenSource />} />
               <Route path="/how-we-score" element={<HowWeScore />} />
