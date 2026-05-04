@@ -431,25 +431,34 @@ export default function Index() {
 
       <Dialog open={!!zoomedImg} onOpenChange={(o) => !o && setZoomedImg(null)}>
         <DialogContent
-          className="border-0 p-0 bg-transparent shadow-none max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] w-auto"
+          className="border-0 p-0 bg-transparent shadow-none max-w-[98vw] sm:max-w-[92vw] md:max-w-[85vw] w-auto"
           style={{ background: 'transparent' }}
         >
           {zoomedImg && (
-            <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <img
-                  src={zoomedImg.placeholder}
-                  alt=""
-                  aria-hidden="true"
-                  style={{ width: '100%', height: 'auto', display: 'block', filter: 'blur(8px)' }}
-                />
-                <img
-                  src={zoomedImg.full}
-                  alt="Zoomed screenshot"
-                  decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: 'auto', display: 'block' }}
-                />
-              </div>
+            <div
+              style={{
+                background: '#000',
+                borderRadius: 12,
+                overflow: 'auto',
+                maxHeight: '90vh',
+                border: '1px solid rgba(255,255,255,0.1)',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-x pan-y pinch-zoom',
+              }}
+            >
+              <img
+                src={zoomedImg.full}
+                alt="Zoomed screenshot"
+                decoding="async"
+                style={{
+                  display: 'block',
+                  // On mobile: render at intrinsic size so users can pan/scroll to "zoom in".
+                  // On desktop: fit to dialog width.
+                  width: 'max(100%, 1400px)',
+                  height: 'auto',
+                  maxWidth: 'none',
+                }}
+              />
             </div>
           )}
         </DialogContent>
