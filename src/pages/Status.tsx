@@ -28,14 +28,16 @@ export default function Status() {
             .
           </p>
         </header>
-        <div className="rounded-lg border border-border overflow-hidden bg-card">
-          <iframe
-            src="https://rismon-ai.betteruptime.com/"
-            title="Rismon status page"
-            className="w-full"
-            style={{ height: "calc(100vh - 220px)", minHeight: 600, border: 0 }}
-            loading="lazy"
-          />
+        <div className="rounded-lg border border-border overflow-hidden bg-card -mx-4 sm:mx-0">
+          <div className="w-full overflow-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+            <iframe
+              src="https://rismon-ai.betteruptime.com/"
+              title="Rismon status page"
+              loading="lazy"
+              className="block w-full border-0 h-[70vh] min-h-[520px] sm:h-[75vh] sm:min-h-[640px] lg:h-[80vh] lg:min-h-[760px]"
+              scrolling="yes"
+            />
+          </div>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
           Trouble loading?{" "}
