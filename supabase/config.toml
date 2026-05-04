@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-complete-your-scan]
 verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
