@@ -96,6 +96,7 @@
     "flatted": "3.4.2",
     "glob": "10.5.0",
     "react-router": "6.30.2",
+    "zod": "4.4.0",
     "@remix-run/router": "1.23.2",
     "rollup": "4.22.4",
     "js-yaml": "4.1.1",
