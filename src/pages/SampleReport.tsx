@@ -614,6 +614,7 @@ export default function SampleReport() {
         title="Sample Report — Rismon.ai"
         description="Real example Rismon report: intent score, proof-backed findings, promises-vs-code checks, and copy-paste fix prompts for an AI-built meal-planning app."
         canonicalPath="/sample-report"
+        noindex
       />
       <Navbar />
 
@@ -627,9 +628,9 @@ export default function SampleReport() {
       >
         <div className="max-w-[800px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
           <p className="text-sm truncate min-w-0">
-            <span className="text-foreground font-medium">Sample report.</span>{' '}
+            <span className="text-foreground font-medium">Example report — fictional app.</span>{' '}
             <span className="text-muted-foreground">
-              This is what your report looks like after a scan.
+              The findings below are about a made-up demo app, not Rismon.
             </span>
           </p>
           <Link

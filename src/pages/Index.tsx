@@ -165,18 +165,18 @@ export default function Index() {
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
       {/* HERO */}
-      <section className="text-left px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
-        <div className="max-w-[800px] mx-auto text-left">
+      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
+        <div className="max-w-[800px] mx-auto">
           <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
-          <h1 className="vercel-hero-h1 text-left">Did your AI build<br />what you meant?</h1>
-          <p className="vercel-hero-sub text-left rounded-sm">
+          <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
+          <p className="vercel-hero-sub text-center rounded-sm">
             Most founders only discover broken logic, business gaps, or security holes after a real user hits them. Scan with Rismon.ai before shipping to real users.
           </p>
-          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-start" style={{ marginTop: '8px' }}>
+          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
-          <p className="text-left" style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
+          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
         </div>
       </section>
 
@@ -431,25 +431,34 @@ export default function Index() {
 
       <Dialog open={!!zoomedImg} onOpenChange={(o) => !o && setZoomedImg(null)}>
         <DialogContent
-          className="border-0 p-0 bg-transparent shadow-none max-w-[95vw] sm:max-w-[90vw] md:max-w-[85vw] w-auto"
+          className="border-0 p-0 bg-transparent shadow-none max-w-[98vw] sm:max-w-[92vw] md:max-w-[85vw] w-auto"
           style={{ background: 'transparent' }}
         >
           {zoomedImg && (
-            <div style={{ background: '#000', borderRadius: 12, overflow: 'auto', maxHeight: '90vh', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <img
-                  src={zoomedImg.placeholder}
-                  alt=""
-                  aria-hidden="true"
-                  style={{ width: '100%', height: 'auto', display: 'block', filter: 'blur(8px)' }}
-                />
-                <img
-                  src={zoomedImg.full}
-                  alt="Zoomed screenshot"
-                  decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: 'auto', display: 'block' }}
-                />
-              </div>
+            <div
+              style={{
+                background: '#000',
+                borderRadius: 12,
+                overflow: 'auto',
+                maxHeight: '90vh',
+                border: '1px solid rgba(255,255,255,0.1)',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-x pan-y pinch-zoom',
+              }}
+            >
+              <img
+                src={zoomedImg.full}
+                alt="Zoomed screenshot"
+                decoding="async"
+                style={{
+                  display: 'block',
+                  // On mobile: render at intrinsic size so users can pan/scroll to "zoom in".
+                  // On desktop: fit to dialog width.
+                  width: 'max(100%, 1400px)',
+                  height: 'auto',
+                  maxWidth: 'none',
+                }}
+              />
             </div>
           )}
         </DialogContent>

@@ -11,21 +11,50 @@ const corsHeaders = {
 // ============================================================
 function runSecurityPreChecks(codeBundle: string) {
   const findings: any[] = [];
-  const secretPatterns = [
-    { pattern: /sk-[a-zA-Z0-9]{20,}/g, type: "OpenAI API key" },
-    { pattern: /AIza[a-zA-Z0-9]{35}/g, type: "Google API key" },
-    { pattern: /ghp_[a-zA-Z0-9]{30,}/g, type: "GitHub token" },
-    { pattern: /rk_live[a-zA-Z0-9_]*/g, type: "Stripe secret key" },
-    { pattern: /sk_live[a-zA-Z0-9_]*/g, type: "Stripe secret key" },
-    { pattern: /r_[a-zA-Z0-9]{30,}/g, type: "Razorpay key" },
+  // Strict secret patterns. We only flag values that are clearly real
+  // secrets — never publishable/anon keys, never regex literals, never
+  // values inside code that itself REDACTS the key. We split the bundle
+  // by file and inspect each line so a hit in one file (e.g. a sample
+  // report's text content, a redaction regex in Analyze.tsx, or this
+  // function's own prompt) cannot pollute another file's verdict.
+  const strictPatterns: Array<{ pattern: RegExp; type: string }> = [
+    // Real OpenAI keys are 48–60 chars of [A-Za-z0-9_-] after `sk-`.
+    // Excludes `sk-ant-` (handled below) and short strings.
+    { pattern: /\bsk-(?!ant-)[A-Za-z0-9_-]{40,}\b/g, type: "OpenAI API key" },
+    { pattern: /\bsk-ant-[A-Za-z0-9_-]{40,}\b/g, type: "Anthropic API key" },
+    { pattern: /\bsk_live_[A-Za-z0-9]{20,}\b/g, type: "Stripe secret key" },
+    { pattern: /\brk_live_[A-Za-z0-9]{20,}\b/g, type: "Stripe restricted key" },
+    { pattern: /\bAIza[A-Za-z0-9_-]{35}\b/g, type: "Google API key" },
+    { pattern: /\bghp_[A-Za-z0-9]{30,}\b/g, type: "GitHub token" },
   ];
-  for (const sp of secretPatterns) {
-    if (sp.pattern.test(codeBundle)) {
-      findings.push({ type: "exposed_secret", key_type: sp.type, severity: "critical", found: true });
+
+  const files = splitBundleByFile(codeBundle);
+  for (const file of files) {
+    // Skip files that are obviously about scanning/redacting secrets,
+    // or sample/marketing content where keys appear in copy.
+    if (/Sample(Report)?|sample-report|Analyze\.tsx|analyze\/index\.ts|README|\.md$|\.test\.|\.spec\./i.test(file.path)) continue;
+    for (let i = 0; i < file.lines.length; i++) {
+      const L = file.lines[i];
+      // Skip comments + regex-literal lines + lines that reference
+      // env-var indirection (those expose the NAME, not the value).
+      if (/^\s*\/\//.test(L) || /^\s*\*/.test(L)) continue;
+      if (/\/sk-|RegExp\(|new RegExp\(/.test(L)) continue;
+      if (/import\.meta\.env|process\.env|Deno\.env/.test(L)) continue;
+      if (/PUBLISHABLE|ANON_KEY|PUBLIC_KEY|SITE_KEY|CLIENT_ID/i.test(L)) continue;
+      for (const sp of strictPatterns) {
+        sp.pattern.lastIndex = 0;
+        if (sp.pattern.test(L)) {
+          findings.push({
+            type: "exposed_secret",
+            key_type: sp.type,
+            severity: "critical",
+            found: true,
+            file_path: file.path,
+            line_number: i + 1,
+          });
+        }
+      }
     }
-  }
-  if (/eyJhbGciOiJIUzI1NiJ9/.test(codeBundle) && /service_role/.test(codeBundle)) {
-    findings.push({ type: "exposed_secret", key_type: "Supabase service role key", severity: "critical", found: true });
   }
   return findings;
 }
@@ -286,11 +315,28 @@ function runDeterministicSecurityScan(
   const edgeFiles = splitBundleByFile(edgeFunctionBundle);
 
   // ---------- D1: Open admin route ----------
+  // First, check if the app's router wraps admin routes in a guard
+  // component (e.g. <AdminRoute>, <RequireAdmin>, <ProtectedAdmin>).
+  // If yes, every admin page is already protected at the route layer
+  // and we must NOT flag the page component itself.
+  const routerFileForAdmin = frontendFiles.find((f) =>
+    /(^|\/)App\.(t|j)sx?$/.test(f.path) ||
+    /(^|\/)router\.(t|j)sx?$/i.test(f.path) ||
+    /(^|\/)routes?\.(t|j)sx?$/i.test(f.path),
+  );
+  const routerTextForAdmin = routerFileForAdmin ? routerFileForAdmin.lines.join("\n") : "";
+  // True if the router renders an admin guard wrapper around /admin paths.
+  const routerProtectsAdmin =
+    /<\s*(Admin(Route|Guard|Protected)|Require(Admin|Role)|ProtectedAdmin)\b/i.test(routerTextForAdmin) ||
+    /path=["']\/admin[^"']*["'][^>]*element=\{[^}]*<\s*(Admin(Route|Guard)|Require(Admin|Role))/i.test(routerTextForAdmin);
+
   for (const file of frontendFiles) {
     const isAdminFile = /\/admin|admin\.|adminpanel|admin-page|admindashboard/i.test(file.path);
     if (!isAdminFile) continue;
+    // If the router already wraps admin routes in a guard component, trust it.
+    if (routerProtectsAdmin) continue;
     const fullText = file.lines.join("\n");
-    const hasAuthCheck = /useauth\b|getuser\b|auth\.uid|isadmin|is_admin|user\?\.role|role\s*===?\s*['"]admin['"]|navigate\(['"]\/login|redirect\(['"]\/login|<protectedroute|requireauth/i.test(fullText);
+    const hasAuthCheck = /useauth\b|getuser\b|auth\.uid|isadmin|is_admin|is_blog_admin|has_role|user\?\.role|role\s*===?\s*['"]admin['"]|navigate\(['"]\/(login|$)|redirect\(['"]\/(login|$)|<protectedroute|<adminroute|requireauth|requireadmin/i.test(fullText);
     if (hasAuthCheck) continue;
     // Find the first meaningful line — component declaration or first JSX return
     let lineNo = 1;
@@ -717,7 +763,15 @@ function runDeterministicLegalScan(
     edgeFiles.some((f) => /delete[-_]?(account|user)/i.test(f.path));
   const hasDeletion = hasDeleteRoute || hasDeleteButton || hasDeleteRpc;
 
-  if (!hasDeletion) {
+  // Anti-hallucination: the Settings page (where Delete Account usually
+  // lives) often isn't in the prioritized quick-scan slice. If we did
+  // NOT scan a Settings/Account file, we can't conclude deletion is
+  // missing — skip the finding rather than guess.
+  const scannedSettings = frontendFiles.some((f) =>
+    /(^|\/)(Settings|Account|Profile)(Page)?\.(t|j)sx?$/i.test(f.path),
+  );
+
+  if (!hasDeletion && scannedSettings) {
     findings.push({
       id: `det-legal-deletion-${findings.length + 1}`,
       severity: "medium",
@@ -1718,14 +1772,31 @@ Can users see each other's data?
 5. SECURITY ISSUES
 Run ALL five checks below on every scan. These checks are MANDATORY and independent of what the founder described. If a pattern exists in the code, flag it. No benefit of the doubt. No assumptions of safety.
 
-CHECK A — EXPOSED SECRET KEYS:
-Scan every frontend file for these exact patterns:
-  - sk- (OpenAI key pattern)
-  - const.*key.*= (any hardcoded key assignment)
-  - VITE_ prefix variables assigned key values
-  - apiKey = "..." (any hardcoded value in quotes)
-  - Authorization.*Bearer.*" (hardcoded Bearer tokens)
-If ANY of these patterns exist in a frontend file: CRITICAL severity. Always flag. Never skip.
+CHECK A — EXPOSED SECRET KEYS (be precise — do not invent):
+Only flag a real secret. A "secret" means a private credential that must never reach the browser.
+
+These are PUBLIC keys and MUST NEVER be flagged as secrets — they are designed to live in the browser:
+  - VITE_SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_ANON_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_ID
+  - Any constant whose name contains PUBLISHABLE_KEY, ANON_KEY, PUBLIC_KEY, PUBLIC_API_KEY
+  - Stripe publishable keys (pk_live_, pk_test_), Paddle client tokens, Google Maps browser keys, reCAPTCHA site keys, Mapbox public tokens, PostHog public keys, Sentry DSNs
+  - Anything named SITE_KEY, CLIENT_ID
+
+Only flag CRITICAL when you can quote an actual exposed PRIVATE secret in a frontend file:
+  - OpenAI key matching sk-[A-Za-z0-9]{20,} (must start with literal "sk-")
+  - Anthropic key matching sk-ant-[A-Za-z0-9_-]{20,}
+  - Stripe secret/restricted keys: sk_live_, sk_test_, rk_live_, rk_test_
+  - Supabase service role JWT (the literal string "service_role" inside a JWT-looking value)
+  - AWS keys: AKIA[0-9A-Z]{16}
+  - GitHub tokens: ghp_, gho_, ghs_, ghu_, github_pat_
+  - Any literal string assigned in frontend code that looks like a private API key (long opaque value with no env-var indirection)
+
+Hard rules — DO NOT FLAG if:
+  - The key only appears as a name on the right side of an env lookup (e.g. import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) — that is the value being read, not exposed.
+  - The key name contains PUBLISHABLE, ANON, PUBLIC, SITE_KEY, CLIENT_ID.
+  - The value is a placeholder like "YOUR_KEY_HERE", "xxxx", "...", or empty.
+  - You cannot quote the actual file path AND line number AND the offending characters.
+
+If you cannot meet the evidence bar above, do not include this finding at all. A false alarm here destroys trust.
 
 CHECK B — DATA LEAK (missing user filter):
 Look for Supabase queries like .from('tableName').select('*') that do NOT have .eq('user_id', ...) or any equivalent user-scoping filter.
@@ -1738,6 +1809,13 @@ Look for page components where:
   - AND there is no auth check before rendering
 If found: CRITICAL severity. "Anyone who guesses the URL can access your admin panel."
 
+DO NOT FLAG admin pages when ANY of these are true:
+  - The router (App.tsx / router.tsx / routes.tsx) wraps the admin route in a guard component such as <AdminRoute>, <RequireAdmin>, <ProtectedAdmin>, <RequireRole role="admin">, or similar. The page itself does not need its own check in that case — the guard runs first.
+  - The page calls useAuth(), supabase.auth.getUser(), auth.uid(), checks user?.role / isAdmin / is_admin / has_role / is_blog_admin, or redirects unauthenticated users via navigate('/login') / Navigate to="/login".
+If you cannot read the router file, you cannot conclude the admin page is unprotected. Skip the finding.
+
+Specifically for THIS project: src/App.tsx wraps every /admin route in <AdminRoute>, which calls the is_blog_admin RPC server-side and redirects non-admins. Do not flag /admin pages as unprotected.
+
 CHECK D — HARDCODED BYPASS VALUES:
 Look for patterns like:
   - const isPro = true
@@ -1745,9 +1823,15 @@ Look for patterns like:
   - Any boolean flag hardcoded to true inside auth or payment logic
 If found: CRITICAL severity. "Your payment or permission check is permanently bypassed."
 
-CHECK E — MISSING DATABASE PROTECTION:
-If Supabase tables appear in the code (via .from() calls) but NO migration files contain any policy definitions (CREATE POLICY, ENABLE ROW LEVEL SECURITY, ALTER TABLE ... ENABLE ROW LEVEL SECURITY):
-HIGH severity. "Your database tables may be completely open — anyone could read or delete all your users' data directly."
+CHECK E — MISSING DATABASE PROTECTION (only flag with proof):
+On a QUICK scan, migration files and the database schema are NOT in the file bundle — only ~20 prioritized frontend files are fetched. You cannot conclude that database protection is missing from frontend code alone.
+
+Hard rules:
+  - On a quick scan: DO NOT flag missing database protection. The evidence simply is not in the bundle. Mention it only as a thing to verify in a deep scan, never as a finding.
+  - On a deep scan: only flag if you have actually inspected files under supabase/migrations/ or a schema.sql file AND found zero "CREATE POLICY" / "ENABLE ROW LEVEL SECURITY" lines anywhere. Quote the directory you checked.
+  - Never assume "no SQL files visible" means "no protection exists" — Lovable/Supabase projects manage schema outside the repo by default.
+
+If you cannot meet this bar, omit the finding entirely.
 
 6. FALSE PROMISE DETECTION
 These checks are MANDATORY on every scan. Search the homepage (index.html, landing page components, marketing copy in any component) for these exact claims. Then verify the claim against the actual code. If the code does not back up the claim, flag it as a false promise. No benefit of the doubt — if the code evidence is absent, flag it.
@@ -1764,6 +1848,7 @@ PROMISE C — "AI-powered" or "powered by AI":
 Search backend/edge functions for AI API calls (openai, anthropic, @anthropic-ai, gemini, googleapis/ai, cohere, replicate).
   - If AI calls exist ONLY in frontend files with a hardcoded or VITE_-prefixed key: flag as BOTH a false promise AND a security issue (Critical). "Your AI key is exposed to anyone who opens your app."
   - If NO AI API calls exist anywhere: flag as false promise. Medium severity. "Your homepage claims AI features but no AI service is connected."
+  - On a QUICK scan when backend/edge function code was NOT included in the bundle: do NOT flag this — backend AI calls cannot be verified from frontend files alone. Skip the finding rather than guess.
 
 PROMISE D — "sync with [ServiceName]" or "integrates with [ServiceName]":
 For each named third-party service in the homepage copy (e.g. Slack, Notion, Google Sheets, Zapier, HubSpot, Salesforce), search the codebase for that service's API domain or SDK import.
@@ -1772,6 +1857,18 @@ If the named integration is not found in the code: flag as false promise. Medium
 PROMISE E — "team collaboration", "invite your team", or "invite members":
 Search for team/organisation logic: org_id, team_id, organization, invite, member_role, workspace.
 If the homepage mentions team features but NO such logic exists in the code: flag as false promise. Medium severity. "Your homepage promises team features but there is no team logic in the app."
+
+UNIVERSAL ANTI-HALLUCINATION RULE (overrides every check above):
+Every finding you emit MUST include a real file_path that exists in the scanned bundle and a real line_number that points to the offending line. If you cannot quote a specific file and line that proves the issue, DROP the finding entirely. Do not generalize. Do not flag "may be" or "might be" issues — only flag what you can prove from code that was actually shown to you.
+
+Specifically, NEVER fabricate findings about:
+  - Missing payment system / Stripe (you cannot see backend or Supabase secrets — payments may be enforced in edge functions you did not scan).
+  - Missing account-deletion (it can live in a SQL function, an edge function, or a settings page route you did not see).
+  - Missing rate limiting, missing email verification, missing audit logs, or any other backend control — unless you can point to a frontend call that bypasses it.
+  - Exposed API keys (OpenAI, Anthropic, Stripe, etc.) when the only "key" you can quote is (a) a regex literal that DETECTS keys, (b) example/marketing copy in a SampleReport / docs file, (c) a string that begins with a public/publishable prefix (pk_, anon, publishable), or (d) an env-var NAME (e.g. import.meta.env.VITE_OPENAI_KEY) rather than the actual key value. Real OpenAI keys are sk- followed by 40+ characters; real Anthropic keys are sk-ant- followed by 40+ characters.
+  - Unprotected admin pages when src/App.tsx (or the router file) wraps admin routes in a guard component like <AdminRoute>.
+
+When in doubt: omit. A short, accurate report beats a long, wrong one.
 
 FOR EVERY FINDING USE THIS EXACT FORMAT:
 Plain English title (max 8 words)
