@@ -92,7 +92,6 @@
     "vitest": "^3.2.4"
   },
   "overrides": {
-    "lodash": "4.18.1",
     "flatted": "3.4.2",
     "glob": "10.5.0",
     "react-router": "6.30.2",
@@ -106,6 +105,7 @@
     "brace-expansion": "1.1.14",
     "@tootallnate/once": "3.0.1",
     "ajv": "6.14.0",
-    "browserslist": "4.25.3"
+    "browserslist": "4.25.3",
+    "lodash": "4.18.1"
   }
 }
