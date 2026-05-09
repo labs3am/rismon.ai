@@ -89,11 +89,9 @@ export default function Navbar() {
         top: 0,
         zIndex: 100,
         height: 64,
-        background: scrolled ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.4)',
-        backdropFilter: 'saturate(180%) blur(16px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-        borderBottom: scrolled ? '1px solid #ffffff14' : '1px solid transparent',
-        transition: 'background 0.25s ease, border-color 0.25s ease',
+        background: '#000000',
+        borderBottom: scrolled ? '1px solid #1a1a1a' : '1px solid transparent',
+        transition: 'border-color 0.25s ease',
       }}
     >
       <div className="flex h-full items-center justify-between max-w-[1200px] mx-auto px-4 sm:px-6">
@@ -123,13 +121,11 @@ export default function Navbar() {
                     top: 'calc(100% + 10px)',
                     left: -12,
                     minWidth: 240,
-                    background: 'rgba(10,10,10,0.96)',
-                    backdropFilter: 'saturate(180%) blur(16px)',
-                    WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-                    border: '1px solid #ffffff14',
+                    background: '#0a0a0a',
+                    border: '1px solid #1f1f1f',
                     borderRadius: 10,
                     padding: 6,
-                    boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+                    boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
                   }}
                 >
                   <ProductMenuItem label="How we score" desc="The math behind every score" onClick={() => { setProductOpen(false); navigate('/how-we-score'); }} />
@@ -184,10 +180,8 @@ export default function Navbar() {
         <div
           className="md:hidden flex flex-col"
           style={{
-            background: 'rgba(0,0,0,0.96)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderTop: '1px solid #ffffff10',
+            background: '#000000',
+            borderTop: '1px solid #1a1a1a',
             padding: '8px 16px 20px',
             maxHeight: 'calc(100vh - 64px)',
             overflowY: 'auto',
