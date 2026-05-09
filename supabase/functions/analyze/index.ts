@@ -1131,7 +1131,12 @@ const PLAN_LIMITS = {
     monthlyScans: Infinity,
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
-    edgeFunctionScan: false,
+    // Backend (edge function) scanning is now ON for every plan. Payment
+    // validation, auth checks, and webhook handlers almost always live in
+    // supabase/functions/* — skipping them on free tier was the #1 reason
+    // real issues (e.g. unverified Stripe webhooks, missing signature
+    // checks) were being missed in reports.
+    edgeFunctionScan: true,
     // Verification pass (Gemini double-checks Claude) is now ON for every
     // scan. It's a single cheap Flash call and meaningfully improves
     // accuracy — false claims get dropped, confirmed claims get a green
@@ -1427,7 +1432,11 @@ serve(async (req) => {
         : "";
 
       // Stage 1: extract facts via Claude Sonnet (primary) — falls back to Gemini 2.5 Flash on 429/529
-      const includeEdge = userPlan === "pro" && edgeFunctionBundle;
+      // Always include backend code in the LLM read when it's available.
+      // The client already fetches supabase/functions/* for every plan, so
+      // gating this on plan tier was just hiding real backend issues
+      // (payment, auth, webhook signature checks) from free users.
+      const includeEdge = !!edgeFunctionBundle;
       const systemPrompt = `You are a code reader. Extract facts from this codebase. Look at: features, user roles, payment code, routes (protected vs public), database tables used, coding patterns, anything that looks unintentional. ${includeEdge ? "Backend logic is included in supabase/functions/* — judge auth, payment, and data-access enforcement based on this code, not just the frontend." : "Note: only frontend code was scanned. Flag features whose backend enforcement cannot be verified."} Then generate up to 8 plain-English questions for the founder, each citing what you found.${preCheckContext}
 
 Return ONLY this JSON:
@@ -1756,6 +1765,16 @@ Check if payment logic is enforced:
 - Paid features checked before access?
 - Subscription verified on every request?
 - Trial expiry actually stops access?
+
+If the codebase touches Stripe, Paddle, Lemon Squeezy, Razorpay, or any checkout flow, ALSO run these specific checks and flag any that fail. Each one is a real way founders lose money or get chargebacks:
+
+- WEBHOOK SIGNATURE: Is the payment webhook handler verifying the signature header? For Stripe that means stripe.webhooks.constructEvent(body, sig, secret). If the handler reads req.json() and trusts it without verifying the signature, flag CRITICAL: "Anyone can fake a payment by sending a request to your webhook URL — they get the paid plan without paying."
+- PRICE ON SERVER: Does the checkout session creation read the price/amount from the client request body, or does it look up the price server-side from a fixed map / Stripe price ID? If the amount comes from the client, flag CRITICAL: "A user can change the price in their browser before checkout and pay $1 for a $99 plan."
+- ENTITLEMENT WRITE: Does the webhook (or checkout-success handler) actually update the user's plan / pro_until / credits in the database? If the database is never written after a successful payment, flag CRITICAL: "Users pay you but the app never records that they paid — they stay on free tier and complain or chargeback."
+- USER MATCHING: When the webhook updates the user, is the user_id taken from the Stripe metadata / customer record (set at session creation), not from the webhook request body? If user_id comes from untrusted webhook body, flag HIGH: "Anyone can promote any account to paid by guessing user IDs."
+- IDEMPOTENCY: Does the webhook protect against duplicate delivery (Stripe retries up to 3 days)? Look for a check on event.id or a unique constraint. If missing on a credit-granting handler, flag MEDIUM: "Stripe retries can grant the same credits multiple times."
+- SUBSCRIPTION CANCEL: Is there a handler for customer.subscription.deleted / invoice.payment_failed that revokes access? If only checkout.session.completed is handled, flag HIGH: "Cancelled or failed-payment users keep paid access forever."
+- ACCESS CHECK LOCATION: Is the "is this user pro?" check happening in the database / edge function (server) or only in React components? If gating is purely client-side (e.g. {isPro && <ProFeature/>} with no server enforcement when the feature actually runs), flag HIGH.
 
 2. DATA SEPARATION GAPS
 Can users see each other's data?
