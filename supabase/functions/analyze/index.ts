@@ -1131,8 +1131,17 @@ const PLAN_LIMITS = {
     monthlyScans: Infinity,
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
-    edgeFunctionScan: false,
-    verificationPass: false,
+    // Backend (edge function) scanning is now ON for every plan. Payment
+    // validation, auth checks, and webhook handlers almost always live in
+    // supabase/functions/* — skipping them on free tier was the #1 reason
+    // real issues (e.g. unverified Stripe webhooks, missing signature
+    // checks) were being missed in reports.
+    edgeFunctionScan: true,
+    // Verification pass (Gemini double-checks Claude) is now ON for every
+    // scan. It's a single cheap Flash call and meaningfully improves
+    // accuracy — false claims get dropped, confirmed claims get a green
+    // "Verified" badge in the report.
+    verificationPass: true,
     emailDelivery: false,
   },
   try_pro: {
@@ -1423,7 +1432,11 @@ serve(async (req) => {
         : "";
 
       // Stage 1: extract facts via Claude Sonnet (primary) — falls back to Gemini 2.5 Flash on 429/529
-      const includeEdge = userPlan === "pro" && edgeFunctionBundle;
+      // Always include backend code in the LLM read when it's available.
+      // The client already fetches supabase/functions/* for every plan, so
+      // gating this on plan tier was just hiding real backend issues
+      // (payment, auth, webhook signature checks) from free users.
+      const includeEdge = !!edgeFunctionBundle;
       const systemPrompt = `You are a code reader. Extract facts from this codebase. Look at: features, user roles, payment code, routes (protected vs public), database tables used, coding patterns, anything that looks unintentional. ${includeEdge ? "Backend logic is included in supabase/functions/* — judge auth, payment, and data-access enforcement based on this code, not just the frontend." : "Note: only frontend code was scanned. Flag features whose backend enforcement cannot be verified."} Then generate up to 8 plain-English questions for the founder, each citing what you found.${preCheckContext}
 
 Return ONLY this JSON:
@@ -1753,6 +1766,16 @@ Check if payment logic is enforced:
 - Subscription verified on every request?
 - Trial expiry actually stops access?
 
+If the codebase touches Stripe, Paddle, Lemon Squeezy, Razorpay, or any checkout flow, ALSO run these specific checks and flag any that fail. Each one is a real way founders lose money or get chargebacks:
+
+- WEBHOOK SIGNATURE: Is the payment webhook handler verifying the signature header? For Stripe that means stripe.webhooks.constructEvent(body, sig, secret). If the handler reads req.json() and trusts it without verifying the signature, flag CRITICAL: "Anyone can fake a payment by sending a request to your webhook URL — they get the paid plan without paying."
+- PRICE ON SERVER: Does the checkout session creation read the price/amount from the client request body, or does it look up the price server-side from a fixed map / Stripe price ID? If the amount comes from the client, flag CRITICAL: "A user can change the price in their browser before checkout and pay $1 for a $99 plan."
+- ENTITLEMENT WRITE: Does the webhook (or checkout-success handler) actually update the user's plan / pro_until / credits in the database? If the database is never written after a successful payment, flag CRITICAL: "Users pay you but the app never records that they paid — they stay on free tier and complain or chargeback."
+- USER MATCHING: When the webhook updates the user, is the user_id taken from the Stripe metadata / customer record (set at session creation), not from the webhook request body? If user_id comes from untrusted webhook body, flag HIGH: "Anyone can promote any account to paid by guessing user IDs."
+- IDEMPOTENCY: Does the webhook protect against duplicate delivery (Stripe retries up to 3 days)? Look for a check on event.id or a unique constraint. If missing on a credit-granting handler, flag MEDIUM: "Stripe retries can grant the same credits multiple times."
+- SUBSCRIPTION CANCEL: Is there a handler for customer.subscription.deleted / invoice.payment_failed that revokes access? If only checkout.session.completed is handled, flag HIGH: "Cancelled or failed-payment users keep paid access forever."
+- ACCESS CHECK LOCATION: Is the "is this user pro?" check happening in the database / edge function (server) or only in React components? If gating is purely client-side (e.g. {isPro && <ProFeature/>} with no server enforcement when the feature actually runs), flag HIGH.
+
 2. DATA SEPARATION GAPS
 Can users see each other's data?
 - Missing user filter in queries?
@@ -1877,6 +1900,21 @@ Real world business impact (1-2 sentences)
 Technical reference (5 words max)
 Google search term to learn more
 Exact fix prompt for Lovable or Cursor
+
+FIX PROMPT QUALITY RULES (CRITICAL — the prompt must be directly executable by an AI coding agent):
+Every fix_prompt MUST be a self-contained instruction that another AI (Lovable, Cursor, Claude Code, Copilot) can act on without asking follow-up questions. It MUST contain, in order:
+  1. The exact file path to edit (use the real path from the scanned bundle, e.g. "src/pages/Admin.tsx" — never "the admin page" or "your file").
+  2. The exact line number or a unique code snippet to locate the change (quote 1-3 lines from the file when possible).
+  3. What is currently wrong on that line, in one sentence.
+  4. The exact change to make — show the BEFORE code and the AFTER code as short fenced blocks when the fix is a code edit. For Supabase/SQL fixes, give the literal SQL to run, with the real table and column names from the app.
+  5. Any related changes required for the fix to actually work (imports to add, RLS policies to create, env vars to set, files to delete, routes to wrap in a guard).
+  6. A one-line verification step ("After the change, <X> should <Y>.").
+Hard rules:
+  - Use real identifiers from the scanned code (table names, column names, component names, route paths). Never use placeholders like <table>, [your file], TODO, or "the relevant component".
+  - No vague verbs ("improve", "harden", "review", "consider"). Use concrete verbs ("Replace line 42 with…", "Add this policy in Supabase SQL editor…", "Wrap the route in <ProtectedRoute>…").
+  - Do not assume context the receiving AI does not have — restate the file, the symbol, and the goal in the prompt itself.
+  - Length 60-220 words. Plain English around the code blocks. No marketing fluff, no apologies, no "as an AI".
+  - If the finding is a false promise on the homepage, the fix_prompt must name the exact homepage file/component (e.g. src/pages/Index.tsx) and quote the offending claim verbatim, then say either "remove this line" or "implement <feature> by doing X, Y, Z".
 
 SCORING:
 Return "score": 0 — the server calculates the final score after verification.
@@ -2038,7 +2076,17 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
             const confirmedIds = new Set(verified.verified.filter((v: any) => v.verdict === "confirmed").map((v: any) => v.id));
             claudeResult.gaps = claudeResult.gaps
               .filter((g: any) => !rejectedIds.has(g.id))
-              .map((g: any) => ({ ...g, verified: confirmedIds.has(g.id) }));
+              .map((g: any) => ({
+                ...g,
+                verified: confirmedIds.has(g.id),
+                // Surface the verification result as the `confidence` badge
+                // the report UI already renders. Confirmed → "verified"
+                // (green), unconfirmed → "unverified" (grey). Existing
+                // explicit values from Claude are preserved.
+                confidence:
+                  g.confidence ||
+                  (confirmedIds.has(g.id) ? "verified" : "unverified"),
+              }));
             claudeResult.verification_applied = true;
             claudeResult.verification_dropped = rejectedIds.size;
           }
@@ -2226,11 +2274,23 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
     // ACTION: generate_fixes (stage 5 — Gemini Flash, cheap & templated)
     // ============================================================
     if (action === "generate_fixes") {
-      const systemPrompt = `Generate copy-paste fix prompts for the founder's app. Each prompt must:
-- Match the app's exact code style and table names where known
-- Be specific to their platform (${platform || "Lovable"})
-- Be plain English with step-by-step instructions
-- Be ready to paste with no modification
+      const systemPrompt = `You generate copy-paste fix prompts that another AI coding agent (${platform || "Lovable"}, Cursor, Claude Code, Copilot) will execute verbatim. The receiving AI has NO memory of this scan — every prompt must stand alone.
+
+Each "prompt" field MUST contain, in order:
+  1. The exact file path to edit (real path from the app — e.g. "src/pages/Admin.tsx", "supabase/functions/checkout/index.ts"). Never use placeholders.
+  2. The exact line number or a unique 1-3 line code snippet so the AI can locate the change.
+  3. One sentence on what is currently wrong there.
+  4. The exact edit. When it is a code change, show BEFORE and AFTER as fenced code blocks with the real surrounding code. When it is a Supabase change, give the literal SQL with the real table/column names.
+  5. Any related edits required (imports to add, RLS policies, route guards, env vars, files to delete).
+  6. A single verification line ("After this change, <X> should <Y>.").
+
+Hard rules:
+  - Use the real identifiers from the app (table names, columns, components, routes). No <placeholders>, no "your table", no TODO.
+  - Concrete verbs only: "Replace", "Add", "Delete", "Wrap", "Run this SQL". Never "improve", "harden", "consider", "review".
+  - 60-220 words per prompt. Plain English around the code. No fluff, no apologies.
+  - "where_to_paste" must be specific: "Lovable chat on this project", "Cursor inline edit on src/pages/Admin.tsx", or "Supabase SQL editor".
+  - "expected_result" is one sentence describing the user-visible outcome after the fix.
+  - Match the app's existing code style (TypeScript, the same import style, the same Supabase client variable name).
 
 Return ONLY:
 { "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;

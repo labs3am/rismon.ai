@@ -22,53 +22,16 @@ export default function RisGuide({ pageKey, message }: RisGuideProps) {
   };
 
   return (
-    <div
-      className="w-full mb-6"
-      style={{
-        background: 'rgba(249,115,22,0.06)',
-        border: '1px solid rgba(249,115,22,0.20)',
-        borderLeft: '3px solid #f97316',
-        borderRadius: 8,
-        padding: '14px 18px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 12,
-      }}
-    >
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          minWidth: 28,
-          background: 'rgba(249,115,22,0.15)',
-          border: '1px solid rgba(249,115,22,0.30)',
-          borderRadius: '50%',
-          fontSize: 12,
-          fontWeight: 700,
-          color: '#f97316',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+    <div className="w-full mb-6 bg-card border border-border rounded-xl px-4 py-3.5 flex items-start gap-3">
+      <div className="w-7 h-7 min-w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[12px] font-bold">
         R
       </div>
-      <p
-        className="flex-1"
-        style={{
-          fontSize: 13,
-          color: 'rgba(255,255,255,0.75)',
-          lineHeight: 1.6,
-          whiteSpace: 'pre-line',
-          margin: 0,
-        }}
-      >
+      <p className="flex-1 text-[13px] text-muted-foreground leading-relaxed whitespace-pre-line m-0">
         {message}
       </p>
       <button
         onClick={dismiss}
-        className="shrink-0 mt-0.5 hover:opacity-70 transition-opacity"
-        style={{ color: 'rgba(255,255,255,0.30)', background: 'none', border: 'none', cursor: 'pointer' }}
+        className="shrink-0 mt-0.5 text-muted-foreground/60 hover:text-foreground transition-colors bg-transparent border-0 cursor-pointer"
         aria-label="Dismiss"
       >
         <X size={14} />

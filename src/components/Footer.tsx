@@ -81,6 +81,41 @@ export default function Footer() {
                 <Mail size={18} />
               </a>
             </div>
+            {/* Badges */}
+            <div className="flex flex-wrap items-center mt-5" style={{ gap: 10 }}>
+              <a
+                href="https://peerpush.net/p/rismonai"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Rismon.ai on PeerPush"
+                style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
+              >
+                <img
+                  src="https://peerpush.net/p/rismonai/badge.png"
+                  alt="Rismon.ai on PeerPush"
+                  style={{ width: 230, display: 'block' }}
+                />
+              </a>
+              <a
+                href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Rismon on Product Hunt"
+                style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
+              >
+                <img
+                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1131680&theme=neutral&t=1777220069245"
+                  alt="Rismon - Did your AI build what you meant? | Product Hunt"
+                  width={180}
+                  height={39}
+                  style={{ width: 180, height: 39, display: 'block' }}
+                />
+              </a>
+            </div>
           </div>
 
           {/* Product */}
@@ -186,23 +221,6 @@ export default function Footer() {
                 Labs3am
               </a>
             </p>
-            <a
-              href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Rismon on Product Hunt"
-              style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
-            >
-              <img
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1131680&theme=neutral&t=1777220069245"
-                alt="Rismon - Did your AI build what you meant? | Product Hunt"
-                width={180}
-                height={39}
-                style={{ width: 180, height: 39, display: 'block' }}
-              />
-            </a>
           </div>
         </div>
       </div>

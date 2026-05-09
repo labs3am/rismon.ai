@@ -77,11 +77,9 @@ export default function DashboardNavbar() {
         right: 0,
         zIndex: 50,
         height: 64,
-        background: scrolled ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.4)',
-        backdropFilter: 'saturate(180%) blur(16px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(16px)',
-        borderBottom: scrolled ? '1px solid #ffffff14' : '1px solid transparent',
-        transition: 'background 0.25s ease, border-color 0.25s ease',
+        background: '#000000',
+        borderBottom: scrolled ? '1px solid #1a1a1a' : '1px solid transparent',
+        transition: 'border-color 0.25s ease',
       }}
     >
       <div className="flex h-full items-center justify-between max-w-[1400px] mx-auto px-4 sm:px-6">
@@ -136,11 +134,10 @@ export default function DashboardNavbar() {
             <div
               className="absolute right-0 mt-2 w-64"
               style={{
-                background: 'rgba(10,10,10,0.95)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid #ffffff14',
+                background: '#0a0a0a',
+                border: '1px solid #1f1f1f',
                 borderRadius: 12,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px #ffffff05',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
                 overflow: 'hidden',
               }}
             >

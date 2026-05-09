@@ -16,7 +16,7 @@ interface Props {
 
 const PILL_BG = '#0a0a0a';
 const PILL_BORDER = '#222222';
-const ACTIVE_BG = 'rgba(249, 115, 22, 0.12)';
+const ACTIVE_BG = '#241309';
 const ACTIVE_BORDER = '#f97316';
 
 export default function FindingReviewPills({

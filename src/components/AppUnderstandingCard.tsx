@@ -203,8 +203,8 @@ export default function AppUnderstandingCard({ understanding, onConfirm }: Props
                         display: 'flex',
                         alignItems: 'flex-start',
                         gap: 12,
-                        background: checked ? 'rgba(245,158,11,0.08)' : '#0a0a0a',
-                        border: `1px solid ${checked ? 'rgba(245,158,11,0.45)' : '#1f1f1f'}`,
+                        background: checked ? '#191207' : '#0a0a0a',
+                        border: `1px solid ${checked ? '#6e4a1c' : '#1f1f1f'}`,
                         borderRadius: 8,
                         padding: '12px 14px',
                         cursor: 'pointer',
@@ -348,8 +348,8 @@ function PillList({
   muted?: boolean;
   warning?: boolean;
 }) {
-  const bg = warning ? 'rgba(245,158,11,0.06)' : muted ? '#0f0f0f' : '#141414';
-  const border = warning ? 'rgba(245,158,11,0.25)' : muted ? '#1f1f1f' : '#262626';
+  const bg = warning ? '#150f05' : muted ? '#0f0f0f' : '#141414';
+  const border = warning ? '#473012' : muted ? '#1f1f1f' : '#262626';
   const color = warning ? '#fbbf24' : muted ? '#888' : '#e5e5e5';
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

@@ -13,7 +13,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 function ValueCard({ icon: Icon, title, body }: { icon: typeof Sparkles; title: string; body: string }) {
   return (
     <div style={{ background: '#0a0a0a', border: '1px solid #161616', borderRadius: 14, padding: 24 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 16 }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a0e06', border: '1px solid #3a1d0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 16 }}>
         <Icon size={18} />
       </div>
       <h3 style={{ color: '#ffffff', fontSize: 16, fontWeight: 600, margin: 0, letterSpacing: '-0.01em' }}>{title}</h3>
