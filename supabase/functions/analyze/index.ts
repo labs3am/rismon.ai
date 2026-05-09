@@ -1432,7 +1432,11 @@ serve(async (req) => {
         : "";
 
       // Stage 1: extract facts via Claude Sonnet (primary) — falls back to Gemini 2.5 Flash on 429/529
-      const includeEdge = userPlan === "pro" && edgeFunctionBundle;
+      // Always include backend code in the LLM read when it's available.
+      // The client already fetches supabase/functions/* for every plan, so
+      // gating this on plan tier was just hiding real backend issues
+      // (payment, auth, webhook signature checks) from free users.
+      const includeEdge = !!edgeFunctionBundle;
       const systemPrompt = `You are a code reader. Extract facts from this codebase. Look at: features, user roles, payment code, routes (protected vs public), database tables used, coding patterns, anything that looks unintentional. ${includeEdge ? "Backend logic is included in supabase/functions/* — judge auth, payment, and data-access enforcement based on this code, not just the frontend." : "Note: only frontend code was scanned. Flag features whose backend enforcement cannot be verified."} Then generate up to 8 plain-English questions for the founder, each citing what you found.${preCheckContext}
 
 Return ONLY this JSON:
