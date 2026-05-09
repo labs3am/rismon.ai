@@ -1131,7 +1131,12 @@ const PLAN_LIMITS = {
     monthlyScans: Infinity,
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
-    edgeFunctionScan: false,
+    // Backend (edge function) scanning is now ON for every plan. Payment
+    // validation, auth checks, and webhook handlers almost always live in
+    // supabase/functions/* — skipping them on free tier was the #1 reason
+    // real issues (e.g. unverified Stripe webhooks, missing signature
+    // checks) were being missed in reports.
+    edgeFunctionScan: true,
     // Verification pass (Gemini double-checks Claude) is now ON for every
     // scan. It's a single cheap Flash call and meaningfully improves
     // accuracy — false claims get dropped, confirmed claims get a green
