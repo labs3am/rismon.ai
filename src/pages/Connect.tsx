@@ -58,7 +58,10 @@ export default function Connect() {
   }, [user]);
 
   useEffect(() => {
-    if (searchParams.get('step') === '2') setStep(2);
+    // Backwards-compat: old OAuth redirects pointed at ?step=2 (GitHub was
+    // step 2). GitHub is now step 1, so always send returning users there.
+    const stepParam = searchParams.get('step');
+    if (stepParam === '1' || stepParam === '2') setStep(1);
     const checkGithub = async () => {
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s?.provider_token) {
@@ -85,7 +88,7 @@ export default function Connect() {
       // fall back to the "Connect GitHub" CTA.
       const res = await githubFetch(
         'https://api.github.com/user/repos?sort=updated&per_page=100&type=owner',
-        { autoReauth: !opts.silent, notifyOnReauth: !opts.silent, reauthRedirectTo: `${window.location.origin}/connect?step=2` }
+        { autoReauth: !opts.silent, notifyOnReauth: !opts.silent, reauthRedirectTo: `${window.location.origin}/connect?step=1` }
       );
       if (!res.ok) {
         if (!opts.silent) toast.error('Failed to load your GitHub repos.');
@@ -128,7 +131,7 @@ export default function Connect() {
         provider: 'github',
         options: {
           scopes: 'repo read:user user:email',
-          redirectTo: `${window.location.origin}/connect?step=2`,
+          redirectTo: `${window.location.origin}/connect?step=1`,
           skipBrowserRedirect: false,
         },
       });
@@ -141,7 +144,7 @@ export default function Connect() {
       provider: 'github',
       options: {
         scopes: 'repo read:user user:email',
-        redirectTo: `${window.location.origin}/connect?step=2`,
+        redirectTo: `${window.location.origin}/connect?step=1`,
       },
     });
     if (error) {
@@ -271,88 +274,34 @@ export default function Connect() {
             </div>
           ))}
           <div className="hidden sm:flex gap-4 ml-4 text-xs text-muted-foreground">
-            <span className={step >= 1 ? 'text-foreground' : ''}>Details</span>
-            <span className={step >= 2 ? 'text-foreground' : ''}>GitHub</span>
+            <span className={step >= 1 ? 'text-foreground' : ''}>GitHub</span>
+            <span className={step >= 2 ? 'text-foreground' : ''}>Details</span>
             <span className={step >= 3 ? 'text-foreground' : ''}>Database</span>
           </div>
           <span className="sm:hidden ml-2 text-xs text-foreground">
-            Step {step} of 3 · {step === 1 ? 'Details' : step === 2 ? 'GitHub' : 'Database'}
+            Step {step} of 3 · {step === 1 ? 'GitHub' : step === 2 ? 'Details' : 'Database'}
           </span>
         </div>
 
-        {/* Step 1 */}
+        {/* Step 1 — GitHub */}
         {step === 1 && (
           <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
-            <h2 className="text-foreground text-lg font-semibold">About your app</h2>
-            <div className="mt-6">
-              <label className="text-foreground text-sm font-medium block mb-1.5">What is this app called?</label>
-              <input value={appName} onChange={e => setAppName(e.target.value)} placeholder="My tutoring app" className={inputClass} />
-            </div>
-            <p className="text-foreground text-[15px] font-semibold mt-7">Which platform did you build on?</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-              {platforms.map(p => (
-                <button key={p} onClick={() => setPlatform(p)}
-                  className={`px-4 py-2.5 rounded-lg text-sm text-center border transition-colors ${platform === p ? 'border-primary bg-primary/10 text-foreground' : 'border-input text-foreground hover:border-hover-border'}`}>
-                  {p}
-                </button>
-              ))}
-            </div>
-            {platform === 'Other AI' && (
-              <input value={otherPlatform} onChange={e => setOtherPlatform(e.target.value)} placeholder="Example: Firebase Studio" className={`${inputClass} mt-3`} />
-            )}
-
-            <div className="mt-7">
-              <label className="text-foreground text-sm font-medium block mb-1.5">Is your app live somewhere? <span className="text-muted-foreground font-normal">(optional)</span></label>
-              <input
-                value={liveUrl}
-                onChange={e => setLiveUrl(e.target.value)}
-                placeholder="https://yourapp.com"
-                className={inputClass}
-                inputMode="url"
-              />
-              <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
-                If you share your live link, we will read your homepage, privacy and terms pages and check that your code matches what your site promises.
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-foreground text-sm font-medium block mb-1.5">In one or two lines, what does your app do? <span className="text-muted-foreground font-normal">(optional)</span></label>
-              <textarea
-                value={appDescription}
-                onChange={e => setAppDescription(e.target.value.slice(0, 240))}
-                placeholder="Example: A booking app for small yoga studios. Students book classes, teachers manage schedules, studio owners get paid."
-                className={`${inputClass} resize-y min-h-[88px]`}
-                rows={3}
-                maxLength={240}
-              />
-              <p className="text-muted-foreground text-xs mt-2">
-                {appDescription.length}/240 characters. We will start the scan with this in mind.
-              </p>
-            </div>
-
-            <button onClick={() => setStep(2)} disabled={!appName || !platform || (platform === 'Other AI' && !otherPlatform)}
-              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-7 hover:bg-primary/90 transition-colors disabled:opacity-50">Next →</button>
-          </div>
-        )}
-
-        {/* Step 2 */}
-        {step === 2 && (
-          <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
             <h2 className="text-foreground text-lg font-semibold">Connect your GitHub</h2>
-            <div className="rounded-xl p-4 mt-4" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.18)' }}>
-              <div className="flex items-center gap-2"><ShieldCheck size={20} style={{ color: '#f97316' }} /><span className="text-foreground text-sm font-semibold">Read only. Always.</span></div>
-              <div className="mt-3 space-y-1.5">
-                {['We connect to read your code only', 'We can never edit, delete, or change anything', 'Your code is analyzed and immediately discarded', 'Nothing is stored on our servers'].map((t, i) => (
-                  <div key={i} className="flex items-center gap-2"><CheckCircle size={13} className="text-success shrink-0" /><span className="text-muted-foreground text-[13px]">{t}</span></div>
+            <p className="text-muted-foreground text-sm mt-2">Pick the repo you want analyzed. We'll ask about the app on the next step.</p>
+
+            {/* Single, consolidated trust panel (replaces the previous 3 stacked blocks). */}
+            <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.18)' }}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} style={{ color: '#f97316' }} />
+                <span className="text-foreground text-sm font-semibold">Read-only. Your code is never stored.</span>
+              </div>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                {['Read your code only', 'Cannot edit, push, or delete', 'Analyzed then discarded', 'Revoke anytime in GitHub'].map((t) => (
+                  <div key={t} className="flex items-center gap-2"><CheckCircle size={13} className="text-success shrink-0" /><span className="text-muted-foreground text-[13px]">{t}</span></div>
                 ))}
               </div>
-            </div>
-            <p className="text-subtle text-xs mt-2">GitHub is for connecting your app only. It is not used for login.</p>
-
-            <div className="flex items-start gap-2.5 mt-4 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #ffffff14' }}>
-              <ShieldCheck size={16} style={{ color: '#f97316' }} className="shrink-0 mt-0.5" />
-              <p className="text-muted-foreground text-[13px] leading-relaxed">
-                Read-only access. Your code is never stored. Rismon.ai is <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">fully open source</a> — verify our claims yourself.
+              <p className="text-subtle text-[11px] mt-3">
+                Not used for login. Rismon.ai is <a href="https://github.com/labs3am/rismon.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">open source</a> — verify yourself.
               </p>
             </div>
 
@@ -360,33 +309,6 @@ export default function Connect() {
               <div className="mt-6">
                 {!usePatMode ? (
                   <div className="text-center">
-                    {/* Trust section */}
-                    <div
-                      className="text-left"
-                      style={{
-                        background: '#0a0a0a',
-                        border: '1px solid #1a1a1a',
-                        borderRadius: 8,
-                        padding: '16px 20px',
-                        marginBottom: 24,
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', marginBottom: 12 }}>
-                        What Rismon accesses
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        {['Read your code files', 'Cannot edit your code', 'Cannot delete anything', 'Cannot push or commit'].map((label) => (
-                          <div key={label} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#888888', alignItems: 'center' }}>
-                            <CheckCircle size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
-                            <span>{label}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#444444', marginTop: 12 }}>
-                        You can revoke access anytime in your GitHub settings.
-                      </div>
-                    </div>
-
                     <Github size={40} className="text-muted-foreground mx-auto" />
                     <button onClick={connectGithub} className="mt-4 border border-hover-border text-foreground px-6 py-3 rounded-lg text-sm font-medium flex items-center gap-2 mx-auto hover:border-muted-foreground/30 transition-colors">
                       <Github size={16} /> Connect GitHub
@@ -403,7 +325,7 @@ export default function Connect() {
                         lineHeight: 1.5,
                       }}
                     >
-                      GitHub will show an authorization screen. You may see your organizations listed. You do not need to grant organization access. Just click Authorize labs3am.
+                      GitHub will show an authorization screen. You don't need to grant org access — just click Authorize labs3am.
                     </p>
                     <button onClick={() => setUsePatMode(true)} className="mt-3 text-muted-foreground text-xs hover:text-foreground transition-colors flex items-center gap-1.5 mx-auto">
                       <KeyRound size={12} /> Don't want to grant org access? Use a personal token
@@ -466,7 +388,7 @@ export default function Connect() {
                 ) : (
                   <div className="max-h-60 overflow-y-auto border border-border rounded-lg">
                     {filteredRepos.map(r => (
-                      <button key={r.full_name} onClick={() => setSelectedRepo(r)}
+                      <button key={r.full_name} onClick={() => { setSelectedRepo(r); if (!appName) setAppName(r.name); }}
                         className={`w-full text-left px-4 py-3 border-b border-border last:border-0 transition-colors ${selectedRepo?.full_name === r.full_name ? 'bg-primary/10' : 'hover:bg-muted/50'}`}>
                         <p className="text-foreground text-sm font-medium">{r.name}</p>
                         <p className="text-muted-foreground text-xs mt-0.5">Updated {relDate(r.updated_at)}</p>
@@ -474,10 +396,70 @@ export default function Connect() {
                     ))}
                   </div>
                 )}
-                <button onClick={() => setStep(3)} disabled={!selectedRepo}
+                <button onClick={() => setStep(2)} disabled={!selectedRepo}
                   className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium mt-6 hover:bg-primary/90 transition-colors disabled:opacity-50">Next →</button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Step 2 — App details (asked AFTER GitHub so the repo name can pre-fill) */}
+        {step === 2 && (
+          <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6 sm:mt-8">
+            <h2 className="text-foreground text-lg font-semibold">About your app</h2>
+            <p className="text-muted-foreground text-sm mt-2">A few quick details so the scan is tailored to what your app actually does.</p>
+
+            <div className="mt-6">
+              <label className="text-foreground text-sm font-medium block mb-1.5">What is this app called?</label>
+              <input value={appName} onChange={e => setAppName(e.target.value)} placeholder="My tutoring app" className={inputClass} />
+              {selectedRepo && <p className="text-subtle text-xs mt-1.5">Connected repo: <span className="text-foreground">{selectedRepo.full_name}</span></p>}
+            </div>
+
+            <p className="text-foreground text-[15px] font-semibold mt-7">Which platform did you build on?</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+              {platforms.map(p => (
+                <button key={p} onClick={() => setPlatform(p)}
+                  className={`px-4 py-2.5 rounded-lg text-sm text-center border transition-colors ${platform === p ? 'border-primary bg-primary/10 text-foreground' : 'border-input text-foreground hover:border-hover-border'}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+            {platform === 'Other AI' && (
+              <input value={otherPlatform} onChange={e => setOtherPlatform(e.target.value)} placeholder="Example: Firebase Studio" className={`${inputClass} mt-3`} />
+            )}
+
+            <div className="mt-7">
+              <label className="text-foreground text-sm font-medium block mb-1.5">Is your app live somewhere? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <input
+                value={liveUrl}
+                onChange={e => setLiveUrl(e.target.value)}
+                placeholder="https://yourapp.com"
+                className={inputClass}
+                inputMode="url"
+              />
+              <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
+                If you share your live link, we'll check that your code matches what your site promises.
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-foreground text-sm font-medium block mb-1.5">In one or two lines, what does your app do? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <textarea
+                value={appDescription}
+                onChange={e => setAppDescription(e.target.value.slice(0, 240))}
+                placeholder="Example: A booking app for small yoga studios. Students book classes, teachers manage schedules, studio owners get paid."
+                className={`${inputClass} resize-y min-h-[88px]`}
+                rows={3}
+                maxLength={240}
+              />
+              <p className="text-muted-foreground text-xs mt-2">{appDescription.length}/240 characters. We'll start the scan with this in mind.</p>
+            </div>
+
+            <div className="flex items-center gap-3 mt-7">
+              <button onClick={() => setStep(1)} className="text-muted-foreground text-sm hover:text-foreground transition-colors">← Back</button>
+              <button onClick={() => setStep(3)} disabled={!appName || !platform || (platform === 'Other AI' && !otherPlatform)}
+                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">Next →</button>
+            </div>
           </div>
         )}
 
