@@ -1132,7 +1132,11 @@ const PLAN_LIMITS = {
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
     edgeFunctionScan: false,
-    verificationPass: false,
+    // Verification pass (Gemini double-checks Claude) is now ON for every
+    // scan. It's a single cheap Flash call and meaningfully improves
+    // accuracy — false claims get dropped, confirmed claims get a green
+    // "Verified" badge in the report.
+    verificationPass: true,
     emailDelivery: false,
   },
   try_pro: {
