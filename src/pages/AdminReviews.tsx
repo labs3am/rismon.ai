@@ -103,9 +103,9 @@ export default function AdminReviews() {
 
   const verdictBadge = (v: string) => {
     const map: Record<string, { color: string; bg: string; Icon: any; label: string }> = {
-      accurate: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', Icon: ThumbsUp, label: 'Accurate' },
-      wrong: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', Icon: ThumbsDown, label: 'Wrong' },
-      unclear: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', Icon: HelpCircle, label: 'Unclear' },
+      accurate: { color: '#22c55e', bg: '#0e2616', Icon: ThumbsUp, label: 'Accurate' },
+      wrong: { color: '#ef4444', bg: '#1f0c0c', Icon: ThumbsDown, label: 'Wrong' },
+      unclear: { color: '#f59e0b', bg: '#1d1408', Icon: HelpCircle, label: 'Unclear' },
     };
     const m = map[v] || map.unclear;
     return (

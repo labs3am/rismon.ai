@@ -131,7 +131,7 @@ export default function ForPlatform() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
             {c.pitfalls.map((p, i) => (
               <div key={i} style={{ background: '#0a0a0a', border: '1px solid #161616', borderRadius: 14, padding: 22 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 14 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1a0e06', border: '1px solid #3a1d0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 14 }}>
                   <AlertTriangle size={15} />
                 </div>
                 <h3 style={{ color: '#ffffff', fontSize: 15, fontWeight: 600, margin: 0, letterSpacing: '-0.005em' }}>{p.title}</h3>
@@ -167,7 +167,7 @@ export default function ForPlatform() {
               { icon: Wand2, title: 'Paste the fix prompt', body: `Each finding ships with a fix prompt you can paste back into ${c.name}.` },
             ].map((step, i) => (
               <div key={i} style={{ background: '#0a0a0a', border: '1px solid #161616', borderRadius: 14, padding: 22 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 14 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a0e06', border: '1px solid #3a1d0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 14 }}>
                   <step.icon size={16} />
                 </div>
                 <div style={{ color: '#444444', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', marginBottom: 6 }}>STEP {i + 1}</div>

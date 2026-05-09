@@ -261,7 +261,7 @@ function FindingCard({
       {(f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
         <div
           className="rounded-md px-3.5 py-2.5 mb-4 flex items-start gap-2.5"
-          style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.25)' }}
+          style={{ background: '#150f05', border: '1px solid #473012' }}
         >
           <Database size={14} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
           <div className="text-[13px] leading-relaxed" style={{ color: '#cbb37a' }}>
@@ -402,10 +402,10 @@ function PromiseRow({ p }: { p: any }) {
   const v = (p.verdict || 'not_found').toLowerCase();
   const palette =
     v === 'found'
-      ? { color: '#22c55e', label: 'Found in code', bg: 'rgba(34,197,94,0.05)' }
+      ? { color: '#22c55e', label: 'Found in code', bg: '#08130a' }
       : v === 'partial'
-        ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
-        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
+        ? { color: '#f59e0b', label: 'Partial', bg: '#13100a' }
+        : { color: '#71717a', label: 'Not found in code', bg: '#0c0c0d' };
   return (
     <div
       className="grid gap-4 px-4 py-4 rounded-lg mb-2.5 border border-border"
@@ -574,7 +574,7 @@ export default function Report() {
             App scanned: <span className="text-foreground font-medium">{appName}</span>
             <span
               className="ml-2 inline-block text-[10px] uppercase tracking-[0.08em] font-semibold rounded-full px-2 py-[2px]"
-              style={{ background: 'rgba(249,115,22,0.1)', color: '#fdba74' }}
+              style={{ background: '#1f1108', color: '#fdba74' }}
             >
               {platform}
             </span>
@@ -666,8 +666,8 @@ export default function Report() {
             <div
               className="rounded-lg px-5 py-4 text-sm"
               style={{
-                background: 'rgba(34,197,94,0.06)',
-                border: '1px solid rgba(34,197,94,0.18)',
+                background: '#0a160c',
+                border: '1px solid #16401f',
                 color: '#86efac',
               }}
             >
@@ -717,8 +717,8 @@ export default function Report() {
             <div
               className="rounded-lg px-5 py-4 text-sm"
               style={{
-                background: 'rgba(34,197,94,0.06)',
-                border: '1px solid rgba(34,197,94,0.18)',
+                background: '#0a160c',
+                border: '1px solid #16401f',
                 color: '#86efac',
               }}
             >

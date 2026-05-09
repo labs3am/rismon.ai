@@ -18,7 +18,7 @@ export default function Terms() {
         <h1 className="text-foreground text-4xl font-semibold">Terms of Service</h1>
         <p className="text-muted-foreground text-sm mt-2">Last updated: April 2026</p>
 
-        <div className="flex items-start gap-3 mt-8 p-4 rounded-xl" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+        <div className="flex items-start gap-3 mt-8 p-4 rounded-xl" style={{ background: '#191207', border: '1px solid #3a2810' }}>
           <AlertTriangle size={20} className="text-warning shrink-0 mt-0.5" />
           <p className="text-muted-foreground text-sm">Rismon.ai provides analysis assistance only and does not guarantee the security or correctness of any application. Always consult a qualified professional for production applications handling sensitive data.</p>
         </div>

@@ -273,8 +273,8 @@ export default function Dashboard() {
               gap: 12,
               padding: '14px 16px',
               borderRadius: 12,
-              background: 'linear-gradient(180deg, rgba(99,102,241,0.10), rgba(99,102,241,0.04))',
-              border: '1px solid rgba(129,140,248,0.35)',
+              background: 'linear-gradient(180deg, #10111e, #070710)',
+              border: '1px solid #363c70',
               color: '#ffffff',
               textAlign: 'left',
             }}
@@ -324,8 +324,8 @@ export default function Dashboard() {
                     fontSize: 12,
                     fontWeight: 600,
                     color: '#ffffff',
-                    background: 'rgba(129,140,248,0.18)',
-                    border: '1px solid rgba(129,140,248,0.5)',
+                    background: '#1f223e',
+                    border: '1px solid #444b94',
                     padding: '8px 14px',
                     borderRadius: 8,
                     cursor: 'pointer',
@@ -359,7 +359,7 @@ export default function Dashboard() {
         )}
 
         {githubConflict && (
-          <div className="flex items-start gap-3 mt-4 p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
+          <div className="flex items-start gap-3 mt-4 p-4" style={{ background: '#1a0a0a', border: '1px solid #421616', borderRadius: 8 }}>
             <AlertTriangle size={20} className="shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
             <p style={{ color: '#ffffff', fontSize: 14 }}>GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
           </div>
@@ -468,7 +468,7 @@ export default function Dashboard() {
 
         {/* Weekly limit */}
         {weeklyLimitReached && (profile?.plan || 'free').toLowerCase() === 'free' && (
-          <div className="mt-6 p-4 flex items-start gap-3" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8 }}>
+          <div className="mt-6 p-4 flex items-start gap-3" style={{ background: '#191207', border: '1px solid #3a2810', borderRadius: 8 }}>
             <Clock size={20} className="shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div>
               <p style={{ color: '#ffffff', fontSize: 15 }}>You have used your 3 free analyses for this week.</p>
@@ -507,7 +507,7 @@ export default function Dashboard() {
                             </span>
                           )}
                           {app.platform && (
-                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(249,115,22,0.1)', color: '#f97316', border: '1px solid rgba(249,115,22,0.25)' }}>{app.platform}</span>
+                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#1f1108', color: '#f97316', border: '1px solid #4f2710' }}>{app.platform}</span>
                           )}
                         </div>
                         {app.has_analyses && app.latest_date ? (

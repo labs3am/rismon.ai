@@ -290,7 +290,7 @@ export default function Connect() {
             <p className="text-muted-foreground text-sm mt-2">Pick the repo you want analyzed. We'll ask about the app on the next step.</p>
 
             {/* Single, consolidated trust panel (replaces the previous 3 stacked blocks). */}
-            <div className="rounded-xl p-4 mt-5" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.18)' }}>
+            <div className="rounded-xl p-4 mt-5" style={{ background: '#160d05', border: '1px solid #3a1d0c' }}>
               <div className="flex items-center gap-2">
                 <ShieldCheck size={18} style={{ color: '#f97316' }} />
                 <span className="text-foreground text-sm font-semibold">Read-only. Your code is never stored.</span>
@@ -474,7 +474,7 @@ export default function Connect() {
               Without your backend connected, Rismon can only read your frontend code. Any finding about access rules, data privacy, or admin protection will be marked <strong className="text-foreground">unverified</strong> because we cannot check your database directly.
             </p>
 
-            <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <div className="mt-5 rounded-lg p-4" style={{ background: '#150f05', border: '1px solid #473012' }}>
               <div className="flex items-start gap-2.5">
                 <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
                 <div>
@@ -556,7 +556,7 @@ export default function Connect() {
                 </div>
 
                 {supabaseUrl && supabaseKey && !serviceRoleWarning && (
-                  <div className="mt-5 rounded-lg p-4" style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.20)' }}>
+                  <div className="mt-5 rounded-lg p-4" style={{ background: '#08130a', border: '1px solid #184823' }}>
                     <div className="flex items-start gap-2.5">
                       <ShieldCheck size={16} className="text-success shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -624,7 +624,7 @@ grant execute on function public.rismon_security_metadata() to anon, authenticat
             )}
 
             {serviceRoleWarning && (
-              <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <div className="flex items-start gap-2 mt-4 p-3 rounded-lg" style={{ background: '#1a0a0a', border: '1px solid #421616' }}>
                 <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
                 <p className="text-destructive text-sm">This is your admin key. Never share this. Use your anon public key instead. Find it: Supabase → Settings → API → anon public</p>
               </div>
