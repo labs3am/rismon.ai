@@ -1878,6 +1878,21 @@ Technical reference (5 words max)
 Google search term to learn more
 Exact fix prompt for Lovable or Cursor
 
+FIX PROMPT QUALITY RULES (CRITICAL — the prompt must be directly executable by an AI coding agent):
+Every fix_prompt MUST be a self-contained instruction that another AI (Lovable, Cursor, Claude Code, Copilot) can act on without asking follow-up questions. It MUST contain, in order:
+  1. The exact file path to edit (use the real path from the scanned bundle, e.g. "src/pages/Admin.tsx" — never "the admin page" or "your file").
+  2. The exact line number or a unique code snippet to locate the change (quote 1-3 lines from the file when possible).
+  3. What is currently wrong on that line, in one sentence.
+  4. The exact change to make — show the BEFORE code and the AFTER code as short fenced blocks when the fix is a code edit. For Supabase/SQL fixes, give the literal SQL to run, with the real table and column names from the app.
+  5. Any related changes required for the fix to actually work (imports to add, RLS policies to create, env vars to set, files to delete, routes to wrap in a guard).
+  6. A one-line verification step ("After the change, <X> should <Y>.").
+Hard rules:
+  - Use real identifiers from the scanned code (table names, column names, component names, route paths). Never use placeholders like <table>, [your file], TODO, or "the relevant component".
+  - No vague verbs ("improve", "harden", "review", "consider"). Use concrete verbs ("Replace line 42 with…", "Add this policy in Supabase SQL editor…", "Wrap the route in <ProtectedRoute>…").
+  - Do not assume context the receiving AI does not have — restate the file, the symbol, and the goal in the prompt itself.
+  - Length 60-220 words. Plain English around the code blocks. No marketing fluff, no apologies, no "as an AI".
+  - If the finding is a false promise on the homepage, the fix_prompt must name the exact homepage file/component (e.g. src/pages/Index.tsx) and quote the offending claim verbatim, then say either "remove this line" or "implement <feature> by doing X, Y, Z".
+
 SCORING:
 Return "score": 0 — the server calculates the final score after verification.
 Your only job is to find real issues and label each one accurately as
