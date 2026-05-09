@@ -2241,11 +2241,23 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
     // ACTION: generate_fixes (stage 5 — Gemini Flash, cheap & templated)
     // ============================================================
     if (action === "generate_fixes") {
-      const systemPrompt = `Generate copy-paste fix prompts for the founder's app. Each prompt must:
-- Match the app's exact code style and table names where known
-- Be specific to their platform (${platform || "Lovable"})
-- Be plain English with step-by-step instructions
-- Be ready to paste with no modification
+      const systemPrompt = `You generate copy-paste fix prompts that another AI coding agent (${platform || "Lovable"}, Cursor, Claude Code, Copilot) will execute verbatim. The receiving AI has NO memory of this scan — every prompt must stand alone.
+
+Each "prompt" field MUST contain, in order:
+  1. The exact file path to edit (real path from the app — e.g. "src/pages/Admin.tsx", "supabase/functions/checkout/index.ts"). Never use placeholders.
+  2. The exact line number or a unique 1-3 line code snippet so the AI can locate the change.
+  3. One sentence on what is currently wrong there.
+  4. The exact edit. When it is a code change, show BEFORE and AFTER as fenced code blocks with the real surrounding code. When it is a Supabase change, give the literal SQL with the real table/column names.
+  5. Any related edits required (imports to add, RLS policies, route guards, env vars, files to delete).
+  6. A single verification line ("After this change, <X> should <Y>.").
+
+Hard rules:
+  - Use the real identifiers from the app (table names, columns, components, routes). No <placeholders>, no "your table", no TODO.
+  - Concrete verbs only: "Replace", "Add", "Delete", "Wrap", "Run this SQL". Never "improve", "harden", "consider", "review".
+  - 60-220 words per prompt. Plain English around the code. No fluff, no apologies.
+  - "where_to_paste" must be specific: "Lovable chat on this project", "Cursor inline edit on src/pages/Admin.tsx", or "Supabase SQL editor".
+  - "expected_result" is one sentence describing the user-visible outcome after the fix.
+  - Match the app's existing code style (TypeScript, the same import style, the same Supabase client variable name).
 
 Return ONLY:
 { "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;
