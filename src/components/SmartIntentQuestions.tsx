@@ -316,7 +316,7 @@ export default function SmartIntentQuestions({
                       cursor: 'pointer',
                       background: answered ? '#f97316' : 'transparent',
                       border: answered ? '1px solid #f97316' : '1px solid #333',
-                      outline: i === step ? '2px solid rgba(249,115,22,0.30)' : 'none',
+                      outline: i === step ? '2px solid #5d2d12' : 'none',
                       outlineOffset: 2,
                     }}
                   />

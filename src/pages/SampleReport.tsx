@@ -564,7 +564,7 @@ function PromiseRow({ p }: { p: any }) {
     v === 'found'
       ? { color: '#22c55e', label: 'Found in code', bg: '#08130a' }
       : v === 'partial'
-        ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
+        ? { color: '#f59e0b', label: 'Partial', bg: '#13100a' }
         : { color: '#71717a', label: 'Not found in code', bg: '#0c0c0d' };
   return (
     <div
