@@ -58,7 +58,10 @@ export default function Connect() {
   }, [user]);
 
   useEffect(() => {
-    if (searchParams.get('step') === '2') setStep(2);
+    // Backwards-compat: old OAuth redirects pointed at ?step=2 (GitHub was
+    // step 2). GitHub is now step 1, so always send returning users there.
+    const stepParam = searchParams.get('step');
+    if (stepParam === '1' || stepParam === '2') setStep(1);
     const checkGithub = async () => {
       const { data: { session: s } } = await supabase.auth.getSession();
       if (s?.provider_token) {
@@ -85,7 +88,7 @@ export default function Connect() {
       // fall back to the "Connect GitHub" CTA.
       const res = await githubFetch(
         'https://api.github.com/user/repos?sort=updated&per_page=100&type=owner',
-        { autoReauth: !opts.silent, notifyOnReauth: !opts.silent, reauthRedirectTo: `${window.location.origin}/connect?step=2` }
+        { autoReauth: !opts.silent, notifyOnReauth: !opts.silent, reauthRedirectTo: `${window.location.origin}/connect?step=1` }
       );
       if (!res.ok) {
         if (!opts.silent) toast.error('Failed to load your GitHub repos.');
@@ -128,7 +131,7 @@ export default function Connect() {
         provider: 'github',
         options: {
           scopes: 'repo read:user user:email',
-          redirectTo: `${window.location.origin}/connect?step=2`,
+          redirectTo: `${window.location.origin}/connect?step=1`,
           skipBrowserRedirect: false,
         },
       });
@@ -141,7 +144,7 @@ export default function Connect() {
       provider: 'github',
       options: {
         scopes: 'repo read:user user:email',
-        redirectTo: `${window.location.origin}/connect?step=2`,
+        redirectTo: `${window.location.origin}/connect?step=1`,
       },
     });
     if (error) {
