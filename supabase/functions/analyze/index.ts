@@ -1132,7 +1132,11 @@ const PLAN_LIMITS = {
     maxRepoBytes: 2 * 1024 * 1024, // 2MB
     duplicateBlockHours: 24,
     edgeFunctionScan: false,
-    verificationPass: false,
+    // Verification pass (Gemini double-checks Claude) is now ON for every
+    // scan. It's a single cheap Flash call and meaningfully improves
+    // accuracy — false claims get dropped, confirmed claims get a green
+    // "Verified" badge in the report.
+    verificationPass: true,
     emailDelivery: false,
   },
   try_pro: {
@@ -2053,7 +2057,17 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
             const confirmedIds = new Set(verified.verified.filter((v: any) => v.verdict === "confirmed").map((v: any) => v.id));
             claudeResult.gaps = claudeResult.gaps
               .filter((g: any) => !rejectedIds.has(g.id))
-              .map((g: any) => ({ ...g, verified: confirmedIds.has(g.id) }));
+              .map((g: any) => ({
+                ...g,
+                verified: confirmedIds.has(g.id),
+                // Surface the verification result as the `confidence` badge
+                // the report UI already renders. Confirmed → "verified"
+                // (green), unconfirmed → "unverified" (grey). Existing
+                // explicit values from Claude are preserved.
+                confidence:
+                  g.confidence ||
+                  (confirmedIds.has(g.id) ? "verified" : "unverified"),
+              }));
             claudeResult.verification_applied = true;
             claudeResult.verification_dropped = rejectedIds.size;
           }
