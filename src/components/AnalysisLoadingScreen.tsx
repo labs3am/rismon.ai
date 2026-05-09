@@ -269,8 +269,8 @@ export default function AnalysisLoadingScreen({ stage, fileCount = 0, totalFiles
             marginTop: 28,
             padding: '12px 16px',
             borderRadius: 10,
-            background: tabHidden ? 'rgba(249,115,22,0.08)' : 'rgba(255,255,255,0.02)',
-            border: tabHidden ? '1px solid rgba(249,115,22,0.35)' : '1px solid #1a1a1a',
+            background: tabHidden ? '#1a0e06' : '#050505',
+            border: tabHidden ? '1px solid #6b3414' : '1px solid #1a1a1a',
             transition: 'background 0.3s ease, border-color 0.3s ease',
             textAlign: 'left',
           }}

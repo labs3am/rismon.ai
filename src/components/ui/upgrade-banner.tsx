@@ -60,8 +60,8 @@ export function UpgradeBanner({
         className,
       )}
       style={{
-        background: "rgba(255,255,255,0.03)",
-        borderColor: "rgba(255,255,255,0.08)",
+        background: "#080808",
+        borderColor: "#141414",
       }}
     >
       <div className="flex items-center justify-between gap-3">
@@ -118,7 +118,7 @@ export function UpgradeBanner({
             style={{ color: "#666" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "#fff";
-              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+              e.currentTarget.style.background = "#0d0d0d";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = "#666";

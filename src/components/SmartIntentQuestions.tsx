@@ -330,8 +330,8 @@ export default function SmartIntentQuestions({
               <span
                 style={{
                   display: 'inline-block',
-                  background: 'rgba(249,115,22,0.08)',
-                  border: '1px solid rgba(249,115,22,0.20)',
+                  background: '#1a0e06',
+                  border: '1px solid #40200d',
                   borderRadius: 999,
                   padding: '4px 12px',
                   fontSize: 11,
@@ -371,7 +371,7 @@ export default function SmartIntentQuestions({
                           if (!selected) e.currentTarget.style.borderColor = '#1a1a1a';
                         }}
                         style={{
-                          background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
+                          background: selected ? '#160d05' : '#0a0a0a',
                           border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
                           borderRadius: 8,
                           padding: '16px 20px',

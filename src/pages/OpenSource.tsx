@@ -15,7 +15,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 function StatCard({ icon: Icon, label, value }: { icon: typeof Star; label: string; value: string }) {
   return (
     <div style={{ background: '#0a0a0a', border: '1px solid #161616', borderRadius: 14, padding: 22, display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', flexShrink: 0 }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a0e06', border: '1px solid #3a1d0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', flexShrink: 0 }}>
         <Icon size={16} />
       </div>
       <div>
@@ -32,7 +32,7 @@ function PathCard({ icon: Icon, title, body, href, cta }: { icon: typeof BookOpe
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#2a2a2a')}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#161616')}
     >
-      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 16 }}>
+      <div style={{ width: 36, height: 36, borderRadius: 8, background: '#1a0e06', border: '1px solid #3a1d0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316', marginBottom: 16 }}>
         <Icon size={18} />
       </div>
       <h3 style={{ color: '#ffffff', fontSize: 16, fontWeight: 600, margin: 0, letterSpacing: '-0.01em' }}>{title}</h3>

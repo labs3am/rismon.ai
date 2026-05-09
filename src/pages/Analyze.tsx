@@ -988,14 +988,14 @@ export default function Analyze() {
         <DashboardNavbar />
         <div className="max-w-[520px] mx-auto px-5 pt-32 pb-16">
           <div className="rounded-2xl p-8 text-center" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
-            <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center" style={{ background: '#1f0c0c', border: '1px solid #5e2020' }}>
               <span className="text-destructive text-xl font-semibold">!</span>
             </div>
             <h2 className="text-foreground text-[22px] font-semibold mt-5">Scan was interrupted</h2>
             <p className="text-muted-foreground text-[14px] leading-relaxed mt-3">
               {failureMessage || 'Your scan did not finish.'}
             </p>
-            <div className="rounded-lg p-4 mt-6 text-left" style={{ background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)' }}>
+            <div className="rounded-lg p-4 mt-6 text-left" style={{ background: '#160d05', border: '1px solid #40200d' }}>
               <p className="text-[12px] font-semibold uppercase" style={{ color: '#f97316', letterSpacing: '0.05em' }}>Tip</p>
               <p className="text-[13px] mt-2" style={{ color: '#a1a1aa', lineHeight: 1.6 }}>
                 Scans can fail when you switch tabs or close the window during analysis. Please keep this tab open and active until your report appears.
@@ -1146,7 +1146,7 @@ export default function Analyze() {
                     <p className="text-[15px] mt-1" style={{ color: '#ffffff' }}>{g.you_said}</p>
                     <p className="text-[13px] font-semibold mt-3" style={{ color: '#888888' }}>What was built:</p>
                     <p className="text-[15px] mt-1" style={{ color: '#ffffff' }}>{g.what_was_built}</p>
-                    <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                    <div className="rounded-lg p-3 mt-4" style={{ background: '#160808', border: '1px solid #321212' }}>
                       <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Business impact:</p>
                       <p className="text-sm mt-1" style={{ color: '#ffffff' }}>{g.business_impact}</p>
                     </div>
@@ -1180,11 +1180,11 @@ export default function Analyze() {
                   <p className="text-[15px] mt-2" style={{ color: '#ffffff' }}>{f.description}</p>
                   <p className="text-[13px] italic mt-1" style={{ color: '#888888' }}>Found in: {f.found_where}</p>
                   <div className="grid grid-cols-2 gap-3 mt-4">
-                    <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                    <div className="rounded-lg p-3" style={{ background: '#150f05', border: '1px solid #3a2810' }}>
                       <p className="text-xs font-semibold" style={{ color: '#f59e0b' }}>If you keep it:</p>
                       <p className="text-sm mt-1" style={{ color: '#888888' }}>{f.risk_if_kept}</p>
                     </div>
-                    <div className="rounded-lg p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <div className="rounded-lg p-3" style={{ background: '#160808', border: '1px solid #421616' }}>
                       <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>If you remove it:</p>
                       <p className="text-sm mt-1" style={{ color: '#888888' }}>{f.risk_if_removed}</p>
                     </div>
@@ -1214,10 +1214,10 @@ export default function Analyze() {
                 <div key={s.id} className="rounded-r-2xl p-6" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderLeft: '4px solid #ef4444' }}>
                   <div className="flex items-center justify-between">
                     <p className="font-bold text-[17px]" style={{ color: '#ffffff' }}>{s.title}</p>
-                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>{s.severity}</span>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: '#1f0c0c', color: '#ef4444' }}>{s.severity}</span>
                   </div>
                   <p className="text-[15px] mt-3" style={{ color: '#888888' }}>{s.explanation}</p>
-                  <div className="rounded-lg p-3 mt-4" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                  <div className="rounded-lg p-3 mt-4" style={{ background: '#160808', border: '1px solid #321212' }}>
                     <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Business impact:</p>
                     <p className="text-sm mt-1" style={{ color: '#ffffff' }}>{s.business_impact}</p>
                   </div>

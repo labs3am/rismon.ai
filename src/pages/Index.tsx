@@ -250,7 +250,7 @@ export default function Index() {
                   className="group relative block w-full"
                   style={{
                     background: '#000',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid #141414',
                     borderRadius: 12,
                     overflow: 'hidden',
                     boxShadow: '0 20px 50px -20px rgba(0,0,0,0.6)',
@@ -441,7 +441,7 @@ export default function Index() {
                 borderRadius: 12,
                 overflow: 'auto',
                 maxHeight: '90vh',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid #1a1a1a',
                 WebkitOverflowScrolling: 'touch',
                 touchAction: 'pan-x pan-y pinch-zoom',
               }}

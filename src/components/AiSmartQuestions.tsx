@@ -150,8 +150,8 @@ export default function AiSmartQuestions({
         <span
           style={{
             display: 'inline-block',
-            background: 'rgba(249,115,22,0.08)',
-            border: '1px solid rgba(249,115,22,0.20)',
+            background: '#1a0e06',
+            border: '1px solid #40200d',
             borderRadius: 999,
             padding: '4px 12px',
             fontSize: 11,
@@ -181,8 +181,8 @@ export default function AiSmartQuestions({
       {userCorrection && (
         <div
           style={{
-            background: 'rgba(99,102,241,0.06)',
-            border: '1px solid rgba(99,102,241,0.20)',
+            background: '#0a0a17',
+            border: '1px solid #1f2143',
             borderRadius: 8,
             padding: 12,
             marginBottom: 20,
@@ -329,7 +329,7 @@ function QuestionView({
                   type="button"
                   onClick={() => onChange(opt)}
                   style={{
-                    background: selected ? 'rgba(249,115,22,0.06)' : '#0a0a0a',
+                    background: selected ? '#160d05' : '#0a0a0a',
                     border: `1px solid ${selected ? '#f97316' : '#1a1a1a'}`,
                     borderRadius: 8,
                     padding: '14px 18px',

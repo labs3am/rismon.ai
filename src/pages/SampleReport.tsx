@@ -469,8 +469,8 @@ function FindingCard({ f }: { f: any }) {
         <div
           className="rounded-md px-3.5 py-2.5 mb-4 flex items-start gap-2.5"
           style={{
-            background: 'rgba(245,158,11,0.06)',
-            border: '1px solid rgba(245,158,11,0.25)',
+            background: '#150f05',
+            border: '1px solid #473012',
           }}
         >
           <Database size={14} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
@@ -562,10 +562,10 @@ function PromiseRow({ p }: { p: any }) {
   const v = (p.verdict || 'not_found').toLowerCase();
   const palette =
     v === 'found'
-      ? { color: '#22c55e', label: 'Found in code', bg: 'rgba(34,197,94,0.05)' }
+      ? { color: '#22c55e', label: 'Found in code', bg: '#08130a' }
       : v === 'partial'
         ? { color: '#f59e0b', label: 'Partial', bg: 'rgba(245,158,11,0.05)' }
-        : { color: '#71717a', label: 'Not found in code', bg: 'rgba(113,113,122,0.05)' };
+        : { color: '#71717a', label: 'Not found in code', bg: '#0c0c0d' };
   return (
     <div
       className="grid gap-4 px-4 py-4 rounded-lg mb-2.5 border border-border"
@@ -622,8 +622,8 @@ export default function SampleReport() {
       <div
         className="fixed top-16 left-0 right-0 z-[999]"
         style={{
-          background: 'rgba(249,115,22,0.06)',
-          borderBottom: '1px solid rgba(249,115,22,0.25)',
+          background: '#160d05',
+          borderBottom: '1px solid #4f2710',
         }}
       >
         <div className="max-w-[800px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
@@ -653,7 +653,7 @@ export default function SampleReport() {
             <span
               className="ml-2 inline-block text-[10px] uppercase tracking-[0.08em] font-semibold rounded-full px-2 py-[2px]"
               style={{
-                background: 'rgba(249,115,22,0.1)',
+                background: '#1f1108',
                 color: '#fdba74',
               }}
             >
