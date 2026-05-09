@@ -88,16 +88,26 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Rismon.ai on PeerPush"
-                style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#ffffff',
+                  border: '1px solid #1a1a1a',
+                  borderRadius: 8,
+                  padding: '4px 8px',
+                  height: 39,
+                  width: 180,
+                  opacity: 0.95,
+                  transition: 'opacity 0.15s',
+                }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.95')}
               >
                 <img
                   src="https://peerpush.net/p/rismonai/badge.png"
                   alt="Rismon.ai on PeerPush"
-                  width={180}
-                  height={39}
-                  style={{ width: 180, height: 39, display: 'block', borderRadius: 6 }}
+                  style={{ maxHeight: 28, width: 'auto', display: 'block' }}
                 />
               </a>
               <a
