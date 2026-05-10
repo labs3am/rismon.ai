@@ -5,6 +5,7 @@ import {
   Activity, Radio, Sparkles, Rocket, Globe, Pencil, Plus,
 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
