@@ -2710,29 +2710,48 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         "missing_user_filter",
         "admin_access",
         "data_leak",
+        "server_enforcement",
+        "server_side_validation",
+        "postgres_trigger",
+        "trigger",
+        "server_only_route",
+        "server_only_file",
+        "route_protection",
+        "row_level_filtering",
       ]);
       const isDbRelated = (f: any) => {
         const cat = (f?.category || "").toString().toLowerCase();
         if (DB_CATEGORIES.has(cat)) return true;
         const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
-        return /\brls\b|row[- ]level\s+security|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation/.test(hay);
+        return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule/.test(hay);
       };
-      if (!supabaseConnected && Array.isArray(claudeResult.security_issues)) {
-        for (const f of claudeResult.security_issues) {
-          if (!f || !isDbRelated(f)) continue;
-          // Skip deterministic findings — they have file/line proof and don't need DB access.
-          if (f.source === "deterministic") continue;
-          // Cap severity at "high" — never "critical" without DB proof.
-          const sev = (f.severity || "medium").toLowerCase();
-          if (sev === "critical") f.severity = "high";
-          // Force confidence to unverified.
-          f.confidence = "unverified";
-          f.confidence_reason =
-            "Detected from code patterns only — your Supabase project is not connected, so we could not verify the live database rules.";
-          f.verification_note =
-            "Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.";
-          f.requires_supabase_verification = true;
-        }
+      if (!supabaseConnected) {
+        const UNVERIFIED_NOTE =
+          "We cannot confirm this without Supabase connected. Connect your Supabase project to verify.";
+        const markUnverified = (arr: any) => {
+          if (!Array.isArray(arr)) return;
+          for (const f of arr) {
+            if (!f || !isDbRelated(f)) continue;
+            // Skip deterministic findings — they have file/line proof and don't need DB access.
+            if (f.source === "deterministic") continue;
+            // Cap severity — never "critical" or "high" without DB proof.
+            const sev = (f.severity || "medium").toLowerCase();
+            if (sev === "critical" || sev === "high") f.severity = "low";
+            // Force confidence to unverified and tag for UI.
+            f.confidence = "unverified";
+            f.unverified = true;
+            f.requires_supabase_verification = true;
+            f.confidence_reason = UNVERIFIED_NOTE;
+            f.verification_note = UNVERIFIED_NOTE;
+            // No "Fix now" button on unverified findings — the fix can't be
+            // trusted until Supabase is connected. The note above tells the
+            // founder exactly what to do instead.
+            f.fix_prompt = "";
+            f.how_to_fix = UNVERIFIED_NOTE;
+          }
+        };
+        markUnverified(claudeResult.security_issues);
+        markUnverified(claudeResult.gaps);
       }
 
       // Override score with server-calculated value (new scoring system)
