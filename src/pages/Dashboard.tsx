@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap, AlertTriangle, Rocket } from 'lucide-react';
+import { PlusCircle, Github, Clock, AlertTriangle, Rocket, RefreshCw, ChevronDown } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
@@ -10,6 +10,8 @@ import RisGuide from '@/components/RisGuide';
 import { UpgradeBanner } from '@/components/ui/upgrade-banner';
 import WelcomeGuide from '@/components/WelcomeGuide';
 import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
+import ReportContent from '@/components/ReportContent';
+import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 
 interface App {
   id: string;
@@ -17,6 +19,7 @@ interface App {
   github_repo_name: string | null;
   github_owner: string | null;
   platform: string | null;
+  live_url: string | null;
   latest_score: number | null;
   latest_date: string | null;
   has_analyses: boolean;
@@ -32,6 +35,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [plainMode, setPlainMode] = useState(true);
+  const generateStarted = useRef<Record<string, boolean>>({});
   // Resume-in-progress banner: surfaces an active scan_session so users
   // who switched tabs (or got disconnected) can hop back into the live
   // analysis screen without losing their slot.
@@ -43,6 +52,8 @@ export default function Dashboard() {
   } | null>(null);
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
+  const urlAnalysisId = searchParams.get('analysis');
+  const urlAppId = searchParams.get('app');
   const navigate = useNavigate();
 
   const getGreeting = () => {
@@ -81,6 +92,7 @@ export default function Dashboard() {
         return {
           id: app.id, app_name: app.app_name, github_repo_name: app.github_repo_name,
           github_owner: app.github_owner, platform: app.platform,
+          live_url: (app as any).live_url ?? null,
           latest_score: latest?.intent_match_score ?? null,
           latest_date: latest?.created_at ?? null,
           has_analyses: appAnalyses.length > 0,
@@ -109,6 +121,25 @@ export default function Dashboard() {
       setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
       setWeeklyScans(ws);
       setWeeklyLimitReached(ws >= 3);
+
+      // Decide which app's report to show:
+      //   1. ?analysis=<id> in URL (legacy /report/:id redirect)
+      //   2. ?app=<id> in URL
+      //   3. App with the most recent analysis
+      //   4. First app
+      let chosen: string | null = null;
+      if (urlAnalysisId) {
+        const owning = (analysesData || []).find((a) => a.id === urlAnalysisId);
+        if (owning?.app_id) chosen = owning.app_id;
+      }
+      if (!chosen && urlAppId && appsList.some((a) => a.id === urlAppId)) {
+        chosen = urlAppId;
+      }
+      if (!chosen) {
+        const withAnalysis = appsList.find((a) => a.has_analyses);
+        chosen = withAnalysis?.id || appsList[0]?.id || null;
+      }
+      setSelectedAppId(chosen);
 
       // Look for an in-progress scan to surface in a "Resume" banner.
       // We only consider sessions started within the last 12 minutes —
@@ -157,7 +188,62 @@ export default function Dashboard() {
       setLoading(false);
     };
     load();
-  }, [user]);
+  }, [user, urlAnalysisId, urlAppId]);
+
+  // Load the selected app's latest analysis (and lazily generate fix prompts).
+  useEffect(() => {
+    if (!selectedAppId) {
+      setAnalysis(null);
+      return;
+    }
+    const selected = apps.find((a) => a.id === selectedAppId);
+    if (!selected || !selected.latest_analysis_id) {
+      setAnalysis(null);
+      return;
+    }
+    const aid = selected.latest_analysis_id;
+    setAnalysisLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('id', aid)
+        .maybeSingle();
+      if (!data) {
+        setAnalysis(null);
+        setAnalysisLoading(false);
+        return;
+      }
+      // Lazily generate fix prompts (mirrors old /report behaviour) so the
+      // dashboard view is functionally identical.
+      if (!data.fix_prompts || data.status === 'generating_prompts') {
+        if (!generateStarted.current[aid]) {
+          generateStarted.current[aid] = true;
+          setGenerating(true);
+          const { data: appPlatform } = await supabase
+            .from('apps').select('platform').eq('id', data.app_id).single();
+          const { data: result, error: invErr } = await supabase.functions.invoke('analyze', {
+            body: {
+              action: 'generate_fixes',
+              platform: appPlatform?.platform,
+              code_understanding: data.code_understanding,
+              gaps: data.gaps,
+              security_issues: data.security_issues,
+              unknown_features: data.unknown_features,
+            },
+          });
+          if (!invErr && result?.fix_prompts) {
+            await supabase.from('analyses').update({ fix_prompts: result.fix_prompts, status: 'complete' }).eq('id', aid);
+            (data as any).fix_prompts = result.fix_prompts;
+            (data as any).status = 'complete';
+          }
+          setGenerating(false);
+        }
+      }
+      setAnalysis(data);
+      setAnalysisLoading(false);
+    })();
+  }, [selectedAppId, apps]);
 
   const relativeDate = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
