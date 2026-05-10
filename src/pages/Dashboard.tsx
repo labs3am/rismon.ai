@@ -476,6 +476,17 @@ export default function Dashboard() {
   const selectedApp = apps.find((a) => a.id === selectedAppId) || null;
   const hasApp = apps.length > 0;
 
+  const promptEditUrl = async (app: App | null) => {
+    if (!app) return;
+    const current = app.live_url || '';
+    const next = window.prompt('Live homepage URL (e.g. https://yoursite.com)', current);
+    if (next == null) return;
+    const trimmed = next.trim();
+    const url = trimmed === '' ? null : (trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+    await supabase.from('apps').update({ live_url: url }).eq('id', app.id);
+    setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, live_url: url } : a)));
+  };
+
   // ---------------- Loading skeleton ----------------
   if (loading) {
     return (
