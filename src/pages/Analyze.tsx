@@ -80,6 +80,15 @@ export default function Analyze() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  // Clear any stale GitHub re-auth flag on mount. The flag is set right before
+  // we redirect the user through OAuth; once they land back here, we MUST clear
+  // it so a follow-up reauth attempt (e.g. if Supabase hasn't surfaced the new
+  // provider_token yet) can actually run instead of silently no-op'ing and
+  // leaving the scan stuck.
+  useEffect(() => {
+    clearReauthFlag();
+  }, []);
+
   // When the user switches tabs and comes back, re-sync stage from the DB.
   // Without this, the loading screen can show a stale "reading" message even
   // though the scan has progressed to analyzing/questions/complete server-side.
