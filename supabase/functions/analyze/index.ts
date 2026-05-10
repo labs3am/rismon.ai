@@ -548,6 +548,106 @@ function snippet(line: string, max = 200): string {
 }
 
 // ============================================================
+// HOMEPAGE PROMISE EXTRACTOR + CODE EVIDENCE CHECKER
+// (added 2026-05). Deterministic, no LLM call.
+//
+// 1. extractHomepagePromises(signals) — pulls feature claims out
+//    of the live homepage (headings, CTAs, meta, visible text)
+//    using a curated keyword list ("AI-powered", "real-time",
+//    "encrypted", "sync", "automatic", "unlimited", etc.).
+// 2. evaluatePromiseAgainstCode(claim, fileContents, edgeBundle)
+//    — searches the scanned code for evidence keywords mapped
+//    from the claim. Returns FOUND / PARTIAL / NOT_FOUND plus a
+//    short human-readable evidence string for the report table.
+// ============================================================
+
+const PROMISE_KEYWORDS: Array<{ rx: RegExp; codeHints: string[]; label: string }> = [
+  { rx: /\bai[- ]?powered\b|\b(uses?|with)\s+ai\b|\bgpt\b|\bllm\b/i,                 codeHints: ["openai", "anthropic", "@ai-sdk", "lovable-ai", "gemini", "claude", "/v1/chat", "VITE_OPENAI", "ai-gateway"], label: "AI integration" },
+  { rx: /\breal[- ]?time\b|\blive\s+(updates?|sync)\b/i,                              codeHints: ["channel(", "supabase.channel", "realtime", "websocket", "ws://", "postgres_changes", "EventSource"], label: "realtime channel" },
+  { rx: /\bend[- ]to[- ]end\s+encrypt|\be2ee\b|\bencrypted\b|\bencryption\b/i,        codeHints: ["pgp_sym_encrypt", "crypto.subtle", "libsodium", "tweetnacl", "AES-", "WebCrypto", "encrypt("], label: "encryption" },
+  { rx: /\bsync(s|ed|ing)?\b|\bauto[- ]?sync\b|\bsynchroniz/i,                        codeHints: ["sync", "syncQueue", "background sync", "useSync", "/sync"], label: "sync logic" },
+  { rx: /\bautomatic(ally)?\b|\bauto[- ]?(generate|run|update|save|backup)/i,        codeHints: ["cron", "pg_cron", "schedule(", "setInterval(", "background_job", "EdgeRuntime.waitUntil"], label: "automation" },
+  { rx: /\bunlimited\b/i,                                                              codeHints: ["unlimited", "Infinity", "no_limit", "PLAN_LIMITS"], label: "unlimited tier" },
+  { rx: /\b(stripe|payment|checkout|subscription|billing)\b/i,                         codeHints: ["stripe", "checkout.session", "subscriptions", "payment_intent", "/billing", "STRIPE_"], label: "payment integration" },
+  { rx: /\b(team|invite\s+(your\s+)?team|workspace|collaborate|members?)\b/i,          codeHints: ["org_id", "team_id", "organization", "invite", "member_role", "workspace"], label: "team/workspace logic" },
+  { rx: /\b(notification|email\s+alerts?|push\s+notification|reminder)\b/i,            codeHints: ["resend", "sendgrid", "mailgun", "Notification(", "expo-notifications", "send-email", "/notify"], label: "notification system" },
+  { rx: /\b(export|download|csv|pdf|backup)\b/i,                                       codeHints: [".csv", "application/pdf", "jspdf", "papaparse", "export(", "downloadBlob"], label: "export/download" },
+  { rx: /\b(search|full[- ]text\s+search|filter)\b/i,                                  codeHints: ["ilike(", "tsvector", "to_tsquery", "fuse.js", "search(", "useSearch"], label: "search" },
+  { rx: /\b(analytics|insights?|dashboard|reports?)\b/i,                               codeHints: ["recharts", "chart.js", "d3", "analytics", "page_view", "metrics"], label: "analytics" },
+  { rx: /\b(oauth|sso|google\s+login|github\s+login|sign\s+in\s+with)\b/i,             codeHints: ["signInWithOAuth", "provider:", "oauth", "GoogleAuth", "github_oauth"], label: "OAuth/SSO" },
+  { rx: /\b(rate[- ]?limit|throttl)/i,                                                 codeHints: ["rate_limit", "ratelimit", "PLAN_LIMITS", "throttle"], label: "rate limiting" },
+  { rx: /\b(secure|gdpr|soc[- ]?2|hipaa|compliant|privacy[- ]first)\b/i,               codeHints: ["RLS", "row level security", "auth.uid()", "policy", "encrypt", "consent"], label: "security/compliance" },
+  { rx: /\b(free\s+(tier|plan)|task\s+limit|message\s+limit|free\s+users)\b/i,         codeHints: ["PLAN_LIMITS", "free:", "weeklyScans", "monthlyScans", "trigger", "enforce_"], label: "free-plan limits" },
+];
+
+function extractHomepagePromises(signals: any): Array<{ claim: string; matchedRule: string; codeHints: string[] }> {
+  if (!signals) return [];
+  const sources: string[] = [];
+  if (signals.title) sources.push(signals.title);
+  if (signals.description) sources.push(signals.description);
+  if (signals.og_title) sources.push(signals.og_title);
+  if (signals.og_description) sources.push(signals.og_description);
+  if (Array.isArray(signals.headings)) sources.push(...signals.headings);
+  if (Array.isArray(signals.cta_text)) sources.push(...signals.cta_text);
+  // Sentence-split visible text and keep sentences that contain promise keywords.
+  if (typeof signals.text === "string") {
+    const sentences = signals.text.split(/(?<=[.!?])\s+/).map((s: string) => s.trim()).filter(Boolean);
+    for (const s of sentences) {
+      if (s.length < 12 || s.length > 220) continue;
+      sources.push(s);
+    }
+  }
+
+  const seen = new Set<string>();
+  const out: Array<{ claim: string; matchedRule: string; codeHints: string[] }> = [];
+  for (const raw of sources) {
+    const claim = raw.replace(/\s+/g, " ").trim();
+    if (!claim || claim.length < 6) continue;
+    const norm = claim.toLowerCase();
+    if (seen.has(norm)) continue;
+    for (const rule of PROMISE_KEYWORDS) {
+      if (rule.rx.test(claim)) {
+        seen.add(norm);
+        out.push({ claim: claim.slice(0, 220), matchedRule: rule.label, codeHints: rule.codeHints });
+        break;
+      }
+    }
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+function evaluatePromiseAgainstCode(
+  promise: { claim: string; matchedRule: string; codeHints: string[] },
+  fileContents: Map<string, string>,
+  edgeBundle: string,
+): { verdict: "found" | "partial" | "not_found"; evidence: string } {
+  const haystackParts: string[] = [];
+  for (const text of fileContents.values()) haystackParts.push(text);
+  if (edgeBundle) haystackParts.push(edgeBundle);
+  const haystack = haystackParts.join("\n").toLowerCase();
+  if (!haystack) {
+    return { verdict: "not_found", evidence: `No ${promise.matchedRule} found in code` };
+  }
+  let hits = 0;
+  const matchedHints: string[] = [];
+  for (const hint of promise.codeHints) {
+    if (haystack.includes(hint.toLowerCase())) {
+      hits++;
+      matchedHints.push(hint);
+      if (matchedHints.length >= 3) break;
+    }
+  }
+  if (hits === 0) {
+    return { verdict: "not_found", evidence: `No ${promise.matchedRule} found in code` };
+  }
+  if (hits === 1) {
+    return { verdict: "partial", evidence: `Found ${matchedHints[0]} — partial ${promise.matchedRule}` };
+  }
+  return { verdict: "found", evidence: `${promise.matchedRule}: ${matchedHints.slice(0, 3).join(", ")}` };
+}
+
+// ============================================================
 // SECTION 1c-bis: Live Supabase backend probe
 //
 // When the founder has connected their app's Supabase project (we
