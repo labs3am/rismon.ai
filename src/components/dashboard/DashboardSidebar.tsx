@@ -17,7 +17,7 @@ const items: NavItem[] = [
   { key: 'overview', label: 'Overview', icon: LayoutDashboard },
   { key: 'intent', label: 'Business Intent', icon: Target },
   { key: 'security', label: 'Security Issues', icon: ShieldAlert },
-  { key: 'seo', label: 'SEO & Homepage', icon: Globe },
+  { key: 'seo', label: 'Intent Match', icon: Globe },
   { key: 'legal', label: 'Legal & Trust', icon: FileText },
   { key: 'performance', label: 'Performance', icon: Activity, pro: true },
   { key: 'monitoring', label: 'Continuous Monitoring', icon: Radio, pro: true },
