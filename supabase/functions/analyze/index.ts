@@ -158,6 +158,121 @@ function splitBundleByFile(bundle: string): Array<{ path: string; lines: string[
   return out;
 }
 
+// ============================================================
+// File-path validation for LLM findings (added 2026-05).
+//
+// Claude/Gemini occasionally hallucinate file paths in their
+// findings and fix prompts (e.g. "src/hooks/useTasks.ts" when no
+// such file exists in the repo). Showing fake paths to a founder
+// destroys trust on the first read. We solve it by:
+//  1. Building a set of every file path actually fetched from the
+//     repo for this scan (frontend bundle + edge function bundle).
+//  2. After each LLM finding is normalized, checking its file_path
+//     against that set and stripping any reference that doesn't
+//     match a real file. The finding is kept (not dropped) but is
+//     marked unverified and its prose is rewritten to point the
+//     user at the feature instead of a fabricated path.
+// ============================================================
+function buildKnownPathSet(...bundles: string[]): Set<string> {
+  const set = new Set<string>();
+  for (const b of bundles) {
+    for (const f of splitBundleByFile(b || "")) {
+      if (f.path) set.add(f.path);
+    }
+  }
+  return set;
+}
+
+// Pseudo-paths the deterministic scanners emit on purpose — they
+// are not real files and must not be flagged as hallucinations.
+const PSEUDO_PATH_RX = /^(supabase:\/\/|router not scanned$|scanned files$|unknown$)/i;
+
+function isRealCodePath(p: string | undefined | null, known: Set<string>): boolean {
+  if (!p || typeof p !== "string") return false;
+  if (PSEUDO_PATH_RX.test(p)) return true;
+  if (known.has(p)) return true;
+  // Tolerate small differences (leading "./", "/", "src/" already on both sides).
+  const norm = p.replace(/^\.?\//, "");
+  if (known.has(norm)) return true;
+  for (const k of known) {
+    if (k === norm) return true;
+    if (k.endsWith("/" + norm) || norm.endsWith("/" + k)) return true;
+  }
+  return false;
+}
+
+// Match anything that looks like a source file reference inside prose.
+const FILE_REF_RX = /(?:[A-Za-z0-9_./\-]+\/)?[A-Za-z0-9_\-]+\.(?:tsx?|jsx?|mjs|cjs|css|html|json|sql|md|py|rb|go|rs)\b/g;
+
+function scrubProse(text: string, known: Set<string>, feature: string): string {
+  if (!text || typeof text !== "string") return text;
+  return text.replace(FILE_REF_RX, (m) => {
+    if (isRealCodePath(m, known)) return m;
+    return `where ${feature} is handled in your codebase`;
+  });
+}
+
+function findingFeatureLabel(f: any): string {
+  const t = (f?.title || f?.category || "this issue").toString().toLowerCase().trim();
+  return t.replace(/[`"']/g, "").slice(0, 60) || "this issue";
+}
+
+function sanitizeLLMFinding(f: any, known: Set<string>): any {
+  if (!f || typeof f !== "object") return f;
+  // Skip findings that the deterministic scanners produced — they
+  // already cite real file paths and we own that path data.
+  if (f.source === "deterministic") return f;
+
+  const out = { ...f };
+  const feature = findingFeatureLabel(out);
+  const fp = out.file_path;
+  const fpReal = isRealCodePath(fp, known);
+
+  const TEXT_KEYS = [
+    "fix_prompt",
+    "how_to_fix",
+    "what_we_found",
+    "what_this_means",
+    "explanation",
+    "you_said",
+    "what_was_built",
+    "business_impact",
+    "title",
+    "technical_reference",
+  ];
+
+  if (fp && !fpReal) {
+    const fallback = `Find where ${feature} is handled in your codebase and apply this fix.`;
+    // Strip the fabricated path everywhere it shows up verbatim.
+    for (const k of TEXT_KEYS) {
+      if (typeof out[k] === "string" && out[k].includes(fp)) {
+        out[k] = out[k].split(fp).join(fallback);
+      }
+    }
+    out.unverified_file_path = fp;
+    out.file_path = null;
+    out.confidence = "unverified";
+    out.confidence_reason =
+      out.confidence_reason ||
+      "The file path the analyzer suggested could not be confirmed in the fetched repository, so this finding is shown without a path.";
+  }
+
+  // Even when file_path is fine (or absent), the body of fix_prompt /
+  // how_to_fix can still mention other fabricated files. Scrub those.
+  for (const k of ["fix_prompt", "how_to_fix", "what_we_found", "what_this_means", "explanation"]) {
+    if (typeof out[k] === "string") {
+      out[k] = scrubProse(out[k], known, feature);
+    }
+  }
+
+  return out;
+}
+
+function sanitizeFindingArray(arr: any, known: Set<string>): any[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((f) => sanitizeLLMFinding(f, known));
+}
+
 const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
 
 function snippet(line: string, max = 200): string {
@@ -2055,6 +2170,30 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           unknown_features: Array.isArray(claudeResult.unknown_features) ? claudeResult.unknown_features : [],
           summary: summary || claudeResult.summary || "",
         };
+      }
+
+      // ----------------------------------------------------------
+      // FILE-PATH ACCURACY GUARD (added 2026-05).
+      //
+      // Cross-check every file_path the LLM returned against the
+      // actual file list pulled from the repo. If the path doesn't
+      // exist, scrub it from the finding (and from the fix_prompt
+      // prose) and mark the finding as unverified. This runs BEFORE
+      // the deterministic overlay because deterministic findings
+      // already cite real, in-bundle paths.
+      // ----------------------------------------------------------
+      try {
+        const knownPaths = buildKnownPathSet(codeBundle || "", edgeFunctionBundle || "");
+        if (knownPaths.size > 0) {
+          claudeResult.gaps = sanitizeFindingArray(claudeResult.gaps, knownPaths);
+          claudeResult.security_issues = sanitizeFindingArray(claudeResult.security_issues, knownPaths);
+          claudeResult.false_promises = sanitizeFindingArray(claudeResult.false_promises, knownPaths);
+          if (Array.isArray(claudeResult.legal_findings)) {
+            claudeResult.legal_findings = sanitizeFindingArray(claudeResult.legal_findings, knownPaths);
+          }
+        }
+      } catch (e) {
+        console.error("File path accuracy guard failed (non-fatal):", e);
       }
 
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
