@@ -208,7 +208,11 @@ function FindingCard({
 
   const sev = (f.severity || 'medium').toLowerCase();
   const ps = plainSeverity(sev);
-  const color = ps.color;
+  const isUnverified = !!(f.requires_supabase_verification || f.unverified || (f.confidence || '').toString().toLowerCase() === 'unverified');
+  const badge = isUnverified
+    ? { label: 'Worth checking', color: '#a1a1aa' }
+    : ps;
+  const color = badge.color;
 
   const findingId = f.id || `f-${idx}`;
   const ignoreKey = analysisId ? `rismon:ignored:${analysisId}:${findingId}` : null;
@@ -285,10 +289,26 @@ function FindingCard({
             className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
             style={{ color, border: `1px solid ${color}40` }}
           >
-            {ps.label}
+            {badge.label}
           </span>
+          {isUnverified && (
+            <span
+              className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
+              style={{ color: '#a1a1aa', border: '1px solid #a1a1aa40' }}
+            >
+              Unverified
+            </span>
+          )}
         </div>
       </div>
+      {isUnverified && (
+        <div
+          className="text-[12px] leading-relaxed mb-4 rounded-md px-3 py-2"
+          style={{ background: '#0c0c0d', border: '1px solid #222', color: '#a1a1aa' }}
+        >
+          {f.verification_note || 'We cannot confirm this without Supabase connected. Connect your Supabase project to verify.'}
+        </div>
+      )}
 
       {showWhatWeFound && (
         <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
@@ -359,7 +379,7 @@ function FindingCard({
       )}
 
       <div className="mt-4 pt-3 border-t border-border flex items-center gap-2 flex-wrap">
-        {fixPrompt && (
+        {fixPrompt && !isUnverified && (
           <button
             onClick={() => setShowFix((v) => !v)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-md px-3 py-1.5"
