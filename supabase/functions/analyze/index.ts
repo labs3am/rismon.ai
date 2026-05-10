@@ -414,6 +414,132 @@ function verifyFindingArray(
 
 const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
 
+// ============================================================
+// LIVE HOMEPAGE FETCH (added 2026-05).
+//
+// When the founder has saved a `live_url` for their app, we fetch
+// the deployed homepage HTML and pass an extracted text version
+// into the Claude/Gemini prompt so the analysis cross-checks
+// claims against what is *actually* shipped to visitors — not
+// just the source code in GitHub. This catches false promises
+// that only exist in the live marketing copy.
+// ============================================================
+function stripHtmlToText(html: string): string {
+  if (!html) return "";
+  let s = html;
+  // Drop script/style/noscript blocks entirely.
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, " ");
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, " ");
+  s = s.replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
+  s = s.replace(/<!--[\s\S]*?-->/g, " ");
+  // Replace tags with spaces, then collapse whitespace.
+  s = s.replace(/<\/?[^>]+>/g, " ");
+  // Decode the most common HTML entities.
+  s = s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function extractTag(html: string, tag: string): string | null {
+  const m = html.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return m ? stripHtmlToText(m[1]).slice(0, 400) : null;
+}
+
+function extractMeta(html: string, name: string): string | null {
+  const rx = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']+)["']`, "i");
+  const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:name|property)=["']${name}["']`, "i");
+  const m = html.match(rx) || html.match(rx2);
+  return m ? m[1].slice(0, 400) : null;
+}
+
+async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<{
+  url: string;
+  status: number;
+  title: string | null;
+  description: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  text: string;          // truncated visible text
+  headings: string[];    // h1/h2 text
+  cta_text: string[];    // button / link text snippets
+  fetched_at: string;
+  error?: string;
+} | null> {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  let url = rawUrl.trim();
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try {
+    new URL(url);
+  } catch {
+    return { url: rawUrl, status: 0, title: null, description: null, og_title: null, og_description: null, text: "", headings: [], cta_text: [], fetched_at: new Date().toISOString(), error: "invalid_url" };
+  }
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        "User-Agent": "RismonAnalyzer/1.0 (+https://rismon.ai)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const html = (await res.text()).slice(0, 400_000); // cap to 400KB
+    const text = stripHtmlToText(html);
+    const headings: string[] = [];
+    for (const tag of ["h1", "h2"]) {
+      const rx = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "gi");
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(html)) !== null && headings.length < 25) {
+        const t = stripHtmlToText(m[1]);
+        if (t) headings.push(t.slice(0, 200));
+      }
+    }
+    const cta_text: string[] = [];
+    const ctaRx = /<(?:button|a)[^>]*>([\s\S]*?)<\/(?:button|a)>/gi;
+    let cm: RegExpExecArray | null;
+    while ((cm = ctaRx.exec(html)) !== null && cta_text.length < 40) {
+      const t = stripHtmlToText(cm[1]);
+      if (t && t.length >= 2 && t.length <= 80) cta_text.push(t);
+    }
+    return {
+      url,
+      status: res.status,
+      title: extractTag(html, "title"),
+      description: extractMeta(html, "description"),
+      og_title: extractMeta(html, "og:title"),
+      og_description: extractMeta(html, "og:description"),
+      text: text.slice(0, 12_000),
+      headings,
+      cta_text,
+      fetched_at: new Date().toISOString(),
+    };
+  } catch (e) {
+    clearTimeout(timer);
+    return {
+      url,
+      status: 0,
+      title: null,
+      description: null,
+      og_title: null,
+      og_description: null,
+      text: "",
+      headings: [],
+      cta_text: [],
+      fetched_at: new Date().toISOString(),
+      error: (e as any)?.message?.slice(0, 200) || "fetch_failed",
+    };
+  }
+}
+
 function snippet(line: string, max = 200): string {
   return (line || "").trim().slice(0, max);
 }
@@ -1934,16 +2060,18 @@ Return ONLY this JSON:
       // could be verified live (vs inferred from code patterns only).
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
+      let appLiveUrl: string | null = null;
       if (app_id) {
         // Credentials are encrypted at rest. Confirm ownership, then decrypt
         // server-side via the service-role-only RPC.
         const { data: ownerCheck } = await serviceClient
           .from("apps")
-          .select("user_id")
+          .select("user_id, live_url")
           .eq("id", app_id)
           .eq("user_id", user.id)
           .maybeSingle();
         if (ownerCheck) {
+          appLiveUrl = (ownerCheck as any).live_url ?? null;
           const { data: appCreds } = await serviceClient
             .rpc("get_app_supabase_credentials", { _app_id: app_id })
             .maybeSingle();
@@ -1978,6 +2106,11 @@ Return ONLY this JSON:
       const scanTypeHint = scan_type === "deep"
         ? "This is a Deep Scan covering the complete codebase."
         : "This is a Quick Scan covering the most critical files only.";
+
+      // Fetch the deployed homepage in parallel with prompt building so the
+      // LLM can cross-check landing-page claims against the live site, not
+      // just the source files.
+      const homepageSignalsPromise = fetchHomepageSignals(appLiveUrl);
 
       const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
 
@@ -2141,6 +2274,9 @@ Every finding you emit MUST include a real file_path that exists in the scanned 
 EVIDENCE QUOTE RULE (mandatory, enforced server-side):
 Every finding MUST also include, inside its explanation or fix_prompt, a verbatim quote of the offending code wrapped in backticks (e.g. \`const isPro = true\` or \`.from('orders').select('*')\`). The quote MUST be at least 8 characters and copied character-for-character from the file you cited. A downstream verifier compares this quote to the actual file contents — if no quote is present, or the quote does not appear in the file, the finding is silently dropped from the report. So: if you cannot copy a real line out of the file, do not emit the finding. Better to return zero findings than one fabricated one.
 
+LIVE HOMEPAGE RULE:
+If a "LIVE HOMEPAGE" section is present in the user message, treat that section as the source of truth for everything the founder publicly promises (headlines, feature claims, marketing copy). For every false_promises finding, the "claim" field MUST be copied verbatim from the LIVE HOMEPAGE section (Title, Meta description, OG fields, Headings, Call-to-action text, or Visible text). Do not paraphrase. Do not invent claims that are not present there. If the LIVE HOMEPAGE section is missing or fetched=false, fall back to text actually present in the scanned source files (e.g. landing page components) and quote it verbatim from there. The same goes for cross-checking: a feature is only a "false promise" if the live homepage advertises it AND the scanned code does not implement it.
+
 TRUTH OVER COVERAGE:
 You are graded on accuracy, not on volume. Returning 0 findings when nothing is provably wrong is a correct answer. Returning 5 findings where 1 is fabricated is a failure. When uncertain, omit.
 
@@ -2252,12 +2388,57 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
+      // Resolve live homepage signals and append a dedicated section so the
+      // model knows which claims are actually shipped to visitors.
+      const homepageSignals = await homepageSignalsPromise;
+      let claudeUserContentFinal = claudeUserContent;
+      if (homepageSignals && homepageSignals.status >= 200 && homepageSignals.status < 400 && homepageSignals.text) {
+        const liveBlock = `\n\nLIVE HOMEPAGE (fetched from ${homepageSignals.url}, HTTP ${homepageSignals.status}):\n` +
+          `Title: ${homepageSignals.title || "(none)"}\n` +
+          `Meta description: ${homepageSignals.description || "(none)"}\n` +
+          `OG title: ${homepageSignals.og_title || "(none)"}\n` +
+          `OG description: ${homepageSignals.og_description || "(none)"}\n` +
+          `Headings (h1/h2): ${JSON.stringify(homepageSignals.headings.slice(0, 15))}\n` +
+          `Call-to-action text: ${JSON.stringify(homepageSignals.cta_text.slice(0, 20))}\n` +
+          `Visible text (truncated):\n${homepageSignals.text}\n\n` +
+          `Use this LIVE HOMEPAGE content as the primary source of truth for false-promise checks. ` +
+          `Quote the exact wording from this section (not from source files) when reporting a false promise. ` +
+          `If a claim appears here but no matching implementation exists in the scanned code, flag it.`;
+        claudeUserContentFinal = claudeUserContent + liveBlock;
+      } else if (appLiveUrl) {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder gave us ${appLiveUrl} but we could not fetch it (${homepageSignals?.error || "no response"}). Do NOT invent homepage claims — base false-promise findings only on text actually present in the scanned source files.`;
+      } else {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder did not provide a deployed URL. Base false-promise findings only on text actually present in the scanned source files.`;
+      }
+
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContentFinal);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
       } catch {
         return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Surface homepage signals so the report UI can show "Verified against
+      // live homepage" badges and the analyses row stores what was checked.
+      if (homepageSignals) {
+        claudeResult.homepage_signals = {
+          ...(claudeResult.homepage_signals || {}),
+          url: homepageSignals.url,
+          fetched: homepageSignals.status >= 200 && homepageSignals.status < 400,
+          status: homepageSignals.status,
+          title: homepageSignals.title,
+          description: homepageSignals.description,
+          og_title: homepageSignals.og_title,
+          og_description: homepageSignals.og_description,
+          headings: homepageSignals.headings,
+          cta_text: homepageSignals.cta_text,
+          fetched_at: homepageSignals.fetched_at,
+          error: homepageSignals.error || null,
+          has_live_url: true,
+        };
       }
 
       // ----------------------------------------------------------
@@ -2355,7 +2536,10 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           const dropped: Array<{ bucket: string; title: string; reason: string }> = [];
           claudeResult.gaps = verifyFindingArray(claudeResult.gaps, fileContents, "gaps", dropped);
           claudeResult.security_issues = verifyFindingArray(claudeResult.security_issues, fileContents, "security", dropped);
-          claudeResult.false_promises = verifyFindingArray(claudeResult.false_promises, fileContents, "false_promises", dropped);
+          // false_promises are intentionally NOT run through the code-evidence
+          // verifier: their proof lives on the live homepage (the `claim`
+          // field), not inside a source file. The path sanitizer still
+          // ensures any code path mentioned in the fix prompt is real.
           if (dropped.length > 0) {
             console.log(`[evidence-guard] dropped ${dropped.length} unverified finding(s):`, JSON.stringify(dropped));
             claudeResult.evidence_guard_dropped = dropped.length;
