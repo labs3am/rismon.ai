@@ -414,6 +414,132 @@ function verifyFindingArray(
 
 const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
 
+// ============================================================
+// LIVE HOMEPAGE FETCH (added 2026-05).
+//
+// When the founder has saved a `live_url` for their app, we fetch
+// the deployed homepage HTML and pass an extracted text version
+// into the Claude/Gemini prompt so the analysis cross-checks
+// claims against what is *actually* shipped to visitors — not
+// just the source code in GitHub. This catches false promises
+// that only exist in the live marketing copy.
+// ============================================================
+function stripHtmlToText(html: string): string {
+  if (!html) return "";
+  let s = html;
+  // Drop script/style/noscript blocks entirely.
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, " ");
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, " ");
+  s = s.replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
+  s = s.replace(/<!--[\s\S]*?-->/g, " ");
+  // Replace tags with spaces, then collapse whitespace.
+  s = s.replace(/<\/?[^>]+>/g, " ");
+  // Decode the most common HTML entities.
+  s = s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function extractTag(html: string, tag: string): string | null {
+  const m = html.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return m ? stripHtmlToText(m[1]).slice(0, 400) : null;
+}
+
+function extractMeta(html: string, name: string): string | null {
+  const rx = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']+)["']`, "i");
+  const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:name|property)=["']${name}["']`, "i");
+  const m = html.match(rx) || html.match(rx2);
+  return m ? m[1].slice(0, 400) : null;
+}
+
+async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<{
+  url: string;
+  status: number;
+  title: string | null;
+  description: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  text: string;          // truncated visible text
+  headings: string[];    // h1/h2 text
+  cta_text: string[];    // button / link text snippets
+  fetched_at: string;
+  error?: string;
+} | null> {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  let url = rawUrl.trim();
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try {
+    new URL(url);
+  } catch {
+    return { url: rawUrl, status: 0, title: null, description: null, og_title: null, og_description: null, text: "", headings: [], cta_text: [], fetched_at: new Date().toISOString(), error: "invalid_url" };
+  }
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        "User-Agent": "RismonAnalyzer/1.0 (+https://rismon.ai)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const html = (await res.text()).slice(0, 400_000); // cap to 400KB
+    const text = stripHtmlToText(html);
+    const headings: string[] = [];
+    for (const tag of ["h1", "h2"]) {
+      const rx = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "gi");
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(html)) !== null && headings.length < 25) {
+        const t = stripHtmlToText(m[1]);
+        if (t) headings.push(t.slice(0, 200));
+      }
+    }
+    const cta_text: string[] = [];
+    const ctaRx = /<(?:button|a)[^>]*>([\s\S]*?)<\/(?:button|a)>/gi;
+    let cm: RegExpExecArray | null;
+    while ((cm = ctaRx.exec(html)) !== null && cta_text.length < 40) {
+      const t = stripHtmlToText(cm[1]);
+      if (t && t.length >= 2 && t.length <= 80) cta_text.push(t);
+    }
+    return {
+      url,
+      status: res.status,
+      title: extractTag(html, "title"),
+      description: extractMeta(html, "description"),
+      og_title: extractMeta(html, "og:title"),
+      og_description: extractMeta(html, "og:description"),
+      text: text.slice(0, 12_000),
+      headings,
+      cta_text,
+      fetched_at: new Date().toISOString(),
+    };
+  } catch (e) {
+    clearTimeout(timer);
+    return {
+      url,
+      status: 0,
+      title: null,
+      description: null,
+      og_title: null,
+      og_description: null,
+      text: "",
+      headings: [],
+      cta_text: [],
+      fetched_at: new Date().toISOString(),
+      error: (e as any)?.message?.slice(0, 200) || "fetch_failed",
+    };
+  }
+}
+
 function snippet(line: string, max = 200): string {
   return (line || "").trim().slice(0, max);
 }
