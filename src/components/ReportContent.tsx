@@ -619,14 +619,14 @@ export default function ReportContent({
   if (section === 'intent') {
     return (
       <div>
-        {ModeToggle}
+
         <div className="mb-8">
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
           {gapsList.length === 0 ? (
             <GoodNews msg="No intent gaps found. Your code matches what you described." />
           ) : (
             gapsList.map((g: any, i: number) => (
-              <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} plainMode={plainMode} />
+              <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />
             ))
           )}
         </div>
@@ -665,13 +665,13 @@ export default function ReportContent({
   if (section === 'security') {
     return (
       <div>
-        {ModeToggle}
+
         <SectionLabel>Security · these can hurt you in production</SectionLabel>
         {secList.length === 0 ? (
           <GoodNews msg="No security issues found in the code we scanned. Nice work." />
         ) : (
           secList.map((s: any, i: number) => (
-            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />
           ))
         )}
       </div>
@@ -808,7 +808,7 @@ export default function ReportContent({
           </div>
         ) : (
           gapsList.map((g: any, i: number) => (
-            <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />
           ))
         )}
       </div>
@@ -851,7 +851,7 @@ export default function ReportContent({
           </div>
         ) : (
           secList.map((s: any, i: number) => (
-            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />
           ))
         )}
       </div>
