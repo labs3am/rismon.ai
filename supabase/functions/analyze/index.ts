@@ -2558,6 +2558,37 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
       }
 
       // ----------------------------------------------------------
+      // INTENT MATCH — promises vs. code (added 2026-05).
+      //
+      // Build the deterministic Promise/Found-in-code/Status table
+      // that powers the Intent Match tab in the report. This runs
+      // server-side, no extra LLM call, so it never hallucinates a
+      // promise the homepage didn't actually make.
+      // ----------------------------------------------------------
+      try {
+        if (appLiveUrl && (!homepageSignals || homepageSignals.status < 200 || homepageSignals.status >= 400 || !homepageSignals.text)) {
+          claudeResult.landing_page_promises = [];
+          claudeResult.homepage_fetch_error =
+            "Could not read homepage. Make sure the URL is correct and the site is live.";
+        } else if (homepageSignals && homepageSignals.text) {
+          const promiseFileContents = buildFileContentMap(codeBundle || "", edgeFunctionBundle || "");
+          const extracted = extractHomepagePromises(homepageSignals);
+          const evaluated = extracted.map((p) => {
+            const r = evaluatePromiseAgainstCode(p, promiseFileContents, edgeFunctionBundle || "");
+            return {
+              claim: p.claim,
+              evidence: r.evidence,
+              claim_source: "homepage",
+              verdict: r.verdict,
+            };
+          });
+          claudeResult.landing_page_promises = evaluated;
+        }
+      } catch (e) {
+        console.error("Intent-match promise check failed (non-fatal):", e);
+      }
+
+      // ----------------------------------------------------------
       // Normalize new Rismon prompt shape -> legacy shape expected
       // by the rest of the app (DB columns, Analyze.tsx, Report.tsx)
       // New keys: score, score_label, verdict, business_logic_gaps,
@@ -2869,12 +2900,16 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
 
       // Override score with server-calculated value (new scoring system)
       const resolvedScanType = scan_type || (userPlan === "free" ? "quick" : "deep");
+      const notFoundPromiseCount = Array.isArray(claudeResult.landing_page_promises)
+        ? claudeResult.landing_page_promises.filter((p: any) => (p?.verdict || "").toLowerCase() === "not_found").length
+        : 0;
       const { score: finalScore, grade: finalGrade, launch_status: finalStatus } = calculateScore(
         claudeResult.gaps || [],
         claudeResult.security_issues || [],
         claudeResult.false_promises || [],
         !!claudeResult.verification_applied,
-        resolvedScanType
+        resolvedScanType,
+        notFoundPromiseCount
       );
       claudeResult.score = finalScore;
       claudeResult.intent_match_score = finalScore;
