@@ -197,5 +197,6 @@ export default function DashboardSidebar({
         </div>
       )}
     </aside>
+    </>
   );
 }
