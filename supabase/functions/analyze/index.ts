@@ -2976,7 +2976,14 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       // deterministic scanner cited the file/line and we cross-checked
       // tables via the live REST probe above).
       // ----------------------------------------------------------
-      const supabaseConnected = !!(appSupabaseUrl && appSupabaseAnonKey);
+      // Reliable connection check: actually probe the Supabase URL
+      // with the saved anon key. Stored credentials alone are NOT
+      // enough — they can be stale, revoked, or pointing at the
+      // wrong project. This single source of truth drives every
+      // VERIFIED vs "Worth checking" decision below.
+      const connectionStatus = await verifySupabaseConnection(appSupabaseUrl, appSupabaseAnonKey);
+      const supabaseConnected = connectionStatus.connected;
+      claudeResult.supabase_connection = connectionStatus;
       const DB_CATEGORIES = new Set([
         "rls",
         "user_data_isolation",
@@ -3001,7 +3008,7 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule/.test(hay);
       };
       if (!supabaseConnected) {
-        const UNVERIFIED_NOTE =
+        const UNVERIFIED_NOTE = connectionStatus.message ||
           "We cannot confirm this without Supabase connected. Connect your Supabase project to verify.";
         const markUnverified = (arr: any) => {
           if (!Array.isArray(arr)) return;
