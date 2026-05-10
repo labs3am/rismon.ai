@@ -578,7 +578,6 @@ export default function Dashboard() {
               <PromiseCoverageCard
                 liveUrl={selectedApp?.live_url ?? null}
                 promises={promises}
-                onAddUrl={() => promptEditUrl(selectedApp)}
                 onView={() => setSection('seo')}
               />
             </div>
