@@ -573,33 +573,20 @@ export default function Dashboard() {
       <div className="space-y-6">
         {section === 'overview' && (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <IntentGaugeCard score={intentScore} />
-              <PromiseCoverageCard
-                liveUrl={selectedApp?.live_url ?? null}
-                promises={promises}
-                onView={() => setSection('seo')}
-              />
-            </div>
+            {analysis.summary && (
+              <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+                <div className="text-[11px] uppercase tracking-[0.1em] font-semibold mb-3" style={{ color: '#888' }}>Summary</div>
+                <div className="text-[15px] leading-[1.7]" style={{ color: '#cbd5e1' }}>{analysis.summary}</div>
+              </div>
+            )}
 
-            {(() => {
-              const stats = [
-                { v: secCount, l: 'Security issues', c: '#ef4444' },
-                { v: gapCount, l: 'Intent gaps', c: '#f59e0b' },
-                { v: legalCount, l: 'Legal gaps', c: '#f59e0b' },
-              ].filter((s) => s.v > 0);
-              if (stats.length === 0) return null;
-              return (
-                <div className={`grid grid-cols-2 sm:grid-cols-${Math.min(stats.length, 4)} gap-3`}>
-                  {stats.map((s) => (
-                    <div key={s.l} className="rounded-xl p-4" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
-                      <div style={{ fontSize: 26, fontWeight: 700, color: s.c, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</div>
-                      <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
+            <IntentGaugeCard score={intentScore} />
+
+            <PromiseCoverageCard
+              liveUrl={selectedApp?.live_url ?? null}
+              promises={promises}
+              onView={() => setSection('seo')}
+            />
 
             <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
               <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
