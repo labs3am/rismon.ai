@@ -775,15 +775,7 @@ export default function Dashboard() {
                         <span>Verifying against: {selectedApp.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                         <Pencil size={10} style={{ color: '#888' }} />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => promptEditUrl(selectedApp)}
-                        className="inline-flex items-center gap-1.5"
-                        style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 999, padding: '5px 10px', color: '#888', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        <Plus size={11} /> Add homepage URL
-                      </button>
-                    )
+                    ) : null
                   )}
                 </div>
                 {selectedApp && (
