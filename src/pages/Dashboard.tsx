@@ -357,6 +357,17 @@ export default function Dashboard() {
     const secCount = Array.isArray(analysis.security_issues) ? analysis.security_issues.length : 0;
     const gapCount = Array.isArray(analysis.gaps) ? analysis.gaps.length : 0;
     const legalCount = Array.isArray(analysis.legal_findings) ? analysis.legal_findings.length : 0;
+    const secIssues: any[] = Array.isArray(analysis.security_issues) ? analysis.security_issues : [];
+    const sevBuckets = [
+      { key: 'critical', label: 'Critical', color: '#ef4444' },
+      { key: 'high', label: 'High', color: '#f97316' },
+      { key: 'medium', label: 'Medium', color: '#f59e0b' },
+      { key: 'low', label: 'Low', color: '#3b82f6' },
+    ].map((b) => ({
+      ...b,
+      count: secIssues.filter((s) => (s?.severity || '').toLowerCase() === b.key).length,
+    }));
+    const sevMax = Math.max(1, ...sevBuckets.map((b) => b.count));
 
     if (section === 'performance') {
       return (
@@ -402,6 +413,47 @@ export default function Dashboard() {
                   <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{s.l}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+              <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                <div>
+                  <div style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Security issues by severity</div>
+                  <div style={{ color: '#666', fontSize: 12, marginTop: 2 }}>
+                    {secCount === 0 ? 'No security issues found in this scan.' : `${secCount} ${secCount === 1 ? 'issue' : 'issues'} found across the code we scanned.`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSection('security')}
+                  style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}
+                >
+                  View all →
+                </button>
+              </div>
+              {secCount === 0 ? (
+                <div className="rounded-md p-4 text-sm" style={{ background: '#08130a', border: '1px solid #16401f', color: '#86efac' }}>
+                  All clear — nothing to fix here.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {sevBuckets.map((b) => (
+                    <div key={b.key} className="flex items-center gap-3">
+                      <div style={{ width: 70, fontSize: 12, color: '#aaa' }}>{b.label}</div>
+                      <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: '#161616' }}>
+                        <div
+                          style={{
+                            width: `${(b.count / sevMax) * 100}%`,
+                            height: '100%',
+                            background: b.color,
+                            transition: 'width 400ms ease',
+                          }}
+                        />
+                      </div>
+                      <div style={{ width: 28, textAlign: 'right', fontSize: 13, color: '#fff', fontWeight: 600 }}>{b.count}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Check, Copy, ShieldAlert, FileText, AlertCircle, Database, Lock, Flag,
-  Eye, Code2, ExternalLink, Globe, BookOpen, ShieldCheck,
+  Eye, Code2, ExternalLink, Globe, BookOpen, ShieldCheck, Wrench, EyeOff, ChevronDown,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -200,17 +200,25 @@ function FlagFooter({
 }
 
 function FindingCard({
-  f, idx, analysisId, plainMode,
-}: { f: any; idx: number; analysisId?: string; plainMode: boolean }) {
+  f, idx, analysisId,
+}: { f: any; idx: number; analysisId?: string }) {
   const [copied, setCopied] = useState(false);
+  const [showFix, setShowFix] = useState(false);
+  const [ignored, setIgnored] = useState(false);
 
   const sev = (f.severity || 'medium').toLowerCase();
-  const techColor = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
   const ps = plainSeverity(sev);
-  const color = plainMode ? ps.color : techColor;
-  const confidence = (f.confidence || 'verified').toLowerCase();
-  const confColor = confidence === 'verified' ? '#22c55e' : '#71717a';
-  const confLabel = confidence === 'verified' ? 'Verified' : 'Unverified';
+  const color = ps.color;
+
+  const findingId = f.id || `f-${idx}`;
+  const ignoreKey = analysisId ? `rismon:ignored:${analysisId}:${findingId}` : null;
+
+  useEffect(() => {
+    if (!ignoreKey) return;
+    if (typeof window !== 'undefined' && window.localStorage.getItem(ignoreKey) === '1') {
+      setIgnored(true);
+    }
+  }, [ignoreKey]);
 
   const title = f.title || 'Issue';
   const whatWeFoundRaw = f.what_we_found || f.you_said || f.explanation || '';
@@ -238,6 +246,33 @@ function FindingCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const onIgnore = () => {
+    if (ignoreKey) window.localStorage.setItem(ignoreKey, '1');
+    setIgnored(true);
+    toast.success('Issue ignored. It will stay hidden on this device.');
+  };
+
+  if (ignored) {
+    return (
+      <div
+        className="bg-card border border-dashed border-border rounded-lg px-4 py-3 mb-3 flex items-center justify-between gap-3 text-xs text-muted-foreground"
+      >
+        <span className="inline-flex items-center gap-2">
+          <EyeOff size={12} /> Ignored: {title}
+        </span>
+        <button
+          onClick={() => {
+            if (ignoreKey) window.localStorage.removeItem(ignoreKey);
+            setIgnored(false);
+          }}
+          className="text-foreground hover:underline"
+        >
+          Undo
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className="bg-card border border-border rounded-lg p-5 sm:p-6 mb-3"
@@ -246,99 +281,107 @@ function FindingCard({
       <div className="flex justify-between items-start gap-3">
         <div className="text-base font-semibold text-foreground mb-2 flex-1">{title}</div>
         <div className="flex gap-2 items-center flex-wrap justify-end">
-          {!plainMode && (
-            <span
-              className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
-              style={{ color: confColor, border: `1px solid ${confColor}33` }}
-              title={confidence === 'verified' ? 'Cross-checked by a second AI pass' : 'Could not verify directly'}
-            >
-              {confLabel}
-            </span>
-          )}
           <span
             className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
             style={{ color, border: `1px solid ${color}40` }}
           >
-            {plainMode ? ps.label : sev}
+            {ps.label}
           </span>
         </div>
       </div>
 
       {showWhatWeFound && (
-        <div className="text-sm text-muted-foreground leading-relaxed mb-3">
+        <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
+          The issue
+        </div>
+      )}
+      {showWhatWeFound && (
+        <div className="text-sm text-foreground leading-relaxed mb-4">
           {whatWeFoundRaw}
         </div>
       )}
 
-      {!plainMode && filePath && (
-        <div className="rounded-md px-3 py-2.5 mb-3.5 font-mono" style={{ background: '#000', border: '1px solid #1a1a1a' }}>
-          <div className="text-[11px] mb-1.5" style={{ color: '#666' }}>
-            <span style={{ color: '#22c55e' }}>● Proof</span> · {filePath}{lineNumber ? `:${lineNumber}` : ''}
+      {(filePath || codeSnippet) && (
+        <div className="mb-4">
+          <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
+            Where we found this
           </div>
-          {codeSnippet && (
-            <div className="text-[12px] whitespace-pre-wrap" style={{ color: '#aaa' }}>{codeSnippet}</div>
-          )}
+          <div className="rounded-md px-3 py-2 font-mono" style={{ background: '#000', border: '1px solid #1a1a1a' }}>
+            {filePath && (
+              <div className="text-[11px]" style={{ color: '#86efac' }}>
+                {filePath}{lineNumber ? `:${lineNumber}` : ''}
+              </div>
+            )}
+            {codeSnippet && (
+              <div className="text-[12px] whitespace-pre-wrap mt-1.5" style={{ color: '#aaa' }}>{codeSnippet}</div>
+            )}
+          </div>
         </div>
       )}
 
       {impactText && (
         <>
           <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
-            {plainMode ? 'Why this matters' : 'Impact'}
+            Why this matters
           </div>
           <div className="text-sm text-foreground leading-relaxed mb-4">{impactText}</div>
         </>
       )}
 
-      {!plainMode && (f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
-        <div
-          className="rounded-md px-3.5 py-2.5 mb-4 flex items-start gap-2.5"
-          style={{ background: '#150f05', border: '1px solid #473012' }}
-        >
-          <Database size={14} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
-          <div className="text-[13px] leading-relaxed" style={{ color: '#cbb37a' }}>
-            {f.verification_note ||
-              'Connect your Supabase project to verify this finding accurately.'}{' '}
-            <Link to="/connect" className="underline" style={{ color: '#f59e0b' }}>Connect Supabase</Link>
-          </div>
-        </div>
-      )}
-
       {howToFix && (
         <>
-          <div className="border-t border-border my-4" />
-          <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-2">
-            {plainMode ? 'What to do' : 'How to fix'}
+          <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
+            What to do
           </div>
           <div className="text-sm text-muted-foreground leading-relaxed mb-3">{howToFix}</div>
         </>
       )}
 
-      {!plainMode && fixPrompt && (
-        <div className="relative">
+      {fixPrompt && showFix && (
+        <div className="relative mt-2 mb-3">
           <div
             className="rounded-md text-[13px] leading-relaxed whitespace-pre-wrap break-words font-mono"
-            style={{ background: '#000000', border: '1px solid #222222', color: '#888888', padding: 16, paddingTop: 40 }}
+            style={{ background: '#000000', border: '1px solid #222222', color: '#cbd5e1', padding: 16, paddingTop: 40 }}
           >
             {fixPrompt}
           </div>
           <button
             onClick={onCopy}
             className="absolute top-2 right-2 inline-flex items-center gap-1 rounded text-[11px] px-2.5 py-1"
-            style={{ background: 'transparent', border: '1px solid #333333', color: '#888888' }}
+            style={{ background: 'transparent', border: '1px solid #333333', color: '#aaa' }}
           >
             {copied ? (<><Check size={11} /> Copied</>) : (<><Copy size={11} /> Copy prompt</>)}
           </button>
+          <div className="text-[11px] text-muted-foreground mt-2">
+            Paste this into Lovable, Cursor, or your AI assistant to apply the fix.
+          </div>
         </div>
       )}
 
-      {!plainMode && techRef && (
-        <div className="mt-3">
-          <div className="text-[11px] font-mono" style={{ color: '#333' }}>{techRef}</div>
+      <div className="mt-4 pt-3 border-t border-border flex items-center gap-2 flex-wrap">
+        {fixPrompt && (
+          <button
+            onClick={() => setShowFix((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-md px-3 py-1.5"
+            style={{ background: '#f97316', color: '#000', border: 'none' }}
+          >
+            <Wrench size={12} /> {showFix ? 'Hide fix' : 'Fix this'}
+          </button>
+        )}
+        <button
+          onClick={onIgnore}
+          className="inline-flex items-center gap-1.5 text-xs rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground"
+          style={{ background: 'transparent', border: '1px solid hsl(var(--border))' }}
+        >
+          <EyeOff size={12} /> Ignore this issue
+        </button>
+        <div className="ml-auto">
+          <FlagFooter analysisId={analysisId} finding={f} title={title} sev={sev} />
         </div>
+      </div>
+      {techRef && (
+        <div className="mt-3 text-[11px] font-mono" style={{ color: '#444' }}>{techRef}</div>
       )}
-
-      <FlagFooter analysisId={analysisId} finding={f} title={title} sev={sev} />
     </div>
   );
 }
@@ -567,7 +610,6 @@ export default function ReportContent({
             </button>
           ))}
         </div>
-        {analysisId && <ReportFeedbackCard analysisId={analysisId} />}
       </div>
     );
   }
@@ -576,14 +618,14 @@ export default function ReportContent({
   if (section === 'intent') {
     return (
       <div>
-        {ModeToggle}
+
         <div className="mb-8">
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
           {gapsList.length === 0 ? (
             <GoodNews msg="No intent gaps found. Your code matches what you described." />
           ) : (
             gapsList.map((g: any, i: number) => (
-              <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} plainMode={plainMode} />
+              <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />
             ))
           )}
         </div>
@@ -622,14 +664,19 @@ export default function ReportContent({
   if (section === 'security') {
     return (
       <div>
-        {ModeToggle}
+
         <SectionLabel>Security · these can hurt you in production</SectionLabel>
         {secList.length === 0 ? (
           <GoodNews msg="No security issues found in the code we scanned. Nice work." />
         ) : (
           secList.map((s: any, i: number) => (
-            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />
           ))
+        )}
+        {analysisId && (
+          <div className="mt-8">
+            <ReportFeedbackCard analysisId={analysisId} />
+          </div>
         )}
       </div>
     );
@@ -765,7 +812,7 @@ export default function ReportContent({
           </div>
         ) : (
           gapsList.map((g: any, i: number) => (
-            <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} />
           ))
         )}
       </div>
@@ -808,7 +855,7 @@ export default function ReportContent({
           </div>
         ) : (
           secList.map((s: any, i: number) => (
-            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />
           ))
         )}
       </div>
