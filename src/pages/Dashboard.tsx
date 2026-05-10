@@ -412,6 +412,8 @@ export default function Dashboard() {
                 plainMode={plainMode}
                 onTogglePlainMode={setPlainMode}
                 isPro={isPro}
+                section="overview"
+                onNavigateSection={(s) => setSection(s)}
               />
             </div>
           </>
@@ -426,6 +428,7 @@ export default function Dashboard() {
               plainMode={plainMode}
               onTogglePlainMode={setPlainMode}
               isPro={isPro}
+              section={section as any}
             />
           </div>
         )}
