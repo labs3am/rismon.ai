@@ -5,6 +5,7 @@ import {
   Activity, Radio, Sparkles, Rocket, Globe, Pencil, Plus,
 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -575,12 +576,34 @@ export default function Dashboard() {
                   <span style={{ color: '#fff', fontSize: 13 }}>New scan running for {activeScan.appName}. We'll email you when it's done.</span>
                 </div>
                 {activeScan.appId && (
-                  <button
-                    onClick={() => navigate(`/analyze/${activeScan.appId}`)}
-                    style={{ background: '#1f223e', border: '1px solid #444b94', color: '#fff', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    View live →
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!activeScan?.sessionId) return;
+                        const ok = window.confirm('Cancel this scan? You can start a new one immediately.');
+                        if (!ok) return;
+                        await supabase
+                          .from('scan_sessions')
+                          .update({ status: 'cancelled' })
+                          .eq('id', activeScan.sessionId);
+                        if (typeof window !== 'undefined') {
+                          window.localStorage.removeItem('rismon_active_analysis');
+                          window.localStorage.removeItem('rismon_analysis_stage');
+                        }
+                        setActiveScan(null);
+                        toast.success('Scan cancelled.');
+                      }}
+                      style={{ background: '#1a0a0a', border: '1px solid #421616', color: '#fca5a5', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Cancel scan
+                    </button>
+                    <button
+                      onClick={() => navigate(`/analyze/${activeScan.appId}`)}
+                      style={{ background: '#1f223e', border: '1px solid #444b94', color: '#fff', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      View live →
+                    </button>
+                  </div>
                 )}
               </div>
             )}
