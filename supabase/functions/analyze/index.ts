@@ -2584,6 +2584,12 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           });
           claudeResult.landing_page_promises = evaluated;
         }
+        // Mirror the fetch error onto homepage_signals so the report
+        // (which reads from the analyses row) can render the message
+        // even though we don't have a dedicated DB column for it.
+        if (claudeResult.homepage_fetch_error && claudeResult.homepage_signals) {
+          claudeResult.homepage_signals.fetch_error_message = claudeResult.homepage_fetch_error;
+        }
       } catch (e) {
         console.error("Intent-match promise check failed (non-fatal):", e);
       }
