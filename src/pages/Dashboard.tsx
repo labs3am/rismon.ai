@@ -112,10 +112,10 @@ function IntentGaugeCard({ score }: { score: number | null }) {
   );
 }
 
-// ----- SEO Score card -----
-function SeoScoreCard({
-  liveUrl, signals, onConnect, onViewSeo,
-}: { liveUrl: string | null; signals: any; onConnect: () => void; onViewSeo: () => void }) {
+// ----- Homepage Promises (Promise Coverage) card -----
+function PromiseCoverageCard({
+  liveUrl, promises, onAddUrl, onView,
+}: { liveUrl: string | null; promises: any[]; onAddUrl: () => void; onView: () => void }) {
   if (!liveUrl) {
     return (
       <div
@@ -123,85 +123,71 @@ function SeoScoreCard({
         style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}
       >
         <div className="flex items-center gap-2">
-          <Search size={14} style={{ color: '#888' }} />
+          <Globe size={14} style={{ color: '#888' }} />
           <div className="text-[11px] uppercase tracking-[0.1em] font-semibold" style={{ color: '#888' }}>
-            SEO Score
+            Homepage Promises
           </div>
         </div>
-        <div className="text-[14px] mt-3" style={{ color: '#e5e5e5' }}>
-          No homepage URL was added.
-        </div>
-        <div className="text-[12px] mt-1.5" style={{ color: '#666', lineHeight: 1.5 }}>
-          Add your live site URL so we can scan its SEO basics — title, meta description, privacy &amp; terms.
+        <div className="text-[14px] mt-3" style={{ color: '#e5e5e5', lineHeight: 1.5 }}>
+          Add your live site URL to check if your homepage claims match your code.
         </div>
         <button
-          onClick={onConnect}
+          onClick={onAddUrl}
           className="self-start mt-4"
           style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
         >
-          Add homepage URL
+          Add URL
         </button>
       </div>
     );
   }
 
-  const checks = [
-    { key: 'live', label: 'Live homepage reachable', ok: !!signals?.has_live_url || !!liveUrl },
-    { key: 'readme', label: 'README in repo', ok: !!signals?.readme_found },
-    { key: 'privacy', label: 'Privacy page', ok: !!signals?.privacy_page_found },
-    { key: 'terms', label: 'Terms page', ok: !!signals?.terms_page_found },
-  ];
-  const passed = checks.filter((c) => c.ok).length;
-  const score = Math.round((passed / checks.length) * 100);
-  const color = score >= 85 ? '#22c55e' : score >= 60 ? '#84cc16' : score >= 40 ? '#f59e0b' : '#ef4444';
+  const verified = promises.filter((p) => (p.verdict || '').toLowerCase() === 'found').length;
+  const partial = promises.filter((p) => (p.verdict || '').toLowerCase() === 'partial').length;
+  const contradicted = promises.filter((p) => {
+    const v = (p.verdict || '').toLowerCase();
+    return v === 'not_found' || v === 'contradicted';
+  }).length;
+  const total = promises.length || 1;
 
   return (
     <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid #1f1f1f' }}>
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-[0.1em] font-semibold" style={{ color: '#888' }}>
-            SEO Score
+            Homepage Promises
           </div>
           <div className="text-[12px] mt-1" style={{ color: '#666' }}>
-            How discoverable &amp; trustworthy your site looks
+            Are your public claims backed by the code we scanned?
           </div>
         </div>
         <button
-          onClick={onViewSeo}
+          onClick={onView}
           style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}
         >
           View →
         </button>
       </div>
 
-      <div className="flex items-baseline gap-2 mt-4">
-        <span style={{ fontSize: 44, fontWeight: 700, color, letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</span>
-        <span style={{ fontSize: 12, color: '#555' }}>/ 100</span>
-        <span className="ml-auto text-[12px]" style={{ color: '#888' }}>{passed} of {checks.length} checks pass</span>
+      <div className="flex items-baseline gap-2 mt-5">
+        <span style={{ fontSize: 44, fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>{promises.length}</span>
+        <span style={{ fontSize: 13, color: '#888' }}>{promises.length === 1 ? 'promise found' : 'promises found'}</span>
       </div>
 
-      <div className="mt-4 space-y-2">
-        {checks.map((c) => (
-          <div key={c.key} className="flex items-center gap-3">
-            <div style={{ width: 16 }}>
-              {c.ok ? <Check size={14} style={{ color: '#22c55e' }} /> : <XIcon size={14} style={{ color: '#71717a' }} />}
-            </div>
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#161616' }}>
-              <div
-                style={{
-                  width: c.ok ? '100%' : '8%',
-                  height: '100%',
-                  background: c.ok ? '#22c55e' : '#2a2a2a',
-                  transition: 'width 400ms ease',
-                }}
-              />
-            </div>
-            <div style={{ fontSize: 12, color: c.ok ? '#cbd5e1' : '#666', minWidth: 160, textAlign: 'right' }}>
-              {c.label}
-            </div>
+      {promises.length > 0 && (
+        <>
+          <div className="mt-4 flex h-2.5 rounded-full overflow-hidden" style={{ background: '#161616' }}>
+            {verified > 0 && <div style={{ width: `${(verified / total) * 100}%`, background: '#22c55e' }} />}
+            {partial > 0 && <div style={{ width: `${(partial / total) * 100}%`, background: '#f59e0b' }} />}
+            {contradicted > 0 && <div style={{ width: `${(contradicted / total) * 100}%`, background: '#ef4444' }} />}
           </div>
-        ))}
-      </div>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[12px]">
+            <span style={{ color: '#22c55e' }}>● {verified} verified</span>
+            <span style={{ color: '#f59e0b' }}>● {partial} partial</span>
+            <span style={{ color: '#ef4444' }}>● {contradicted} contradicted</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
