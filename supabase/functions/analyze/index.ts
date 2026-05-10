@@ -2335,6 +2335,30 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
         console.error("File path accuracy guard failed (non-fatal):", e);
       }
 
+      // ----------------------------------------------------------
+      // EVIDENCE GUARD (added 2026-05).
+      //
+      // Drop any LLM finding whose quoted code cannot be located in
+      // the actual file it claims to point at. This is the second
+      // half of the accuracy contract: path-sanitizer fixes fake
+      // paths; this verifier fixes fake CLAIMS about real files.
+      // ----------------------------------------------------------
+      try {
+        const fileContents = buildFileContentMap(codeBundle || "", edgeFunctionBundle || "");
+        if (fileContents.size > 0) {
+          const dropped: Array<{ bucket: string; title: string; reason: string }> = [];
+          claudeResult.gaps = verifyFindingArray(claudeResult.gaps, fileContents, "gaps", dropped);
+          claudeResult.security_issues = verifyFindingArray(claudeResult.security_issues, fileContents, "security", dropped);
+          claudeResult.false_promises = verifyFindingArray(claudeResult.false_promises, fileContents, "false_promises", dropped);
+          if (dropped.length > 0) {
+            console.log(`[evidence-guard] dropped ${dropped.length} unverified finding(s):`, JSON.stringify(dropped));
+            claudeResult.evidence_guard_dropped = dropped.length;
+          }
+        }
+      } catch (e) {
+        console.error("Evidence guard failed (non-fatal):", e);
+      }
+
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
       if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
         try {
