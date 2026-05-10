@@ -763,6 +763,28 @@ export default function Dashboard() {
                   {selectedApp?.latest_date && (
                     <span style={{ color: '#666', fontSize: 12 }}>· Last scan {relativeDate(selectedApp.latest_date)}</span>
                   )}
+                  {selectedApp && (
+                    selectedApp.live_url ? (
+                      <button
+                        onClick={() => promptEditUrl(selectedApp)}
+                        className="inline-flex items-center gap-1.5"
+                        style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 999, padding: '5px 10px', color: '#cbd5e1', fontSize: 12, cursor: 'pointer' }}
+                        title="Edit homepage URL"
+                      >
+                        <Globe size={11} style={{ color: '#888' }} />
+                        <span>Verifying against: {selectedApp.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                        <Pencil size={10} style={{ color: '#888' }} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => promptEditUrl(selectedApp)}
+                        className="inline-flex items-center gap-1.5"
+                        style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 999, padding: '5px 10px', color: '#888', fontSize: 12, cursor: 'pointer' }}
+                      >
+                        <Plus size={11} /> Add homepage URL
+                      </button>
+                    )
+                  )}
                 </div>
                 {selectedApp && (
                   <button
