@@ -3012,39 +3012,58 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
         return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule|service[_ ]role\s+key|server\s+role\s+key/.test(hay);
       };
-      // Findings in DB-related categories (RLS, row-level filtering, database
-      // access patterns, server role keys, server-only files, DB-level route
-      // protection) are based on code patterns only. Without a live Supabase
-      // connection (and even WITH one — code patterns alone never prove what
-      // the actual database config is) we cannot confirm the finding. Mark
-      // every such finding as unverified, downgrade severity to "watch out"
-      // (low), and strip the fix_prompt so the UI shows "Worth checking"
-      // instead of a "Fix now" button. Findings about missing integrations,
-      // homepage promise gaps, missing legal pages, and mock implementations
-      // are NOT touched here — they remain confirmed.
+      // DB-related findings (RLS, row-level filtering, database access
+      // patterns, server role keys, server-only files, DB-level route
+      // protection) are based on code patterns only. We use the live
+      // Supabase connection check (verifySupabaseConnection above) as the
+      // single source of truth:
+      //   - connected → mark VERIFIED, restore original severity, keep the
+      //     fix_prompt so the UI shows the "Fix this" button.
+      //   - not connected → mark UNVERIFIED, downgrade severity to "watch
+      //     out" (low), strip the fix_prompt so the UI shows "Worth
+      //     checking" with the connect-Supabase note.
+      // Findings about missing integrations, homepage promise gaps, missing
+      // legal pages, and mock implementations are NOT touched here.
       {
         const UNVERIFIED_NOTE =
           "Connect your Supabase project to confirm this finding. Without backend access this is based on code patterns only and may not reflect your actual configuration.";
-        const markUnverified = (arr: any) => {
+        const VERIFIED_NOTE =
+          "Verified against your connected Supabase project.";
+        const applyConnectionStatus = (arr: any) => {
           if (!Array.isArray(arr)) return;
           for (const f of arr) {
             if (!f || !isDbRelated(f)) continue;
-            // Cap severity — "watch out" (low), never "fix now".
-            const sev = (f.severity || "medium").toLowerCase();
-            if (sev === "critical" || sev === "high" || sev === "medium") f.severity = "low";
-            f.confidence = "unverified";
-            f.unverified = true;
-            f.verified = false;
-            f.requires_supabase_verification = true;
-            f.confidence_reason = UNVERIFIED_NOTE;
-            f.verification_note = UNVERIFIED_NOTE;
-            // No "Fix now" button on unverified findings.
-            f.fix_prompt = "";
-            f.how_to_fix = UNVERIFIED_NOTE;
+            if (supabaseConnected) {
+              // Flip to verified. Preserve original severity if the model
+              // captured one in original_severity; otherwise leave as-is.
+              if (f.original_severity) f.severity = f.original_severity;
+              f.confidence = "verified";
+              f.unverified = false;
+              f.verified = true;
+              f.requires_supabase_verification = false;
+              f.confidence_reason = VERIFIED_NOTE;
+              // Clear the connect-Supabase note; keep how_to_fix/fix_prompt
+              // intact so the UI renders the "Fix this" button.
+              if (f.verification_note === UNVERIFIED_NOTE) delete f.verification_note;
+              if (f.how_to_fix === UNVERIFIED_NOTE) f.how_to_fix = "";
+            } else {
+              // Stash original severity so we can restore it on reconnect.
+              const sev = (f.severity || "medium").toLowerCase();
+              if (!f.original_severity) f.original_severity = f.severity || "medium";
+              if (sev === "critical" || sev === "high" || sev === "medium") f.severity = "low";
+              f.confidence = "unverified";
+              f.unverified = true;
+              f.verified = false;
+              f.requires_supabase_verification = true;
+              f.confidence_reason = UNVERIFIED_NOTE;
+              f.verification_note = UNVERIFIED_NOTE;
+              f.fix_prompt = "";
+              f.how_to_fix = UNVERIFIED_NOTE;
+            }
           }
         };
-        markUnverified(claudeResult.security_issues);
-        markUnverified(claudeResult.gaps);
+        applyConnectionStatus(claudeResult.security_issues);
+        applyConnectionStatus(claudeResult.gaps);
       }
 
       // Override score with server-calculated value (new scoring system)
