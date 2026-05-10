@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, AlertTriangle, Rocket, RefreshCw } from 'lucide-react';
+import {
+  PlusCircle, Github, AlertTriangle, RefreshCw, Lock, Plug, ChevronDown,
+  Activity, Radio, ShieldAlert, Target, Globe, FileText, Sparkles,
+} from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import RisGuide from '@/components/RisGuide';
-import { UpgradeBanner } from '@/components/ui/upgrade-banner';
-import WelcomeGuide from '@/components/WelcomeGuide';
 import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
 import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
+import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
+import ScoreDonut from '@/components/dashboard/ScoreDonut';
 
 interface App {
   id: string;
@@ -29,9 +31,6 @@ interface App {
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
-  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0, totalSecurity: 0 });
-  const [weeklyScans, setWeeklyScans] = useState(0);
-  const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
@@ -40,6 +39,8 @@ export default function Dashboard() {
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [plainMode, setPlainMode] = useState(true);
+  const [section, setSection] = useState<SectionKey>('overview');
+  const [appSwitcherOpen, setAppSwitcherOpen] = useState(false);
   const generateStarted = useRef<Record<string, boolean>>({});
   // Resume-in-progress banner: surfaces an active scan_session so users
   // who switched tabs (or got disconnected) can hop back into the live
@@ -56,24 +57,8 @@ export default function Dashboard() {
   const urlAppId = searchParams.get('app');
   const navigate = useNavigate();
 
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    const name = profile?.full_name?.split(' ')[0] || '';
-    if (h < 12) return `Good morning, ${name}`;
-    if (h < 18) return `Good afternoon, ${name}`;
-    return `Good evening, ${name}`;
-  };
-
-  const getResetDay = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
-    if (daysUntilMonday === 1) return 'tomorrow';
-    if (daysUntilMonday === 7) return 'next Monday';
-    const next = new Date(now);
-    next.setDate(now.getDate() + daysUntilMonday);
-    return next.toLocaleDateString('en-US', { weekday: 'long' });
-  };
+  const isPro = (profile?.plan || 'free').toLowerCase() === 'pro' ||
+    (profile?.plan || '').toLowerCase().startsWith('try_pro');
 
   useEffect(() => {
     if (!user) return;
@@ -100,27 +85,7 @@ export default function Dashboard() {
         };
       });
 
-      const now = new Date();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
-      const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
-      const totalSecurity = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.security_issues) ? a.security_issues.length : 0), 0);
-
-      // Use Monday-based week for scan_usage
-      const dayOfW = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((dayOfW + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
-      const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
-
       setApps(appsList);
-      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
-      setWeeklyScans(ws);
-      setWeeklyLimitReached(ws >= 3);
 
       // Decide which app's report to show:
       //   1. ?analysis=<id> in URL (legacy /report/:id redirect)
