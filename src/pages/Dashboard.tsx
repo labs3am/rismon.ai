@@ -573,91 +573,132 @@ export default function Dashboard() {
             <Link to="/connect" className="btn-cyber-primary inline-block mt-7">Connect an app</Link>
           </div>
         ) : (
-          <div className="mt-12">
-            <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
-            <div className="mt-4 space-y-4">
-              {apps.map(app => {
-                const isPro = (profile?.plan || 'free').toLowerCase() === 'pro';
-                return (
-                  <div key={app.id} className="p-4 sm:p-6" style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8 }}>
-                    <div className="flex items-start justify-between gap-4 sm:gap-6 flex-wrap">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {app.github_repo_name && <Github size={15} style={{ color: '#ffffff' }} />}
-                          <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>
-                            {app.github_repo_name ? `${app.github_owner}/${app.github_repo_name}` : app.app_name}
-                          </p>
-                          {isPro && (
-                            <span style={{ background: 'transparent', border: '1px solid #333333', color: '#888888', fontSize: 10, padding: '2px 8px', borderRadius: 4, letterSpacing: '0.05em' }}>
-                              DEEP SCAN
-                            </span>
-                          )}
-                          {app.platform && (
-                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#1f1108', color: '#f97316', border: '1px solid #4f2710' }}>{app.platform}</span>
-                          )}
-                        </div>
-                        {app.has_analyses && app.latest_date ? (
-                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
-                        ) : (
-                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
-                        )}
-                      </div>
+          <div className="mt-10">
+            {/* App switcher (only when more than one app) */}
+            {apps.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                {apps.map((a) => {
+                  const active = a.id === selectedAppId;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => setSelectedAppId(a.id)}
+                      className="inline-flex items-center gap-2 text-[13px] px-3 py-2 rounded-md transition-colors"
+                      style={{
+                        background: active ? '#1a1a1a' : 'transparent',
+                        color: active ? '#ffffff' : '#888888',
+                        border: `1px solid ${active ? '#333' : '#1f1f1f'}`,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {a.github_repo_name && <Github size={13} />}
+                      {a.github_repo_name ? `${a.github_owner}/${a.github_repo_name}` : a.app_name}
+                    </button>
+                  );
+                })}
+                <Link
+                  to="/connect"
+                  className="inline-flex items-center gap-2 text-[13px] px-3 py-2 rounded-md"
+                  style={{ border: '1px dashed #2a2a2a', color: '#666' }}
+                >
+                  <PlusCircle size={13} /> Add app
+                </Link>
+              </div>
+            )}
 
-                      {app.has_analyses && app.latest_score !== null && (
-                        <div className="text-right">
-                          <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
-                            {app.latest_score}
-                          </p>
-                          <p style={{ fontSize: 11, color: '#555555', marginTop: 4 }}>Intent Score</p>
-                        </div>
+            {/* Selected app header */}
+            {(() => {
+              const sel = apps.find((a) => a.id === selectedAppId);
+              if (!sel) return null;
+              return (
+                <div
+                  className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6 mb-6"
+                  style={{ background: '#111111', border: '1px solid #222222', borderRadius: 12 }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {sel.github_repo_name && <Github size={16} style={{ color: '#fff' }} />}
+                      <span style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>
+                        {sel.github_repo_name ? `${sel.github_owner}/${sel.github_repo_name}` : sel.app_name}
+                      </span>
+                      {sel.platform && (
+                        <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#1f1108', color: '#f97316', border: '1px solid #4f2710' }}>
+                          {sel.platform}
+                        </span>
                       )}
-
-                      <div className="flex flex-col gap-2 w-full sm:w-auto">
-                        <button
-                          onClick={() => handleAnalyzeNow(app)}
-                          className="w-full sm:w-auto"
-                          style={{ background: '#ffffff', color: '#000000', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
-                        >
-                          Analyze now
-                        </button>
-                        {app.has_analyses && app.latest_analysis_id && (
-                          <Link
-                            to={`/report/${app.latest_analysis_id}`}
-                            className="w-full sm:w-auto"
-                            style={{ border: '1px solid #333333', color: '#ffffff', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent', textAlign: 'center' }}
-                          >
-                            View report
-                          </Link>
-                        )}
-                      </div>
                     </div>
+                    <p style={{ color: '#666', fontSize: 13, marginTop: 6 }}>
+                      {sel.has_analyses && sel.latest_date
+                        ? `Last scanned ${relativeDate(sel.latest_date)}`
+                        : 'Not scanned yet'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleAnalyzeNow(sel)}
+                      className="inline-flex items-center gap-1.5"
+                      style={{ background: '#ffffff', color: '#000', padding: '9px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
+                    >
+                      <RefreshCw size={13} /> {sel.has_analyses ? 'Scan again' : 'Run first scan'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Inline report */}
+            {(() => {
+              const sel = apps.find((a) => a.id === selectedAppId);
+              if (!sel) return null;
+              if (!sel.has_analyses) {
+                return (
+                  <div className="text-center" style={{ border: '1px dashed #1f1f1f', borderRadius: 12, padding: '40px 24px' }}>
+                    <p style={{ color: '#fff', fontSize: 16, fontWeight: 600 }}>No scan yet for this app</p>
+                    <p style={{ color: '#888', fontSize: 14, marginTop: 8 }}>Run your first scan to see the full report here.</p>
+                    <button
+                      onClick={() => handleAnalyzeNow(sel)}
+                      className="btn-cyber-primary inline-block mt-5"
+                    >
+                      Run scan
+                    </button>
                   </div>
                 );
-              })}
-            </div>
+              }
+              if (analysisLoading || generating) {
+                return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
+              }
+              if (!analysis) return null;
+              const isPro = (profile?.plan || 'free').toLowerCase() === 'pro' || (profile?.plan || '').toLowerCase().startsWith('try_pro');
+              return (
+                <ReportContent
+                  analysis={analysis}
+                  app={sel}
+                  analysisId={sel.latest_analysis_id || undefined}
+                  plainMode={plainMode}
+                  onTogglePlainMode={setPlainMode}
+                  isPro={isPro}
+                />
+              );
+            })()}
 
-            {/* Locked / Add-app cards by plan */}
+            {/* Add another app for free users */}
             {(() => {
               const plan = (profile?.plan || 'free').toLowerCase();
+              if (apps.length > 1) return null;
               if (plan === 'pro') {
                 return (
                   <Link
                     to="/connect"
-                    className="mt-4 block text-center transition-colors"
+                    className="mt-8 block text-center transition-colors"
                     style={{ background: 'transparent', border: '1px dashed #333333', borderRadius: 8, padding: '16px 24px', fontSize: 14, color: '#555555' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#555555')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#333333')}
                   >
                     + Connect another app
                   </Link>
                 );
               }
-              if (plan === 'try_pro' || plan === 'trypro') {
-                return null;
-              }
-              // FREE — locked card
+              if (plan === 'try_pro' || plan === 'trypro') return null;
               return (
-                <div className="mt-4 text-center" style={{ background: '#0a0a0a', border: '1px dashed #222222', borderRadius: 8, padding: '20px 24px', opacity: 0.6 }}>
+                <div className="mt-8 text-center" style={{ background: '#0a0a0a', border: '1px dashed #222222', borderRadius: 8, padding: '20px 24px', opacity: 0.7 }}>
                   <p style={{ fontSize: 14, color: '#555555' }}>Want to scan another app?</p>
                   <button
                     onClick={() => setWaitlistOpen(true)}
