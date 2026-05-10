@@ -2172,6 +2172,30 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
         };
       }
 
+      // ----------------------------------------------------------
+      // FILE-PATH ACCURACY GUARD (added 2026-05).
+      //
+      // Cross-check every file_path the LLM returned against the
+      // actual file list pulled from the repo. If the path doesn't
+      // exist, scrub it from the finding (and from the fix_prompt
+      // prose) and mark the finding as unverified. This runs BEFORE
+      // the deterministic overlay because deterministic findings
+      // already cite real, in-bundle paths.
+      // ----------------------------------------------------------
+      try {
+        const knownPaths = buildKnownPathSet(codeBundle || "", edgeFunctionBundle || "");
+        if (knownPaths.size > 0) {
+          claudeResult.gaps = sanitizeFindingArray(claudeResult.gaps, knownPaths);
+          claudeResult.security_issues = sanitizeFindingArray(claudeResult.security_issues, knownPaths);
+          claudeResult.false_promises = sanitizeFindingArray(claudeResult.false_promises, knownPaths);
+          if (Array.isArray(claudeResult.legal_findings)) {
+            claudeResult.legal_findings = sanitizeFindingArray(claudeResult.legal_findings, knownPaths);
+          }
+        }
+      } catch (e) {
+        console.error("File path accuracy guard failed (non-fatal):", e);
+      }
+
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
       if (limits.verificationPass && Array.isArray(claudeResult.gaps) && claudeResult.gaps.length > 0) {
         try {
