@@ -479,8 +479,11 @@ async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<
     return { url: rawUrl, status: 0, title: null, description: null, og_title: null, og_description: null, text: "", headings: [], cta_text: [], fetched_at: new Date().toISOString(), error: "invalid_url" };
   }
 
+  // Tight budget — this fetch blocks the Claude call, so we can't afford
+  // to wait 8s on a slow homepage. If the site doesn't respond in 4s we
+  // fall back to source-only analysis.
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 8000);
+  const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
     const res = await fetch(url, {
       method: "GET",
@@ -492,7 +495,7 @@ async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<
       signal: ctrl.signal,
     });
     clearTimeout(timer);
-    const html = (await res.text()).slice(0, 400_000); // cap to 400KB
+    const html = (await res.text()).slice(0, 200_000); // cap to 200KB
     const text = stripHtmlToText(html);
     const headings: string[] = [];
     for (const tag of ["h1", "h2"]) {
