@@ -9,7 +9,7 @@ export type SectionKey =
 interface NavItem {
   key: SectionKey;
   label: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: any;
   pro?: boolean;
 }
 
