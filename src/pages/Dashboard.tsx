@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PlusCircle, Github, AlertTriangle, RefreshCw, Lock, Plug, ChevronDown,
-  Activity, Radio, Sparkles, Rocket,
+  Activity, Radio, Sparkles, Rocket, Globe, Check, X as XIcon, Search,
 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,198 @@ import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
 import ScoreDonut from '@/components/dashboard/ScoreDonut';
+
+// ----- Inline gauge for the new Intent Match card -----
+function IntentGaugeCard({ score }: { score: number | null }) {
+  const v = score == null ? 0 : Math.max(0, Math.min(100, score));
+  const has = score != null;
+  const color =
+    !has ? '#3a3a3a' :
+    v >= 85 ? '#22c55e' :
+    v >= 70 ? '#84cc16' :
+    v >= 50 ? '#f59e0b' : '#ef4444';
+  const status =
+    !has ? 'Awaiting scan' :
+    v >= 90 ? 'Excellent — your code lives up to your pitch' :
+    v >= 75 ? 'Strong — a few small gaps' :
+    v >= 60 ? 'Good — some claims aren’t backed by code' :
+    v >= 40 ? 'Needs work — several intent gaps' :
+    'Critical — your code does not match what you described';
+
+  // Half-circle gauge
+  const W = 220, H = 130, stroke = 14;
+  const cx = W / 2, cy = H - 10, r = (W - stroke) / 2;
+  const arcLen = Math.PI * r;
+  const dash = (v / 100) * arcLen;
+
+  const polarArc = (start: number, end: number) => {
+    const sx = cx + r * Math.cos(Math.PI - Math.PI * start);
+    const sy = cy - r * Math.sin(Math.PI - Math.PI * start);
+    const ex = cx + r * Math.cos(Math.PI - Math.PI * end);
+    const ey = cy - r * Math.sin(Math.PI - Math.PI * end);
+    return `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}`;
+  };
+
+  return (
+    <div
+      className="rounded-xl p-5 sm:p-6"
+      style={{
+        background: 'radial-gradient(120% 100% at 0% 0%, #1a1308 0%, #0a0a0a 60%)',
+        border: '1px solid #1f1f1f',
+      }}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.1em] font-semibold" style={{ color: '#888' }}>
+            Intent Match
+          </div>
+          <div className="text-[12px] mt-1" style={{ color: '#666' }}>
+            How well your code delivers what you described
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-5 mt-4 flex-wrap">
+        <div style={{ width: W, height: H, position: 'relative', flexShrink: 0 }}>
+          <svg width={W} height={H}>
+            <path d={polarArc(0, 1)} stroke="#1a1a1a" strokeWidth={stroke} fill="none" strokeLinecap="round" />
+            {has && (
+              <path
+                d={polarArc(0, 1)}
+                stroke={color}
+                strokeWidth={stroke}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${dash} ${arcLen - dash}`}
+                style={{ transition: 'stroke-dasharray 0.8s ease-out' }}
+              />
+            )}
+          </svg>
+          <div
+            style={{
+              position: 'absolute', inset: 0, display: 'flex',
+              flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
+              paddingBottom: 6,
+            }}
+          >
+            <span style={{ fontSize: 44, fontWeight: 700, color, letterSpacing: '-0.04em', lineHeight: 1 }}>
+              {has ? Math.round(v) : '—'}
+            </span>
+            <span style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{has ? 'out of 100' : 'no score yet'}</span>
+          </div>
+        </div>
+        <div className="flex-1 min-w-[180px]">
+          <div
+            className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 mb-2"
+            style={{ background: '#11140d', border: `1px solid ${color}40`, color }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em' }}>
+              {has ? (v >= 90 ? 'EXCELLENT' : v >= 75 ? 'STRONG' : v >= 60 ? 'GOOD' : v >= 40 ? 'NEEDS WORK' : 'CRITICAL') : 'PENDING'}
+            </span>
+          </div>
+          <div className="text-[14px] leading-snug" style={{ color: '#e5e5e5' }}>
+            {status}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----- SEO Score card -----
+function SeoScoreCard({
+  liveUrl, signals, onConnect, onViewSeo,
+}: { liveUrl: string | null; signals: any; onConnect: () => void; onViewSeo: () => void }) {
+  if (!liveUrl) {
+    return (
+      <div
+        className="rounded-xl p-5 sm:p-6 flex flex-col"
+        style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}
+      >
+        <div className="flex items-center gap-2">
+          <Search size={14} style={{ color: '#888' }} />
+          <div className="text-[11px] uppercase tracking-[0.1em] font-semibold" style={{ color: '#888' }}>
+            SEO Score
+          </div>
+        </div>
+        <div className="text-[14px] mt-3" style={{ color: '#e5e5e5' }}>
+          No homepage URL was added.
+        </div>
+        <div className="text-[12px] mt-1.5" style={{ color: '#666', lineHeight: 1.5 }}>
+          Add your live site URL so we can scan its SEO basics — title, meta description, privacy &amp; terms.
+        </div>
+        <button
+          onClick={onConnect}
+          className="self-start mt-4"
+          style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Add homepage URL
+        </button>
+      </div>
+    );
+  }
+
+  const checks = [
+    { key: 'live', label: 'Live homepage reachable', ok: !!signals?.has_live_url || !!liveUrl },
+    { key: 'readme', label: 'README in repo', ok: !!signals?.readme_found },
+    { key: 'privacy', label: 'Privacy page', ok: !!signals?.privacy_page_found },
+    { key: 'terms', label: 'Terms page', ok: !!signals?.terms_page_found },
+  ];
+  const passed = checks.filter((c) => c.ok).length;
+  const score = Math.round((passed / checks.length) * 100);
+  const color = score >= 85 ? '#22c55e' : score >= 60 ? '#84cc16' : score >= 40 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid #1f1f1f' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.1em] font-semibold" style={{ color: '#888' }}>
+            SEO Score
+          </div>
+          <div className="text-[12px] mt-1" style={{ color: '#666' }}>
+            How discoverable &amp; trustworthy your site looks
+          </div>
+        </div>
+        <button
+          onClick={onViewSeo}
+          style={{ background: 'transparent', border: '1px solid #2a2a2a', color: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 12, cursor: 'pointer' }}
+        >
+          View →
+        </button>
+      </div>
+
+      <div className="flex items-baseline gap-2 mt-4">
+        <span style={{ fontSize: 44, fontWeight: 700, color, letterSpacing: '-0.04em', lineHeight: 1 }}>{score}</span>
+        <span style={{ fontSize: 12, color: '#555' }}>/ 100</span>
+        <span className="ml-auto text-[12px]" style={{ color: '#888' }}>{passed} of {checks.length} checks pass</span>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {checks.map((c) => (
+          <div key={c.key} className="flex items-center gap-3">
+            <div style={{ width: 16 }}>
+              {c.ok ? <Check size={14} style={{ color: '#22c55e' }} /> : <XIcon size={14} style={{ color: '#71717a' }} />}
+            </div>
+            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: '#161616' }}>
+              <div
+                style={{
+                  width: c.ok ? '100%' : '8%',
+                  height: '100%',
+                  background: c.ok ? '#22c55e' : '#2a2a2a',
+                  transition: 'width 400ms ease',
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: c.ok ? '#cbd5e1' : '#666', minWidth: 160, textAlign: 'right' }}>
+              {c.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface App {
   id: string;
@@ -349,10 +541,7 @@ export default function Dashboard() {
     if (!analysis) return null;
 
     const intentScore = analysis.intent_match_score ?? null;
-    const securityScore = analysis.security_score ?? null;
     const promises = Array.isArray(analysis.landing_page_promises) ? analysis.landing_page_promises : [];
-    const delivered = promises.filter((p: any) => (p.verdict || '').toLowerCase() === 'found').length;
-    const validationScore = promises.length > 0 ? Math.round((delivered / promises.length) * 100) : null;
 
     const secCount = Array.isArray(analysis.security_issues) ? analysis.security_issues.length : 0;
     const gapCount = Array.isArray(analysis.gaps) ? analysis.gaps.length : 0;
@@ -395,10 +584,14 @@ export default function Dashboard() {
       <div className="space-y-6">
         {section === 'overview' && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <ScoreDonut value={intentScore} label="Intent Match" sublabel="Code vs. what you described" />
-              <ScoreDonut value={validationScore} label="Business Validation" sublabel={promises.length === 0 ? 'No homepage claims found' : `${delivered} of ${promises.length} promises delivered`} locked={validationScore === null} />
-              <ScoreDonut value={securityScore} label="Security" sublabel={secCount === 0 ? 'No issues found' : `${secCount} ${secCount === 1 ? 'issue' : 'issues'} to review`} locked={securityScore === null} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <IntentGaugeCard score={intentScore} />
+              <SeoScoreCard
+                liveUrl={selectedApp?.live_url ?? null}
+                signals={analysis.homepage_signals}
+                onConnect={() => navigate('/connect')}
+                onViewSeo={() => setSection('seo')}
+              />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
