@@ -2536,7 +2536,10 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           const dropped: Array<{ bucket: string; title: string; reason: string }> = [];
           claudeResult.gaps = verifyFindingArray(claudeResult.gaps, fileContents, "gaps", dropped);
           claudeResult.security_issues = verifyFindingArray(claudeResult.security_issues, fileContents, "security", dropped);
-          claudeResult.false_promises = verifyFindingArray(claudeResult.false_promises, fileContents, "false_promises", dropped);
+          // false_promises are intentionally NOT run through the code-evidence
+          // verifier: their proof lives on the live homepage (the `claim`
+          // field), not inside a source file. The path sanitizer still
+          // ensures any code path mentioned in the fix prompt is real.
           if (dropped.length > 0) {
             console.log(`[evidence-guard] dropped ${dropped.length} unverified finding(s):`, JSON.stringify(dropped));
             claudeResult.evidence_guard_dropped = dropped.length;
