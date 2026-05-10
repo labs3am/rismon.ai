@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PlusCircle, Github, AlertTriangle, RefreshCw, Lock, Plug, ChevronDown,
-  Activity, Radio, Sparkles, Rocket, Globe, Check, X as XIcon, Search,
+  Activity, Radio, Sparkles, Globe, Pencil, Plus,
 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +13,6 @@ import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
 import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
-import ScoreDonut from '@/components/dashboard/ScoreDonut';
 
 // ----- Inline gauge for the new Intent Match card -----
 function IntentGaugeCard({ score }: { score: number | null }) {
