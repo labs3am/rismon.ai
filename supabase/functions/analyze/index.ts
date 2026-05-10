@@ -2274,6 +2274,9 @@ Every finding you emit MUST include a real file_path that exists in the scanned 
 EVIDENCE QUOTE RULE (mandatory, enforced server-side):
 Every finding MUST also include, inside its explanation or fix_prompt, a verbatim quote of the offending code wrapped in backticks (e.g. \`const isPro = true\` or \`.from('orders').select('*')\`). The quote MUST be at least 8 characters and copied character-for-character from the file you cited. A downstream verifier compares this quote to the actual file contents — if no quote is present, or the quote does not appear in the file, the finding is silently dropped from the report. So: if you cannot copy a real line out of the file, do not emit the finding. Better to return zero findings than one fabricated one.
 
+LIVE HOMEPAGE RULE:
+If a "LIVE HOMEPAGE" section is present in the user message, treat that section as the source of truth for everything the founder publicly promises (headlines, feature claims, marketing copy). For every false_promises finding, the "claim" field MUST be copied verbatim from the LIVE HOMEPAGE section (Title, Meta description, OG fields, Headings, Call-to-action text, or Visible text). Do not paraphrase. Do not invent claims that are not present there. If the LIVE HOMEPAGE section is missing or fetched=false, fall back to text actually present in the scanned source files (e.g. landing page components) and quote it verbatim from there. The same goes for cross-checking: a feature is only a "false promise" if the live homepage advertises it AND the scanned code does not implement it.
+
 TRUTH OVER COVERAGE:
 You are graded on accuracy, not on volume. Returning 0 findings when nothing is provably wrong is a correct answer. Returning 5 findings where 1 is fabricated is a failure. When uncertain, omit.
 
