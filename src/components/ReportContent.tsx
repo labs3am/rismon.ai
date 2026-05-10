@@ -451,7 +451,7 @@ function HomepageCard({ signals, liveUrl }: { signals: any; liveUrl?: string | n
 }
 
 export default function ReportContent({
-  analysis, app, analysisId, plainMode, onTogglePlainMode, isPro,
+  analysis, app, analysisId, plainMode, onTogglePlainMode, isPro, section = 'all', onNavigateSection,
 }: {
   analysis: any;
   app: any;
@@ -459,6 +459,8 @@ export default function ReportContent({
   plainMode: boolean;
   onTogglePlainMode: (v: boolean) => void;
   isPro: boolean;
+  section?: 'all' | 'overview' | 'intent' | 'security' | 'seo' | 'legal';
+  onNavigateSection?: (s: 'intent' | 'security' | 'seo' | 'legal') => void;
 }) {
   if (!analysis) return null;
 
@@ -499,6 +501,176 @@ export default function ReportContent({
   const promisesLocked = isPro ? 0 : Math.max(0, promisesList.length - 2);
   const unverifiedPromises = promisesList.filter((p: any) => p.verdict !== 'found').length;
 
+  // ---------- Section-scoped rendering ----------
+  const showAll = section === 'all';
+
+  const ModeToggle = (
+    <div className="flex items-center justify-end mb-5">
+      <div className="inline-flex rounded-md p-0.5" style={{ background: '#0a0a0a', border: '1px solid hsl(var(--border))' }}>
+        <button
+          onClick={() => onTogglePlainMode(true)}
+          className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded transition-colors"
+          style={{ background: plainMode ? 'hsl(var(--foreground))' : 'transparent', color: plainMode ? 'hsl(var(--background))' : 'hsl(var(--muted-foreground))', fontWeight: plainMode ? 600 : 500 }}
+        >
+          <Eye size={12} /> Plain English
+        </button>
+        <button
+          onClick={() => onTogglePlainMode(false)}
+          className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded transition-colors"
+          style={{ background: !plainMode ? 'hsl(var(--foreground))' : 'transparent', color: !plainMode ? 'hsl(var(--background))' : 'hsl(var(--muted-foreground))', fontWeight: !plainMode ? 600 : 500 }}
+        >
+          <Code2 size={12} /> Technical
+        </button>
+      </div>
+    </div>
+  );
+
+  const GoodNews = ({ msg }: { msg: string }) => (
+    <div className="rounded-lg px-5 py-6 text-sm flex items-center gap-3" style={{ background: '#0a160c', border: '1px solid #16401f', color: '#86efac' }}>
+      <Check size={18} /> <span>{msg}</span>
+    </div>
+  );
+
+  // ===== OVERVIEW: short teaser only =====
+  if (section === 'overview') {
+    const teasers = [
+      { key: 'security', count: secList.length, label: 'Security issues', good: 'No security issues found in the code we scanned.', cta: 'Open Security' },
+      { key: 'intent', count: gapsList.length, label: 'Business intent gaps', good: 'Your code matches what you described.', cta: 'Open Business Intent' },
+      { key: 'legal', count: legalList.length, label: 'Legal & trust gaps', good: 'No missing legal pages detected.', cta: 'Open Legal & Trust' },
+    ] as const;
+    return (
+      <div>
+        {summary && (
+          <div className="bg-card border border-border rounded-lg p-5 sm:p-6 mb-5">
+            <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-3">Summary</div>
+            <div className="text-[15px] text-muted-foreground leading-[1.7]">{summary}</div>
+            {verdict && <div className="text-[15px] text-foreground font-semibold leading-snug mt-4">{verdict}</div>}
+          </div>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {teasers.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => onNavigateSection?.(t.key as any)}
+              className="bg-card border border-border rounded-lg p-4 text-left hover:border-foreground/30 transition-colors"
+            >
+              <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{t.label}</div>
+              <div className="mt-2 text-2xl font-bold" style={{ color: t.count > 0 ? '#f97316' : '#22c55e', letterSpacing: '-0.02em' }}>
+                {t.count === 0 ? 'All clear' : t.count}
+              </div>
+              <div className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                {t.count === 0 ? t.good : `Tap to review ${t.count === 1 ? 'this finding' : 'these findings'}.`}
+              </div>
+              <div className="text-[12px] text-foreground font-medium mt-3 inline-flex items-center gap-1">
+                {t.cta} →
+              </div>
+            </button>
+          ))}
+        </div>
+        {analysisId && <ReportFeedbackCard analysisId={analysisId} />}
+      </div>
+    );
+  }
+
+  // ===== INTENT only =====
+  if (section === 'intent') {
+    return (
+      <div>
+        {ModeToggle}
+        <div className="mb-8">
+          <SectionLabel>What you wanted vs what your code does</SectionLabel>
+          {gapsList.length === 0 ? (
+            <GoodNews msg="No intent gaps found. Your code matches what you described." />
+          ) : (
+            gapsList.map((g: any, i: number) => (
+              <FindingCard key={g.id || `g-${i}`} f={g} idx={i} analysisId={analysisId} plainMode={plainMode} />
+            ))
+          )}
+        </div>
+        {promisesList.length > 0 && (
+          <div className="mb-8">
+            <SectionLabel>Promises on your homepage vs your code</SectionLabel>
+            {promisesVisible.map((p: any, i: number) => <PromiseRow key={p.id || `p-${i}`} p={p} />)}
+            {promisesLocked > 0 && (
+              <div className="bg-card border border-border rounded-lg px-5 py-4 mt-3 flex items-center gap-3.5 flex-wrap">
+                <Lock size={18} className="text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-sm text-foreground font-medium">{promisesLocked} more {promisesLocked === 1 ? 'promise' : 'promises'} to verify</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Pro shows the full claim-by-claim table.</div>
+                </div>
+                <Link to="/pricing" className="vercel-btn-primary text-[13px] px-4 py-2 whitespace-nowrap">Unlock with Pro</Link>
+              </div>
+            )}
+          </div>
+        )}
+        {whatWorksList.length > 0 && (
+          <div className="mb-8">
+            <SectionLabel>What your app does right</SectionLabel>
+            {whatWorksList.map((w: string, i: number) => (
+              <div key={i} className="flex items-start gap-3 py-3" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+                <Check size={14} className="shrink-0 mt-1" style={{ color: '#22c55e' }} />
+                <span className="text-sm text-muted-foreground leading-relaxed">{w}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ===== SECURITY only =====
+  if (section === 'security') {
+    return (
+      <div>
+        {ModeToggle}
+        <SectionLabel>Security · these can hurt you in production</SectionLabel>
+        {secList.length === 0 ? (
+          <GoodNews msg="No security issues found in the code we scanned. Nice work." />
+        ) : (
+          secList.map((s: any, i: number) => (
+            <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} plainMode={plainMode} />
+          ))
+        )}
+      </div>
+    );
+  }
+
+  // ===== SEO / Homepage signals =====
+  if (section === 'seo') {
+    if (!homepageSignals && !app?.live_url) {
+      return <GoodNews msg="No homepage was scanned for this app yet." />;
+    }
+    return (
+      <div>
+        <HomepageCard signals={homepageSignals} liveUrl={app?.live_url} />
+        {promisesList.length > 0 && (
+          <div className="mb-8">
+            <SectionLabel>What your homepage tells visitors</SectionLabel>
+            <p className="text-[13px] text-muted-foreground leading-relaxed -mt-2 mb-4">
+              These are the claims we read on your public site or README.
+            </p>
+            {promisesVisible.map((p: any, i: number) => <PromiseRow key={p.id || `p-${i}`} p={p} />)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ===== LEGAL only =====
+  if (section === 'legal') {
+    return (
+      <div>
+        <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
+        {legalList.length === 0 ? (
+          <GoodNews msg="We didn't find missing legal pages. Looks good." />
+        ) : (
+          legalList.map((f: any, i: number) => <LegalCard key={f.id || `l-${i}`} f={f} />)
+        )}
+      </div>
+    );
+  }
+
+  // ===== ALL (legacy full report) =====
   return (
     <div>
       {/* Mode toggle */}
