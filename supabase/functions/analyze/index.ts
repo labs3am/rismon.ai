@@ -752,6 +752,131 @@ async function probeSupabaseBackend(
   return result;
 }
 
+// ============================================================
+// SUPABASE CONNECTION VERIFIER (added 2026-05).
+//
+// Reliable check used by the analyze function to decide whether
+// DB-related findings can be labelled VERIFIED or must fall back
+// to "Worth checking". We do NOT trust the mere presence of a
+// stored URL + anon key — those can be stale, revoked, mistyped,
+// or pointing at the wrong project. Instead we make a real HTTP
+// call to PostgREST's OpenAPI root with the anon key and confirm
+// the response shape. Any non-2xx, network failure, or unexpected
+// body means we treat the project as NOT connected.
+// ============================================================
+type SupabaseConnectionStatus = {
+  connected: boolean;
+  /**
+   * Machine-readable reason. The UI maps this to a CTA:
+   *   - "ok"               → connected, findings can be VERIFIED.
+   *   - "not_configured"   → no URL/anon key on the app row.
+   *   - "invalid_url"      → URL did not parse / is not https.
+   *   - "unreachable"      → network error or non-2xx response.
+   *   - "invalid_key"      → endpoint returned 401/403 to anon key.
+   *   - "unexpected_body"  → 2xx but not a PostgREST OpenAPI doc.
+   */
+  reason:
+    | "ok"
+    | "not_configured"
+    | "invalid_url"
+    | "unreachable"
+    | "invalid_key"
+    | "unexpected_body";
+  message: string;
+  checked_at: string;
+  http_status?: number;
+};
+
+async function verifySupabaseConnection(
+  url: string | null | undefined,
+  anonKey: string | null | undefined,
+): Promise<SupabaseConnectionStatus> {
+  const checked_at = new Date().toISOString();
+  if (!url || !anonKey) {
+    return {
+      connected: false,
+      reason: "not_configured",
+      message: "Connect your Supabase project to verify these findings live.",
+      checked_at,
+    };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+    if (!/^https?:$/.test(parsed.protocol)) throw new Error("non-http");
+  } catch {
+    return {
+      connected: false,
+      reason: "invalid_url",
+      message: "The Supabase URL on file is not a valid https URL. Reconnect Supabase to verify these findings.",
+      checked_at,
+    };
+  }
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`${parsed.origin}/rest/v1/`, {
+      method: "GET",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        Accept: "application/openapi+json, application/json",
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    const http_status = res.status;
+    if (http_status === 401 || http_status === 403) {
+      return {
+        connected: false,
+        reason: "invalid_key",
+        message: "Supabase rejected the saved anon key. Reconnect your Supabase project to verify these findings.",
+        checked_at,
+        http_status,
+      };
+    }
+    if (!res.ok) {
+      return {
+        connected: false,
+        reason: "unreachable",
+        message: `Could not reach your Supabase project (HTTP ${http_status}). Reconnect Supabase to verify these findings.`,
+        checked_at,
+        http_status,
+      };
+    }
+    let body: any = null;
+    try { body = await res.json(); } catch { body = null; }
+    const looksLikePostgrest =
+      body && typeof body === "object" &&
+      (body.swagger || body.openapi || body.paths || body.definitions);
+    if (!looksLikePostgrest) {
+      return {
+        connected: false,
+        reason: "unexpected_body",
+        message: "The URL on file did not respond like a Supabase project. Reconnect Supabase to verify these findings.",
+        checked_at,
+        http_status,
+      };
+    }
+    return {
+      connected: true,
+      reason: "ok",
+      message: "Supabase connected — DB-related findings were verified live.",
+      checked_at,
+      http_status,
+    };
+  } catch (e) {
+    clearTimeout(t);
+    return {
+      connected: false,
+      reason: "unreachable",
+      message: `Could not reach your Supabase project (${(e as any)?.message?.slice(0, 120) || "network error"}). Reconnect Supabase to verify these findings.`,
+      checked_at,
+    };
+  }
+}
+
 // Build deterministic "verified" findings from a backend probe.
 // One critical finding per publicly-readable table.
 function findingsFromBackendProbe(probe: BackendProbeResult): DetectorFinding[] {
@@ -2851,7 +2976,14 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       // deterministic scanner cited the file/line and we cross-checked
       // tables via the live REST probe above).
       // ----------------------------------------------------------
-      const supabaseConnected = !!(appSupabaseUrl && appSupabaseAnonKey);
+      // Reliable connection check: actually probe the Supabase URL
+      // with the saved anon key. Stored credentials alone are NOT
+      // enough — they can be stale, revoked, or pointing at the
+      // wrong project. This single source of truth drives every
+      // VERIFIED vs "Worth checking" decision below.
+      const connectionStatus = await verifySupabaseConnection(appSupabaseUrl, appSupabaseAnonKey);
+      const supabaseConnected = connectionStatus.connected;
+      claudeResult.supabase_connection = connectionStatus;
       const DB_CATEGORIES = new Set([
         "rls",
         "user_data_isolation",
@@ -2876,7 +3008,7 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule/.test(hay);
       };
       if (!supabaseConnected) {
-        const UNVERIFIED_NOTE =
+        const UNVERIFIED_NOTE = connectionStatus.message ||
           "We cannot confirm this without Supabase connected. Connect your Supabase project to verify.";
         const markUnverified = (arr: any) => {
           if (!Array.isArray(arr)) return;

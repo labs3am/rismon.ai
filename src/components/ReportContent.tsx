@@ -880,6 +880,27 @@ export default function ReportContent({
       {/* Security */}
       <div id="rc-security" className="mb-8">
         <SectionLabel>Security · these can hurt you in production</SectionLabel>
+        {analysis?.supabase_connection && analysis.supabase_connection.connected === false && (
+          <div
+            className="rounded-lg px-5 py-4 text-sm mb-4 flex items-start gap-3 flex-wrap"
+            style={{ background: '#161208', border: '1px solid #4d3a16', color: '#fbbf24' }}
+          >
+            <div className="flex-1 min-w-[220px]">
+              <div className="font-semibold mb-0.5">Supabase not connected — some findings are unverified</div>
+              <div className="text-[12.5px] leading-relaxed text-[#e7c87a]">
+                {analysis.supabase_connection.message ||
+                  'We cannot confirm database-level findings without Supabase connected. Connect your Supabase project to verify these findings.'}
+              </div>
+            </div>
+            <Link
+              to="/connect"
+              className="text-[12px] font-semibold rounded-md px-3 py-1.5 whitespace-nowrap"
+              style={{ background: '#fbbf24', color: '#000' }}
+            >
+              Connect Supabase
+            </Link>
+          </div>
+        )}
         {secList.length === 0 ? (
           <div className="rounded-lg px-5 py-4 text-sm" style={{ background: '#0a160c', border: '1px solid #16401f', color: '#86efac' }}>
             No security issues found in the code we scanned.
