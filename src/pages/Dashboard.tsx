@@ -571,27 +571,32 @@ export default function Dashboard() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <IntentGaugeCard score={intentScore} />
-              <SeoScoreCard
+              <PromiseCoverageCard
                 liveUrl={selectedApp?.live_url ?? null}
-                signals={analysis.homepage_signals}
-                onConnect={() => navigate('/connect')}
-                onViewSeo={() => setSection('seo')}
+                promises={promises}
+                onAddUrl={() => promptEditUrl(selectedApp)}
+                onView={() => setSection('seo')}
               />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { v: secCount, l: 'Security issues', c: secCount > 0 ? '#ef4444' : '#22c55e' },
-                { v: gapCount, l: 'Intent gaps', c: gapCount > 0 ? '#f59e0b' : '#22c55e' },
-                { v: legalCount, l: 'Legal gaps', c: legalCount > 0 ? '#f59e0b' : '#22c55e' },
-                { v: promises.length, l: 'Promises checked', c: '#888' },
-              ].map((s) => (
-                <div key={s.l} className="rounded-xl p-4" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: s.c, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</div>
-                  <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{s.l}</div>
+            {(() => {
+              const stats = [
+                { v: secCount, l: 'Security issues', c: '#ef4444' },
+                { v: gapCount, l: 'Intent gaps', c: '#f59e0b' },
+                { v: legalCount, l: 'Legal gaps', c: '#f59e0b' },
+              ].filter((s) => s.v > 0);
+              if (stats.length === 0) return null;
+              return (
+                <div className={`grid grid-cols-2 sm:grid-cols-${Math.min(stats.length, 4)} gap-3`}>
+                  {stats.map((s) => (
+                    <div key={s.l} className="rounded-xl p-4" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+                      <div style={{ fontSize: 26, fontWeight: 700, color: s.c, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</div>
+                      <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{s.l}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
               <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
