@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
+import { getGithubToken, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
 import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
