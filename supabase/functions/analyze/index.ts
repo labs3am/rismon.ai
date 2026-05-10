@@ -3000,34 +3000,45 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         "server_only_file",
         "route_protection",
         "row_level_filtering",
+        "server_role_key",
+        "service_role_key",
+        "service_role",
+        "database_access",
+        "database_access_rule",
       ]);
       const isDbRelated = (f: any) => {
         const cat = (f?.category || "").toString().toLowerCase();
         if (DB_CATEGORIES.has(cat)) return true;
         const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
-        return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule/.test(hay);
+        return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule|service[_ ]role\s+key|server\s+role\s+key/.test(hay);
       };
-      if (!supabaseConnected) {
-        const UNVERIFIED_NOTE = connectionStatus.message ||
-          "We cannot confirm this without Supabase connected. Connect your Supabase project to verify.";
+      // Findings in DB-related categories (RLS, row-level filtering, database
+      // access patterns, server role keys, server-only files, DB-level route
+      // protection) are based on code patterns only. Without a live Supabase
+      // connection (and even WITH one — code patterns alone never prove what
+      // the actual database config is) we cannot confirm the finding. Mark
+      // every such finding as unverified, downgrade severity to "watch out"
+      // (low), and strip the fix_prompt so the UI shows "Worth checking"
+      // instead of a "Fix now" button. Findings about missing integrations,
+      // homepage promise gaps, missing legal pages, and mock implementations
+      // are NOT touched here — they remain confirmed.
+      {
+        const UNVERIFIED_NOTE =
+          "Connect your Supabase project to confirm this finding. Without backend access this is based on code patterns only and may not reflect your actual configuration.";
         const markUnverified = (arr: any) => {
           if (!Array.isArray(arr)) return;
           for (const f of arr) {
             if (!f || !isDbRelated(f)) continue;
-            // Skip deterministic findings — they have file/line proof and don't need DB access.
-            if (f.source === "deterministic") continue;
-            // Cap severity — never "critical" or "high" without DB proof.
+            // Cap severity — "watch out" (low), never "fix now".
             const sev = (f.severity || "medium").toLowerCase();
-            if (sev === "critical" || sev === "high") f.severity = "low";
-            // Force confidence to unverified and tag for UI.
+            if (sev === "critical" || sev === "high" || sev === "medium") f.severity = "low";
             f.confidence = "unverified";
             f.unverified = true;
+            f.verified = false;
             f.requires_supabase_verification = true;
             f.confidence_reason = UNVERIFIED_NOTE;
             f.verification_note = UNVERIFIED_NOTE;
-            // No "Fix now" button on unverified findings — the fix can't be
-            // trusted until Supabase is connected. The note above tells the
-            // founder exactly what to do instead.
+            // No "Fix now" button on unverified findings.
             f.fix_prompt = "";
             f.how_to_fix = UNVERIFIED_NOTE;
           }
