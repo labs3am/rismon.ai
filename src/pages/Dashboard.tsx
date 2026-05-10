@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, AlertTriangle, Rocket, RefreshCw, ChevronDown } from 'lucide-react';
+import { PlusCircle, Github, Clock, AlertTriangle, Rocket, RefreshCw } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
