@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Clock, CheckCircle } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
 import WaitlistModal from '@/components/WaitlistModal';
@@ -844,136 +844,15 @@ export default function Analyze() {
   // was gated on `resumingSession`, which caused the UI to flash back to
   // the default Rismon AnalysisLoadingScreen at the tail end of a scan.
   if (stage === 'checking' || stage === 'reading' || stage === 'analyzing') {
-    if (resumingSession || stage === 'analyzing') {
-      const mm = String(Math.floor(resumeElapsed / 60)).padStart(2, '0');
-      const ss = String(resumeElapsed % 60).padStart(2, '0');
-      const ETA_SECONDS = 180; // typical scan completion target
-      const remaining = Math.max(0, ETA_SECONDS - resumeElapsed);
-      const remMin = Math.floor(remaining / 60);
-      const remSec = remaining % 60;
-      const remainingLabel = remaining > 0
-        ? (remMin > 0 ? `~${remMin}m ${remSec}s remaining` : `~${remSec}s remaining`)
-        : 'Wrapping up...';
-      const pct = Math.min(95, Math.round((resumeElapsed / ETA_SECONDS) * 100));
-
-      const steps = [
-        { label: 'Reading your code', threshold: 0 },
-        { label: 'Understanding your app', threshold: 30 },
-        { label: 'Comparing intent vs code', threshold: 75 },
-        { label: 'Writing your report', threshold: 130 },
-      ];
-
-      return (
-        <div className="min-h-screen bg-background">
-          <DashboardNavbar />
-          <div className="max-w-[520px] mx-auto px-5 pt-24 pb-16">
-            {/* Live status pill */}
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#22c55e' }} />
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#22c55e' }} />
-              </span>
-              <span className="text-[12px] font-medium tracking-wide" style={{ color: '#22c55e', letterSpacing: '0.05em' }}>SCAN RUNNING</span>
-            </div>
-
-            <h2 className="text-foreground text-[24px] font-semibold text-center">Your scan is still running</h2>
-            <p className="text-center mt-3 text-[14px] leading-relaxed" style={{ color: '#71717a' }}>
-              You can safely leave this page. We'll email you when it's done.
-            </p>
-
-            {/* Timer + ETA */}
-            <div className="rounded-2xl p-6 mt-8" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-[11px] uppercase" style={{ color: '#555', letterSpacing: '0.1em' }}>Elapsed</p>
-                  <p className="text-foreground text-[34px] font-semibold tabular-nums mt-1" style={{ letterSpacing: '-0.02em' }}>{mm}:{ss}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] uppercase" style={{ color: '#555', letterSpacing: '0.1em' }}>Estimate</p>
-                  <p className="text-[14px] mt-2" style={{ color: '#a1a1aa' }}>{remainingLabel}</p>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mt-5 w-full rounded-full overflow-hidden" style={{ background: '#1a1a1a', height: 4 }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#6366f1,#818cf8)', transition: 'width 1s linear' }}
-                />
-              </div>
-            </div>
-
-            {/* Step list */}
-            <div className="mt-6 rounded-2xl p-5" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
-              <p className="text-[11px] uppercase mb-4" style={{ color: '#555', letterSpacing: '0.1em' }}>What Ris is doing</p>
-              <div className="space-y-3">
-                {steps.map((s, i) => {
-                  const done = resumeElapsed >= (steps[i + 1]?.threshold ?? Infinity);
-                  const active = !done && resumeElapsed >= s.threshold;
-                  const pending = !done && !active;
-                  return (
-                    <div key={s.label} className="flex items-center gap-3">
-                      {done && (
-                        <CheckCircle size={16} style={{ color: '#22c55e' }} />
-                      )}
-                      {active && (
-                        <span className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#818cf8', borderTopColor: 'transparent' }} />
-                      )}
-                      {pending && (
-                        <span className="w-4 h-4 rounded-full" style={{ border: '1px solid #2a2a2a' }} />
-                      )}
-                      <span
-                        className="text-[14px]"
-                        style={{ color: done ? '#a1a1aa' : active ? '#ffffff' : '#52525b', fontWeight: active ? 500 : 400 }}
-                      >
-                        {s.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <p className="text-center mt-6 text-[12px]" style={{ color: '#52525b' }}>
-              Most scans finish in 2–3 minutes. We'll redirect you automatically.
-            </p>
-
-            <div className="flex flex-col items-center gap-3 mt-6">
-              <button
-                onClick={async () => {
-                  if (!confirm('Cancel this scan? You can start a new one right after.')) return;
-                  try {
-                    if (pollRef.current) clearInterval(pollRef.current);
-                    if (scanSessionId) {
-                      await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', scanSessionId);
-                    }
-                    if (analysisId) {
-                      await supabase.from('analyses').update({ status: 'cancelled' }).eq('id', analysisId);
-                    }
-                    localStorage.removeItem('rismon_active_analysis');
-                    localStorage.removeItem('rismon_analysis_stage');
-                    toast.success('Scan cancelled. You can start a new one.');
-                    navigate('/dashboard');
-                  } catch {
-                    toast.error('Could not cancel. Please try again.');
-                  }
-                }}
-                className="text-[13px] px-4 py-2 rounded-lg transition-colors"
-                style={{ background: 'transparent', border: '1px solid #333', color: '#a1a1aa' }}
-              >
-                Cancel scan and start over
-              </button>
-              <Link to="/dashboard" className="text-[13px] hover:text-foreground transition-colors" style={{ color: '#52525b' }}>
-                ← Back to dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    // Unified minimal loading screen — same calm Rismon.ai logo + progress
+    // bar + "keep this tab open" UI for every in-progress state (checking,
+    // reading, analyzing, resuming a session). The full scan/poll/email
+    // logic still runs underneath; this just hides the noisy timer UI.
+    const loadingStage: 'reading' | 'analyzing' | 'generating' =
+      stage === 'analyzing' ? 'analyzing' : 'reading';
     return (
       <AnalysisLoadingScreen
-        stage={stage === 'checking' ? 'reading' : stage}
+        stage={loadingStage}
         fileCount={fileCount}
         totalFiles={totalFiles}
         currentFile={currentFile}
