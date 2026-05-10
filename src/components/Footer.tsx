@@ -84,21 +84,6 @@ export default function Footer() {
             {/* Badges */}
             <div className="flex flex-wrap items-center mt-5" style={{ gap: 10 }}>
               <a
-                href="https://peerpush.net/p/rismonai"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Rismon.ai on PeerPush"
-                style={{ display: 'inline-block', opacity: 0.85, transition: 'opacity 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}
-              >
-                <img
-                  src="https://peerpush.net/p/rismonai/badge.png"
-                  alt="Rismon.ai on PeerPush"
-                  style={{ width: 230, display: 'block' }}
-                />
-              </a>
-              <a
                 href="https://www.producthunt.com/products/rismon?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-rismon"
                 target="_blank"
                 rel="noopener noreferrer"
