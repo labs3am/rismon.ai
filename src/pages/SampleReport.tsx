@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Github, Lock, RefreshCw, Activity, Radio, Globe } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -295,12 +295,79 @@ const sampleApp = {
 const PANEL_BG = '#0a0a0a';
 const PANEL_BORDER = '#1f1f1f';
 
+// Sample is intentionally trimmed: show only 2 findings per section, blur the rest.
+const VISIBLE = 2;
+const trimmedAnalysis = {
+  ...sampleAnalysis,
+  gaps: sample.gaps.slice(0, VISIBLE),
+  security_issues: sample.security_issues.slice(0, VISIBLE),
+  landing_page_promises: sample.landing_page_promises.slice(0, VISIBLE),
+};
+const hiddenCounts = {
+  gaps: Math.max(0, sample.gaps.length - VISIBLE),
+  security: Math.max(0, sample.security_issues.length - VISIBLE),
+  promises: Math.max(0, sample.landing_page_promises.length - VISIBLE),
+};
+
+function BlurredMore({ count, label }: { count: number; label: string }) {
+  if (count <= 0) return null;
+  return (
+    <div className="relative mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid ' + PANEL_BORDER }}>
+      {/* Fake blurred rows behind */}
+      <div aria-hidden className="space-y-3 p-5" style={{ filter: 'blur(6px)', background: PANEL_BG, opacity: 0.55, userSelect: 'none' }}>
+        {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
+          <div key={i} style={{ background: '#141414', border: '1px solid #1f1f1f', borderRadius: 10, padding: 16 }}>
+            <div style={{ width: '60%', height: 12, background: '#2a2a2a', borderRadius: 4 }} />
+            <div style={{ width: '90%', height: 10, background: '#1f1f1f', borderRadius: 4, marginTop: 10 }} />
+            <div style={{ width: '75%', height: 10, background: '#1f1f1f', borderRadius: 4, marginTop: 6 }} />
+          </div>
+        ))}
+      </div>
+      {/* Lock CTA on top */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6" style={{ background: 'linear-gradient(180deg, rgba(10,10,10,0.5), rgba(10,10,10,0.85))' }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#0a0a0a', border: '1px solid #2a2a2a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+          <Lock size={16} />
+        </div>
+        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginTop: 12 }}>
+          {count} more {label} hidden in this sample
+        </div>
+        <div style={{ color: '#888', fontSize: 12, marginTop: 4, maxWidth: 360 }}>
+          Scan your own app to see the full report.
+        </div>
+        <Link
+          to="/signup"
+          className="inline-flex items-center gap-1.5 mt-4"
+          style={{ background: '#fff', color: '#000', padding: '8px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+        >
+          <Github size={13} /> Scan your app
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function SampleLockedSection({ title, icon, description }: { title: string; icon: React.ReactNode; description: string }) {
+  return (
+    <div className="rounded-xl p-8 sm:p-12 text-center" style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}>
+      <div style={{ width: 56, height: 56, borderRadius: 14, margin: '0 auto', background: '#0a0a0a', border: '1px solid #2a2a2a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        {icon}
+      </div>
+      <div className="mt-5 inline-flex items-center gap-1.5"
+        style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a', letterSpacing: '0.08em' }}>
+        <Lock size={10} /> LOCKED
+      </div>
+      <h3 style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginTop: 14, letterSpacing: '-0.02em' }}>{title}</h3>
+      <p style={{ color: '#888', fontSize: 14, marginTop: 8, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{description}</p>
+    </div>
+  );
+}
+
 export default function SampleReport() {
   const [section, setSection] = useState<SectionKey>('overview');
   const [plainMode, setPlainMode] = useState(true);
 
-  const promises = sampleAnalysis.landing_page_promises;
-  const secIssues = sampleAnalysis.security_issues;
+  const promises = trimmedAnalysis.landing_page_promises;
+  const secIssues = trimmedAnalysis.security_issues;
 
   return (
     <div className="min-h-screen bg-background">
@@ -310,33 +377,7 @@ export default function SampleReport() {
       />
       <Navbar />
 
-      <div className="pt-20 sm:pt-24" style={{ background: '#000' }}>
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-6">
-          <div
-            className="rounded-xl flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            style={{ background: 'linear-gradient(180deg, #1a1308, #0c0a05)', border: '1px solid #3a2a14' }}
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles size={16} style={{ color: '#f97316' }} />
-              <div>
-                <div style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>This is a sample report</div>
-                <div style={{ color: '#a98455', fontSize: 12 }}>
-                  Real findings from a fictional app, rendered with the same UI you'll see for your own scan.
-                </div>
-              </div>
-            </div>
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-1.5"
-              style={{ background: '#f97316', color: '#000', padding: '8px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
-            >
-              Scan your app <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex">
+      <div className="flex pt-16">
         <DashboardSidebar
           active={section}
           onSelect={(k) => setSection(k)}
@@ -345,31 +386,40 @@ export default function SampleReport() {
         />
 
         <main className="flex-1 min-w-0">
-          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-8">
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <div
-                className="inline-flex items-center gap-2"
-                style={{ background: PANEL_BG, border: '1px solid #222', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, fontWeight: 500 }}
-              >
-                {sampleApp.github_owner}/{sampleApp.github_repo_name}
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+            {/* Header — mirrors the real dashboard exactly */}
+            <div className="flex flex-wrap items-center gap-3 justify-between mb-6">
+              <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                <div className="inline-flex items-center gap-2" style={{ background: PANEL_BG, border: '1px solid #222', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, fontWeight: 500 }}>
+                  <Github size={13} />
+                  {sampleApp.github_owner}/{sampleApp.github_repo_name}
+                </div>
+                <span style={{ color: '#666', fontSize: 12 }}>· Last scan 2h ago</span>
+                <div className="inline-flex items-center gap-1.5" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 999, padding: '5px 10px', color: '#cbd5e1', fontSize: 12 }}>
+                  <Globe size={11} style={{ color: '#888' }} />
+                  <span>Verifying against: noted-ai.example.com</span>
+                </div>
+                <span style={{ background: '#1a1308', border: '1px solid #3a2a14', color: '#f97316', borderRadius: 999, padding: '4px 10px', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>
+                  SAMPLE
+                </span>
               </div>
-              <span style={{ color: '#666', fontSize: 12 }}>· Sample data</span>
-              <div
+              <Link
+                to="/signup"
                 className="inline-flex items-center gap-1.5"
-                style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 999, padding: '5px 10px', color: '#cbd5e1', fontSize: 12 }}
+                style={{ background: '#fff', color: '#000', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
               >
-                Verifying against: noted-ai.example.com
-              </div>
+                <RefreshCw size={13} /> Scan your app
+              </Link>
             </div>
 
             {section === 'overview' && (
               <div className="space-y-6">
                 <div className="rounded-xl p-5 sm:p-6" style={{ background: '#000', border: '1px solid ' + PANEL_BORDER }}>
                   <div className="text-[11px] uppercase tracking-[0.12em] font-semibold mb-3" style={{ color: '#9ca3af' }}>Summary</div>
-                  <div className="text-[15px] leading-[1.75]" style={{ color: '#ffffff' }}>{sampleAnalysis.summary}</div>
+                  <div className="text-[15px] leading-[1.75]" style={{ color: '#ffffff' }}>{trimmedAnalysis.summary}</div>
                 </div>
 
-                <IntentGaugeCard score={sampleAnalysis.intent_match_score} />
+                <IntentGaugeCard score={trimmedAnalysis.intent_match_score} />
 
                 <PromiseCoverageCard
                   liveUrl={sampleApp.live_url}
@@ -381,7 +431,7 @@ export default function SampleReport() {
 
                 <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
                   <ReportContent
-                    analysis={sampleAnalysis}
+                    analysis={trimmedAnalysis}
                     app={sampleApp}
                     plainMode={plainMode}
                     onTogglePlainMode={setPlainMode}
@@ -393,33 +443,50 @@ export default function SampleReport() {
               </div>
             )}
 
-            {section !== 'overview' && (
-              <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
-                <ReportContent
-                  analysis={sampleAnalysis}
-                  app={sampleApp}
-                  plainMode={plainMode}
-                  onTogglePlainMode={setPlainMode}
-                  isPro={false}
-                  section={section as any}
-                />
+            {(section === 'intent' || section === 'security' || section === 'seo' || section === 'legal') && (
+              <div>
+                <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+                  <ReportContent
+                    analysis={trimmedAnalysis}
+                    app={sampleApp}
+                    plainMode={plainMode}
+                    onTogglePlainMode={setPlainMode}
+                    isPro={false}
+                    section={section as any}
+                  />
+                </div>
+                {section === 'intent' && <BlurredMore count={hiddenCounts.gaps} label="intent gaps" />}
+                {section === 'security' && <BlurredMore count={hiddenCounts.security} label="security issues" />}
+                {section === 'seo' && <BlurredMore count={hiddenCounts.promises} label="homepage promises" />}
               </div>
             )}
 
-            <div
-              className="mt-10 rounded-xl p-6 sm:p-8 text-center"
-              style={{ background: 'radial-gradient(120% 100% at 0% 0%, #1a1308 0%, #0a0a0a 60%)', border: '1px solid #3a2a14' }}
-            >
-              <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>Ready to see your real report?</h2>
-              <p style={{ color: '#a98455', fontSize: 14, marginTop: 8, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
-                Connect your GitHub repo and we'll generate a dashboard just like this — only it'll be your code.
+            {section === 'performance' && (
+              <SampleLockedSection
+                title="Performance monitoring"
+                icon={<Activity size={26} />}
+                description="Lighthouse-grade metrics for your live site — Core Web Vitals, render-blocking resources, image weight, and weekly trend lines. Locked in this sample."
+              />
+            )}
+            {section === 'monitoring' && (
+              <SampleLockedSection
+                title="Continuous monitoring"
+                icon={<Radio size={26} />}
+                description="Auto re-scan every time you push to GitHub. Get an instant alert if a new security issue, broken promise, or legal gap shows up. Locked in this sample."
+              />
+            )}
+
+            <div className="mt-10 rounded-xl p-6 sm:p-8 text-center" style={{ background: '#0a0a0a', border: '1px solid ' + PANEL_BORDER }}>
+              <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>This is a sample. Run your own scan.</h2>
+              <p style={{ color: '#888', fontSize: 14, marginTop: 8, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+                You'll get the same dashboard — with your code, your homepage, and your findings.
               </p>
               <Link
                 to="/signup"
                 className="inline-flex items-center gap-1.5 mt-5"
-                style={{ background: '#f97316', color: '#000', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                style={{ background: '#fff', color: '#000', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
               >
-                Run my scan <ArrowRight size={13} />
+                <Github size={13} /> Scan your app <ArrowRight size={13} />
               </Link>
             </div>
           </div>
