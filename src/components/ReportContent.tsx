@@ -583,13 +583,6 @@ export default function ReportContent({
     ] as const;
     return (
       <div>
-        {summary && (
-          <div className="bg-card border border-border rounded-lg p-5 sm:p-6 mb-5">
-            <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-3">Summary</div>
-            <div className="text-[15px] text-muted-foreground leading-[1.7]">{summary}</div>
-            {verdict && <div className="text-[15px] text-foreground font-semibold leading-snug mt-4">{verdict}</div>}
-          </div>
-        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {teasers.map((t) => (
             <button
