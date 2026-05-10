@@ -610,7 +610,6 @@ export default function ReportContent({
             </button>
           ))}
         </div>
-        {analysisId && <ReportFeedbackCard analysisId={analysisId} />}
       </div>
     );
   }
@@ -673,6 +672,11 @@ export default function ReportContent({
           secList.map((s: any, i: number) => (
             <FindingCard key={s.id || `s-${i}`} f={s} idx={i} analysisId={analysisId} />
           ))
+        )}
+        {analysisId && (
+          <div className="mt-8">
+            <ReportFeedbackCard analysisId={analysisId} />
+          </div>
         )}
       </div>
     );
