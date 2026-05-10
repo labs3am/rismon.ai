@@ -574,9 +574,9 @@ export default function Dashboard() {
         {section === 'overview' && (
           <>
             {analysis.summary && (
-              <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
-                <div className="text-[11px] uppercase tracking-[0.1em] font-semibold mb-3" style={{ color: '#888' }}>Summary</div>
-                <div className="text-[15px] leading-[1.7]" style={{ color: '#cbd5e1' }}>{analysis.summary}</div>
+              <div className="rounded-xl p-5 sm:p-6" style={{ background: '#000', border: '1px solid ' + PANEL_BORDER }}>
+                <div className="text-[11px] uppercase tracking-[0.12em] font-semibold mb-3" style={{ color: '#9ca3af' }}>Summary</div>
+                <div className="text-[15px] leading-[1.75]" style={{ color: '#ffffff' }}>{analysis.summary}</div>
               </div>
             )}
 
