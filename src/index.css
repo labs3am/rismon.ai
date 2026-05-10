@@ -452,3 +452,7 @@
 
 /* Avoid horizontal scroll caused by long words / inline code */
 html, body { overflow-x: hidden; }
+
+/* Hide scrollbar utility for horizontal scroll strips (mobile section nav) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
