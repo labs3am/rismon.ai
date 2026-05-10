@@ -2305,8 +2305,31 @@ App understanding: ${JSON.stringify(code_understanding)}`;
       try {
         const parsed = parseJSON(text);
         return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      } catch {
-        return new Response(JSON.stringify({ error: "Failed to parse fix prompts" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch (e) {
+        // Robust fallback: try to salvage JSON from the raw text before giving up.
+        try {
+          let cleaned = String(text || "")
+            .replace(/```json\s*/gi, "")
+            .replace(/```\s*/g, "")
+            .trim();
+          const start = cleaned.search(/[\{\[]/);
+          const isArr = start !== -1 && cleaned[start] === "[";
+          const end = cleaned.lastIndexOf(isArr ? "]" : "}");
+          if (start !== -1 && end !== -1) {
+            cleaned = cleaned.substring(start, end + 1)
+              .replace(/,\s*}/g, "}")
+              .replace(/,\s*]/g, "]")
+              .replace(/[\x00-\x1F\x7F]/g, "");
+            const parsed = JSON.parse(cleaned);
+            return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        } catch (_) { /* fall through */ }
+        console.error("generate_fixes parse failed:", (e as Error)?.message, "raw:", String(text || "").slice(0, 500));
+        // Return empty fix_prompts with 200 so the UI doesn't crash.
+        return new Response(
+          JSON.stringify({ fix_prompts: [], fallback: true, error: "Failed to parse fix prompts" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
