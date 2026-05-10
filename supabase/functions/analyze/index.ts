@@ -183,6 +183,40 @@ function buildKnownPathSet(...bundles: string[]): Set<string> {
   return set;
 }
 
+// Build a map of path -> raw file text for evidence verification.
+function buildFileContentMap(...bundles: string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const b of bundles) {
+    for (const f of splitBundleByFile(b || "")) {
+      if (f.path) map.set(f.path, f.lines.join("\n"));
+    }
+  }
+  return map;
+}
+
+// Resolve a finding's path against the content map (handles minor
+// normalization like leading "./" or repo-prefix mismatches).
+function resolveFileContent(
+  fp: string | undefined | null,
+  contents: Map<string, string>,
+): string | null {
+  if (!fp || typeof fp !== "string") return null;
+  if (contents.has(fp)) return contents.get(fp)!;
+  const norm = fp.replace(/^\.?\//, "");
+  if (contents.has(norm)) return contents.get(norm)!;
+  for (const [k, v] of contents) {
+    if (k === norm) return v;
+    if (k.endsWith("/" + norm) || norm.endsWith("/" + k)) return v;
+  }
+  return null;
+}
+
+// Normalize whitespace so a quoted snippet matches the file even if
+// the LLM trimmed indentation or collapsed runs of spaces.
+function normalizeForMatch(s: string): string {
+  return (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
 // Pseudo-paths the deterministic scanners emit on purpose — they
 // are not real files and must not be flagged as hallucinations.
 const PSEUDO_PATH_RX = /^(supabase:\/\/|router not scanned$|scanned files$|unknown$)/i;
@@ -271,6 +305,111 @@ function sanitizeLLMFinding(f: any, known: Set<string>): any {
 function sanitizeFindingArray(arr: any, known: Set<string>): any[] {
   if (!Array.isArray(arr)) return [];
   return arr.map((f) => sanitizeLLMFinding(f, known));
+}
+
+// ============================================================
+// EVIDENCE VERIFIER (added 2026-05).
+//
+// After path-sanitization, every LLM finding that *claims* to point
+// at a real file must be backed by code we can actually find in
+// that file. If the LLM quoted a code_snippet, evidence, or
+// what_we_found containing a code-looking phrase, that phrase has
+// to literally appear in the file. If it doesn't, we drop the
+// finding outright — the model fabricated it.
+//
+// This runs only on LLM findings (skips deterministic ones, which
+// already cite verified file/line data) and only when we can read
+// the file's contents from the bundle.
+// ============================================================
+function extractCandidateQuotes(f: any): string[] {
+  const out: string[] = [];
+  const push = (s: any) => {
+    if (typeof s === "string" && s.trim().length >= 8) out.push(s.trim());
+  };
+  push(f?.code_snippet);
+  push(f?.evidence);
+  // Pull anything inside backticks from prose fields — that's how the
+  // LLM is told to quote real code. Single-word quotes are ignored.
+  const proseFields = [
+    f?.what_we_found,
+    f?.explanation,
+    f?.fix_prompt,
+    f?.how_to_fix,
+  ];
+  for (const p of proseFields) {
+    if (typeof p !== "string") continue;
+    const matches = p.match(/`([^`\n]{8,200})`/g);
+    if (matches) for (const m of matches) push(m.replace(/`/g, ""));
+  }
+  return out;
+}
+
+function quoteAppearsInFile(quote: string, fileText: string): boolean {
+  if (!quote || !fileText) return false;
+  const q = normalizeForMatch(quote);
+  if (q.length < 8) return false;
+  const hay = normalizeForMatch(fileText);
+  if (hay.includes(q)) return true;
+  // Try the longest contiguous code-looking sub-phrase too — handles
+  // cases where the LLM wrapped the quote with a few extra words.
+  const sub = q.match(/[a-z0-9_$.()\[\]'"]{12,}/gi);
+  if (sub) {
+    for (const s of sub) {
+      if (hay.includes(s.toLowerCase())) return true;
+    }
+  }
+  return false;
+}
+
+function verifyFindingEvidence(
+  f: any,
+  contents: Map<string, string>,
+): { keep: boolean; reason?: string } {
+  if (!f || typeof f !== "object") return { keep: true };
+  if (f.source === "deterministic") return { keep: true };
+  // No file path or pseudo path — nothing to cross-check at the
+  // line level. The path-sanitizer already handled this case.
+  const fp = f.file_path;
+  if (!fp || typeof fp !== "string") return { keep: true };
+  if (PSEUDO_PATH_RX.test(fp)) return { keep: true };
+
+  const fileText = resolveFileContent(fp, contents);
+  if (fileText == null) return { keep: true }; // path scrubbed elsewhere
+
+  const quotes = extractCandidateQuotes(f);
+  if (quotes.length === 0) {
+    // No code was quoted at all — we can't prove the claim. Per the
+    // accuracy mandate, drop it instead of showing an unprovable
+    // finding.
+    return { keep: false, reason: "no_quoted_evidence" };
+  }
+  for (const q of quotes) {
+    if (quoteAppearsInFile(q, fileText)) return { keep: true };
+  }
+  return { keep: false, reason: "quote_not_in_file" };
+}
+
+function verifyFindingArray(
+  arr: any,
+  contents: Map<string, string>,
+  bucket: string,
+  dropLog: Array<{ bucket: string; title: string; reason: string }>,
+): any[] {
+  if (!Array.isArray(arr)) return [];
+  const out: any[] = [];
+  for (const f of arr) {
+    const v = verifyFindingEvidence(f, contents);
+    if (v.keep) {
+      out.push(f);
+    } else {
+      dropLog.push({
+        bucket,
+        title: (f?.title || "(untitled)").toString().slice(0, 80),
+        reason: v.reason || "unverified",
+      });
+    }
+  }
+  return out;
 }
 
 const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
