@@ -172,14 +172,21 @@ export default function Dashboard() {
     (profile?.plan || '').toLowerCase().startsWith('try_pro');
 
   // ---- load apps + analyses ----
+  // IMPORTANT: depend on `user?.id` (a stable primitive), NOT the `user`
+  // object. Supabase emits a fresh `user` reference on every TOKEN_REFRESHED
+  // event (and the SDK auto-refreshes silently in the background). If we
+  // depend on the object, this effect re-runs on every refresh, flips
+  // `loading` back to `true`, and the dashboard "flashes" / re-loads while
+  // the user is just sitting on the page.
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     const load = async () => {
       const { data: appsData } = await supabase
         .from('apps')
         .select('id,user_id,app_name,platform,status,live_url,app_description,github_repo_url,github_repo_name,github_owner,created_at')
-        .eq('user_id', user.id);
-      const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        .eq('user_id', userId);
+      const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', userId).order('created_at', { ascending: false });
 
       const appsList: App[] = (appsData || []).map((app) => {
         const appAnalyses = (analysesData || []).filter((a) => a.app_id === app.id);
@@ -213,7 +220,7 @@ export default function Dashboard() {
       const { data: liveSession } = await supabase
         .from('scan_sessions')
         .select('id, status, created_at, repo_name')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .in('status', ['pending', 'analyzing'])
         .order('created_at', { ascending: false })
         .limit(1)
@@ -235,7 +242,7 @@ export default function Dashboard() {
       setLoading(false);
     };
     load();
-  }, [user, urlAnalysisId, urlAppId]);
+  }, [userId, urlAnalysisId, urlAppId]);
 
   // ---- load analysis for selected app ----
   useEffect(() => {
