@@ -246,7 +246,15 @@ export default function Dashboard() {
     (async () => {
       const { data } = await supabase.from('analyses').select('*').eq('id', aid).maybeSingle();
       if (!data) { setAnalysis(null); setAnalysisLoading(false); return; }
-      if (!data.fix_prompts || data.status === 'generating_prompts') {
+      // Only generate fix prompts when the analysis pipeline has actually
+      // produced findings. If the row is still 'reading' / 'questions_ready'
+      // / 'analyzing' (e.g. the user just clicked "Scan again"), skip — the
+      // background analyze job hasn't written gaps/security_issues yet, and
+      // updating status to 'complete' here would prematurely "finish" the
+      // in-progress scan with empty data.
+      const readyForFixes =
+        data.status === 'review_pending' || data.status === 'generating_prompts';
+      if (readyForFixes && !data.fix_prompts) {
         if (!generateStarted.current[aid]) {
           generateStarted.current[aid] = true;
           setGenerating(true);
