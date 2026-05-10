@@ -629,8 +629,67 @@ export default function ReportContent({
 
   // ===== INTENT only =====
   if (section === 'intent') {
+    const cu: any = (analysis as any).code_understanding || {};
+    const businessType: string = cu.business_type_guess || '';
+    const featuresFound: string[] = Array.isArray(cu.features_found) ? cu.features_found : [];
+    const userRoles: string[] = Array.isArray(cu.user_roles_found) ? cu.user_roles_found : [];
+    const appDescription: string = (app?.app_description || '').trim();
+    const intentSummary = summary || appDescription;
+    const hasIntent = !!(businessType || featuresFound.length || intentSummary);
     return (
       <div>
+        {hasIntent && (
+          <div
+            className="rounded-lg p-5 sm:p-6 mb-6"
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+          >
+            <SectionLabel>What we understood about your business</SectionLabel>
+            {businessType && (
+              <div className="mb-3">
+                <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-1">Business type</div>
+                <div className="text-[15px] text-foreground font-medium">{businessType}</div>
+              </div>
+            )}
+            {intentSummary && (
+              <div className="mb-3">
+                <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-1">What your app does</div>
+                <div className="text-[14px] text-muted-foreground leading-[1.7]">{intentSummary}</div>
+              </div>
+            )}
+            {featuresFound.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-2">Features detected in your code</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {featuresFound.slice(0, 18).map((f, i) => (
+                    <span
+                      key={i}
+                      className="text-[12px] px-2.5 py-1 rounded-md"
+                      style={{ background: '#0f1a0f', border: '1px solid #1f3a1f', color: '#86efac' }}
+                    >
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {userRoles.length > 0 && (
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground mb-2">User roles</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {userRoles.map((r, i) => (
+                    <span
+                      key={i}
+                      className="text-[12px] px-2.5 py-1 rounded-md"
+                      style={{ background: '#0a0a0a', border: '1px solid hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mb-8">
           <SectionLabel>What you wanted vs what your code does</SectionLabel>
