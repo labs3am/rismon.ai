@@ -12,7 +12,7 @@ import RisGuide from '@/components/RisGuide';
 import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
 import AiSmartQuestions from '@/components/AiSmartQuestions';
-import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub } from '@/lib/github-auth';
+import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
 
 export default function Analyze() {
   const { appId } = useParams();
