@@ -77,6 +77,49 @@ export default function DashboardSidebar({
   );
 
   return (
+    <>
+    {/* Mobile horizontal section strip */}
+    <div
+      className="md:hidden sticky z-30 flex gap-2 overflow-x-auto no-scrollbar"
+      style={{
+        top: 56,
+        background: '#000',
+        borderBottom: '1px solid #1a1a1a',
+        padding: '10px 12px',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
+      {items.map((it) => {
+        const Icon = it.icon;
+        const isActive = active === it.key && hasApp;
+        const locked = !hasApp;
+        return (
+          <button
+            key={it.key}
+            type="button"
+            onClick={locked ? undefined : () => onSelect(it.key)}
+            disabled={locked}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full"
+            style={{
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: isActive ? 600 : 500,
+              border: `1px solid ${isActive ? '#2a2a2a' : '#1a1a1a'}`,
+              background: isActive ? '#181818' : '#0a0a0a',
+              color: locked ? '#3f3f3f' : isActive ? '#fff' : '#a3a3a3',
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={12} />
+            {it.label}
+            {it.pro && !isPro && (
+              <span style={{ fontSize: 9, color: '#f97316', marginLeft: 2 }}>PRO</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+
     <aside
       className="hidden md:flex flex-col"
       style={{
