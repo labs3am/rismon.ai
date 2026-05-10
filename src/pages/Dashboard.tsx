@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
+import { getGithubToken, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
 import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
@@ -293,17 +293,31 @@ export default function Dashboard() {
   };
 
   const handleAnalyzeNow = async (app: App) => {
+    // Always clear any stale re-auth flag from a previous OAuth round-trip
+    // so that, if the token is still missing, we can trigger a fresh OAuth
+    // flow instead of silently no-op'ing.
+    clearReauthFlag();
     let token = await getGithubToken();
     if (!token) {
       const { data: refreshed } = await supabase.auth.refreshSession();
       token = refreshed.session?.provider_token ?? null;
     }
-    if (token) navigate(`/analyze/${app.id}`);
-    else setReconnectModal(app);
+    if (token) {
+      navigate(`/analyze/${app.id}`);
+    } else {
+      // No token cached — go straight through OAuth and come back to the
+      // analyze page so the scan resumes immediately, instead of stopping
+      // on a modal that the user has to click through.
+      await reauthenticateGithub({
+        redirectTo: `${window.location.origin}/analyze/${app.id}`,
+        message: 'Reconnecting to GitHub to start your scan…',
+      });
+    }
   };
 
   const handleReconnectGithub = async () => {
     if (!reconnectModal) return;
+    clearReauthFlag();
     await reauthenticateGithub({ redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`, notify: false });
   };
 

@@ -12,7 +12,7 @@ import RisGuide from '@/components/RisGuide';
 import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
 import AiSmartQuestions from '@/components/AiSmartQuestions';
-import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub } from '@/lib/github-auth';
+import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -78,6 +78,15 @@ export default function Analyze() {
   // Cleanup polling on unmount
   useEffect(() => {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  // Clear any stale GitHub re-auth flag on mount. The flag is set right before
+  // we redirect the user through OAuth; once they land back here, we MUST clear
+  // it so a follow-up reauth attempt (e.g. if Supabase hasn't surfaced the new
+  // provider_token yet) can actually run instead of silently no-op'ing and
+  // leaving the scan stuck.
+  useEffect(() => {
+    clearReauthFlag();
   }, []);
 
   // When the user switches tabs and comes back, re-sync stage from the DB.
