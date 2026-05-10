@@ -685,7 +685,14 @@ export default function ReportContent({
   // ===== SEO / Homepage signals =====
   if (section === 'seo') {
     if (!homepageSignals && !app?.live_url) {
-      return <GoodNews msg="No homepage was scanned for this app yet." />;
+      return (
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <div className="text-foreground text-[15px] font-semibold">No homepage URL on file</div>
+          <p className="text-muted-foreground text-sm mt-2 leading-relaxed max-w-md mx-auto">
+            Add your live homepage URL on your next scan and we'll check whether the promises on your site are actually backed by your code.
+          </p>
+        </div>
+      );
     }
     return (
       <div>

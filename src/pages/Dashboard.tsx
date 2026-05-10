@@ -114,8 +114,8 @@ function IntentGaugeCard({ score }: { score: number | null }) {
 
 // ----- Homepage Promises (Promise Coverage) card -----
 function PromiseCoverageCard({
-  liveUrl, promises, onAddUrl, onView,
-}: { liveUrl: string | null; promises: any[]; onAddUrl: () => void; onView: () => void }) {
+  liveUrl, promises, onView,
+}: { liveUrl: string | null; promises: any[]; onView: () => void }) {
   if (!liveUrl) {
     return (
       <div
@@ -129,15 +129,8 @@ function PromiseCoverageCard({
           </div>
         </div>
         <div className="text-[14px] mt-3" style={{ color: '#e5e5e5', lineHeight: 1.5 }}>
-          Add your live site URL to check if your homepage claims match your code.
+          Add your homepage URL on your next scan and we'll check if the claims on your site match your code.
         </div>
-        <button
-          onClick={onAddUrl}
-          className="self-start mt-4"
-          style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-        >
-          Add URL
-        </button>
       </div>
     );
   }
@@ -585,7 +578,6 @@ export default function Dashboard() {
               <PromiseCoverageCard
                 liveUrl={selectedApp?.live_url ?? null}
                 promises={promises}
-                onAddUrl={() => promptEditUrl(selectedApp)}
                 onView={() => setSection('seo')}
               />
             </div>
@@ -775,15 +767,7 @@ export default function Dashboard() {
                         <span>Verifying against: {selectedApp.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
                         <Pencil size={10} style={{ color: '#888' }} />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => promptEditUrl(selectedApp)}
-                        className="inline-flex items-center gap-1.5"
-                        style={{ background: 'transparent', border: '1px dashed #2a2a2a', borderRadius: 999, padding: '5px 10px', color: '#888', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        <Plus size={11} /> Add homepage URL
-                      </button>
-                    )
+                    ) : null
                   )}
                 </div>
                 {selectedApp && (
