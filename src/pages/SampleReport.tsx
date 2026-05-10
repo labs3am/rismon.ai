@@ -377,7 +377,7 @@ export default function SampleReport() {
       />
       <Navbar />
 
-      <div className="flex pt-16">
+      <div className="flex flex-col md:flex-row pt-16">
         <DashboardSidebar
           active={section}
           onSelect={(k) => setSection(k)}

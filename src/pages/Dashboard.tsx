@@ -317,7 +317,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="flex pt-16">
+        <div className="flex flex-col md:flex-row pt-16">
           <div className="hidden md:block" style={{ width: 240, padding: 20, borderRight: '1px solid #1a1a1a', background: '#080808', height: 'calc(100vh - 64px)' }}>
             <Skeleton className="h-4 w-20 mb-4" />
             {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 mb-2" />)}
@@ -462,7 +462,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="flex pt-16">
+      <div className="flex flex-col md:flex-row pt-16">
         <DashboardSidebar
           active={section}
           onSelect={(k) => setSection(k)}
