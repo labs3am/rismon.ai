@@ -838,6 +838,17 @@ export default function ReportContent({
       </div>
 
       {/* Promises */}
+      {homepageSignals?.fetch_error_message && promisesList.length === 0 && (
+        <div id="rc-promises" className="mb-8">
+          <SectionLabel>Promises on your homepage vs your code</SectionLabel>
+          <div
+            className="rounded-lg px-5 py-4 text-sm"
+            style={{ background: '#160c0c', border: '1px solid #401616', color: '#fca5a5' }}
+          >
+            {homepageSignals.fetch_error_message}
+          </div>
+        </div>
+      )}
       {promisesList.length > 0 && (
         <div id="rc-promises" className="mb-8">
           <SectionLabel>Promises on your homepage vs your code</SectionLabel>
