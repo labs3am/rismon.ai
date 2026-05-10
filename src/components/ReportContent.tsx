@@ -306,7 +306,7 @@ function FindingCard({
           className="text-[12px] leading-relaxed mb-4 rounded-md px-3 py-2"
           style={{ background: '#0c0c0d', border: '1px solid #222', color: '#a1a1aa' }}
         >
-          {f.verification_note || 'We cannot confirm this without Supabase connected. Connect your Supabase project to verify.'}
+          {f.verification_note || 'Connect your Supabase project to confirm this finding. Without backend access this is based on code patterns only and may not reflect your actual configuration.'}
         </div>
       )}
 
