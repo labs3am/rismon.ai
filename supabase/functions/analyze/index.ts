@@ -1550,7 +1550,8 @@ function calculateScore(
   securityIssues: any[],
   falsePromises: any[],
   verificationApplied: boolean,
-  scanType: string
+  scanType: string,
+  notFoundPromiseCount: number = 0
 ): { score: number; grade: string; launch_status: string } {
   const DEDUCTIONS: Record<string, { verified: number; unverified: number }> = {
     critical: { verified: 10,   unverified: 5 },
@@ -1588,6 +1589,18 @@ function calculateScore(
   // Floor — 40 minimum always; 0 only for failed/empty scans (handled by caller)
   score = Math.max(score, 40);
 
+  score = Math.round(score * 10) / 10;
+
+  // Each homepage promise that has NO matching code evidence is treated
+  // the same as a medium-severity finding: -2 points per NOT_FOUND.
+  if (notFoundPromiseCount > 0) {
+    score -= 2 * notFoundPromiseCount;
+  }
+
+  // Re-apply hard caps and floors after the promise penalty so the
+  // final value still respects the published scoring bands.
+  if (scanType !== "deep") score = Math.min(score, 90);
+  score = Math.max(score, 40);
   score = Math.round(score * 10) / 10;
 
   const grade =
