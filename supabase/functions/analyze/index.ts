@@ -2138,6 +2138,12 @@ If the homepage mentions team features but NO such logic exists in the code: fla
 UNIVERSAL ANTI-HALLUCINATION RULE (overrides every check above):
 Every finding you emit MUST include a real file_path that exists in the scanned bundle and a real line_number that points to the offending line. If you cannot quote a specific file and line that proves the issue, DROP the finding entirely. Do not generalize. Do not flag "may be" or "might be" issues — only flag what you can prove from code that was actually shown to you.
 
+EVIDENCE QUOTE RULE (mandatory, enforced server-side):
+Every finding MUST also include, inside its explanation or fix_prompt, a verbatim quote of the offending code wrapped in backticks (e.g. \`const isPro = true\` or \`.from('orders').select('*')\`). The quote MUST be at least 8 characters and copied character-for-character from the file you cited. A downstream verifier compares this quote to the actual file contents — if no quote is present, or the quote does not appear in the file, the finding is silently dropped from the report. So: if you cannot copy a real line out of the file, do not emit the finding. Better to return zero findings than one fabricated one.
+
+TRUTH OVER COVERAGE:
+You are graded on accuracy, not on volume. Returning 0 findings when nothing is provably wrong is a correct answer. Returning 5 findings where 1 is fabricated is a failure. When uncertain, omit.
+
 Specifically, NEVER fabricate findings about:
   - Missing payment system / Stripe (you cannot see backend or Supabase secrets — payments may be enforced in edge functions you did not scan).
   - Missing account-deletion (it can live in a SQL function, an edge function, or a settings page route you did not see).
