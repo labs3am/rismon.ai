@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PlusCircle, Github, AlertTriangle, RefreshCw, Lock, Plug, ChevronDown,
-  Activity, Radio, Sparkles, Globe, Pencil, Plus,
+  Activity, Radio, Sparkles, Rocket, Globe, Pencil, Plus,
 } from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import { Skeleton } from '@/components/ui/skeleton';
