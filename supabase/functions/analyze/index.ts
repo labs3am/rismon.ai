@@ -2060,16 +2060,18 @@ Return ONLY this JSON:
       // could be verified live (vs inferred from code patterns only).
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
+      let appLiveUrl: string | null = null;
       if (app_id) {
         // Credentials are encrypted at rest. Confirm ownership, then decrypt
         // server-side via the service-role-only RPC.
         const { data: ownerCheck } = await serviceClient
           .from("apps")
-          .select("user_id")
+          .select("user_id, live_url")
           .eq("id", app_id)
           .eq("user_id", user.id)
           .maybeSingle();
         if (ownerCheck) {
+          appLiveUrl = (ownerCheck as any).live_url ?? null;
           const { data: appCreds } = await serviceClient
             .rpc("get_app_supabase_credentials", { _app_id: app_id })
             .maybeSingle();
@@ -2104,6 +2106,11 @@ Return ONLY this JSON:
       const scanTypeHint = scan_type === "deep"
         ? "This is a Deep Scan covering the complete codebase."
         : "This is a Quick Scan covering the most critical files only.";
+
+      // Fetch the deployed homepage in parallel with prompt building so the
+      // LLM can cross-check landing-page claims against the live site, not
+      // just the source files.
+      const homepageSignalsPromise = fetchHomepageSignals(appLiveUrl);
 
       const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
 
@@ -2378,12 +2385,57 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
+      // Resolve live homepage signals and append a dedicated section so the
+      // model knows which claims are actually shipped to visitors.
+      const homepageSignals = await homepageSignalsPromise;
+      let claudeUserContentFinal = claudeUserContent;
+      if (homepageSignals && homepageSignals.status >= 200 && homepageSignals.status < 400 && homepageSignals.text) {
+        const liveBlock = `\n\nLIVE HOMEPAGE (fetched from ${homepageSignals.url}, HTTP ${homepageSignals.status}):\n` +
+          `Title: ${homepageSignals.title || "(none)"}\n` +
+          `Meta description: ${homepageSignals.description || "(none)"}\n` +
+          `OG title: ${homepageSignals.og_title || "(none)"}\n` +
+          `OG description: ${homepageSignals.og_description || "(none)"}\n` +
+          `Headings (h1/h2): ${JSON.stringify(homepageSignals.headings.slice(0, 15))}\n` +
+          `Call-to-action text: ${JSON.stringify(homepageSignals.cta_text.slice(0, 20))}\n` +
+          `Visible text (truncated):\n${homepageSignals.text}\n\n` +
+          `Use this LIVE HOMEPAGE content as the primary source of truth for false-promise checks. ` +
+          `Quote the exact wording from this section (not from source files) when reporting a false promise. ` +
+          `If a claim appears here but no matching implementation exists in the scanned code, flag it.`;
+        claudeUserContentFinal = claudeUserContent + liveBlock;
+      } else if (appLiveUrl) {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder gave us ${appLiveUrl} but we could not fetch it (${homepageSignals?.error || "no response"}). Do NOT invent homepage claims — base false-promise findings only on text actually present in the scanned source files.`;
+      } else {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder did not provide a deployed URL. Base false-promise findings only on text actually present in the scanned source files.`;
+      }
+
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContentFinal);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
       } catch {
         return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Surface homepage signals so the report UI can show "Verified against
+      // live homepage" badges and the analyses row stores what was checked.
+      if (homepageSignals) {
+        claudeResult.homepage_signals = {
+          ...(claudeResult.homepage_signals || {}),
+          url: homepageSignals.url,
+          fetched: homepageSignals.status >= 200 && homepageSignals.status < 400,
+          status: homepageSignals.status,
+          title: homepageSignals.title,
+          description: homepageSignals.description,
+          og_title: homepageSignals.og_title,
+          og_description: homepageSignals.og_description,
+          headings: homepageSignals.headings,
+          cta_text: homepageSignals.cta_text,
+          fetched_at: homepageSignals.fetched_at,
+          error: homepageSignals.error || null,
+          has_live_url: true,
+        };
       }
 
       // ----------------------------------------------------------
