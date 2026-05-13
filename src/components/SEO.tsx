@@ -12,6 +12,8 @@ interface SEOProps {
   noindex?: boolean;
   /** JSON-LD structured data object to inject as <script type="application/ld+json"> */
   jsonLd?: Record<string, unknown>;
+  /** OpenGraph type. Defaults to 'website'. Use 'article' for blog posts. */
+  type?: 'website' | 'article';
 }
 
 const SITE_ORIGIN = 'https://rismon.ai';
@@ -42,7 +44,7 @@ const upsertLink = (rel: string, href: string) => {
  * Per-page SEO updater. Keeps title, description, canonical and social cards
  * in sync with the current route so Google shows the right snippet for each link.
  */
-export default function SEO({ title, description, canonicalPath, image, noindex, jsonLd }: SEOProps) {
+export default function SEO({ title, description, canonicalPath, image, noindex, jsonLd, type = 'website' }: SEOProps) {
   const location = useLocation();
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
     upsertMeta('meta[property="og:description"]', 'property', 'og:description', trimmedDesc);
     upsertMeta('meta[property="og:url"]', 'property', 'og:url', canonicalUrl);
     upsertMeta('meta[property="og:image"]', 'property', 'og:image', img);
-    upsertMeta('meta[property="og:type"]', 'property', 'og:type', 'website');
+    upsertMeta('meta[property="og:type"]', 'property', 'og:type', type);
 
     upsertMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image');
     upsertMeta('meta[name="twitter:title"]', 'name', 'twitter:title', trimmedTitle);
@@ -88,7 +90,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
         cleanupScript.remove();
       }
     };
-  }, [title, description, canonicalPath, image, noindex, location.pathname, jsonLd]);
+  }, [title, description, canonicalPath, image, noindex, location.pathname, jsonLd, type]);
 
   return null;
 }
