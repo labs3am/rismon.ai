@@ -1,15 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { PlusCircle, Github, Clock, Zap, AlertTriangle, Rocket } from 'lucide-react';
+import {
+  PlusCircle, Github, AlertTriangle, RefreshCw, Lock, Plug, ChevronDown,
+  Activity, Radio, Sparkles, Rocket, Globe, Pencil, Plus,
+} from 'lucide-react';
 import DashboardNavbar from '@/components/DashboardNavbar';
+import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import RisGuide from '@/components/RisGuide';
-import { UpgradeBanner } from '@/components/ui/upgrade-banner';
-import WelcomeGuide from '@/components/WelcomeGuide';
-import { getGithubToken, reauthenticateGithub } from '@/lib/github-auth';
+import { getGithubToken, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
+import ReportContent from '@/components/ReportContent';
+import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
+import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
+import { IntentGaugeCard, PromiseCoverageCard, SeverityBarCard } from '@/components/dashboard/OverviewCards';
+
+// (Overview cards extracted to src/components/dashboard/OverviewCards.tsx)
 
 interface App {
   id: string;
@@ -17,70 +24,177 @@ interface App {
   github_repo_name: string | null;
   github_owner: string | null;
   platform: string | null;
+  live_url: string | null;
   latest_score: number | null;
   latest_date: string | null;
   has_analyses: boolean;
   latest_analysis_id: string | null;
 }
 
+const PANEL_BG = '#0a0a0a';
+const PANEL_BORDER = '#1f1f1f';
+
+// ============================================================
+// Locked / Pro placeholder card used by Performance / Monitoring
+// ============================================================
+function LockedSection({
+  title, icon, description, onUpgrade,
+}: { title: string; icon: React.ReactNode; description: string; onUpgrade: () => void }) {
+  return (
+    <div
+      className="rounded-xl p-8 sm:p-12 text-center"
+      style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}
+    >
+      <div
+        style={{
+          width: 56, height: 56, borderRadius: 14, margin: '0 auto',
+          background: 'linear-gradient(180deg, #1a1308, #0a0a0a)',
+          border: '1px solid #2a2210',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#f97316',
+        }}
+      >
+        {icon}
+      </div>
+      <div className="mt-5 inline-flex items-center gap-1.5"
+        style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#1f1108', color: '#f97316', border: '1px solid #4f2710', letterSpacing: '0.08em' }}>
+        <Lock size={10} /> PRO
+      </div>
+      <h3 style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginTop: 14, letterSpacing: '-0.02em' }}>{title}</h3>
+      <p style={{ color: '#888', fontSize: 14, marginTop: 8, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{description}</p>
+      <button
+        onClick={onUpgrade}
+        style={{
+          marginTop: 20, background: '#f97316', color: '#000', border: 'none',
+          padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        }}
+      >
+        Upgrade to Pro
+      </button>
+    </div>
+  );
+}
+
+function EmptyDashboard() {
+  return (
+    <div
+      className="rounded-xl text-center"
+      style={{ background: PANEL_BG, border: '1px solid #1a1a1a', padding: '56px 24px' }}
+    >
+      <div
+        style={{
+          width: 72, height: 72, borderRadius: 18, margin: '0 auto',
+          background: 'linear-gradient(180deg, #1a1308, #0a0a0a)',
+          border: '1px solid #3a2a14',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#f97316',
+        }}
+      >
+        <Plug size={28} />
+      </div>
+      <h2 style={{ color: '#fff', fontSize: 24, fontWeight: 600, marginTop: 22, letterSpacing: '-0.02em' }}>
+        Connect your first app
+      </h2>
+      <p style={{ color: '#888', fontSize: 15, marginTop: 10, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
+        Your dashboard unlocks the moment you connect a GitHub repo. We'll scan your code, read your homepage, and build a single view of how your app is really doing.
+      </p>
+      <Link
+        to="/connect"
+        className="inline-flex items-center gap-2 mt-7"
+        style={{ background: '#f97316', color: '#000', padding: '12px 22px', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+      >
+        <Github size={15} /> Connect a GitHub repo
+      </Link>
+      <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-[640px] mx-auto">
+        {[
+          { t: 'Business intent score', d: 'Does your code do what you said?' },
+          { t: 'Security findings', d: 'Critical issues, in plain English' },
+          { t: 'SEO & homepage', d: 'What your public site signals' },
+        ].map((x) => (
+          <div key={x.t} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{x.t}</div>
+            <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>{x.d}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScanInProgressPanel({ appName }: { appName: string }) {
+  return (
+    <div className="rounded-xl p-6" style={{ background: PANEL_BG, border: '1px solid #1f1f1f' }}>
+      <div className="flex items-center gap-3">
+        <span style={{ position: 'relative', display: 'inline-flex', width: 12, height: 12 }}>
+          <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
+          <span style={{ position: 'relative', display: 'inline-flex', width: 12, height: 12, borderRadius: '50%', background: '#22c55e' }} />
+        </span>
+        <div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 600 }}>Scan running for {appName}</div>
+          <div style={{ color: '#888', fontSize: 13, marginTop: 2 }}>
+            We'll email you when the report is ready. You can leave this page.
+          </div>
+        </div>
+      </div>
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} className="h-[180px] rounded-xl" />
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Skeleton className="h-[140px] rounded-xl" />
+        <Skeleton className="h-[140px] rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const [apps, setApps] = useState<App[]>([]);
-  const [stats, setStats] = useState({ apps: 0, thisWeek: 0, totalGaps: 0, totalSecurity: 0 });
-  const [weeklyScans, setWeeklyScans] = useState(0);
-  const [weeklyLimitReached, setWeeklyLimitReached] = useState(false);
   const [loading, setLoading] = useState(true);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reconnectModal, setReconnectModal] = useState<App | null>(null);
-  // Resume-in-progress banner: surfaces an active scan_session so users
-  // who switched tabs (or got disconnected) can hop back into the live
-  // analysis screen without losing their slot.
-  const [activeScan, setActiveScan] = useState<{
-    sessionId: string;
-    appId: string | null;
-    appName: string | null;
-    startedAt: number;
-  } | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [plainMode, setPlainMode] = useState(true);
+  const [section, setSection] = useState<SectionKey>('overview');
+  const [appSwitcherOpen, setAppSwitcherOpen] = useState(false);
+  const [activeScan, setActiveScan] = useState<{ sessionId: string; appId: string | null; appName: string | null; startedAt: number } | null>(null);
+  const generateStarted = useRef<Record<string, boolean>>({});
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
+  const urlAnalysisId = searchParams.get('analysis');
+  const urlAppId = searchParams.get('app');
   const navigate = useNavigate();
 
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    const name = profile?.full_name?.split(' ')[0] || '';
-    if (h < 12) return `Good morning, ${name}`;
-    if (h < 18) return `Good afternoon, ${name}`;
-    return `Good evening, ${name}`;
-  };
+  const isPro = (profile?.plan || 'free').toLowerCase() === 'pro' ||
+    (profile?.plan || '').toLowerCase().startsWith('try_pro');
 
-  const getResetDay = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon
-    const daysUntilMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 7 : 8 - dayOfWeek;
-    if (daysUntilMonday === 1) return 'tomorrow';
-    if (daysUntilMonday === 7) return 'next Monday';
-    const next = new Date(now);
-    next.setDate(now.getDate() + daysUntilMonday);
-    return next.toLocaleDateString('en-US', { weekday: 'long' });
-  };
-
+  // ---- load apps + analyses ----
+  // IMPORTANT: depend on `user?.id` (a stable primitive), NOT the `user`
+  // object. Supabase emits a fresh `user` reference on every TOKEN_REFRESHED
+  // event (and the SDK auto-refreshes silently in the background). If we
+  // depend on the object, this effect re-runs on every refresh, flips
+  // `loading` back to `true`, and the dashboard "flashes" / re-loads while
+  // the user is just sitting on the page.
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     const load = async () => {
-      // Avoid selecting credential columns (supabase_url, supabase_anon_key) on
-      // the client. Those are only needed by server-side analysis.
       const { data: appsData } = await supabase
         .from('apps')
         .select('id,user_id,app_name,platform,status,live_url,app_description,github_repo_url,github_repo_name,github_owner,created_at')
-        .eq('user_id', user.id);
-      const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+        .eq('user_id', userId);
+      const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', userId).order('created_at', { ascending: false });
 
-      const appsList: App[] = (appsData || []).map(app => {
-        const appAnalyses = (analysesData || []).filter(a => a.app_id === app.id);
+      const appsList: App[] = (appsData || []).map((app) => {
+        const appAnalyses = (analysesData || []).filter((a) => a.app_id === app.id);
         const latest = appAnalyses[0];
         return {
           id: app.id, app_name: app.app_name, github_repo_name: app.github_repo_name,
           github_owner: app.github_owner, platform: app.platform,
+          live_url: (app as any).live_url ?? null,
           latest_score: latest?.intent_match_score ?? null,
           latest_date: latest?.created_at ?? null,
           has_analyses: appAnalyses.length > 0,
@@ -88,36 +202,25 @@ export default function Dashboard() {
         };
       });
 
-      const now = new Date();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const thisWeekAnalyses = (analysesData || []).filter(a => a.created_at && new Date(a.created_at) >= weekStart);
-      const totalGaps = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.gaps) ? a.gaps.length : 0), 0);
-      const totalSecurity = (analysesData || []).reduce((sum, a) => sum + (Array.isArray(a.security_issues) ? a.security_issues.length : 0), 0);
-
-      // Use Monday-based week for scan_usage
-      const dayOfW = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((dayOfW + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-      const mondayStr = monday.toISOString().split('T')[0];
-      const { data: usageRows } = await supabase.from('scan_usage').select('scan_count').eq('user_id', user.id).eq('week_start', mondayStr);
-      const ws = (usageRows || []).reduce((sum, l) => sum + (l.scan_count || 0), 0);
-
       setApps(appsList);
-      setStats({ apps: appsList.length, thisWeek: thisWeekAnalyses.length, totalGaps, totalSecurity });
-      setWeeklyScans(ws);
-      setWeeklyLimitReached(ws >= 3);
 
-      // Look for an in-progress scan to surface in a "Resume" banner.
-      // We only consider sessions started within the last 12 minutes —
-      // anything older is almost certainly stuck and the analyze page
-      // will clean it up on entry.
+      let chosen: string | null = null;
+      if (urlAnalysisId) {
+        const owning = (analysesData || []).find((a) => a.id === urlAnalysisId);
+        if (owning?.app_id) chosen = owning.app_id;
+      }
+      if (!chosen && urlAppId && appsList.some((a) => a.id === urlAppId)) chosen = urlAppId;
+      if (!chosen) {
+        const withAnalysis = appsList.find((a) => a.has_analyses);
+        chosen = withAnalysis?.id || appsList[0]?.id || null;
+      }
+      setSelectedAppId(chosen);
+
+      // resume banner
       const { data: liveSession } = await supabase
         .from('scan_sessions')
         .select('id, status, created_at, repo_name')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .in('status', ['pending', 'analyzing'])
         .order('created_at', { ascending: false })
         .limit(1)
@@ -127,37 +230,65 @@ export default function Dashboard() {
         const startedAt = liveSession.created_at ? new Date(liveSession.created_at).getTime() : Date.now();
         const ageMin = (Date.now() - startedAt) / 60000;
         if (ageMin <= 12) {
-          // Match the session's repo_name back to one of the user's apps so
-          // we can deep-link the resume button to /analyze/:appId.
           const owned = appsList.find((a) => `${a.github_owner}/${a.github_repo_name}` === liveSession.repo_name);
           if (!owned) {
-            // The app this scan was running against has been deleted.
-            // Cancel the orphaned session so we never surface a broken
-            // "resume" CTA that would just error out.
-            await supabase
-              .from('scan_sessions')
-              .update({ status: 'cancelled' })
-              .eq('id', liveSession.id);
+            await supabase.from('scan_sessions').update({ status: 'cancelled' }).eq('id', liveSession.id);
             setActiveScan(null);
           } else {
-            setActiveScan({
-              sessionId: liveSession.id,
-              appId: owned.id,
-              appName: owned.app_name ?? liveSession.repo_name ?? 'your app',
-              startedAt,
-            });
+            setActiveScan({ sessionId: liveSession.id, appId: owned.id, appName: owned.app_name ?? liveSession.repo_name ?? 'your app', startedAt });
           }
-        } else {
-          setActiveScan(null);
         }
-      } else {
-        setActiveScan(null);
       }
-
       setLoading(false);
     };
     load();
-  }, [user]);
+  }, [userId, urlAnalysisId, urlAppId]);
+
+  // ---- load analysis for selected app ----
+  useEffect(() => {
+    if (!selectedAppId) { setAnalysis(null); return; }
+    const selected = apps.find((a) => a.id === selectedAppId);
+    if (!selected || !selected.latest_analysis_id) { setAnalysis(null); return; }
+    const aid = selected.latest_analysis_id;
+    setAnalysisLoading(true);
+    (async () => {
+      const { data } = await supabase.from('analyses').select('*').eq('id', aid).maybeSingle();
+      if (!data) { setAnalysis(null); setAnalysisLoading(false); return; }
+      // Only generate fix prompts when the analysis pipeline has actually
+      // produced findings. If the row is still 'reading' / 'questions_ready'
+      // / 'analyzing' (e.g. the user just clicked "Scan again"), skip — the
+      // background analyze job hasn't written gaps/security_issues yet, and
+      // updating status to 'complete' here would prematurely "finish" the
+      // in-progress scan with empty data.
+      const readyForFixes =
+        data.status === 'review_pending' || data.status === 'generating_prompts';
+      if (readyForFixes && !data.fix_prompts) {
+        if (!generateStarted.current[aid]) {
+          generateStarted.current[aid] = true;
+          setGenerating(true);
+          const { data: appPlatform } = await supabase.from('apps').select('platform').eq('id', data.app_id).single();
+          const { data: result, error: invErr } = await supabase.functions.invoke('analyze', {
+            body: {
+              action: 'generate_fixes',
+              platform: appPlatform?.platform,
+              code_understanding: data.code_understanding,
+              gaps: data.gaps,
+              security_issues: data.security_issues,
+              unknown_features: data.unknown_features,
+            },
+          });
+          if (!invErr && result?.fix_prompts) {
+            await supabase.from('analyses').update({ fix_prompts: result.fix_prompts, status: 'complete' }).eq('id', aid);
+            (data as any).fix_prompts = result.fix_prompts;
+            (data as any).status = 'complete';
+          }
+          setGenerating(false);
+        }
+      }
+      setAnalysis(data);
+      setAnalysisLoading(false);
+    })();
+  }, [selectedAppId, apps]);
 
   const relativeDate = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
@@ -168,422 +299,360 @@ export default function Dashboard() {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
-  const scoreColor = (s: number) => {
-    if (s <= 40) return '#ef4444';
-    if (s <= 70) return '#f59e0b';
-    return '#22c55e';
-  };
-
   const handleAnalyzeNow = async (app: App) => {
-    // Check if GitHub token is available. If a refresh recovers it we skip
-    // the reconnect modal entirely.
+    // Always clear any stale re-auth flag from a previous OAuth round-trip
+    // so that, if the token is still missing, we can trigger a fresh OAuth
+    // flow instead of silently no-op'ing.
+    clearReauthFlag();
     let token = await getGithubToken();
     if (!token) {
       const { data: refreshed } = await supabase.auth.refreshSession();
       token = refreshed.session?.provider_token ?? null;
     }
-
     if (token) {
       navigate(`/analyze/${app.id}`);
     } else {
-      // Still no token — show reconnect modal so the user can re-authorize.
-      setReconnectModal(app);
+      // No token cached — go straight through OAuth and come back to the
+      // analyze page so the scan resumes immediately, instead of stopping
+      // on a modal that the user has to click through.
+      await reauthenticateGithub({
+        redirectTo: `${window.location.origin}/analyze/${app.id}`,
+        message: 'Reconnecting to GitHub to start your scan…',
+      });
     }
   };
 
   const handleReconnectGithub = async () => {
     if (!reconnectModal) return;
-    await reauthenticateGithub({
-      redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`,
-      notify: false,
-    });
+    clearReauthFlag();
+    await reauthenticateGithub({ redirectTo: `${window.location.origin}/analyze/${reconnectModal.id}`, notify: false });
   };
 
+  const selectedApp = apps.find((a) => a.id === selectedAppId) || null;
+  const hasApp = apps.length > 0;
+
+  const promptEditUrl = async (app: App | null) => {
+    if (!app) return;
+    const current = app.live_url || '';
+    const next = window.prompt('Live homepage URL (e.g. https://yoursite.com)', current);
+    if (next == null) return;
+    const trimmed = next.trim();
+    const url = trimmed === '' ? null : (trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+    await supabase.from('apps').update({ live_url: url }).eq('id', app.id);
+    setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, live_url: url } : a)));
+  };
+
+  // ---------------- Loading skeleton ----------------
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="max-w-[1100px] mx-auto pt-20 sm:pt-24 pb-16 px-4 sm:px-6 md:px-12">
-          {/* Greeting */}
-          <Skeleton className="h-7 sm:h-8 w-56 max-w-full" />
-          <Skeleton className="h-4 w-72 max-w-full mt-3" />
-
-          {/* Plan card */}
-          <Skeleton className="h-24 w-full rounded-lg mt-6" />
-
-          {/* Stats: 2x2 on mobile, 4 across on desktop — matches real layout */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-[88px] sm:h-[112px] rounded-lg" />
-            ))}
+        <div className="flex flex-col md:flex-row pt-16">
+          <div className="hidden md:block" style={{ width: 240, padding: 20, borderRight: '1px solid #1a1a1a', background: '#080808', height: 'calc(100vh - 64px)' }}>
+            <Skeleton className="h-4 w-20 mb-4" />
+            {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 mb-2" />)}
           </div>
-
-          {/* App rows */}
-          <Skeleton className="h-5 w-32 mt-12" />
-          <div className="mt-4 space-y-4">
-            {[0, 1].map((i) => (
-              <Skeleton key={i} className="h-[120px] sm:h-[96px] rounded-lg" />
-            ))}
+          <div className="flex-1 p-6 sm:p-10">
+            <Skeleton className="h-7 w-72" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[200px] rounded-xl" />)}
+            </div>
+            <Skeleton className="h-[300px] rounded-xl mt-6" />
           </div>
         </div>
       </div>
     );
   }
 
+  // ---------------- Main content per section ----------------
+  const renderMain = () => {
+    if (!hasApp) return <EmptyDashboard />;
+
+    if (activeScan && (!selectedApp || !selectedApp.has_analyses)) {
+      return <ScanInProgressPanel appName={activeScan.appName || 'your app'} />;
+    }
+
+    if (!selectedApp) return <EmptyDashboard />;
+
+    if (!selectedApp.has_analyses) {
+      return (
+        <div className="rounded-xl text-center" style={{ background: PANEL_BG, border: '1px dashed #2a2a2a', padding: '48px 24px' }}>
+          <Sparkles size={32} style={{ color: '#f97316', margin: '0 auto' }} />
+          <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 600, marginTop: 14 }}>No scan yet for this app</h3>
+          <p style={{ color: '#888', fontSize: 14, marginTop: 6 }}>Run your first scan to populate the dashboard.</p>
+          <button onClick={() => handleAnalyzeNow(selectedApp)}
+            style={{ marginTop: 16, background: '#fff', color: '#000', border: 'none', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            Run scan
+          </button>
+        </div>
+      );
+    }
+
+    if (analysisLoading || generating) return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
+    if (!analysis) return null;
+
+    const intentScore = analysis.intent_match_score ?? null;
+    const promises = Array.isArray(analysis.landing_page_promises) ? analysis.landing_page_promises : [];
+
+    const secCount = Array.isArray(analysis.security_issues) ? analysis.security_issues.length : 0;
+    const secIssues: any[] = Array.isArray(analysis.security_issues) ? analysis.security_issues : [];
+
+    if (section === 'performance') {
+      return (
+        <LockedSection
+          title="Performance monitoring"
+          icon={<Activity size={26} />}
+          description="Lighthouse-grade metrics for your live site — Core Web Vitals, render-blocking resources, image weight, and weekly trend lines."
+          onUpgrade={() => navigate('/pricing')}
+        />
+      );
+    }
+
+    if (section === 'monitoring') {
+      return (
+        <LockedSection
+          title="Continuous monitoring"
+          icon={<Radio size={26} />}
+          description="Auto re-scan every time you push to GitHub. Get an instant alert if a new security issue, broken promise, or legal gap shows up."
+          onUpgrade={() => navigate('/pricing')}
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {section === 'overview' && (
+          <>
+            {analysis.summary && (
+              <div className="rounded-xl p-5 sm:p-6" style={{ background: '#000', border: '1px solid ' + PANEL_BORDER }}>
+                <div className="text-[11px] uppercase tracking-[0.12em] font-semibold mb-3" style={{ color: '#9ca3af' }}>Summary</div>
+                <div className="text-[15px] leading-[1.75]" style={{ color: '#ffffff' }}>{analysis.summary}</div>
+              </div>
+            )}
+
+            <IntentGaugeCard score={intentScore} />
+
+            <PromiseCoverageCard
+              liveUrl={selectedApp?.live_url ?? null}
+              promises={promises}
+              onView={() => setSection('seo')}
+            />
+
+            <SeverityBarCard securityIssues={secIssues} onViewAll={() => setSection('security')} />
+
+            <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+              <ReportContent
+                analysis={analysis}
+                app={selectedApp}
+                analysisId={selectedApp.latest_analysis_id || undefined}
+                plainMode={plainMode}
+                onTogglePlainMode={setPlainMode}
+                isPro={isPro}
+                section="overview"
+                onNavigateSection={(s) => setSection(s)}
+              />
+            </div>
+          </>
+        )}
+
+        {section !== 'overview' && (
+          <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+            <ReportContent
+              analysis={analysis}
+              app={selectedApp}
+              analysisId={selectedApp.latest_analysis_id || undefined}
+              plainMode={plainMode}
+              onTogglePlainMode={setPlainMode}
+              isPro={isPro}
+              section={section as any}
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ---------------- Render ----------------
   return (
     <div className="min-h-screen bg-background">
       <DashboardNavbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
-      {/* Reconnect GitHub Modal */}
       {reconnectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <div className="text-center" style={{ background: '#0a0a0a', border: '1px solid #ffffff14', borderRadius: 12, padding: 32, maxWidth: 400, width: '100%', margin: '0 16px' }}>
-            <Github size={36} style={{ color: '#888888' }} className="mx-auto" />
-            <h3 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, marginTop: 16, letterSpacing: '-0.02em' }}>Reconnect GitHub</h3>
-            <p style={{ color: '#888888', fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
-              We need to reconnect to GitHub to read your {reconnectModal.github_repo_name} repository. We will use the same repository you connected before.
+            <Github size={36} style={{ color: '#888' }} className="mx-auto" />
+            <h3 style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginTop: 16, letterSpacing: '-0.02em' }}>Reconnect GitHub</h3>
+            <p style={{ color: '#888', fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
+              We need to reconnect to GitHub to read your {reconnectModal.github_repo_name} repository.
             </p>
-            <p className="font-mono" style={{ color: '#555555', fontSize: 12, marginTop: 8 }}>
-              {reconnectModal.github_owner}/{reconnectModal.github_repo_name}
-            </p>
-            <button onClick={handleReconnectGithub} className="btn-cyber-primary w-full mt-6">
-              Reconnect GitHub
-            </button>
-            <button onClick={() => setReconnectModal(null)} className="w-full py-3 mt-2" style={{ color: '#888888', background: 'transparent', border: 'none', fontSize: 14, cursor: 'pointer' }}>
-              Cancel
-            </button>
+            <button onClick={handleReconnectGithub} className="btn-cyber-primary w-full mt-6">Reconnect GitHub</button>
+            <button onClick={() => setReconnectModal(null)} className="w-full py-3 mt-2" style={{ color: '#888', background: 'transparent', border: 'none', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}
 
-      <div className="max-w-[1100px] mx-auto pt-20 sm:pt-24 pb-16 px-4 sm:px-6 md:px-12">
-        <h1 className="text-[24px] sm:text-[28px]" style={{ color: '#ffffff', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>{getGreeting()}</h1>
-        <p className="text-[14px] sm:text-[15px]" style={{ color: '#555555', marginTop: 4 }}>{apps.length === 0 ? 'Connect your first app to get started' : 'Ready to verify your next app?'}</p>
+      <div className="flex flex-col md:flex-row pt-16">
+        <DashboardSidebar
+          active={section}
+          onSelect={(k) => setSection(k)}
+          hasApp={hasApp}
+          isPro={isPro}
+        />
 
-        {activeScan && (
-          <div
-            className="flex-col sm:flex-row sm:items-center"
-            style={{
-              marginTop: 20,
-              width: '100%',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 12,
-              padding: '14px 16px',
-              borderRadius: 12,
-              background: 'linear-gradient(180deg, #10111e, #070710)',
-              border: '1px solid #363c70',
-              color: '#ffffff',
-              textAlign: 'left',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0, flex: 1 }}>
-              <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10 }}>
-                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
-                <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
-              </span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>
-                  Scan in progress for {activeScan.appName}
-                </div>
-                <div style={{ fontSize: 12, color: '#a1a1aa', marginTop: 2 }}>
-                  Running in the background — you can leave this tab. {activeScan.appId ? 'Click to watch live progress.' : 'It will finish on its own.'}
-                </div>
-              </div>
-            </div>
-            <div className="self-stretch sm:self-auto" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <button
-                onClick={async () => {
-                  await supabase
-                    .from('scan_sessions')
-                    .update({ status: 'cancelled' })
-                    .eq('id', activeScan.sessionId);
-                  setActiveScan(null);
-                }}
-                className="flex-1 sm:flex-none"
-                style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: '#a1a1aa',
-                  background: 'transparent',
-                  border: '1px solid #2a2a2a',
-                  padding: '8px 14px',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel scan
-              </button>
-              {activeScan.appId && (
-                <button
-                  onClick={() => navigate(`/analyze/${activeScan.appId}`)}
-                  className="flex-1 sm:flex-none"
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    background: '#1f223e',
-                    border: '1px solid #444b94',
-                    padding: '8px 14px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Resume →
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        <WelcomeGuide />
-
-        {((profile?.plan || 'free').toLowerCase() !== 'pro') && (
-          <div className="mt-5">
-            <UpgradeBanner
-              buttonText="Upgrade to Pro"
-              description="for unlimited Deep Scans and faster, deeper analysis."
-              accent="#f97316"
-              icon={<Rocket className="h-3 w-3" strokeWidth={2.4} />}
-              onClick={() => navigate('/pricing')}
-            />
-          </div>
-        )}
-
-        {apps.length === 0 && (
-          <div className="mt-4">
-            <RisGuide pageKey="dashboard_empty" message={"You haven't analyzed anything yet.\nConnect your first app and find out if it does what you actually meant to build."} />
-          </div>
-        )}
-
-        {githubConflict && (
-          <div className="flex items-start gap-3 mt-4 p-4" style={{ background: '#1a0a0a', border: '1px solid #421616', borderRadius: 8 }}>
-            <AlertTriangle size={20} className="shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
-            <p style={{ color: '#ffffff', fontSize: 14 }}>GitHub is already linked to a different account. Please use a different GitHub account or disconnect it from the other account first.</p>
-          </div>
-        )}
-
-        {/* Plan Status Card */}
-        {(() => {
-          const plan = (profile?.plan || 'free').toLowerCase();
-          const proCredits = profile?.pro_credits ?? 0;
-          const cardBase: React.CSSProperties = { background: '#111111', border: '1px solid #222222', borderRadius: 8, padding: '20px 24px' };
-
-          if (plan === 'pro') {
-            return (
-              <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #f97316' }}>
-                <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRO</p>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
-                  <span style={{ fontSize: 13, color: '#555555' }}>Unlimited apps</span>
-                  <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                  <span style={{ fontSize: 13, color: '#555555' }}>Unlimited scans</span>
-                  <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                  <span style={{ fontSize: 13, color: '#555555' }}>Deep scan enabled</span>
-                </div>
-              </div>
-            );
-          }
-
-          if (plan === 'try_pro' || plan === 'trypro') {
-            const used = proCredits <= 0;
-            return (
-              <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #ffffff' }}>
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div>
-                    <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TRY PRO</p>
-                    {used ? (
-                      <>
-                        <p style={{ color: '#ffffff', fontSize: 14, marginTop: 8 }}>Deep scan used</p>
-                        <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>Your app has been fully analyzed.</p>
-                      </>
-                    ) : (
-                      <>
-                        <p style={{ color: '#ffffff', fontSize: 14, marginTop: 8 }}>1 Deep Scan available</p>
-                        <p style={{ color: '#555555', fontSize: 13, marginTop: 4 }}>Use it on your connected app before it expires.</p>
-                      </>
+        <main className="flex-1 min-w-0">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+            {/* Header bar: app switcher + scan again */}
+            {hasApp && (
+              <div className="flex flex-wrap items-center gap-3 justify-between mb-6">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative">
+                    <button
+                      onClick={() => setAppSwitcherOpen((o) => !o)}
+                      className="inline-flex items-center gap-2"
+                      style={{
+                        background: PANEL_BG, border: '1px solid #222', borderRadius: 8,
+                        padding: '8px 12px', color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                      }}
+                    >
+                      <Github size={13} />
+                      <span style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedApp ? (selectedApp.github_repo_name ? `${selectedApp.github_owner}/${selectedApp.github_repo_name}` : selectedApp.app_name) : 'Pick an app'}
+                      </span>
+                      <ChevronDown size={13} style={{ color: '#888' }} />
+                    </button>
+                    {appSwitcherOpen && (
+                      <div
+                        className="absolute left-0 mt-2 w-72 z-40"
+                        style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 10, boxShadow: '0 10px 30px rgba(0,0,0,0.6)', padding: 6 }}
+                      >
+                        {apps.map((a) => (
+                          <button
+                            key={a.id}
+                            onClick={() => { setSelectedAppId(a.id); setAppSwitcherOpen(false); }}
+                            className="w-full text-left px-3 py-2 rounded-md"
+                            style={{ background: a.id === selectedAppId ? '#181818' : 'transparent', color: '#fff', fontSize: 13, border: 'none', cursor: 'pointer' }}
+                          >
+                            <div style={{ fontWeight: 500 }}>
+                              {a.github_repo_name ? `${a.github_owner}/${a.github_repo_name}` : a.app_name}
+                            </div>
+                            {a.latest_date && <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>Last scan {relativeDate(a.latest_date)}</div>}
+                          </button>
+                        ))}
+                        <Link
+                          to="/connect"
+                          onClick={() => setAppSwitcherOpen(false)}
+                          className="block px-3 py-2 mt-1 rounded-md"
+                          style={{ borderTop: '1px solid #1a1a1a', color: '#f97316', fontSize: 13, textDecoration: 'none' }}
+                        >
+                          <PlusCircle size={12} style={{ display: 'inline', marginRight: 6 }} /> Connect another app
+                        </Link>
+                      </div>
                     )}
                   </div>
-                  {used ? (
-                    <button
-                      onClick={() => setWaitlistOpen(true)}
-                      style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '8px 16px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
-                    >
-                      Buy another deep scan
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => apps[0] && handleAnalyzeNow(apps[0])}
-                      style={{ background: '#ffffff', color: '#000000', padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
-                    >
-                      Run Deep Scan
-                    </button>
+                  {selectedApp?.latest_date && (
+                    <span style={{ color: '#666', fontSize: 12 }}>· Last scan {relativeDate(selectedApp.latest_date)}</span>
+                  )}
+                  {selectedApp && (
+                    selectedApp.live_url ? (
+                      <button
+                        onClick={() => promptEditUrl(selectedApp)}
+                        className="inline-flex items-center gap-1.5"
+                        style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 999, padding: '5px 10px', color: '#cbd5e1', fontSize: 12, cursor: 'pointer' }}
+                        title="Edit homepage URL"
+                      >
+                        <Globe size={11} style={{ color: '#888' }} />
+                        <span>Verifying against: {selectedApp.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                        <Pencil size={10} style={{ color: '#888' }} />
+                      </button>
+                    ) : null
                   )}
                 </div>
+                {selectedApp && (
+                  <button
+                    onClick={() => handleAnalyzeNow(selectedApp)}
+                    className="inline-flex items-center gap-1.5"
+                    style={{ background: '#fff', color: '#000', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                  >
+                    <RefreshCw size={13} /> {selectedApp.has_analyses ? 'Scan again' : 'Run first scan'}
+                  </button>
+                )}
               </div>
-            );
-          }
+            )}
 
-          // FREE
-          return (
-            <div className="mt-6 mb-6" style={{ ...cardBase, borderLeft: '3px solid #f97316' }}>
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <p style={{ color: '#ffffff', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Free Plan</p>
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
-                    <span style={{ fontSize: 13, color: '#555555' }}>{stats.apps} of 1 app</span>
-                    <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                    <span style={{ fontSize: 13, color: '#555555' }}>{weeklyScans} of 3 scans</span>
-                    <span style={{ fontSize: 13, color: '#333333' }}>·</span>
-                    <span style={{ fontSize: 13, color: '#555555' }}>Resets {getResetDay()}</span>
+            {githubConflict && (
+              <div className="flex items-start gap-3 mb-4 p-4" style={{ background: '#1a0a0a', border: '1px solid #421616', borderRadius: 8 }}>
+                <AlertTriangle size={20} className="shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
+                <p style={{ color: '#fff', fontSize: 14 }}>GitHub is already linked to a different account.</p>
+              </div>
+            )}
+
+            {activeScan && hasApp && selectedApp?.has_analyses && (
+              <div className="mb-4 p-3 flex items-center justify-between gap-3" style={{ background: '#10111e', border: '1px solid #363c70', borderRadius: 10 }}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10 }}>
+                    <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', opacity: 0.6, animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
+                    <span style={{ position: 'relative', display: 'inline-flex', width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+                  </span>
+                  <span style={{ color: '#fff', fontSize: 13 }}>New scan running for {activeScan.appName}. We'll email you when it's done.</span>
+                </div>
+                {activeScan.appId && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        if (!activeScan?.sessionId) return;
+                        const ok = window.confirm('Cancel this scan? You can start a new one immediately.');
+                        if (!ok) return;
+                        await supabase
+                          .from('scan_sessions')
+                          .update({ status: 'cancelled' })
+                          .eq('id', activeScan.sessionId);
+                        if (typeof window !== 'undefined') {
+                          window.localStorage.removeItem('rismon_active_analysis');
+                          window.localStorage.removeItem('rismon_analysis_stage');
+                        }
+                        setActiveScan(null);
+                        toast.success('Scan cancelled.');
+                      }}
+                      style={{ background: '#1a0a0a', border: '1px solid #421616', color: '#fca5a5', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Cancel scan
+                    </button>
+                    <button
+                      onClick={() => navigate(`/analyze/${activeScan.appId}`)}
+                      style={{ background: '#1f223e', border: '1px solid #444b94', color: '#fff', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      View live →
+                    </button>
                   </div>
-                  <p style={{ fontSize: 12, color: '#f97316', marginTop: 8 }}>40% code coverage</p>
+                )}
+              </div>
+            )}
+
+            {!isPro && hasApp && (
+              <div
+                className="mb-6 flex items-center justify-between gap-4 flex-wrap"
+                style={{ background: 'linear-gradient(180deg, #1a1308, #0c0a05)', border: '1px solid #3a2a14', borderRadius: 12, padding: '14px 18px' }}
+              >
+                <div className="flex items-center gap-3">
+                  <Rocket size={16} style={{ color: '#f97316' }} />
+                  <div>
+                    <div style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>Unlock Performance & Continuous Monitoring</div>
+                    <div style={{ color: '#a98455', fontSize: 12, marginTop: 2 }}>Auto-rescan on every push, deeper code coverage, full claim verification.</div>
+                  </div>
                 </div>
                 <button
-                  onClick={() => setWaitlistOpen(true)}
-                  style={{ border: '1px solid #f97316', color: '#f97316', background: 'transparent', padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}
+                  onClick={() => navigate('/pricing')}
+                  style={{ background: '#f97316', color: '#000', border: 'none', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                 >
                   Upgrade to Pro
                 </button>
               </div>
-            </div>
-          );
-        })()}
+            )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {[
-            { v: stats.apps, l: 'Apps connected' },
-            { v: stats.thisWeek, l: 'Analyses this week' },
-            { v: stats.totalGaps, l: 'Total gaps found' },
-            { v: stats.totalSecurity, l: 'Security issues found' },
-          ].map((s, i) => (
-            <div key={i} className="p-4 sm:p-6" style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8 }}>
-              <p className="text-[28px] sm:text-[40px]" style={{ color: '#ffffff', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1 }}>{s.v}</p>
-              <p className="text-[12px] sm:text-[13px]" style={{ color: '#555555', marginTop: 8 }}>{s.l}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Weekly limit */}
-        {weeklyLimitReached && (profile?.plan || 'free').toLowerCase() === 'free' && (
-          <div className="mt-6 p-4 flex items-start gap-3" style={{ background: '#191207', border: '1px solid #3a2810', borderRadius: 8 }}>
-            <Clock size={20} className="shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
-            <div>
-              <p style={{ color: '#ffffff', fontSize: 15 }}>You have used your 3 free analyses for this week.</p>
-              <p style={{ color: '#888888', fontSize: 13, marginTop: 4 }}>Your scans reset next week. Upgrade to Pro for unlimited access.</p>
-              <button onClick={() => setWaitlistOpen(true)} style={{ color: '#f97316', fontSize: 13, marginTop: 4, background: 'transparent', border: 'none', cursor: 'pointer' }} className="hover:underline">Join Pro waitlist →</button>
-            </div>
+            {renderMain()}
           </div>
-        )}
-
-        {/* No apps */}
-        {apps.length === 0 ? (
-          <div className="mt-16 text-center" style={{ border: '2px dashed #1f1f1f', borderRadius: 12, padding: 64 }}>
-            <PlusCircle size={48} style={{ color: '#333333' }} className="mx-auto" />
-            <p style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, marginTop: 20, letterSpacing: '-0.02em' }}>Connect your first app</p>
-            <p className="max-w-[400px] mx-auto" style={{ color: '#888888', fontSize: 15, marginTop: 12, lineHeight: 1.6 }}>Connect your GitHub repository to start your first analysis. Read only access. We never store or edit your code.</p>
-            <Link to="/connect" className="btn-cyber-primary inline-block mt-7">Connect an app</Link>
-          </div>
-        ) : (
-          <div className="mt-12">
-            <h2 style={{ color: '#ffffff', fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Your apps</h2>
-            <div className="mt-4 space-y-4">
-              {apps.map(app => {
-                const isPro = (profile?.plan || 'free').toLowerCase() === 'pro';
-                return (
-                  <div key={app.id} className="p-4 sm:p-6" style={{ background: '#111111', border: '1px solid #222222', borderRadius: 8 }}>
-                    <div className="flex items-start justify-between gap-4 sm:gap-6 flex-wrap">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {app.github_repo_name && <Github size={15} style={{ color: '#ffffff' }} />}
-                          <p style={{ color: '#ffffff', fontSize: 15, fontWeight: 500 }}>
-                            {app.github_repo_name ? `${app.github_owner}/${app.github_repo_name}` : app.app_name}
-                          </p>
-                          {isPro && (
-                            <span style={{ background: 'transparent', border: '1px solid #333333', color: '#888888', fontSize: 10, padding: '2px 8px', borderRadius: 4, letterSpacing: '0.05em' }}>
-                              DEEP SCAN
-                            </span>
-                          )}
-                          {app.platform && (
-                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#1f1108', color: '#f97316', border: '1px solid #4f2710' }}>{app.platform}</span>
-                          )}
-                        </div>
-                        {app.has_analyses && app.latest_date ? (
-                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6 }}>Last analyzed {relativeDate(app.latest_date)}</p>
-                        ) : (
-                          <p style={{ color: '#555555', fontSize: 13, marginTop: 6, fontStyle: 'italic' }}>Not analyzed yet</p>
-                        )}
-                      </div>
-
-                      {app.has_analyses && app.latest_score !== null && (
-                        <div className="text-right">
-                          <p style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.02em', color: scoreColor(app.latest_score), lineHeight: 1 }}>
-                            {app.latest_score}
-                          </p>
-                          <p style={{ fontSize: 11, color: '#555555', marginTop: 4 }}>Intent Score</p>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-2 w-full sm:w-auto">
-                        <button
-                          onClick={() => handleAnalyzeNow(app)}
-                          className="w-full sm:w-auto"
-                          style={{ background: '#ffffff', color: '#000000', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}
-                        >
-                          Analyze now
-                        </button>
-                        {app.has_analyses && app.latest_analysis_id && (
-                          <Link
-                            to={`/report/${app.latest_analysis_id}`}
-                            className="w-full sm:w-auto"
-                            style={{ border: '1px solid #333333', color: '#ffffff', padding: '10px 16px', borderRadius: 6, fontSize: 13, fontWeight: 500, background: 'transparent', textAlign: 'center' }}
-                          >
-                            View report
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Locked / Add-app cards by plan */}
-            {(() => {
-              const plan = (profile?.plan || 'free').toLowerCase();
-              if (plan === 'pro') {
-                return (
-                  <Link
-                    to="/connect"
-                    className="mt-4 block text-center transition-colors"
-                    style={{ background: 'transparent', border: '1px dashed #333333', borderRadius: 8, padding: '16px 24px', fontSize: 14, color: '#555555' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#555555')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#333333')}
-                  >
-                    + Connect another app
-                  </Link>
-                );
-              }
-              if (plan === 'try_pro' || plan === 'trypro') {
-                return null;
-              }
-              // FREE — locked card
-              return (
-                <div className="mt-4 text-center" style={{ background: '#0a0a0a', border: '1px dashed #222222', borderRadius: 8, padding: '20px 24px', opacity: 0.6 }}>
-                  <p style={{ fontSize: 14, color: '#555555' }}>Want to scan another app?</p>
-                  <button
-                    onClick={() => setWaitlistOpen(true)}
-                    style={{ background: 'transparent', border: '1px solid #f97316', color: '#f97316', padding: '8px 16px', borderRadius: 6, fontSize: 13, marginTop: 12, cursor: 'pointer' }}
-                  >
-                    Unlock unlimited apps
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+        </main>
       </div>
     </div>
   );

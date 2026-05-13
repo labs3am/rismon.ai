@@ -158,10 +158,493 @@ function splitBundleByFile(bundle: string): Array<{ path: string; lines: string[
   return out;
 }
 
+// ============================================================
+// File-path validation for LLM findings (added 2026-05).
+//
+// Claude/Gemini occasionally hallucinate file paths in their
+// findings and fix prompts (e.g. "src/hooks/useTasks.ts" when no
+// such file exists in the repo). Showing fake paths to a founder
+// destroys trust on the first read. We solve it by:
+//  1. Building a set of every file path actually fetched from the
+//     repo for this scan (frontend bundle + edge function bundle).
+//  2. After each LLM finding is normalized, checking its file_path
+//     against that set and stripping any reference that doesn't
+//     match a real file. The finding is kept (not dropped) but is
+//     marked unverified and its prose is rewritten to point the
+//     user at the feature instead of a fabricated path.
+// ============================================================
+function buildKnownPathSet(...bundles: string[]): Set<string> {
+  const set = new Set<string>();
+  for (const b of bundles) {
+    for (const f of splitBundleByFile(b || "")) {
+      if (f.path) set.add(f.path);
+    }
+  }
+  return set;
+}
+
+// Build a map of path -> raw file text for evidence verification.
+function buildFileContentMap(...bundles: string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const b of bundles) {
+    for (const f of splitBundleByFile(b || "")) {
+      if (f.path) map.set(f.path, f.lines.join("\n"));
+    }
+  }
+  return map;
+}
+
+// Resolve a finding's path against the content map (handles minor
+// normalization like leading "./" or repo-prefix mismatches).
+function resolveFileContent(
+  fp: string | undefined | null,
+  contents: Map<string, string>,
+): string | null {
+  if (!fp || typeof fp !== "string") return null;
+  if (contents.has(fp)) return contents.get(fp)!;
+  const norm = fp.replace(/^\.?\//, "");
+  if (contents.has(norm)) return contents.get(norm)!;
+  for (const [k, v] of contents) {
+    if (k === norm) return v;
+    if (k.endsWith("/" + norm) || norm.endsWith("/" + k)) return v;
+  }
+  return null;
+}
+
+// Normalize whitespace so a quoted snippet matches the file even if
+// the LLM trimmed indentation or collapsed runs of spaces.
+function normalizeForMatch(s: string): string {
+  return (s || "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+// Pseudo-paths the deterministic scanners emit on purpose — they
+// are not real files and must not be flagged as hallucinations.
+const PSEUDO_PATH_RX = /^(supabase:\/\/|router not scanned$|scanned files$|unknown$)/i;
+
+function isRealCodePath(p: string | undefined | null, known: Set<string>): boolean {
+  if (!p || typeof p !== "string") return false;
+  if (PSEUDO_PATH_RX.test(p)) return true;
+  if (known.has(p)) return true;
+  // Tolerate small differences (leading "./", "/", "src/" already on both sides).
+  const norm = p.replace(/^\.?\//, "");
+  if (known.has(norm)) return true;
+  for (const k of known) {
+    if (k === norm) return true;
+    if (k.endsWith("/" + norm) || norm.endsWith("/" + k)) return true;
+  }
+  return false;
+}
+
+// Match anything that looks like a source file reference inside prose.
+const FILE_REF_RX = /(?:[A-Za-z0-9_./\-]+\/)?[A-Za-z0-9_\-]+\.(?:tsx?|jsx?|mjs|cjs|css|html|json|sql|md|py|rb|go|rs)\b/g;
+
+function scrubProse(text: string, known: Set<string>, feature: string): string {
+  if (!text || typeof text !== "string") return text;
+  return text.replace(FILE_REF_RX, (m) => {
+    if (isRealCodePath(m, known)) return m;
+    return `where ${feature} is handled in your codebase`;
+  });
+}
+
+function findingFeatureLabel(f: any): string {
+  const t = (f?.title || f?.category || "this issue").toString().toLowerCase().trim();
+  return t.replace(/[`"']/g, "").slice(0, 60) || "this issue";
+}
+
+function sanitizeLLMFinding(f: any, known: Set<string>): any {
+  if (!f || typeof f !== "object") return f;
+  // Skip findings that the deterministic scanners produced — they
+  // already cite real file paths and we own that path data.
+  if (f.source === "deterministic") return f;
+
+  const out = { ...f };
+  const feature = findingFeatureLabel(out);
+  const fp = out.file_path;
+  const fpReal = isRealCodePath(fp, known);
+
+  const TEXT_KEYS = [
+    "fix_prompt",
+    "how_to_fix",
+    "what_we_found",
+    "what_this_means",
+    "explanation",
+    "you_said",
+    "what_was_built",
+    "business_impact",
+    "title",
+    "technical_reference",
+  ];
+
+  if (fp && !fpReal) {
+    const fallback = `Find where ${feature} is handled in your codebase and apply this fix.`;
+    // Strip the fabricated path everywhere it shows up verbatim.
+    for (const k of TEXT_KEYS) {
+      if (typeof out[k] === "string" && out[k].includes(fp)) {
+        out[k] = out[k].split(fp).join(fallback);
+      }
+    }
+    out.unverified_file_path = fp;
+    out.file_path = null;
+    out.confidence = "unverified";
+    out.confidence_reason =
+      out.confidence_reason ||
+      "The file path the analyzer suggested could not be confirmed in the fetched repository, so this finding is shown without a path.";
+  }
+
+  // Even when file_path is fine (or absent), the body of fix_prompt /
+  // how_to_fix can still mention other fabricated files. Scrub those.
+  for (const k of ["fix_prompt", "how_to_fix", "what_we_found", "what_this_means", "explanation"]) {
+    if (typeof out[k] === "string") {
+      out[k] = scrubProse(out[k], known, feature);
+    }
+  }
+
+  return out;
+}
+
+function sanitizeFindingArray(arr: any, known: Set<string>): any[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((f) => sanitizeLLMFinding(f, known));
+}
+
+// ============================================================
+// EVIDENCE VERIFIER (added 2026-05).
+//
+// After path-sanitization, every LLM finding that *claims* to point
+// at a real file must be backed by code we can actually find in
+// that file. If the LLM quoted a code_snippet, evidence, or
+// what_we_found containing a code-looking phrase, that phrase has
+// to literally appear in the file. If it doesn't, we drop the
+// finding outright — the model fabricated it.
+//
+// This runs only on LLM findings (skips deterministic ones, which
+// already cite verified file/line data) and only when we can read
+// the file's contents from the bundle.
+// ============================================================
+function extractCandidateQuotes(f: any): string[] {
+  const out: string[] = [];
+  const push = (s: any) => {
+    if (typeof s === "string" && s.trim().length >= 8) out.push(s.trim());
+  };
+  push(f?.code_snippet);
+  push(f?.evidence);
+  // Pull anything inside backticks from prose fields — that's how the
+  // LLM is told to quote real code. Single-word quotes are ignored.
+  const proseFields = [
+    f?.what_we_found,
+    f?.explanation,
+    f?.fix_prompt,
+    f?.how_to_fix,
+  ];
+  for (const p of proseFields) {
+    if (typeof p !== "string") continue;
+    const matches = p.match(/`([^`\n]{8,200})`/g);
+    if (matches) for (const m of matches) push(m.replace(/`/g, ""));
+  }
+  return out;
+}
+
+function quoteAppearsInFile(quote: string, fileText: string): boolean {
+  if (!quote || !fileText) return false;
+  const q = normalizeForMatch(quote);
+  if (q.length < 8) return false;
+  const hay = normalizeForMatch(fileText);
+  if (hay.includes(q)) return true;
+  // Try the longest contiguous code-looking sub-phrase too — handles
+  // cases where the LLM wrapped the quote with a few extra words.
+  const sub = q.match(/[a-z0-9_$.()\[\]'"]{12,}/gi);
+  if (sub) {
+    for (const s of sub) {
+      if (hay.includes(s.toLowerCase())) return true;
+    }
+  }
+  return false;
+}
+
+function verifyFindingEvidence(
+  f: any,
+  contents: Map<string, string>,
+): { keep: boolean; reason?: string } {
+  if (!f || typeof f !== "object") return { keep: true };
+  if (f.source === "deterministic") return { keep: true };
+  // No file path or pseudo path — nothing to cross-check at the
+  // line level. The path-sanitizer already handled this case.
+  const fp = f.file_path;
+  if (!fp || typeof fp !== "string") return { keep: true };
+  if (PSEUDO_PATH_RX.test(fp)) return { keep: true };
+
+  const fileText = resolveFileContent(fp, contents);
+  if (fileText == null) return { keep: true }; // path scrubbed elsewhere
+
+  const quotes = extractCandidateQuotes(f);
+  if (quotes.length === 0) {
+    // No code was quoted at all — we can't prove the claim. Per the
+    // accuracy mandate, drop it instead of showing an unprovable
+    // finding.
+    return { keep: false, reason: "no_quoted_evidence" };
+  }
+  for (const q of quotes) {
+    if (quoteAppearsInFile(q, fileText)) return { keep: true };
+  }
+  return { keep: false, reason: "quote_not_in_file" };
+}
+
+function verifyFindingArray(
+  arr: any,
+  contents: Map<string, string>,
+  bucket: string,
+  dropLog: Array<{ bucket: string; title: string; reason: string }>,
+): any[] {
+  if (!Array.isArray(arr)) return [];
+  const out: any[] = [];
+  for (const f of arr) {
+    const v = verifyFindingEvidence(f, contents);
+    if (v.keep) {
+      out.push(f);
+    } else {
+      dropLog.push({
+        bucket,
+        title: (f?.title || "(untitled)").toString().slice(0, 80),
+        reason: v.reason || "unverified",
+      });
+    }
+  }
+  return out;
+}
+
 const USER_TABLE_HINT = /\b(notes?|orders?|messages?|posts?|comments?|files?|uploads?|invoices?|bookings?|appointments?|tasks?|projects?|sessions?|profiles?|users?|customers?|payments?|subscriptions?|chats?|conversations?|contacts?|leads?|tickets?|documents?|reports?|entries?|records?)\b/i;
+
+// ============================================================
+// LIVE HOMEPAGE FETCH (added 2026-05).
+//
+// When the founder has saved a `live_url` for their app, we fetch
+// the deployed homepage HTML and pass an extracted text version
+// into the Claude/Gemini prompt so the analysis cross-checks
+// claims against what is *actually* shipped to visitors — not
+// just the source code in GitHub. This catches false promises
+// that only exist in the live marketing copy.
+// ============================================================
+function stripHtmlToText(html: string): string {
+  if (!html) return "";
+  let s = html;
+  // Drop script/style/noscript blocks entirely.
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, " ");
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, " ");
+  s = s.replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
+  s = s.replace(/<!--[\s\S]*?-->/g, " ");
+  // Replace tags with spaces, then collapse whitespace.
+  s = s.replace(/<\/?[^>]+>/g, " ");
+  // Decode the most common HTML entities.
+  s = s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function extractTag(html: string, tag: string): string | null {
+  const m = html.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
+  return m ? stripHtmlToText(m[1]).slice(0, 400) : null;
+}
+
+function extractMeta(html: string, name: string): string | null {
+  const rx = new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']+)["']`, "i");
+  const rx2 = new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:name|property)=["']${name}["']`, "i");
+  const m = html.match(rx) || html.match(rx2);
+  return m ? m[1].slice(0, 400) : null;
+}
+
+async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<{
+  url: string;
+  status: number;
+  title: string | null;
+  description: string | null;
+  og_title: string | null;
+  og_description: string | null;
+  text: string;          // truncated visible text
+  headings: string[];    // h1/h2 text
+  cta_text: string[];    // button / link text snippets
+  fetched_at: string;
+  error?: string;
+} | null> {
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  let url = rawUrl.trim();
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try {
+    new URL(url);
+  } catch {
+    return { url: rawUrl, status: 0, title: null, description: null, og_title: null, og_description: null, text: "", headings: [], cta_text: [], fetched_at: new Date().toISOString(), error: "invalid_url" };
+  }
+
+  // Tight budget — this fetch blocks the Claude call, so we can't afford
+  // to wait 8s on a slow homepage. If the site doesn't respond in 4s we
+  // fall back to source-only analysis.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: {
+        "User-Agent": "RismonAnalyzer/1.0 (+https://rismon.ai)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const html = (await res.text()).slice(0, 200_000); // cap to 200KB
+    const text = stripHtmlToText(html);
+    const headings: string[] = [];
+    for (const tag of ["h1", "h2"]) {
+      const rx = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "gi");
+      let m: RegExpExecArray | null;
+      while ((m = rx.exec(html)) !== null && headings.length < 25) {
+        const t = stripHtmlToText(m[1]);
+        if (t) headings.push(t.slice(0, 200));
+      }
+    }
+    const cta_text: string[] = [];
+    const ctaRx = /<(?:button|a)[^>]*>([\s\S]*?)<\/(?:button|a)>/gi;
+    let cm: RegExpExecArray | null;
+    while ((cm = ctaRx.exec(html)) !== null && cta_text.length < 40) {
+      const t = stripHtmlToText(cm[1]);
+      if (t && t.length >= 2 && t.length <= 80) cta_text.push(t);
+    }
+    return {
+      url,
+      status: res.status,
+      title: extractTag(html, "title"),
+      description: extractMeta(html, "description"),
+      og_title: extractMeta(html, "og:title"),
+      og_description: extractMeta(html, "og:description"),
+      text: text.slice(0, 12_000),
+      headings,
+      cta_text,
+      fetched_at: new Date().toISOString(),
+    };
+  } catch (e) {
+    clearTimeout(timer);
+    return {
+      url,
+      status: 0,
+      title: null,
+      description: null,
+      og_title: null,
+      og_description: null,
+      text: "",
+      headings: [],
+      cta_text: [],
+      fetched_at: new Date().toISOString(),
+      error: (e as any)?.message?.slice(0, 200) || "fetch_failed",
+    };
+  }
+}
 
 function snippet(line: string, max = 200): string {
   return (line || "").trim().slice(0, max);
+}
+
+// ============================================================
+// HOMEPAGE PROMISE EXTRACTOR + CODE EVIDENCE CHECKER
+// (added 2026-05). Deterministic, no LLM call.
+//
+// 1. extractHomepagePromises(signals) — pulls feature claims out
+//    of the live homepage (headings, CTAs, meta, visible text)
+//    using a curated keyword list ("AI-powered", "real-time",
+//    "encrypted", "sync", "automatic", "unlimited", etc.).
+// 2. evaluatePromiseAgainstCode(claim, fileContents, edgeBundle)
+//    — searches the scanned code for evidence keywords mapped
+//    from the claim. Returns FOUND / PARTIAL / NOT_FOUND plus a
+//    short human-readable evidence string for the report table.
+// ============================================================
+
+const PROMISE_KEYWORDS: Array<{ rx: RegExp; codeHints: string[]; label: string }> = [
+  { rx: /\bai[- ]?powered\b|\b(uses?|with)\s+ai\b|\bgpt\b|\bllm\b/i,                 codeHints: ["openai", "anthropic", "@ai-sdk", "lovable-ai", "gemini", "claude", "/v1/chat", "VITE_OPENAI", "ai-gateway"], label: "AI integration" },
+  { rx: /\breal[- ]?time\b|\blive\s+(updates?|sync)\b/i,                              codeHints: ["channel(", "supabase.channel", "realtime", "websocket", "ws://", "postgres_changes", "EventSource"], label: "realtime channel" },
+  { rx: /\bend[- ]to[- ]end\s+encrypt|\be2ee\b|\bencrypted\b|\bencryption\b/i,        codeHints: ["pgp_sym_encrypt", "crypto.subtle", "libsodium", "tweetnacl", "AES-", "WebCrypto", "encrypt("], label: "encryption" },
+  { rx: /\bsync(s|ed|ing)?\b|\bauto[- ]?sync\b|\bsynchroniz/i,                        codeHints: ["sync", "syncQueue", "background sync", "useSync", "/sync"], label: "sync logic" },
+  { rx: /\bautomatic(ally)?\b|\bauto[- ]?(generate|run|update|save|backup)/i,        codeHints: ["cron", "pg_cron", "schedule(", "setInterval(", "background_job", "EdgeRuntime.waitUntil"], label: "automation" },
+  { rx: /\bunlimited\b/i,                                                              codeHints: ["unlimited", "Infinity", "no_limit", "PLAN_LIMITS"], label: "unlimited tier" },
+  { rx: /\b(stripe|payment|checkout|subscription|billing)\b/i,                         codeHints: ["stripe", "checkout.session", "subscriptions", "payment_intent", "/billing", "STRIPE_"], label: "payment integration" },
+  { rx: /\b(team|invite\s+(your\s+)?team|workspace|collaborate|members?)\b/i,          codeHints: ["org_id", "team_id", "organization", "invite", "member_role", "workspace"], label: "team/workspace logic" },
+  { rx: /\b(notification|email\s+alerts?|push\s+notification|reminder)\b/i,            codeHints: ["resend", "sendgrid", "mailgun", "Notification(", "expo-notifications", "send-email", "/notify"], label: "notification system" },
+  { rx: /\b(export|download|csv|pdf|backup)\b/i,                                       codeHints: [".csv", "application/pdf", "jspdf", "papaparse", "export(", "downloadBlob"], label: "export/download" },
+  { rx: /\b(search|full[- ]text\s+search|filter)\b/i,                                  codeHints: ["ilike(", "tsvector", "to_tsquery", "fuse.js", "search(", "useSearch"], label: "search" },
+  { rx: /\b(analytics|insights?|dashboard|reports?)\b/i,                               codeHints: ["recharts", "chart.js", "d3", "analytics", "page_view", "metrics"], label: "analytics" },
+  { rx: /\b(oauth|sso|google\s+login|github\s+login|sign\s+in\s+with)\b/i,             codeHints: ["signInWithOAuth", "provider:", "oauth", "GoogleAuth", "github_oauth"], label: "OAuth/SSO" },
+  { rx: /\b(rate[- ]?limit|throttl)/i,                                                 codeHints: ["rate_limit", "ratelimit", "PLAN_LIMITS", "throttle"], label: "rate limiting" },
+  { rx: /\b(secure|gdpr|soc[- ]?2|hipaa|compliant|privacy[- ]first)\b/i,               codeHints: ["RLS", "row level security", "auth.uid()", "policy", "encrypt", "consent"], label: "security/compliance" },
+  { rx: /\b(free\s+(tier|plan)|task\s+limit|message\s+limit|free\s+users)\b/i,         codeHints: ["PLAN_LIMITS", "free:", "weeklyScans", "monthlyScans", "trigger", "enforce_"], label: "free-plan limits" },
+];
+
+function extractHomepagePromises(signals: any): Array<{ claim: string; matchedRule: string; codeHints: string[] }> {
+  if (!signals) return [];
+  const sources: string[] = [];
+  if (signals.title) sources.push(signals.title);
+  if (signals.description) sources.push(signals.description);
+  if (signals.og_title) sources.push(signals.og_title);
+  if (signals.og_description) sources.push(signals.og_description);
+  if (Array.isArray(signals.headings)) sources.push(...signals.headings);
+  if (Array.isArray(signals.cta_text)) sources.push(...signals.cta_text);
+  // Sentence-split visible text and keep sentences that contain promise keywords.
+  if (typeof signals.text === "string") {
+    const sentences = signals.text.split(/(?<=[.!?])\s+/).map((s: string) => s.trim()).filter(Boolean);
+    for (const s of sentences) {
+      if (s.length < 12 || s.length > 220) continue;
+      sources.push(s);
+    }
+  }
+
+  const seen = new Set<string>();
+  const out: Array<{ claim: string; matchedRule: string; codeHints: string[] }> = [];
+  for (const raw of sources) {
+    const claim = raw.replace(/\s+/g, " ").trim();
+    if (!claim || claim.length < 6) continue;
+    const norm = claim.toLowerCase();
+    if (seen.has(norm)) continue;
+    for (const rule of PROMISE_KEYWORDS) {
+      if (rule.rx.test(claim)) {
+        seen.add(norm);
+        out.push({ claim: claim.slice(0, 220), matchedRule: rule.label, codeHints: rule.codeHints });
+        break;
+      }
+    }
+    if (out.length >= 12) break;
+  }
+  return out;
+}
+
+function evaluatePromiseAgainstCode(
+  promise: { claim: string; matchedRule: string; codeHints: string[] },
+  fileContents: Map<string, string>,
+  edgeBundle: string,
+): { verdict: "found" | "partial" | "not_found"; evidence: string } {
+  const haystackParts: string[] = [];
+  for (const text of fileContents.values()) haystackParts.push(text);
+  if (edgeBundle) haystackParts.push(edgeBundle);
+  const haystack = haystackParts.join("\n").toLowerCase();
+  if (!haystack) {
+    return { verdict: "not_found", evidence: `No ${promise.matchedRule} found in code` };
+  }
+  let hits = 0;
+  const matchedHints: string[] = [];
+  for (const hint of promise.codeHints) {
+    if (haystack.includes(hint.toLowerCase())) {
+      hits++;
+      matchedHints.push(hint);
+      if (matchedHints.length >= 3) break;
+    }
+  }
+  if (hits === 0) {
+    return { verdict: "not_found", evidence: `No ${promise.matchedRule} found in code` };
+  }
+  if (hits === 1) {
+    return { verdict: "partial", evidence: `Found ${matchedHints[0]} — partial ${promise.matchedRule}` };
+  }
+  return { verdict: "found", evidence: `${promise.matchedRule}: ${matchedHints.slice(0, 3).join(", ")}` };
 }
 
 // ============================================================
@@ -267,6 +750,131 @@ async function probeSupabaseBackend(
   }
 
   return result;
+}
+
+// ============================================================
+// SUPABASE CONNECTION VERIFIER (added 2026-05).
+//
+// Reliable check used by the analyze function to decide whether
+// DB-related findings can be labelled VERIFIED or must fall back
+// to "Worth checking". We do NOT trust the mere presence of a
+// stored URL + anon key — those can be stale, revoked, mistyped,
+// or pointing at the wrong project. Instead we make a real HTTP
+// call to PostgREST's OpenAPI root with the anon key and confirm
+// the response shape. Any non-2xx, network failure, or unexpected
+// body means we treat the project as NOT connected.
+// ============================================================
+type SupabaseConnectionStatus = {
+  connected: boolean;
+  /**
+   * Machine-readable reason. The UI maps this to a CTA:
+   *   - "ok"               → connected, findings can be VERIFIED.
+   *   - "not_configured"   → no URL/anon key on the app row.
+   *   - "invalid_url"      → URL did not parse / is not https.
+   *   - "unreachable"      → network error or non-2xx response.
+   *   - "invalid_key"      → endpoint returned 401/403 to anon key.
+   *   - "unexpected_body"  → 2xx but not a PostgREST OpenAPI doc.
+   */
+  reason:
+    | "ok"
+    | "not_configured"
+    | "invalid_url"
+    | "unreachable"
+    | "invalid_key"
+    | "unexpected_body";
+  message: string;
+  checked_at: string;
+  http_status?: number;
+};
+
+async function verifySupabaseConnection(
+  url: string | null | undefined,
+  anonKey: string | null | undefined,
+): Promise<SupabaseConnectionStatus> {
+  const checked_at = new Date().toISOString();
+  if (!url || !anonKey) {
+    return {
+      connected: false,
+      reason: "not_configured",
+      message: "Connect your Supabase project to verify these findings live.",
+      checked_at,
+    };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+    if (!/^https?:$/.test(parsed.protocol)) throw new Error("non-http");
+  } catch {
+    return {
+      connected: false,
+      reason: "invalid_url",
+      message: "The Supabase URL on file is not a valid https URL. Reconnect Supabase to verify these findings.",
+      checked_at,
+    };
+  }
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`${parsed.origin}/rest/v1/`, {
+      method: "GET",
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        Accept: "application/openapi+json, application/json",
+      },
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    const http_status = res.status;
+    if (http_status === 401 || http_status === 403) {
+      return {
+        connected: false,
+        reason: "invalid_key",
+        message: "Supabase rejected the saved anon key. Reconnect your Supabase project to verify these findings.",
+        checked_at,
+        http_status,
+      };
+    }
+    if (!res.ok) {
+      return {
+        connected: false,
+        reason: "unreachable",
+        message: `Could not reach your Supabase project (HTTP ${http_status}). Reconnect Supabase to verify these findings.`,
+        checked_at,
+        http_status,
+      };
+    }
+    let body: any = null;
+    try { body = await res.json(); } catch { body = null; }
+    const looksLikePostgrest =
+      body && typeof body === "object" &&
+      (body.swagger || body.openapi || body.paths || body.definitions);
+    if (!looksLikePostgrest) {
+      return {
+        connected: false,
+        reason: "unexpected_body",
+        message: "The URL on file did not respond like a Supabase project. Reconnect Supabase to verify these findings.",
+        checked_at,
+        http_status,
+      };
+    }
+    return {
+      connected: true,
+      reason: "ok",
+      message: "Supabase connected — DB-related findings were verified live.",
+      checked_at,
+      http_status,
+    };
+  } catch (e) {
+    clearTimeout(t);
+    return {
+      connected: false,
+      reason: "unreachable",
+      message: `Could not reach your Supabase project (${(e as any)?.message?.slice(0, 120) || "network error"}). Reconnect Supabase to verify these findings.`,
+      checked_at,
+    };
+  }
 }
 
 // Build deterministic "verified" findings from a backend probe.
@@ -1067,7 +1675,8 @@ function calculateScore(
   securityIssues: any[],
   falsePromises: any[],
   verificationApplied: boolean,
-  scanType: string
+  scanType: string,
+  notFoundPromiseCount: number = 0
 ): { score: number; grade: string; launch_status: string } {
   const DEDUCTIONS: Record<string, { verified: number; unverified: number }> = {
     critical: { verified: 10,   unverified: 5 },
@@ -1105,6 +1714,18 @@ function calculateScore(
   // Floor — 40 minimum always; 0 only for failed/empty scans (handled by caller)
   score = Math.max(score, 40);
 
+  score = Math.round(score * 10) / 10;
+
+  // Each homepage promise that has NO matching code evidence is treated
+  // the same as a medium-severity finding: -2 points per NOT_FOUND.
+  if (notFoundPromiseCount > 0) {
+    score -= 2 * notFoundPromiseCount;
+  }
+
+  // Re-apply hard caps and floors after the promise penalty so the
+  // final value still respects the published scoring bands.
+  if (scanType !== "deep") score = Math.min(score, 90);
+  score = Math.max(score, 40);
   score = Math.round(score * 10) / 10;
 
   const grade =
@@ -1680,16 +2301,18 @@ Return ONLY this JSON:
       // could be verified live (vs inferred from code patterns only).
       let appSupabaseUrl: string | null = null;
       let appSupabaseAnonKey: string | null = null;
+      let appLiveUrl: string | null = null;
       if (app_id) {
         // Credentials are encrypted at rest. Confirm ownership, then decrypt
         // server-side via the service-role-only RPC.
         const { data: ownerCheck } = await serviceClient
           .from("apps")
-          .select("user_id")
+          .select("user_id, live_url")
           .eq("id", app_id)
           .eq("user_id", user.id)
           .maybeSingle();
         if (ownerCheck) {
+          appLiveUrl = (ownerCheck as any).live_url ?? null;
           const { data: appCreds } = await serviceClient
             .rpc("get_app_supabase_credentials", { _app_id: app_id })
             .maybeSingle();
@@ -1724,6 +2347,11 @@ Return ONLY this JSON:
       const scanTypeHint = scan_type === "deep"
         ? "This is a Deep Scan covering the complete codebase."
         : "This is a Quick Scan covering the most critical files only.";
+
+      // Fetch the deployed homepage in parallel with prompt building so the
+      // LLM can cross-check landing-page claims against the live site, not
+      // just the source files.
+      const homepageSignalsPromise = fetchHomepageSignals(appLiveUrl);
 
       const claudeSystemPrompt = `You are Rismon, an expert at analyzing apps built with AI coding platforms like Lovable, Bolt, Cursor, and Replit.
 
@@ -1884,6 +2512,15 @@ If the homepage mentions team features but NO such logic exists in the code: fla
 UNIVERSAL ANTI-HALLUCINATION RULE (overrides every check above):
 Every finding you emit MUST include a real file_path that exists in the scanned bundle and a real line_number that points to the offending line. If you cannot quote a specific file and line that proves the issue, DROP the finding entirely. Do not generalize. Do not flag "may be" or "might be" issues — only flag what you can prove from code that was actually shown to you.
 
+EVIDENCE QUOTE RULE (mandatory, enforced server-side):
+Every finding MUST also include, inside its explanation or fix_prompt, a verbatim quote of the offending code wrapped in backticks (e.g. \`const isPro = true\` or \`.from('orders').select('*')\`). The quote MUST be at least 8 characters and copied character-for-character from the file you cited. A downstream verifier compares this quote to the actual file contents — if no quote is present, or the quote does not appear in the file, the finding is silently dropped from the report. So: if you cannot copy a real line out of the file, do not emit the finding. Better to return zero findings than one fabricated one.
+
+LIVE HOMEPAGE RULE:
+If a "LIVE HOMEPAGE" section is present in the user message, treat that section as the source of truth for everything the founder publicly promises (headlines, feature claims, marketing copy). For every false_promises finding, the "claim" field MUST be copied verbatim from the LIVE HOMEPAGE section (Title, Meta description, OG fields, Headings, Call-to-action text, or Visible text). Do not paraphrase. Do not invent claims that are not present there. If the LIVE HOMEPAGE section is missing or fetched=false, fall back to text actually present in the scanned source files (e.g. landing page components) and quote it verbatim from there. The same goes for cross-checking: a feature is only a "false promise" if the live homepage advertises it AND the scanned code does not implement it.
+
+TRUTH OVER COVERAGE:
+You are graded on accuracy, not on volume. Returning 0 findings when nothing is provably wrong is a correct answer. Returning 5 findings where 1 is fabricated is a failure. When uncertain, omit.
+
 Specifically, NEVER fabricate findings about:
   - Missing payment system / Stripe (you cannot see backend or Supabase secrets — payments may be enforced in edge functions you did not scan).
   - Missing account-deletion (it can live in a SQL function, an edge function, or a settings page route you did not see).
@@ -1992,12 +2629,94 @@ Monetization: ${monetization || "unknown"}
 
 Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
 
-      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContent);
+      // Resolve live homepage signals and append a dedicated section so the
+      // model knows which claims are actually shipped to visitors.
+      const homepageSignals = await homepageSignalsPromise;
+      let claudeUserContentFinal = claudeUserContent;
+      if (homepageSignals && homepageSignals.status >= 200 && homepageSignals.status < 400 && homepageSignals.text) {
+        const liveBlock = `\n\nLIVE HOMEPAGE (fetched from ${homepageSignals.url}, HTTP ${homepageSignals.status}):\n` +
+          `Title: ${homepageSignals.title || "(none)"}\n` +
+          `Meta description: ${homepageSignals.description || "(none)"}\n` +
+          `OG title: ${homepageSignals.og_title || "(none)"}\n` +
+          `OG description: ${homepageSignals.og_description || "(none)"}\n` +
+          `Headings (h1/h2): ${JSON.stringify(homepageSignals.headings.slice(0, 15))}\n` +
+          `Call-to-action text: ${JSON.stringify(homepageSignals.cta_text.slice(0, 20))}\n` +
+          `Visible text (truncated):\n${homepageSignals.text}\n\n` +
+          `Use this LIVE HOMEPAGE content as the primary source of truth for false-promise checks. ` +
+          `Quote the exact wording from this section (not from source files) when reporting a false promise. ` +
+          `If a claim appears here but no matching implementation exists in the scanned code, flag it.`;
+        claudeUserContentFinal = claudeUserContent + liveBlock;
+      } else if (appLiveUrl) {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder gave us ${appLiveUrl} but we could not fetch it (${homepageSignals?.error || "no response"}). Do NOT invent homepage claims — base false-promise findings only on text actually present in the scanned source files.`;
+      } else {
+        claudeUserContentFinal = claudeUserContent +
+          `\n\nLIVE HOMEPAGE: the founder did not provide a deployed URL. Base false-promise findings only on text actually present in the scanned source files.`;
+      }
+
+      const claudeText = await callClaudeWithFallback(claudeSystemPrompt, claudeUserContentFinal);
       let claudeResult: any;
       try {
         claudeResult = parseJSON(claudeText);
       } catch {
         return new Response(JSON.stringify({ error: "Failed to parse analysis" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Surface homepage signals so the report UI can show "Verified against
+      // live homepage" badges and the analyses row stores what was checked.
+      if (homepageSignals) {
+        claudeResult.homepage_signals = {
+          ...(claudeResult.homepage_signals || {}),
+          url: homepageSignals.url,
+          fetched: homepageSignals.status >= 200 && homepageSignals.status < 400,
+          status: homepageSignals.status,
+          title: homepageSignals.title,
+          description: homepageSignals.description,
+          og_title: homepageSignals.og_title,
+          og_description: homepageSignals.og_description,
+          headings: homepageSignals.headings,
+          cta_text: homepageSignals.cta_text,
+          fetched_at: homepageSignals.fetched_at,
+          error: homepageSignals.error || null,
+          has_live_url: true,
+        };
+      }
+
+      // ----------------------------------------------------------
+      // INTENT MATCH — promises vs. code (added 2026-05).
+      //
+      // Build the deterministic Promise/Found-in-code/Status table
+      // that powers the Intent Match tab in the report. This runs
+      // server-side, no extra LLM call, so it never hallucinates a
+      // promise the homepage didn't actually make.
+      // ----------------------------------------------------------
+      try {
+        if (appLiveUrl && (!homepageSignals || homepageSignals.status < 200 || homepageSignals.status >= 400 || !homepageSignals.text)) {
+          claudeResult.landing_page_promises = [];
+          claudeResult.homepage_fetch_error =
+            "Could not read homepage. Make sure the URL is correct and the site is live.";
+        } else if (homepageSignals && homepageSignals.text) {
+          const promiseFileContents = buildFileContentMap(codeBundle || "", edgeFunctionBundle || "");
+          const extracted = extractHomepagePromises(homepageSignals);
+          const evaluated = extracted.map((p) => {
+            const r = evaluatePromiseAgainstCode(p, promiseFileContents, edgeFunctionBundle || "");
+            return {
+              claim: p.claim,
+              evidence: r.evidence,
+              claim_source: "homepage",
+              verdict: r.verdict,
+            };
+          });
+          claudeResult.landing_page_promises = evaluated;
+        }
+        // Mirror the fetch error onto homepage_signals so the report
+        // (which reads from the analyses row) can render the message
+        // even though we don't have a dedicated DB column for it.
+        if (claudeResult.homepage_fetch_error && claudeResult.homepage_signals) {
+          claudeResult.homepage_signals.fetch_error_message = claudeResult.homepage_fetch_error;
+        }
+      } catch (e) {
+        console.error("Intent-match promise check failed (non-fatal):", e);
       }
 
       // ----------------------------------------------------------
@@ -2055,6 +2774,57 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           unknown_features: Array.isArray(claudeResult.unknown_features) ? claudeResult.unknown_features : [],
           summary: summary || claudeResult.summary || "",
         };
+      }
+
+      // ----------------------------------------------------------
+      // FILE-PATH ACCURACY GUARD (added 2026-05).
+      //
+      // Cross-check every file_path the LLM returned against the
+      // actual file list pulled from the repo. If the path doesn't
+      // exist, scrub it from the finding (and from the fix_prompt
+      // prose) and mark the finding as unverified. This runs BEFORE
+      // the deterministic overlay because deterministic findings
+      // already cite real, in-bundle paths.
+      // ----------------------------------------------------------
+      try {
+        const knownPaths = buildKnownPathSet(codeBundle || "", edgeFunctionBundle || "");
+        if (knownPaths.size > 0) {
+          claudeResult.gaps = sanitizeFindingArray(claudeResult.gaps, knownPaths);
+          claudeResult.security_issues = sanitizeFindingArray(claudeResult.security_issues, knownPaths);
+          claudeResult.false_promises = sanitizeFindingArray(claudeResult.false_promises, knownPaths);
+          if (Array.isArray(claudeResult.legal_findings)) {
+            claudeResult.legal_findings = sanitizeFindingArray(claudeResult.legal_findings, knownPaths);
+          }
+        }
+      } catch (e) {
+        console.error("File path accuracy guard failed (non-fatal):", e);
+      }
+
+      // ----------------------------------------------------------
+      // EVIDENCE GUARD (added 2026-05).
+      //
+      // Drop any LLM finding whose quoted code cannot be located in
+      // the actual file it claims to point at. This is the second
+      // half of the accuracy contract: path-sanitizer fixes fake
+      // paths; this verifier fixes fake CLAIMS about real files.
+      // ----------------------------------------------------------
+      try {
+        const fileContents = buildFileContentMap(codeBundle || "", edgeFunctionBundle || "");
+        if (fileContents.size > 0) {
+          const dropped: Array<{ bucket: string; title: string; reason: string }> = [];
+          claudeResult.gaps = verifyFindingArray(claudeResult.gaps, fileContents, "gaps", dropped);
+          claudeResult.security_issues = verifyFindingArray(claudeResult.security_issues, fileContents, "security", dropped);
+          // false_promises are intentionally NOT run through the code-evidence
+          // verifier: their proof lives on the live homepage (the `claim`
+          // field), not inside a source file. The path sanitizer still
+          // ensures any code path mentioned in the fix prompt is real.
+          if (dropped.length > 0) {
+            console.log(`[evidence-guard] dropped ${dropped.length} unverified finding(s):`, JSON.stringify(dropped));
+            claudeResult.evidence_guard_dropped = dropped.length;
+          }
+        }
+      } catch (e) {
+        console.error("Evidence guard failed (non-fatal):", e);
       }
 
       // Stage 4: Verification pass (Pro only) — Gemini Pro re-checks each gap against the facts
@@ -2206,7 +2976,14 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
       // deterministic scanner cited the file/line and we cross-checked
       // tables via the live REST probe above).
       // ----------------------------------------------------------
-      const supabaseConnected = !!(appSupabaseUrl && appSupabaseAnonKey);
+      // Reliable connection check: actually probe the Supabase URL
+      // with the saved anon key. Stored credentials alone are NOT
+      // enough — they can be stale, revoked, or pointing at the
+      // wrong project. This single source of truth drives every
+      // VERIFIED vs "Worth checking" decision below.
+      const connectionStatus = await verifySupabaseConnection(appSupabaseUrl, appSupabaseAnonKey);
+      const supabaseConnected = connectionStatus.connected;
+      claudeResult.supabase_connection = connectionStatus;
       const DB_CATEGORIES = new Set([
         "rls",
         "user_data_isolation",
@@ -2215,39 +2992,92 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
         "missing_user_filter",
         "admin_access",
         "data_leak",
+        "server_enforcement",
+        "server_side_validation",
+        "postgres_trigger",
+        "trigger",
+        "server_only_route",
+        "server_only_file",
+        "route_protection",
+        "row_level_filtering",
+        "server_role_key",
+        "service_role_key",
+        "service_role",
+        "database_access",
+        "database_access_rule",
       ]);
       const isDbRelated = (f: any) => {
         const cat = (f?.category || "").toString().toLowerCase();
         if (DB_CATEGORIES.has(cat)) return true;
         const hay = `${f?.title || ""} ${f?.what_we_found || ""} ${f?.technical_reference || ""}`.toLowerCase();
-        return /\brls\b|row[- ]level\s+security|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation/.test(hay);
+        return /\brls\b|row[- ]level\s+security|row[- ]level\s+filter|user[_ ]?id filter|unfiltered.*(query|select|read)|user data isolation|other users? (can )?(see|read|access)|cross[- ]user|tenant isolation|postgres\s+trigger|database\s+trigger|server[- ]side\s+(enforcement|validation|check)|server[- ]only\s+(file|route)|route\s+protection|protected\s+route\s+(at|on)\s+(the\s+)?(database|server)|admin\s+route|database\s+access\s+rule|service[_ ]role\s+key|server\s+role\s+key/.test(hay);
       };
-      if (!supabaseConnected && Array.isArray(claudeResult.security_issues)) {
-        for (const f of claudeResult.security_issues) {
-          if (!f || !isDbRelated(f)) continue;
-          // Skip deterministic findings — they have file/line proof and don't need DB access.
-          if (f.source === "deterministic") continue;
-          // Cap severity at "high" — never "critical" without DB proof.
-          const sev = (f.severity || "medium").toLowerCase();
-          if (sev === "critical") f.severity = "high";
-          // Force confidence to unverified.
-          f.confidence = "unverified";
-          f.confidence_reason =
-            "Detected from code patterns only — your Supabase project is not connected, so we could not verify the live database rules.";
-          f.verification_note =
-            "Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.";
-          f.requires_supabase_verification = true;
-        }
+      // DB-related findings (RLS, row-level filtering, database access
+      // patterns, server role keys, server-only files, DB-level route
+      // protection) are based on code patterns only. We use the live
+      // Supabase connection check (verifySupabaseConnection above) as the
+      // single source of truth:
+      //   - connected → mark VERIFIED, restore original severity, keep the
+      //     fix_prompt so the UI shows the "Fix this" button.
+      //   - not connected → mark UNVERIFIED, downgrade severity to "watch
+      //     out" (low), strip the fix_prompt so the UI shows "Worth
+      //     checking" with the connect-Supabase note.
+      // Findings about missing integrations, homepage promise gaps, missing
+      // legal pages, and mock implementations are NOT touched here.
+      {
+        const UNVERIFIED_NOTE =
+          "Connect your Supabase project to confirm this finding. Without backend access this is based on code patterns only and may not reflect your actual configuration.";
+        const VERIFIED_NOTE =
+          "Verified against your connected Supabase project.";
+        const applyConnectionStatus = (arr: any) => {
+          if (!Array.isArray(arr)) return;
+          for (const f of arr) {
+            if (!f || !isDbRelated(f)) continue;
+            if (supabaseConnected) {
+              // Flip to verified. Preserve original severity if the model
+              // captured one in original_severity; otherwise leave as-is.
+              if (f.original_severity) f.severity = f.original_severity;
+              f.confidence = "verified";
+              f.unverified = false;
+              f.verified = true;
+              f.requires_supabase_verification = false;
+              f.confidence_reason = VERIFIED_NOTE;
+              // Clear the connect-Supabase note; keep how_to_fix/fix_prompt
+              // intact so the UI renders the "Fix this" button.
+              if (f.verification_note === UNVERIFIED_NOTE) delete f.verification_note;
+              if (f.how_to_fix === UNVERIFIED_NOTE) f.how_to_fix = "";
+            } else {
+              // Stash original severity so we can restore it on reconnect.
+              const sev = (f.severity || "medium").toLowerCase();
+              if (!f.original_severity) f.original_severity = f.severity || "medium";
+              if (sev === "critical" || sev === "high" || sev === "medium") f.severity = "low";
+              f.confidence = "unverified";
+              f.unverified = true;
+              f.verified = false;
+              f.requires_supabase_verification = true;
+              f.confidence_reason = UNVERIFIED_NOTE;
+              f.verification_note = UNVERIFIED_NOTE;
+              f.fix_prompt = "";
+              f.how_to_fix = UNVERIFIED_NOTE;
+            }
+          }
+        };
+        applyConnectionStatus(claudeResult.security_issues);
+        applyConnectionStatus(claudeResult.gaps);
       }
 
       // Override score with server-calculated value (new scoring system)
       const resolvedScanType = scan_type || (userPlan === "free" ? "quick" : "deep");
+      const notFoundPromiseCount = Array.isArray(claudeResult.landing_page_promises)
+        ? claudeResult.landing_page_promises.filter((p: any) => (p?.verdict || "").toLowerCase() === "not_found").length
+        : 0;
       const { score: finalScore, grade: finalGrade, launch_status: finalStatus } = calculateScore(
         claudeResult.gaps || [],
         claudeResult.security_issues || [],
         claudeResult.false_promises || [],
         !!claudeResult.verification_applied,
-        resolvedScanType
+        resolvedScanType,
+        notFoundPromiseCount
       );
       claudeResult.score = finalScore;
       claudeResult.intent_match_score = finalScore;
@@ -2305,8 +3135,31 @@ App understanding: ${JSON.stringify(code_understanding)}`;
       try {
         const parsed = parseJSON(text);
         return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      } catch {
-        return new Response(JSON.stringify({ error: "Failed to parse fix prompts" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } catch (e) {
+        // Robust fallback: try to salvage JSON from the raw text before giving up.
+        try {
+          let cleaned = String(text || "")
+            .replace(/```json\s*/gi, "")
+            .replace(/```\s*/g, "")
+            .trim();
+          const start = cleaned.search(/[\{\[]/);
+          const isArr = start !== -1 && cleaned[start] === "[";
+          const end = cleaned.lastIndexOf(isArr ? "]" : "}");
+          if (start !== -1 && end !== -1) {
+            cleaned = cleaned.substring(start, end + 1)
+              .replace(/,\s*}/g, "}")
+              .replace(/,\s*]/g, "]")
+              .replace(/[\x00-\x1F\x7F]/g, "");
+            const parsed = JSON.parse(cleaned);
+            return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        } catch (_) { /* fall through */ }
+        console.error("generate_fixes parse failed:", (e as Error)?.message, "raw:", String(text || "").slice(0, 500));
+        // Return empty fix_prompts with 200 so the UI doesn't crash.
+        return new Response(
+          JSON.stringify({ fix_prompts: [], fallback: true, error: "Failed to parse fix prompts" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 

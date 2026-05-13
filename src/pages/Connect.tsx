@@ -429,7 +429,7 @@ export default function Connect() {
             )}
 
             <div className="mt-7">
-              <label className="text-foreground text-sm font-medium block mb-1.5">Is your app live somewhere? <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <label className="text-foreground text-sm font-medium block mb-1.5">Your live homepage URL <span className="text-muted-foreground font-normal">(optional)</span></label>
               <input
                 value={liveUrl}
                 onChange={e => setLiveUrl(e.target.value)}
@@ -438,7 +438,7 @@ export default function Connect() {
                 inputMode="url"
               />
               <p className="text-muted-foreground text-xs mt-2 leading-relaxed">
-                If you share your live link, we'll check that your code matches what your site promises.
+                We'll read your homepage and check if the promises on it actually exist in your code. Skip if your app isn't live yet.
               </p>
             </div>
 

@@ -1,0 +1,28 @@
+# Rismon.ai
+
+> Rismon.ai scans AI-built apps and finds gaps between what a founder meant to build and what was actually built. Plain-English findings, file-and-line proof, copy-paste fix prompts for Lovable, Bolt, Cursor, and other AI coding tools.
+
+Rismon connects to a GitHub repo, reads the live landing page to extract product promises, asks the founder a few smart questions about intent, then cross-references promises against the actual codebase. The output is an intent-match score (0–100), a list of business-logic gaps, security findings verified by two independent AI models (Claude and Gemini), and ready-to-paste fix prompts. Built for non-technical founders.
+
+## Pages
+
+- [Home](/): What Rismon does, how the scan works, pricing, FAQ.
+- [Pricing](/pricing): Free plan (3 scans/week) and Try Pro ($14.99 one-time deep scan).
+- [Sample report](/sample-report): A real Rismon report so you can see the output before signing up.
+- [Blog](/blog): Articles on AI-built app safety, intent verification, and shipping with no-code tools.
+- [About](/about): Who built Rismon and why.
+- [Security](/security): How Rismon handles your code and tokens (read-only, in-memory, never stored).
+- [Open source](/open-source): The Rismon codebase on GitHub.
+- [Contact](/contact): Email and other ways to reach the team.
+- [Status](/status): Live uptime and incident history.
+
+## For platforms
+
+- [For Lovable](/for/lovable): Rismon for apps built with Lovable.
+- [For Bolt](/for/bolt): Rismon for apps built with Bolt.
+- [For Cursor](/for/cursor): Rismon for apps built with Cursor.
+
+## Optional
+
+- [Privacy](/privacy): Privacy policy.
+- [Terms](/terms): Terms of service.

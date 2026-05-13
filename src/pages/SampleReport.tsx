@@ -1,46 +1,12 @@
-import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { Check, Copy, ShieldAlert, FileText, AlertCircle, ArrowRight, Database } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Github, Lock, RefreshCw, Activity, Radio, Globe } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
-
-/**
- * SampleReport mirrors the live Report page exactly so visitors see what they
- * will actually receive. Hand-crafted data showcases:
- *  - The new scoring (verified findings count fully, unverified count half-weight)
- *  - Hard caps for critical findings; QUICK SCAN max 90, DEEP SCAN max 100
- *  - Verified vs Unverified confidence labels, with the explicit
- *    "Connect Supabase to verify" note on DB-pattern findings
- *  - Proof badges (file_path + line_number + code_snippet)
- *  - Promises-vs-code mismatches
- *  - Soft-tone legal findings
- *  - Copy-paste fix prompts
- */
-
-const SEVERITY_COLORS: Record<string, string> = {
-  critical: '#ef4444',
-  high: '#f97316',
-  medium: '#f59e0b',
-  low: '#3b82f6',
-  info: '#71717a',
-};
-
-function scoreColor(score: number) {
-  if (score >= 89) return '#22c55e';
-  if (score >= 75) return '#84cc16';
-  if (score >= 65) return '#f59e0b';
-  return '#f97316';
-}
-
-function scoreLabelFor(score: number) {
-  if (score >= 93) return 'Excellent';
-  if (score >= 85) return 'Strong';
-  if (score >= 70) return 'Good';
-  if (score >= 55) return 'Getting there';
-  if (score >= 40) return 'Significant work needed';
-  return 'Critical issues';
-}
+import ReportContent from '@/components/ReportContent';
+import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
+import { IntentGaugeCard, PromiseCoverageCard, SeverityBarCard } from '@/components/dashboard/OverviewCards';
 
 const sample = {
   appName: 'noted-ai.lovable',
@@ -299,512 +265,235 @@ const sample = {
   },
 };
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+
+// Adapt to the shape ReportContent / dashboard cards expect
+const sampleAnalysis = {
+  intent_match_score: sample.score,
+  summary: `${sample.summary} ${sample.verdict}`,
+  scan_type: sample.scanType,
+  gaps: sample.gaps,
+  security_issues: sample.security_issues,
+  legal_findings: sample.legal_findings,
+  landing_page_promises: sample.landing_page_promises,
+  what_works: sample.what_works,
+  homepage_signals: sample.homepage_signals,
+  fix_prompts: [],
+};
+
+const sampleApp = {
+  id: 'sample',
+  app_name: sample.appName,
+  github_repo_name: 'noted-ai',
+  github_owner: 'demo',
+  platform: sample.platform,
+  live_url: 'https://noted-ai.example.com',
+  latest_score: sample.score,
+  has_analyses: true,
+  latest_analysis_id: 'sample',
+};
+
+const PANEL_BG = '#0a0a0a';
+const PANEL_BORDER = '#1f1f1f';
+
+// Sample is intentionally trimmed: show only 2 findings per section, blur the rest.
+const VISIBLE = 2;
+const trimmedAnalysis = {
+  ...sampleAnalysis,
+  gaps: sample.gaps.slice(0, VISIBLE),
+  security_issues: sample.security_issues.slice(0, VISIBLE),
+  landing_page_promises: sample.landing_page_promises.slice(0, VISIBLE),
+};
+const hiddenCounts = {
+  gaps: Math.max(0, sample.gaps.length - VISIBLE),
+  security: Math.max(0, sample.security_issues.length - VISIBLE),
+  promises: Math.max(0, sample.landing_page_promises.length - VISIBLE),
+};
+
+function BlurredMore({ count, label }: { count: number; label: string }) {
+  if (count <= 0) return null;
   return (
-    <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-4">
-      {children}
-    </div>
-  );
-}
-
-function IntentScoreCard({
-  score,
-  label,
-  scanType,
-}: {
-  score: number;
-  label: string;
-  scanType: string;
-}) {
-  const c = scoreColor(score);
-  const ceiling = scanType === 'deep' ? 100 : 90;
-  return (
-    <div className="bg-card border border-border rounded-2xl px-8 py-10 text-center">
-      <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-4">
-        Intent match
+    <div className="relative mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid ' + PANEL_BORDER }}>
+      {/* Fake blurred rows behind */}
+      <div aria-hidden className="space-y-3 p-5" style={{ filter: 'blur(6px)', background: PANEL_BG, opacity: 0.55, userSelect: 'none' }}>
+        {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
+          <div key={i} style={{ background: '#141414', border: '1px solid #1f1f1f', borderRadius: 10, padding: 16 }}>
+            <div style={{ width: '60%', height: 12, background: '#2a2a2a', borderRadius: 4 }} />
+            <div style={{ width: '90%', height: 10, background: '#1f1f1f', borderRadius: 4, marginTop: 10 }} />
+            <div style={{ width: '75%', height: 10, background: '#1f1f1f', borderRadius: 4, marginTop: 6 }} />
+          </div>
+        ))}
       </div>
-      <div
-        className="font-bold leading-[0.95] tracking-[-0.04em]"
-        style={{ fontSize: 88, color: c }}
-      >
-        {score}
-        <span className="text-[28px] font-medium ml-1" style={{ color: '#444' }}>
-          /100
-        </span>
-      </div>
-      <div className="text-base font-medium text-foreground mt-4">{label}</div>
-      <div className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">
-        Does your code do what you said your app does?
-      </div>
-      <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 text-xs text-muted-foreground">
-        <span
-          aria-hidden
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: 999,
-            background: 'hsl(var(--muted-foreground))',
-          }}
-        />
-        <span>
-          Quick scan ceiling{' '}
-          <span className="text-foreground tabular-nums">{ceiling}/100</span>
-          <span className="mx-1.5 text-border">·</span>
-          Run a deep scan to unlock the full 100.
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function WarningChip({
-  icon,
-  count,
-  label,
-  tone,
-}: {
-  icon: React.ReactNode;
-  count: number;
-  label: string;
-  tone: 'sharp' | 'soft' | 'clear';
-}) {
-  const dotColor =
-    tone === 'sharp' ? '#ef4444' : tone === 'soft' ? '#f59e0b' : '#22c55e';
-  return (
-    <span className="inline-flex items-center gap-2.5 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-medium text-foreground">
-      <span
-        aria-hidden
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: 999,
-          background: dotColor,
-          boxShadow: `0 0 0 3px ${dotColor}1f`,
-        }}
-      />
-      <span className="flex text-muted-foreground">{icon}</span>
-      <span className="tabular-nums text-foreground">{count}</span>
-      <span className="text-muted-foreground">{label}</span>
-    </span>
-  );
-}
-
-function FindingCard({ f }: { f: any }) {
-  const [copied, setCopied] = useState(false);
-  const sev = (f.severity || 'medium').toLowerCase();
-  const color = SEVERITY_COLORS[sev] || SEVERITY_COLORS.medium;
-  const confidence = (f.confidence || 'verified').toLowerCase();
-  const confColor = confidence === 'verified' ? '#22c55e' : '#71717a';
-  const confLabel = confidence === 'verified' ? 'Verified' : 'Unverified';
-
-  const onCopy = () => {
-    if (!f.fix_prompt) return;
-    navigator.clipboard.writeText(f.fix_prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const norm = (s: string) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
-  const isImpactDup =
-    f.what_we_found &&
-    f.what_this_means &&
-    (norm(f.what_we_found) === norm(f.what_this_means) ||
-      norm(f.what_we_found).includes(norm(f.what_this_means)) ||
-      norm(f.what_this_means).includes(norm(f.what_we_found)));
-  const showWhatWeFound = !isImpactDup && !!f.what_we_found;
-  const impactText = f.what_this_means || (isImpactDup ? f.what_we_found : '');
-
-  return (
-    <div
-      className="bg-card border border-border rounded-lg p-6 mb-3"
-      style={{ borderLeft: `3px solid ${color}` }}
-    >
-      <div className="flex justify-between items-start gap-3">
-        <div className="text-base font-semibold text-foreground mb-2 flex-1">{f.title}</div>
-        <div className="flex gap-2 items-center">
-          <span
-            className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
-            style={{ color: confColor, border: `1px solid ${confColor}33` }}
-          >
-            {confLabel}
-          </span>
-          <span
-            className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap"
-            style={{ color }}
-          >
-            {sev}
-          </span>
+      {/* Lock CTA on top */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6" style={{ background: 'linear-gradient(180deg, rgba(10,10,10,0.5), rgba(10,10,10,0.85))' }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#0a0a0a', border: '1px solid #2a2a2a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+          <Lock size={16} />
         </div>
-      </div>
-
-      {showWhatWeFound && (
-        <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
-      )}
-
-      {/* Proof: file_path + line + snippet */}
-      {f.file_path && (
-        <div
-          className="rounded-md px-3 py-2.5 mb-3.5 font-mono"
-          style={{ background: '#000', border: '1px solid #1a1a1a' }}
+        <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, marginTop: 12 }}>
+          {count} more {label} hidden in this sample
+        </div>
+        <div style={{ color: '#888', fontSize: 12, marginTop: 4, maxWidth: 360 }}>
+          Scan your own app to see the full report.
+        </div>
+        <Link
+          to="/signup"
+          className="inline-flex items-center gap-1.5 mt-4"
+          style={{ background: '#fff', color: '#000', padding: '8px 14px', borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
         >
-          <div className="text-[11px] mb-1.5" style={{ color: '#666' }}>
-            <span style={{ color: '#22c55e' }}>● Proof</span> · {f.file_path}
-            {f.line_number ? `:${f.line_number}` : ''}
-          </div>
-          {f.code_snippet && (
-            <div className="text-[12px] whitespace-pre-wrap" style={{ color: '#aaa' }}>
-              {f.code_snippet}
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
-        Impact
+          <Github size={13} /> Scan your app
+        </Link>
       </div>
-      <div className="text-sm text-foreground leading-relaxed mb-4">{impactText}</div>
-
-      {/* Verification note for unverified DB findings */}
-      {(f.requires_supabase_verification || (confidence === 'unverified' && f.verification_note)) && (
-        <div
-          className="rounded-md px-3.5 py-2.5 mb-4 flex items-start gap-2.5"
-          style={{
-            background: '#150f05',
-            border: '1px solid #473012',
-          }}
-        >
-          <Database size={14} style={{ color: '#f59e0b', marginTop: 2, flexShrink: 0 }} />
-          <div className="text-[13px] leading-relaxed" style={{ color: '#cbb37a' }}>
-            {f.verification_note ||
-              'Connect your Supabase project to verify this finding accurately. Without Supabase access this is based on code patterns only.'}{' '}
-            <Link to="/connect" className="underline" style={{ color: '#f59e0b' }}>
-              Connect Supabase
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <div className="border-t border-border my-4" />
-
-      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-2">
-        How to fix
-      </div>
-      <div className="text-sm text-muted-foreground leading-relaxed mb-4">{f.how_to_fix}</div>
-
-      {f.fix_prompt && (
-        <div className="relative">
-          <div
-            className="rounded-md text-[13px] leading-relaxed whitespace-pre-wrap break-words font-mono"
-            style={{
-              background: '#000000',
-              border: '1px solid #222222',
-              color: '#888888',
-              padding: 16,
-              paddingTop: 40,
-            }}
-          >
-            {f.fix_prompt}
-          </div>
-          <button
-            onClick={onCopy}
-            className="absolute top-2 right-2 inline-flex items-center gap-1 rounded text-[11px] px-2.5 py-1"
-            style={{
-              background: 'transparent',
-              border: '1px solid #333333',
-              color: '#888888',
-            }}
-          >
-            {copied ? (
-              <>
-                <Check size={11} /> Copied
-              </>
-            ) : (
-              <>
-                <Copy size={11} /> Copy prompt
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {f.technical_reference && (
-        <div className="mt-3">
-          <div className="text-[11px] font-mono" style={{ color: '#333' }}>
-            {f.technical_reference}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function LegalCard({ f }: { f: any }) {
+function SampleLockedSection({ title, icon, description }: { title: string; icon: React.ReactNode; description: string }) {
   return (
-    <div
-      className="bg-card border border-border rounded-lg p-5 mb-3"
-      style={{ borderLeft: '3px solid #f59e0b' }}
-    >
-      <div className="text-base font-semibold text-foreground mb-2">{f.title}</div>
-      <div className="text-sm text-muted-foreground leading-relaxed mb-3">{f.what_we_found}</div>
-      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
-        Why it matters
+    <div className="rounded-xl p-8 sm:p-12 text-center" style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}>
+      <div style={{ width: 56, height: 56, borderRadius: 14, margin: '0 auto', background: '#0a0a0a', border: '1px solid #2a2a2a', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        {icon}
       </div>
-      <div className="text-sm text-foreground leading-relaxed mb-3">{f.what_this_means}</div>
-      <div className="text-[10px] uppercase tracking-[0.08em] font-semibold text-muted-foreground mb-1">
-        What to do
+      <div className="mt-5 inline-flex items-center gap-1.5"
+        style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#0a0a0a', color: '#888', border: '1px solid #2a2a2a', letterSpacing: '0.08em' }}>
+        <Lock size={10} /> LOCKED
       </div>
-      <div className="text-sm text-muted-foreground leading-relaxed">{f.how_to_fix}</div>
-    </div>
-  );
-}
-
-function PromiseRow({ p }: { p: any }) {
-  const v = (p.verdict || 'not_found').toLowerCase();
-  const palette =
-    v === 'found'
-      ? { color: '#22c55e', label: 'Found in code', bg: '#08130a' }
-      : v === 'partial'
-        ? { color: '#f59e0b', label: 'Partial', bg: '#13100a' }
-        : { color: '#71717a', label: 'Not found in code', bg: '#0c0c0d' };
-  return (
-    <div
-      className="grid gap-4 px-4 py-4 rounded-lg mb-2.5 border border-border"
-      style={{ gridTemplateColumns: '1fr auto', background: palette.bg }}
-    >
-      <div>
-        <div className="text-sm text-foreground font-medium mb-1.5 leading-snug">{p.claim}</div>
-        {p.evidence && (
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            <span style={{ color: '#555' }}>From your {p.claim_source} · </span>
-            {p.evidence}
-          </div>
-        )}
-      </div>
-      <span
-        className="text-[11px] font-semibold uppercase tracking-[0.04em] rounded-full px-2.5 py-1 h-fit whitespace-nowrap"
-        style={{ color: palette.color, border: `1px solid ${palette.color}40` }}
-      >
-        {palette.label}
-      </span>
+      <h3 style={{ color: '#fff', fontSize: 20, fontWeight: 600, marginTop: 14, letterSpacing: '-0.02em' }}>{title}</h3>
+      <p style={{ color: '#888', fontSize: 14, marginTop: 8, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>{description}</p>
     </div>
   );
 }
 
 export default function SampleReport() {
-  const {
-    appName,
-    platform,
-    score,
-    scanType,
-    summary,
-    verdict,
-    gaps,
-    security_issues,
-    legal_findings,
-    landing_page_promises,
-    what_works,
-    homepage_signals,
-  } = sample;
+  const [section, setSection] = useState<SectionKey>('overview');
+  const [plainMode, setPlainMode] = useState(true);
 
-  const scoreLabel = scoreLabelFor(score);
+  const promises = trimmedAnalysis.landing_page_promises;
+  const secIssues = trimmedAnalysis.security_issues;
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Sample Report — Rismon.ai"
-        description="Real example Rismon report: intent score, proof-backed findings, promises-vs-code checks, and copy-paste fix prompts for an AI-built meal-planning app."
-        canonicalPath="/sample-report"
-        noindex
+        title="Sample Report — see what Rismon delivers"
+        description="A live walkthrough of an actual Rismon report: intent match, homepage promises vs code, security issues, and copy-paste fixes."
       />
       <Navbar />
 
-      {/* Sample banner — clean, no shield/emoji icon */}
-      <div
-        className="fixed top-16 left-0 right-0 z-[999]"
-        style={{
-          background: '#160d05',
-          borderBottom: '1px solid #4f2710',
-        }}
-      >
-        <div className="max-w-[800px] mx-auto px-5 py-3 flex items-center justify-between gap-3">
-          <p className="text-sm truncate min-w-0">
-            <span className="text-foreground font-medium">Example report — fictional app.</span>{' '}
-            <span className="text-muted-foreground">
-              The findings below are about a made-up demo app, not Rismon.
-            </span>
-          </p>
-          <Link
-            to="/signup"
-            className="shrink-0 hidden sm:inline-flex items-center gap-1 bg-primary text-primary-foreground rounded-md text-xs font-semibold px-3.5 py-1.5 hover:bg-primary/90 transition-colors"
-          >
-            Scan your app <ArrowRight size={12} />
-          </Link>
-        </div>
-      </div>
+      <div className="flex flex-col md:flex-row pt-16">
+        <DashboardSidebar
+          active={section}
+          onSelect={(k) => setSection(k)}
+          hasApp={true}
+          isPro={false}
+        />
 
-      <div
-        className="report-container mx-auto px-6 pt-[120px] pb-12"
-        style={{ maxWidth: 800 }}
-      >
-        {/* SECTION 1, HEADER */}
-        <div className="flex justify-between items-center">
-          <div className="text-[13px] text-muted-foreground">
-            App scanned: <span className="text-foreground font-medium">{appName}</span>
-            <span
-              className="ml-2 inline-block text-[10px] uppercase tracking-[0.08em] font-semibold rounded-full px-2 py-[2px]"
-              style={{
-                background: '#1f1108',
-                color: '#fdba74',
-              }}
-            >
-              {platform}
-            </span>
-          </div>
-          <span
-            className="text-[10px] uppercase tracking-[0.08em] font-semibold rounded px-2.5 py-[3px] text-muted-foreground"
-            style={{ border: '1px solid #333' }}
-          >
-            {scanType === 'quick' ? 'Quick Scan' : 'Deep Scan'}
-          </span>
-        </div>
-
-        {/* SECTION 2, INTENT HERO + WARNING CHIPS */}
-        <div className="pt-10 pb-3">
-          <IntentScoreCard score={score} label={scoreLabel} scanType={scanType} />
-          <div className="flex flex-wrap gap-2.5 justify-center mt-5">
-            <WarningChip
-              icon={<ShieldAlert size={14} />}
-              count={security_issues.length}
-              label={security_issues.length === 1 ? 'security issue' : 'security issues'}
-              tone={security_issues.length === 0 ? 'clear' : 'sharp'}
-            />
-            <WarningChip
-              icon={<FileText size={14} />}
-              count={legal_findings.length}
-              label={legal_findings.length === 1 ? 'legal gap' : 'legal gaps'}
-              tone={legal_findings.length === 0 ? 'clear' : 'soft'}
-            />
-            <WarningChip
-              icon={<AlertCircle size={14} />}
-              count={landing_page_promises.filter((p) => p.verdict !== 'found').length}
-              label="unverified promises"
-              tone="soft"
-            />
-          </div>
-        </div>
-
-        {/* SECTION 3, SUMMARY */}
-        <div className="bg-card border border-border rounded-lg p-6 mt-8 mb-6">
-          <div className="text-[11px] uppercase tracking-[0.1em] font-semibold text-muted-foreground mb-3">
-            Overview
-          </div>
-          <div className="text-[15px] text-muted-foreground leading-[1.7]">{summary}</div>
-          <div
-            className="text-xs text-muted-foreground mt-3.5 pt-3.5"
-            style={{ borderTop: '1px solid hsl(var(--border))' }}
-          >
-            We also read your{' '}
-            {[
-              homepage_signals.readme_found && 'README',
-              homepage_signals.has_live_url && 'homepage',
-              homepage_signals.privacy_page_found && 'privacy page',
-              homepage_signals.terms_page_found && 'terms page',
-            ]
-              .filter(Boolean)
-              .join(', ')}
-            .
-          </div>
-        </div>
-
-        {/* SECTION 4, VERDICT */}
-        <div
-          className="text-center text-lg font-semibold text-foreground leading-snug py-6 mb-8"
-          style={{
-            borderTop: '1px solid hsl(var(--border))',
-            borderBottom: '1px solid hsl(var(--border))',
-          }}
-        >
-          {verdict}
-        </div>
-
-        {/* SECTION 5, INTENT GAPS */}
-        <div className="mb-8">
-          <SectionLabel>What you wanted vs what your code does</SectionLabel>
-          {gaps.map((g) => (
-            <FindingCard key={g.id} f={g} />
-          ))}
-        </div>
-
-        {/* SECTION 6, PROMISES VS CODE */}
-        <div className="mb-8">
-          <SectionLabel>Promises on your homepage vs your code</SectionLabel>
-          <p className="text-[13px] text-muted-foreground leading-relaxed -mt-2 mb-4">
-            We read what your homepage and README claim, then checked your code for proof. Items
-            marked &quot;not found&quot; may still exist, they were just not in the code we
-            scanned.
-          </p>
-          {landing_page_promises.map((p) => (
-            <PromiseRow key={p.id} p={p} />
-          ))}
-        </div>
-
-        {/* SECTION 7, SECURITY */}
-        <div className="mb-8">
-          <SectionLabel>Security · these can hurt you in production</SectionLabel>
-          {security_issues.map((s) => (
-            <FindingCard key={s.id} f={s} />
-          ))}
-        </div>
-
-        {/* SECTION 8, LEGAL */}
-        <div className="mb-8">
-          <SectionLabel>Legal &amp; trust · what to add before launch</SectionLabel>
-          {legal_findings.map((f) => (
-            <LegalCard key={f.id} f={f} />
-          ))}
-        </div>
-
-        {/* SECTION 9, WHAT WORKS */}
-        <div className="mb-8">
-          <SectionLabel>What your app does right</SectionLabel>
-          <div>
-            {what_works.map((w, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 py-3"
-                style={{ borderBottom: '1px solid hsl(var(--border))' }}
-              >
-                <Check size={14} className="shrink-0 mt-1" style={{ color: '#22c55e' }} />
-                <span className="text-sm text-muted-foreground leading-relaxed">{w}</span>
+        <main className="flex-1 min-w-0">
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10">
+            {/* Header — mirrors the real dashboard exactly */}
+            <div className="flex flex-wrap items-center gap-3 justify-between mb-6">
+              <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                <div className="inline-flex items-center gap-2" style={{ background: PANEL_BG, border: '1px solid #222', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 13, fontWeight: 500 }}>
+                  <Github size={13} />
+                  {sampleApp.github_owner}/{sampleApp.github_repo_name}
+                </div>
+                <span style={{ color: '#666', fontSize: 12 }}>· Last scan 2h ago</span>
+                <div className="inline-flex items-center gap-1.5" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 999, padding: '5px 10px', color: '#cbd5e1', fontSize: 12 }}>
+                  <Globe size={11} style={{ color: '#888' }} />
+                  <span>Verifying against: noted-ai.example.com</span>
+                </div>
+                <span style={{ background: '#1a1308', border: '1px solid #3a2a14', color: '#f97316', borderRadius: 999, padding: '4px 10px', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em' }}>
+                  SAMPLE
+                </span>
               </div>
-            ))}
-          </div>
-        </div>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5"
+                style={{ background: '#fff', color: '#000', padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+              >
+                <RefreshCw size={13} /> Scan your app
+              </Link>
+            </div>
 
-        {/* SECTION 10, CTA */}
-        <div className="bg-card border border-border rounded-xl p-8 text-center mt-10">
-          <div className="text-xl font-semibold text-foreground mb-2">
-            Ready to scan your own app?
+            {section === 'overview' && (
+              <div className="space-y-6">
+                <div className="rounded-xl p-5 sm:p-6" style={{ background: '#000', border: '1px solid ' + PANEL_BORDER }}>
+                  <div className="text-[11px] uppercase tracking-[0.12em] font-semibold mb-3" style={{ color: '#9ca3af' }}>Summary</div>
+                  <div className="text-[15px] leading-[1.75]" style={{ color: '#ffffff' }}>{trimmedAnalysis.summary}</div>
+                </div>
+
+                <IntentGaugeCard score={trimmedAnalysis.intent_match_score} />
+
+                <PromiseCoverageCard
+                  liveUrl={sampleApp.live_url}
+                  promises={promises}
+                  onView={() => setSection('seo')}
+                />
+
+                <SeverityBarCard securityIssues={secIssues} onViewAll={() => setSection('security')} />
+
+                <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+                  <ReportContent
+                    analysis={trimmedAnalysis}
+                    app={sampleApp}
+                    plainMode={plainMode}
+                    onTogglePlainMode={setPlainMode}
+                    isPro={false}
+                    section="overview"
+                    onNavigateSection={(s) => setSection(s as SectionKey)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {(section === 'intent' || section === 'security' || section === 'seo' || section === 'legal') && (
+              <div>
+                <div className="rounded-xl p-5 sm:p-6" style={{ background: PANEL_BG, border: '1px solid ' + PANEL_BORDER }}>
+                  <ReportContent
+                    analysis={trimmedAnalysis}
+                    app={sampleApp}
+                    plainMode={plainMode}
+                    onTogglePlainMode={setPlainMode}
+                    isPro={false}
+                    section={section as any}
+                  />
+                </div>
+                {section === 'intent' && <BlurredMore count={hiddenCounts.gaps} label="intent gaps" />}
+                {section === 'security' && <BlurredMore count={hiddenCounts.security} label="security issues" />}
+                {section === 'seo' && <BlurredMore count={hiddenCounts.promises} label="homepage promises" />}
+              </div>
+            )}
+
+            {section === 'performance' && (
+              <SampleLockedSection
+                title="Performance monitoring"
+                icon={<Activity size={26} />}
+                description="Lighthouse-grade metrics for your live site — Core Web Vitals, render-blocking resources, image weight, and weekly trend lines. Locked in this sample."
+              />
+            )}
+            {section === 'monitoring' && (
+              <SampleLockedSection
+                title="Continuous monitoring"
+                icon={<Radio size={26} />}
+                description="Auto re-scan every time you push to GitHub. Get an instant alert if a new security issue, broken promise, or legal gap shows up. Locked in this sample."
+              />
+            )}
+
+            <div className="mt-10 rounded-xl p-6 sm:p-8 text-center" style={{ background: '#0a0a0a', border: '1px solid ' + PANEL_BORDER }}>
+              <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em' }}>This is a sample. Run your own scan.</h2>
+              <p style={{ color: '#888', fontSize: 14, marginTop: 8, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+                You'll get the same dashboard — with your code, your homepage, and your findings.
+              </p>
+              <Link
+                to="/signup"
+                className="inline-flex items-center gap-1.5 mt-5"
+                style={{ background: '#fff', color: '#000', padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+              >
+                <Github size={13} /> Scan your app <ArrowRight size={13} />
+              </Link>
+            </div>
           </div>
-          <div className="text-sm text-muted-foreground mb-5">
-            Free to start. No credit card. Your code is never stored.
-          </div>
-          <Link
-            to="/signup"
-            className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold px-6 py-3 hover:bg-primary/90 transition-colors"
-          >
-            Scan my app <ArrowRight size={14} />
-          </Link>
-        </div>
+        </main>
       </div>
 
       <Footer />
-
-      <style>{`
-        @media (max-width: 640px) {
-          .report-container { padding: 24px 16px !important; padding-top: 110px !important; }
-        }
-      `}</style>
     </div>
   );
 }
