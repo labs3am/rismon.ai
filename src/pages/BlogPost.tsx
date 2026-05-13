@@ -144,6 +144,7 @@ export default function BlogPost() {
         canonicalPath={`/blog/${post.slug}`}
         image={post.cover_image_url || undefined}
         noindex={!post.published}
+        type="article"
       />
       <Navbar />
 

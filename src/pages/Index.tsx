@@ -159,11 +159,21 @@ export default function Index() {
         title="Rismon.ai — Intent Verification for AI-Built Apps"
         description="Scan your AI-built app before you ship. Rismon finds gaps between what you meant to build and what was actually built. Free for non-technical founders."
         canonicalPath="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a },
+          })),
+        }}
       />
       <AnnouncementBar />
       <Navbar />
       <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
 
+      <main>
       {/* HERO */}
       <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
         <div className="max-w-[800px] mx-auto">
@@ -426,6 +436,7 @@ export default function Index() {
           </Accordion>
         </div>
       </section>
+      </main>
 
       <Footer />
 
