@@ -26,6 +26,7 @@ const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = 
   { path: '/for/lovable', changefreq: 'monthly', priority: '0.7' },
   { path: '/for/bolt', changefreq: 'monthly', priority: '0.7' },
   { path: '/for/cursor', changefreq: 'monthly', priority: '0.7' },
+  { path: '/status', changefreq: 'daily', priority: '0.5' },
   { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
   { path: '/terms', changefreq: 'yearly', priority: '0.3' },
 ];
