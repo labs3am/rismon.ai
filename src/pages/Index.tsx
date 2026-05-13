@@ -159,6 +159,15 @@ export default function Index() {
         title="Rismon.ai — Intent Verification for AI-Built Apps"
         description="Scan your AI-built app before you ship. Rismon finds gaps between what you meant to build and what was actually built. Free for non-technical founders."
         canonicalPath="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.q,
+            acceptedAnswer: { '@type': 'Answer', text: f.a },
+          })),
+        }}
       />
       <AnnouncementBar />
       <Navbar />
