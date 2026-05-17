@@ -256,6 +256,37 @@ export default function PromiseAudit() {
                 </div>
               </div>
 
+              {/* Share card */}
+              {result.id && (
+                <div className="mt-4 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                  <div className="flex items-center gap-2 sm:flex-1 min-w-0">
+                    <Share2 size={14} style={{ color: '#888', flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: '#888', letterSpacing: '0.1em', fontWeight: 600, flexShrink: 0 }}>SHARE THIS REPORT</span>
+                    <code className="hidden sm:block truncate" style={{ fontSize: 12, color: '#888', background: '#0f0f0f', border: '1px solid #1f1f1f', padding: '4px 8px', borderRadius: 6 }}>
+                      {permalink.replace('https://', '')}
+                    </code>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={copyLink}
+                      className="inline-flex items-center gap-1.5"
+                      style={{ fontSize: 12, color: '#fff', background: '#161616', border: '1px solid #2a2a2a', padding: '7px 12px', borderRadius: 6, cursor: 'pointer' }}
+                    >
+                      {copied ? <><Check size={13} style={{ color: '#22c55e' }} /> Copied</> : <><Copy size={13} /> Copy link</>}
+                    </button>
+                    <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Twitter size={14} />
+                    </a>
+                    <a href={shareLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Linkedin size={14} />
+                    </a>
+                    <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Facebook size={14} />
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Promises list */}
               <div className="mt-6 grid grid-cols-1 gap-3">
                 {result.promises.map((p, i) => {
