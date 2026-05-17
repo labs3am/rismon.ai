@@ -394,6 +394,45 @@ export type Database = {
         }
         Relationships: []
       }
+      public_audits: {
+        Row: {
+          clarity_score: number | null
+          clear_count: number
+          created_at: string
+          id: string
+          ip_hash: string | null
+          promise_count: number
+          promises: Json
+          url: string
+          url_host: string
+          vague_count: number
+        }
+        Insert: {
+          clarity_score?: number | null
+          clear_count?: number
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          promise_count?: number
+          promises?: Json
+          url: string
+          url_host: string
+          vague_count?: number
+        }
+        Update: {
+          clarity_score?: number | null
+          clear_count?: number
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          promise_count?: number
+          promises?: Json
+          url?: string
+          url_host?: string
+          vague_count?: number
+        }
+        Relationships: []
+      }
       report_feedback: {
         Row: {
           analysis_id: string
@@ -818,6 +857,13 @@ export type Database = {
       notify_admin_event: {
         Args: { _event: string; _payload: Json }
         Returns: undefined
+      }
+      public_audit_stats: {
+        Args: never
+        Returns: {
+          total_24h: number
+          total_all_time: number
+        }[]
       }
       set_app_supabase_credentials: {
         Args: {
