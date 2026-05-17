@@ -3,6 +3,7 @@ import { Loader2, Sparkles, ThumbsUp, ThumbsDown, HelpCircle, Star } from 'lucid
 import ReactMarkdown from 'react-markdown';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
+import PageSkeleton from '@/components/PageSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
