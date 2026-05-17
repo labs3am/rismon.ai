@@ -545,6 +545,7 @@ export default function ReportContent({
         ...item,
         fix_prompt: fp.prompt || item.fix_prompt,
         how_to_fix: item.how_to_fix || fp.where_to_paste || '',
+        fix_verification_status: fp.verification_status || item.fix_verification_status,
       };
     }
     return item;
