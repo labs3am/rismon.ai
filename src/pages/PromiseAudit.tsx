@@ -445,7 +445,9 @@ export default function PromiseAudit() {
                   <Lock size={11} /> Free forever · Read-only GitHub · Code never stored
                 </p>
                 <p style={{ fontSize: 12, color: '#555', marginTop: 14 }}>
-                  {result.remaining_today} audits left today.{' '}
+                  {typeof result.remaining_today === 'number' && (
+                    <>{result.remaining_today} audits left today. </>
+                  )}
                   <button onClick={resetAudit} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
                     Audit another site
                   </button>
