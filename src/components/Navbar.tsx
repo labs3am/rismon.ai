@@ -130,6 +130,7 @@ export default function Navbar() {
                 >
                   <ProductMenuItem label="How we score" desc="The math behind every score" onClick={() => { setProductOpen(false); navigate('/how-we-score'); }} />
                   <ProductMenuItem label="Sample report" desc="See a real Rismon report" onClick={() => { setProductOpen(false); navigate('/sample-report'); }} />
+                  <ProductMenuItem label="Promise Audit" desc="Free · No login · No GitHub" onClick={() => { setProductOpen(false); navigate('/promise-audit'); }} />
                   <ProductMenuItem label="Security" desc="How we handle your code" onClick={() => { setProductOpen(false); navigate('/security'); }} />
                 </div>
               )}
@@ -189,6 +190,7 @@ export default function Navbar() {
         >
           <Link to="/how-we-score" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>How we score</Link>
           <Link to="/sample-report" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>Sample report</Link>
+          <Link to="/promise-audit" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>Promise Audit <span style={{ marginLeft: 8, fontSize: 10, color: '#f97316', letterSpacing: '0.08em' }}>FREE</span></Link>
           <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }}>Security</Link>
           <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>Pricing</button>
           <Link to="/blog" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }} onClick={() => setOpen(false)}>Blog</Link>
