@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio, PenLine, ShieldCheck, Target } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, MessageCircle, AtSign, Activity, Radio, PenLine, ShieldCheck, Target, Swords } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -42,6 +42,12 @@ export default function PromiseAudit() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [isDebug, setIsDebug] = useState(false);
+
+  // Debug bypass — set in console with `localStorage.rismon_debug = '<token>'`
+  // then reload. The token is checked server-side against RISMON_AUDIT_DEBUG_TOKEN.
+  const debugToken = typeof window !== 'undefined' ? localStorage.getItem('rismon_debug') : null;
 
   // Load live social-proof stats. Polls every 15s so the counter feels alive
   // even when other people are running audits.
@@ -73,6 +79,7 @@ export default function PromiseAudit() {
         id: row.id,
         url: row.url,
         host: row.url_host,
+        title: row.title || undefined,
         promises: (row.promises as Promise_[]) || [],
         clarity_score: row.clarity_score,
         promise_count: row.promise_count,
@@ -92,6 +99,7 @@ export default function PromiseAudit() {
     try {
       const { data, error: fnError } = await supabase.functions.invoke('public-promise-audit', {
         body: { url: trimmed },
+        headers: debugToken ? { 'x-rismon-debug': debugToken } : undefined,
       });
       if (fnError) {
         // supabase-js wraps non-2xx responses in FunctionsHttpError. The real
@@ -114,6 +122,8 @@ export default function PromiseAudit() {
       }
       const r = data as AuditResult;
       setResult(r);
+      if (typeof r.remaining_today === 'number') setRemaining(r.remaining_today);
+      if ((data as any)?.debug) setIsDebug(true);
       // Optimistically bump the live counter, then re-sync from the server.
       setStats((s) => s ? { total_24h: s.total_24h + 1, total_all_time: s.total_all_time + 1 } : s);
       refreshStats();
