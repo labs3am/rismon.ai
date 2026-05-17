@@ -162,6 +162,7 @@ export default function Dashboard() {
   const [appSwitcherOpen, setAppSwitcherOpen] = useState(false);
   const [activeScan, setActiveScan] = useState<{ sessionId: string; appId: string | null; appName: string | null; startedAt: number } | null>(null);
   const generateStarted = useRef<Record<string, boolean>>({});
+  const generatingFor = useRef<string | null>(null);
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
   const urlAnalysisId = searchParams.get('analysis');
@@ -272,6 +273,7 @@ export default function Dashboard() {
       if (readyForFixes && !data.fix_prompts) {
         if (!generateStarted.current[aid]) {
           generateStarted.current[aid] = true;
+          generatingFor.current = aid;
           setGenerating(true);
           const { data: appPlatform } = await supabase.from('apps').select('platform').eq('id', data.app_id).single();
           const { data: result, error: invErr } = await supabase.functions.invoke('analyze', {
@@ -289,7 +291,10 @@ export default function Dashboard() {
             (data as any).fix_prompts = result.fix_prompts;
             (data as any).status = 'complete';
           }
-          if (!cancelled) setGenerating(false);
+          if (generatingFor.current === aid) {
+            generatingFor.current = null;
+            setGenerating(false);
+          }
         }
       }
       if (cancelled) return;
