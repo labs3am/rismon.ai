@@ -222,7 +222,13 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  // Rate limit: 3 per IP per 24 hours.
+  // Debug bypass — internal testing only. Caller must send the matching
+  // x-rismon-debug header. Skips the per-IP daily limit.
+  const debugToken = Deno.env.get("RISMON_AUDIT_DEBUG_TOKEN");
+  const debugHeader = req.headers.get("x-rismon-debug") || "";
+  const isDebug = !!debugToken && debugHeader === debugToken;
+
+  // Rate limit: 3 per IP per 24 hours (skipped for debug callers).
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count: recent } = await supabase
     .from("public_audits")
@@ -230,7 +236,7 @@ Deno.serve(async (req) => {
     .eq("ip_hash", ipHash)
     .gte("created_at", since);
 
-  if ((recent ?? 0) >= DAILY_LIMIT) {
+  if (!isDebug && (recent ?? 0) >= DAILY_LIMIT) {
     return json({
       error: `Daily limit reached (${DAILY_LIMIT} audits per day). Sign up for unlimited code-verified scans.`,
       rate_limited: true,
@@ -279,6 +285,7 @@ Deno.serve(async (req) => {
       url: u.toString(),
       url_host: u.hostname,
       ip_hash: ipHash,
+      title: page.title || null,
       promises: promises as any,
       clarity_score: clarityScore,
       promise_count: promises.length,
@@ -299,6 +306,7 @@ Deno.serve(async (req) => {
     promise_count: promises.length,
     clear_count: clearCount,
     vague_count: vagueCount,
-    remaining_today: Math.max(0, DAILY_LIMIT - ((recent ?? 0) + 1)),
+    remaining_today: isDebug ? 999 : Math.max(0, DAILY_LIMIT - ((recent ?? 0) + 1)),
+    debug: isDebug || undefined,
   });
 });
