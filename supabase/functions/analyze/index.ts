@@ -3105,7 +3105,41 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
     // ACTION: generate_fixes (stage 5 — Gemini Flash, cheap & templated)
     // ============================================================
     if (action === "generate_fixes") {
+      // Detect whether the scanned app has a backend. Without backend code in
+      // the bundle, any "fix" that requires server-side enforcement (Stripe
+      // webhooks, RLS, auth checks, AI key proxying, rate limiting) cannot be
+      // verified from the frontend alone — so the model must mark it as
+      // "needs_backend" instead of confidently telling the user to edit a
+      // file that doesn't exist.
+      const cu: any = code_understanding || {};
+      const backendSignals: string[] = [
+        ...(Array.isArray(cu.backend_files) ? cu.backend_files : []),
+        ...(Array.isArray(cu.edge_functions) ? cu.edge_functions : []),
+        ...(Array.isArray(cu.database_tables) ? cu.database_tables : []),
+      ];
+      const hasBackend = backendSignals.length > 0
+        || !!cu.uses_supabase
+        || !!cu.has_edge_functions
+        || JSON.stringify(cu).toLowerCase().includes("supabase");
+
+      // Strip findings down to just the fields the model needs, and preserve
+      // each finding's confidence so the generated prompt can inherit it.
+      const slim = (arr: any[]) => (Array.isArray(arr) ? arr : []).map((f: any) => ({
+        id: f?.id,
+        name: f?.name || f?.title,
+        severity: f?.severity,
+        description: f?.description,
+        file_path: f?.file_path,
+        line_number: f?.line_number,
+        code_snippet: typeof f?.code_snippet === "string" ? f.code_snippet.slice(0, 300) : undefined,
+        confidence: f?.confidence || (f?.verified ? "verified" : "unverified"),
+      }));
+
       const systemPrompt = `You generate copy-paste fix prompts that another AI coding agent (${platform || "Lovable"}, Cursor, Claude Code, Copilot) will execute verbatim. The receiving AI has NO memory of this scan — every prompt must stand alone.
+
+CONTEXT FROM THIS SCAN:
+- Backend detected in scanned code: ${hasBackend ? "YES" : "NO"}
+- Each finding includes a "confidence" field ("verified" or "unverified"). You MUST carry that through to the fix.
 
 Each "prompt" field MUST contain, in order:
   1. The exact file path to edit (real path from the app — e.g. "src/pages/Admin.tsx", "supabase/functions/checkout/index.ts"). Never use placeholders.
@@ -3118,18 +3152,27 @@ Each "prompt" field MUST contain, in order:
 Hard rules:
   - Use the real identifiers from the app (table names, columns, components, routes). No <placeholders>, no "your table", no TODO.
   - Concrete verbs only: "Replace", "Add", "Delete", "Wrap", "Run this SQL". Never "improve", "harden", "consider", "review".
-  - 60-220 words per prompt. Plain English around the code. No fluff, no apologies.
+  - 60-180 words per prompt. Plain English around the code. No fluff, no apologies. Keep it tight — long prompts get truncated.
   - "where_to_paste" must be specific: "Lovable chat on this project", "Cursor inline edit on src/pages/Admin.tsx", or "Supabase SQL editor".
   - "expected_result" is one sentence describing the user-visible outcome after the fix.
   - Match the app's existing code style (TypeScript, the same import style, the same Supabase client variable name).
 
+VERIFICATION STATUS (REQUIRED on every fix):
+Set "verification_status" to exactly one of:
+  - "verified": the underlying finding was confirmed in the scanned code (confidence=verified) AND the fix targets a file you can name from the scan.
+  - "worth_checking": the finding was inferred (confidence=unverified) OR you cannot point to the exact file. Start the prompt with: "Worth checking — this finding could not be confirmed from the scanned files. Before applying, open <file or area> and verify <X>."
+  - "needs_backend": the fix requires backend code (server-side enforcement, webhooks, RLS, AI key proxying, rate limiting, payment verification) AND backend detected=${hasBackend ? "YES" : "NO"}. If backend detected is NO, you MUST use this status for any backend fix. Start the prompt with: "This fix requires a backend. Your scanned app has no backend code — adding this is a new feature, not a patch. If you already have a backend that wasn't scanned, verify the behavior there first."
+
+Skip generating a fix entirely when verification_status would be "needs_backend" AND the original finding's confidence is "unverified" — that combo means we are guessing about a backend that may not exist. Better to omit than to mislead.
+
 Return ONLY:
-{ "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;
+{ "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "verification_status": "verified|worth_checking|needs_backend", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;
 
       const userContent = `Platform: ${platform || "unknown"}
-Gaps: ${JSON.stringify(gaps)}
-Security issues: ${JSON.stringify(security_issues)}
-Unknown features: ${JSON.stringify(unknown_features)}
+Backend detected in scan: ${hasBackend ? "YES" : "NO"}
+Gaps: ${JSON.stringify(slim(gaps))}
+Security issues: ${JSON.stringify(slim(security_issues))}
+Unknown features: ${JSON.stringify(slim(unknown_features))}
 App understanding: ${JSON.stringify(code_understanding)}`;
 
       const text = await callGemini(systemPrompt, userContent);
