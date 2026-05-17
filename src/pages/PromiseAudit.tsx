@@ -340,6 +340,49 @@ export default function PromiseAudit() {
                 </div>
               )}
 
+              {/* Audit a competitor — virality nudge */}
+              {result.host && (
+                <div
+                  className="mt-4 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
+                  style={{ background: 'radial-gradient(120% 100% at 100% 0%, #1a1308 0%, #0a0a0a 60%)', border: '1px solid #2a2a2a' }}
+                >
+                  <div className="flex items-start gap-3 sm:flex-1 min-w-0">
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: 34, height: 34, borderRadius: 8,
+                        background: 'linear-gradient(180deg, #141414 0%, #0a0a0a 100%)',
+                        border: '1px solid #232323',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <Swords size={15} strokeWidth={1.75} style={{ color: '#f97316' }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p style={{ fontSize: 11, color: '#f97316', letterSpacing: '0.1em', fontWeight: 600 }}>NOW DO YOUR COMPETITOR</p>
+                      <p style={{ fontSize: 14, color: '#ccc', marginTop: 4, lineHeight: 1.5 }}>
+                        See how {result.host} stacks up. Paste a competitor's URL — find out who promises more vs. who promises better.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      resetAudit();
+                      setTimeout(() => {
+                        const input = document.querySelector<HTMLInputElement>('input[inputmode="url"]');
+                        input?.focus();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className="vercel-btn-secondary"
+                    style={{ minHeight: 40, whiteSpace: 'nowrap' }}
+                  >
+                    Audit a competitor →
+                  </button>
+                </div>
+              )}
+
               {/* Promises list */}
               <div className="mt-6 grid grid-cols-1 gap-3">
                 {result.promises.map((p, i) => {
