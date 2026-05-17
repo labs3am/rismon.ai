@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio, PenLine, ShieldCheck, Target } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -353,8 +353,8 @@ export default function PromiseAudit() {
                 if (topFluffy.length > 0) {
                   actions.push({
                     num: '01',
-                    icon: AlertTriangle,
-                    tone: '#f59e0b',
+                    icon: PenLine,
+                    tone: '#a1a1aa',
                     title: `Rewrite ${fluffy.length} fluffy claim${fluffy.length === 1 ? '' : 's'} with proof`,
                     body: (
                       <>
@@ -375,8 +375,8 @@ export default function PromiseAudit() {
                 if (topSensitive.length > 0) {
                   actions.push({
                     num: actions.length === 0 ? '01' : '02',
-                    icon: Shield,
-                    tone: '#22c55e',
+                    icon: ShieldCheck,
+                    tone: '#a1a1aa',
                     title: `Verify ${specific.length} specific claim${specific.length === 1 ? '' : 's'} against your code`,
                     body: (
                       <>
@@ -400,8 +400,8 @@ export default function PromiseAudit() {
                 // Action 3 — based on score
                 actions.push({
                   num: String(actions.length + 1).padStart(2, '0'),
-                  icon: Sparkles,
-                  tone: '#f97316',
+                  icon: Target,
+                  tone: '#a1a1aa',
                   title: score < 50
                     ? 'Your homepage sells vibes, not features'
                     : score < 80
@@ -434,8 +434,21 @@ export default function PromiseAudit() {
                         return (
                           <div key={i} className="rounded-lg p-5" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
                             <div className="flex items-start gap-4">
-                              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 8, background: `${a.tone}14`, border: `1px solid ${a.tone}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon size={16} style={{ color: a.tone }} />
+                              <div
+                                style={{
+                                  flexShrink: 0,
+                                  width: 34,
+                                  height: 34,
+                                  borderRadius: 8,
+                                  background: 'linear-gradient(180deg, #141414 0%, #0a0a0a 100%)',
+                                  border: '1px solid #232323',
+                                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <Icon size={15} strokeWidth={1.75} style={{ color: '#d4d4d8' }} />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-baseline gap-2 mb-1.5">
