@@ -107,7 +107,7 @@ function EmptyDashboard() {
         {[
           { t: 'Business intent score', d: 'Does your code do what you said?' },
           { t: 'Security findings', d: 'Critical issues, in plain English' },
-          { t: 'SEO & homepage', d: 'What your public site signals' },
+          { t: 'SEO health', d: 'Titles, meta, headings & indexability' },
         ].map((x) => (
           <div key={x.t} style={{ background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 10, padding: 14 }}>
             <div style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{x.t}</div>
