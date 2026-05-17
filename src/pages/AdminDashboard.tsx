@@ -456,7 +456,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-6 border-b border-border">
+        <div className="flex gap-1 mt-6 border-b border-border overflow-x-auto no-scrollbar -mx-5 px-5">
           {([
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
@@ -469,7 +469,7 @@ export default function AdminDashboard() {
             <button
               key={key}
               onClick={() => setTab(key as Tab)}
-              className={`px-4 py-2.5 text-sm flex items-center gap-2 border-b-2 -mb-px transition-colors ${
+              className={`px-4 py-2.5 text-sm flex items-center gap-2 border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
                 tab === key
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
