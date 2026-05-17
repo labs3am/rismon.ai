@@ -43,13 +43,17 @@ export default function PromiseAudit() {
   const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Load live social-proof stats once.
+  // Load live social-proof stats. Polls every 15s so the counter feels alive
+  // even when other people are running audits.
+  const refreshStats = async () => {
+    const { data } = await supabase.rpc('public_audit_stats');
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
+  };
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.rpc('public_audit_stats');
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
-    })();
+    refreshStats();
+    const t = setInterval(refreshStats, 15000);
+    return () => clearInterval(t);
   }, []);
 
   // Load shared audit by id from URL.
@@ -99,6 +103,9 @@ export default function PromiseAudit() {
       }
       const r = data as AuditResult;
       setResult(r);
+      // Optimistically bump the live counter, then re-sync from the server.
+      setStats((s) => s ? { total_24h: s.total_24h + 1, total_all_time: s.total_all_time + 1 } : s);
+      refreshStats();
       if (r.id) {
         // Clean permalink in the URL bar — no reload.
         window.history.replaceState(null, '', `/promise-audit/${r.id}`);
