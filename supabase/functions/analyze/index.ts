@@ -518,11 +518,16 @@ async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<
     // that runs the page and returns markdown. This is what catches almost all
     // Lovable / Bolt / Cursor apps, whose marketing copy lives in client JS.
     let renderedText = text;
-    const looksLikeSpa = text.length < 400 && headings.length === 0 && cta_text.length < 3;
+    // Be aggressive about using the rendered-HTML fallback. Lovable / Bolt /
+    // Cursor / Next.js apps frequently ship a shell with <title> + meta but
+    // no real visible body — the actual marketing copy is in client JS. If
+    // raw text is short OR we got <2 headings, hit r.jina.ai for the
+    // rendered DOM so we have sentence-level content for promise extraction.
+    const looksLikeSpa = text.length < 2000 || headings.length < 2;
     if (looksLikeSpa) {
       try {
         const ctrl2 = new AbortController();
-        const t2 = setTimeout(() => ctrl2.abort(), 6000);
+        const t2 = setTimeout(() => ctrl2.abort(), 10000);
         const r2 = await fetch(`https://r.jina.ai/${url}`, {
           headers: { "User-Agent": "RismonAnalyzer/1.0 (+https://rismon.ai)", "Accept": "text/plain" },
           signal: ctrl2.signal,
@@ -2728,6 +2733,7 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           fetched_at: homepageSignals.fetched_at,
           error: homepageSignals.error || null,
           has_live_url: true,
+          text: (homepageSignals.text || "").slice(0, 4000),
         };
       }
 
