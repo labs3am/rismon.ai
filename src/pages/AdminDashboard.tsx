@@ -15,6 +15,7 @@ import {
   UserX,
   GitBranch,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -1026,6 +1027,16 @@ export default function AdminDashboard() {
               </h3>
               <p className="text-muted-foreground text-sm mt-1">
                 Send the founder note to inactive users (signed up 14+ days ago, never scanned). Test first, then broadcast.
+              </p>
+            </Link>
+            <Link
+              to="/admin/audit-test"
+              className="bg-card border border-border rounded-2xl p-5 hover:border-hover-border transition-colors group"
+            >
+              <ShieldCheck className="text-primary" size={20} />
+              <h3 className="text-foreground font-semibold mt-3">Promise Audit tester</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Run the public audit without the 3/day IP limit. Debug token stays server-side.
               </p>
             </Link>
             <div className="bg-card border border-border rounded-2xl p-5">

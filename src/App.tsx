@@ -38,6 +38,7 @@ const ForPlatform = lazy(() => import("./pages/ForPlatform"));
 const HowWeScore = lazy(() => import("./pages/HowWeScore"));
 const Status = lazy(() => import("./pages/Status"));
 const PromiseAudit = lazy(() => import("./pages/PromiseAudit"));
+const AdminAuditTest = lazy(() => import("./pages/AdminAuditTest"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
               <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
               <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcast /></AdminRoute>} />
+              <Route path="/admin/audit-test" element={<AdminRoute><AdminAuditTest /></AdminRoute>} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
