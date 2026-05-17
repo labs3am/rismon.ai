@@ -157,9 +157,22 @@ export default function PromiseAudit() {
                   )}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5" style={{ fontSize: 13 }}>
-                  <span style={{ color: '#22c55e' }}>● {result.clear_count} concrete</span>
-                  <span style={{ color: '#f59e0b' }}>● {result.vague_count} vague</span>
+                  <span style={{ color: '#22c55e' }}>● {result.clear_count} specific</span>
+                  <span style={{ color: '#f59e0b' }}>● {result.vague_count} fluffy</span>
                   <span style={{ color: '#555', marginLeft: 'auto' }}>{result.promise_count} total promises</span>
+                </div>
+                <div
+                  className="mt-5 rounded-lg p-4"
+                  style={{ background: '#0f0f0f', border: '1px solid #1f1f1f', fontSize: 13, color: '#999', lineHeight: 1.6 }}
+                >
+                  <p style={{ marginBottom: 6 }}>
+                    <span style={{ color: '#22c55e', fontWeight: 600 }}>● Specific</span>
+                    <span style={{ color: '#666' }}> — a real, testable claim. Something a user (or a scanner) can actually check, like "Sign in with Google" or "Stripe checkout".</span>
+                  </p>
+                  <p>
+                    <span style={{ color: '#f59e0b', fontWeight: 600 }}>● Fluffy</span>
+                    <span style={{ color: '#666' }}> — marketing language with no proof. Words like "powerful", "seamless", or "founder-friendly" — nice to read, impossible to verify.</span>
+                  </p>
                 </div>
               </div>
 
@@ -179,8 +192,11 @@ export default function PromiseAudit() {
                           <span style={{ fontSize: 10, letterSpacing: '0.08em', color: '#666', fontWeight: 600 }}>
                             {CAT_LABEL[p.category] || 'OTHER'}
                           </span>
-                          <span style={{ fontSize: 10, letterSpacing: '0.08em', color: isClear ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>
-                            ● {isClear ? 'CONCRETE' : 'VAGUE'}
+                          <span
+                            title={isClear ? 'Specific claim — testable against real code or behavior.' : 'Marketing fluff — no concrete promise to verify.'}
+                            style={{ fontSize: 10, letterSpacing: '0.08em', color: isClear ? '#22c55e' : '#f59e0b', fontWeight: 600 }}
+                          >
+                            ● {isClear ? 'SPECIFIC' : 'TOO VAGUE'}
                           </span>
                         </div>
                         <p style={{ fontSize: 15, color: '#fff', fontWeight: 500, lineHeight: 1.45 }}>"{p.claim}"</p>
@@ -242,8 +258,8 @@ export default function PromiseAudit() {
                 </div>
                 <div className="vercel-card">
                   <p style={{ fontSize: 11, color: '#666', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>03 — GRADE</p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Concrete vs. vague</p>
-                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Each promise gets a verdict. The more concrete claims, the higher your clarity score.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Specific vs. fluffy</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Real, testable claims score high. Marketing fluff with nothing to verify drags your clarity score down.</p>
                 </div>
               </div>
               <p style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
