@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -167,23 +167,24 @@ export default function PromiseAudit() {
             {stats && stats.total_all_time > 0 && (
               <div
                 aria-live="polite"
-                className="mx-auto mt-5 inline-flex items-center gap-2.5 px-3.5 py-2"
-                style={{
-                  background: 'rgba(34,197,94,0.06)',
-                  border: '1px solid rgba(34,197,94,0.25)',
-                  borderRadius: 999,
-                  fontSize: 13,
-                  color: '#d1fadf',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
+                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-3 pl-3 pr-4 py-2"
               >
-                <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
-                  <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'rismonPing 1.6s cubic-bezier(0,0,0.2,1) infinite', opacity: 0.7 }} />
-                  <span style={{ position: 'relative', display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 10px #22c55e' }} />
+                <span className="rismon-glass-dot">
+                  <span className="rismon-glass-dot-ping" />
+                  <span className="rismon-glass-dot-core" />
                 </span>
-                <span><strong style={{ color: '#fff', fontWeight: 600 }}>{stats.total_24h.toLocaleString()}</strong> audit{stats.total_24h === 1 ? '' : 's'} run in the last 24h</span>
-                <span style={{ color: '#3a6a4a' }}>·</span>
-                <span style={{ color: '#9bb3a3' }}><strong style={{ color: '#d1fadf', fontWeight: 600 }}>{stats.total_all_time.toLocaleString()}</strong> all-time</span>
+                <span className="rismon-glass-divider" />
+                <span className="rismon-glass-stat">
+                  <Activity size={13} strokeWidth={2.25} className="rismon-glass-icon" />
+                  <strong>{stats.total_24h.toLocaleString()}</strong>
+                  <span className="rismon-glass-label">last 24h</span>
+                </span>
+                <span className="rismon-glass-divider" />
+                <span className="rismon-glass-stat">
+                  <Radio size={13} strokeWidth={2.25} className="rismon-glass-icon" />
+                  <strong>{stats.total_all_time.toLocaleString()}</strong>
+                  <span className="rismon-glass-label">all-time</span>
+                </span>
               </div>
             )}
 
