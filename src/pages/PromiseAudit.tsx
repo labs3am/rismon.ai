@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -14,16 +14,17 @@ type Promise_ = {
 };
 
 type AuditResult = {
+  id?: string | null;
   url: string;
   host: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   promises: Promise_[];
   clarity_score: number | null;
   promise_count: number;
   clear_count: number;
   vague_count: number;
-  remaining_today: number;
+  remaining_today?: number;
 };
 
 const CAT_LABEL: Record<string, string> = {
@@ -33,10 +34,49 @@ const CAT_LABEL: Record<string, string> = {
 };
 
 export default function PromiseAudit() {
+  const { id: permalinkId } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResult | null>(null);
+  const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Load live social-proof stats once.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc('public_audit_stats');
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
+    })();
+  }, []);
+
+  // Load shared audit by id from URL.
+  useEffect(() => {
+    if (!permalinkId) return;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      const { data, error: rpcErr } = await supabase.rpc('get_public_audit', { _id: permalinkId });
+      setLoading(false);
+      if (rpcErr || !data || (Array.isArray(data) && data.length === 0)) {
+        setError("This audit link is invalid or has expired.");
+        return;
+      }
+      const row: any = Array.isArray(data) ? data[0] : data;
+      setResult({
+        id: row.id,
+        url: row.url,
+        host: row.url_host,
+        promises: (row.promises as Promise_[]) || [],
+        clarity_score: row.clarity_score,
+        promise_count: row.promise_count,
+        clear_count: row.clear_count,
+        vague_count: row.vague_count,
+      });
+    })();
+  }, [permalinkId]);
 
   const runAudit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -57,7 +97,12 @@ export default function PromiseAudit() {
         setError((data as any).error);
         return;
       }
-      setResult(data as AuditResult);
+      const r = data as AuditResult;
+      setResult(r);
+      if (r.id) {
+        // Clean permalink in the URL bar — no reload.
+        window.history.replaceState(null, '', `/promise-audit/${r.id}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -65,12 +110,40 @@ export default function PromiseAudit() {
     }
   };
 
+  const permalink = result?.id ? `https://rismon.ai/promise-audit/${result.id}` : '';
+  const shareTitle = result
+    ? `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit — ${result.clear_count} specific claims, ${result.vague_count} fluffy. Audit any site free:`
+    : '';
+  const shareLinks = {
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(permalink)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(permalink)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(permalink)}`,
+  };
+
+  const copyLink = async () => {
+    if (!permalink) return;
+    try {
+      await navigator.clipboard.writeText(permalink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {/* ignore */}
+  };
+
+  const resetAudit = () => {
+    setResult(null);
+    setUrl('');
+    setError(null);
+    if (permalinkId) navigate('/promise-audit', { replace: true });
+  };
+
   return (
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
-        title="Promise Audit — Free, no login | Rismon"
-        description="Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds."
-        canonicalPath="/promise-audit"
+        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free, no login | Rismon'}
+        description={result
+          ? `${result.host} scored ${result.clarity_score ?? '—'}/100. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Audit your own homepage free.`
+          : 'Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds.'}
+        canonicalPath={result?.id ? `/promise-audit/${result.id}` : '/promise-audit'}
       />
       <Navbar />
 
@@ -109,6 +182,13 @@ export default function PromiseAudit() {
               </button>
             </form>
             <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>3 free audits per day per IP. No credit card.</p>
+            {stats && stats.total_all_time > 0 && (
+              <p style={{ fontSize: 12, color: '#777', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e88' }} />
+                {stats.total_24h.toLocaleString()} audit{stats.total_24h === 1 ? '' : 's'} in the last 24h ·{' '}
+                {stats.total_all_time.toLocaleString()} all-time
+              </p>
+            )}
 
             {error && (
               <div className="mt-6 mx-auto max-w-[560px] text-left px-4 py-3" style={{ background: '#1a0a0a', border: '1px solid #3a1010', borderRadius: 8 }}>
@@ -175,6 +255,37 @@ export default function PromiseAudit() {
                   </p>
                 </div>
               </div>
+
+              {/* Share card */}
+              {result.id && (
+                <div className="mt-4 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                  <div className="flex items-center gap-2 sm:flex-1 min-w-0">
+                    <Share2 size={14} style={{ color: '#888', flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: '#888', letterSpacing: '0.1em', fontWeight: 600, flexShrink: 0 }}>SHARE THIS REPORT</span>
+                    <code className="hidden sm:block truncate" style={{ fontSize: 12, color: '#888', background: '#0f0f0f', border: '1px solid #1f1f1f', padding: '4px 8px', borderRadius: 6 }}>
+                      {permalink.replace('https://', '')}
+                    </code>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={copyLink}
+                      className="inline-flex items-center gap-1.5"
+                      style={{ fontSize: 12, color: '#fff', background: '#161616', border: '1px solid #2a2a2a', padding: '7px 12px', borderRadius: 6, cursor: 'pointer' }}
+                    >
+                      {copied ? <><Check size={13} style={{ color: '#22c55e' }} /> Copied</> : <><Copy size={13} /> Copy link</>}
+                    </button>
+                    <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Share on X" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Twitter size={14} />
+                    </a>
+                    <a href={shareLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Linkedin size={14} />
+                    </a>
+                    <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <Facebook size={14} />
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {/* Promises list */}
               <div className="mt-6 grid grid-cols-1 gap-3">
@@ -365,8 +476,10 @@ export default function PromiseAudit() {
                   <Lock size={11} /> Free forever · Read-only GitHub · Code never stored
                 </p>
                 <p style={{ fontSize: 12, color: '#555', marginTop: 14 }}>
-                  {result.remaining_today} audits left today.{' '}
-                  <button onClick={() => { setResult(null); setUrl(''); }} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
+                  {typeof result.remaining_today === 'number' && (
+                    <>{result.remaining_today} audits left today. </>
+                  )}
+                  <button onClick={resetAudit} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
                     Audit another site
                   </button>
                 </p>

@@ -15,11 +15,23 @@ export default function Privacy() {
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />
         <h1 className="text-foreground text-4xl font-semibold">Privacy Policy</h1>
-        <p className="text-muted-foreground text-sm mt-2">Last updated: April 2026</p>
+        <p className="text-muted-foreground text-sm mt-2">Last updated: May 17, 2026</p>
         <div className="mt-10 space-y-8 text-muted-foreground leading-[1.8]">
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">What we collect</h2>
             <p>Name, email, company name, and analysis results (not your code).</p>
+          </section>
+
+          <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Promise Audit (anonymous, no login)</h2>
+            <p>The free Promise Audit lets anyone paste a public URL and grade the marketing claims on that page. Here's exactly what happens:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1.5">
+              <li>We fetch the public HTML of the URL you provide (the same content any visitor would see).</li>
+              <li>The visible text, title, and meta description are sent to the Lovable AI Gateway to extract and classify claims.</li>
+              <li>We store the URL, hostname, extracted claims, and clarity score so the audit can be shared via a permalink.</li>
+              <li>To enforce a 3-audits-per-day fair-use limit, we store a one-way SHA-256 hash of your IP address. We never store the raw IP, and the hash cannot be reversed to identify you.</li>
+              <li>No login, no cookies, no code, and no private pages are ever read.</li>
+            </ul>
           </section>
 
           <section>
@@ -57,6 +69,7 @@ export default function Privacy() {
             <h2 className="text-foreground text-xl font-semibold mb-3">Third-party processors</h2>
             <ul className="list-disc list-inside space-y-1.5">
               <li><strong className="text-foreground">Anthropic (Claude)</strong> — processes code snippets during analysis. Per their <a href="https://www.anthropic.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">API privacy policy</a>, API inputs are not used for training and are not retained after processing.</li>
+              <li><strong className="text-foreground">Lovable AI Gateway</strong> — processes the text of public pages submitted to the Promise Audit. Inputs are used only to return the audit result and are not used for model training.</li>
               <li><strong className="text-foreground">Supabase</strong> — hosts our database and authentication. Stores your account and analysis results only.</li>
             </ul>
           </section>
