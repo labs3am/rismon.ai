@@ -19,6 +19,8 @@ const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = 
   { path: '/blog', changefreq: 'weekly', priority: '0.9' },
   { path: '/sample-report', changefreq: 'monthly', priority: '0.8' },
   { path: '/pricing', changefreq: 'monthly', priority: '0.7' },
+  { path: '/promise-audit', changefreq: 'weekly', priority: '0.9' },
+  { path: '/how-we-score', changefreq: 'monthly', priority: '0.7' },
   { path: '/about', changefreq: 'monthly', priority: '0.7' },
   { path: '/security', changefreq: 'monthly', priority: '0.7' },
   { path: '/open-source', changefreq: 'monthly', priority: '0.6' },

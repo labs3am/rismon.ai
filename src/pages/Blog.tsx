@@ -78,6 +78,23 @@ export default function Blog() {
         title="Blog — Rismon.ai"
         description="Guides and deep dives on shipping production-ready AI-built apps. Verify findings, fix Supabase setups, and harden your stack."
         canonicalPath="/blog"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Blog',
+          name: 'Rismon.ai Blog',
+          url: 'https://rismon.ai/blog',
+          blogPost: posts
+            .filter((p) => p.published)
+            .map((p) => ({
+              '@type': 'BlogPosting',
+              headline: p.title,
+              url: `https://rismon.ai/blog/${p.slug}`,
+              datePublished: p.published_at || p.updated_at,
+              dateModified: p.updated_at,
+              description: p.excerpt || undefined,
+              author: { '@type': 'Person', name: p.author_name || 'Rismon Team' },
+            })),
+        }}
       />
       <Navbar />
 
