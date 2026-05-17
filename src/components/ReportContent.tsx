@@ -242,6 +242,15 @@ function FindingCard({
   const filePath = f.file_path || '';
   const lineNumber = f.line_number;
   const codeSnippet = f.code_snippet || '';
+  const fixStatus: string = (f.fix_verification_status || '').toLowerCase();
+  const fixStatusMeta =
+    fixStatus === 'needs_backend'
+      ? { color: '#f59e0b', label: 'Needs backend', note: 'This fix requires backend code. Your scanned app has no backend — treat this as a new feature, not a patch. If you have a backend that was not scanned, verify the behavior there first.' }
+      : fixStatus === 'worth_checking'
+        ? { color: '#a1a1aa', label: 'Worth checking', note: 'This fix is based on inferred evidence. Open the referenced file and confirm the issue before applying.' }
+        : fixStatus === 'verified'
+          ? { color: '#22c55e', label: 'Verified', note: '' }
+          : null;
 
   const onCopy = () => {
     if (!fixPrompt) return;
@@ -359,6 +368,15 @@ function FindingCard({
 
       {fixPrompt && showFix && (
         <div className="relative mt-2 mb-3">
+          {fixStatusMeta && fixStatusMeta.note && (
+            <div
+              className="rounded-md px-3 py-2 text-[12px] leading-relaxed mb-2"
+              style={{ background: '#0c0c0d', border: `1px solid ${fixStatusMeta.color}40`, color: fixStatusMeta.color }}
+            >
+              <strong style={{ fontWeight: 600 }}>{fixStatusMeta.label}.</strong>{' '}
+              <span style={{ color: '#a1a1aa' }}>{fixStatusMeta.note}</span>
+            </div>
+          )}
           <div
             className="rounded-md text-[13px] leading-relaxed whitespace-pre-wrap break-words font-mono"
             style={{ background: '#000000', border: '1px solid #222222', color: '#cbd5e1', padding: 16, paddingTop: 40 }}
@@ -387,6 +405,14 @@ function FindingCard({
           >
             <Wrench size={12} /> {showFix ? 'Hide fix' : 'Fix this'}
           </button>
+        )}
+        {fixPrompt && fixStatusMeta && (
+          <span
+            className="text-[10px] uppercase tracking-[0.08em] font-semibold whitespace-nowrap rounded-full px-2 py-[2px]"
+            style={{ color: fixStatusMeta.color, border: `1px solid ${fixStatusMeta.color}40` }}
+          >
+            Fix: {fixStatusMeta.label}
+          </span>
         )}
         <button
           onClick={onIgnore}
@@ -545,6 +571,7 @@ export default function ReportContent({
         ...item,
         fix_prompt: fp.prompt || item.fix_prompt,
         how_to_fix: item.how_to_fix || fp.where_to_paste || '',
+        fix_verification_status: fp.verification_status || item.fix_verification_status,
       };
     }
     return item;
