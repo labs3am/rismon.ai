@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio, PenLine, ShieldCheck, Target } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, MessageCircle, AtSign, Activity, Radio, PenLine, ShieldCheck, Target, Swords } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -42,6 +42,12 @@ export default function PromiseAudit() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [isDebug, setIsDebug] = useState(false);
+
+  // Debug bypass — set in console with `localStorage.rismon_debug = '<token>'`
+  // then reload. The token is checked server-side against RISMON_AUDIT_DEBUG_TOKEN.
+  const debugToken = typeof window !== 'undefined' ? localStorage.getItem('rismon_debug') : null;
 
   // Load live social-proof stats. Polls every 15s so the counter feels alive
   // even when other people are running audits.
@@ -73,6 +79,7 @@ export default function PromiseAudit() {
         id: row.id,
         url: row.url,
         host: row.url_host,
+        title: row.title || undefined,
         promises: (row.promises as Promise_[]) || [],
         clarity_score: row.clarity_score,
         promise_count: row.promise_count,
@@ -92,6 +99,7 @@ export default function PromiseAudit() {
     try {
       const { data, error: fnError } = await supabase.functions.invoke('public-promise-audit', {
         body: { url: trimmed },
+        headers: debugToken ? { 'x-rismon-debug': debugToken } : undefined,
       });
       if (fnError) {
         // supabase-js wraps non-2xx responses in FunctionsHttpError. The real
@@ -114,6 +122,8 @@ export default function PromiseAudit() {
       }
       const r = data as AuditResult;
       setResult(r);
+      if (typeof r.remaining_today === 'number') setRemaining(r.remaining_today);
+      if ((data as any)?.debug) setIsDebug(true);
       // Optimistically bump the live counter, then re-sync from the server.
       setStats((s) => s ? { total_24h: s.total_24h + 1, total_all_time: s.total_all_time + 1 } : s);
       refreshStats();
@@ -135,7 +145,8 @@ export default function PromiseAudit() {
   const shareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(permalink)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(permalink)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(permalink)}`,
+    reddit: `https://www.reddit.com/submit?url=${encodeURIComponent(permalink)}&title=${encodeURIComponent(shareTitle)}`,
+    threads: `https://www.threads.net/intent/post?text=${encodeURIComponent(shareTitle + ' ' + permalink)}`,
   };
 
   const copyLink = async () => {
@@ -217,7 +228,17 @@ export default function PromiseAudit() {
                 {loading ? (<span className="inline-flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Auditing…</span>) : (<>Run audit →</>)}
               </button>
             </form>
-            <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>3 free audits per day per IP. No credit card.</p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2" style={{ fontSize: 12 }}>
+              {isDebug ? (
+                <span style={{ color: '#f97316', fontWeight: 600, letterSpacing: '0.05em' }}>● DEBUG MODE — rate limit bypassed</span>
+              ) : remaining !== null ? (
+                <span style={{ color: remaining === 0 ? '#fca5a5' : '#888' }}>
+                  <strong style={{ color: remaining === 0 ? '#fca5a5' : '#fff' }}>{remaining}</strong> of 3 free audits left today.
+                </span>
+              ) : (
+                <span style={{ color: '#555' }}>3 free audits per day per IP. No credit card.</span>
+              )}
+            </div>
 
             {error && (
               <div className="mt-6 mx-auto max-w-[560px] text-left px-4 py-3" style={{ background: '#1a0a0a', border: '1px solid #3a1010', borderRadius: 8 }}>
@@ -309,10 +330,56 @@ export default function PromiseAudit() {
                     <a href={shareLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
                       <Linkedin size={14} />
                     </a>
-                    <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
-                      <Facebook size={14} />
+                    <a href={shareLinks.reddit} target="_blank" rel="noopener noreferrer" aria-label="Share on Reddit" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <MessageCircle size={14} />
+                    </a>
+                    <a href={shareLinks.threads} target="_blank" rel="noopener noreferrer" aria-label="Share on Threads" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <AtSign size={14} />
                     </a>
                   </div>
+                </div>
+              )}
+
+              {/* Audit a competitor — virality nudge */}
+              {result.host && (
+                <div
+                  className="mt-4 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3"
+                  style={{ background: 'radial-gradient(120% 100% at 100% 0%, #1a1308 0%, #0a0a0a 60%)', border: '1px solid #2a2a2a' }}
+                >
+                  <div className="flex items-start gap-3 sm:flex-1 min-w-0">
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: 34, height: 34, borderRadius: 8,
+                        background: 'linear-gradient(180deg, #141414 0%, #0a0a0a 100%)',
+                        border: '1px solid #232323',
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      <Swords size={15} strokeWidth={1.75} style={{ color: '#f97316' }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p style={{ fontSize: 11, color: '#f97316', letterSpacing: '0.1em', fontWeight: 600 }}>NOW DO YOUR COMPETITOR</p>
+                      <p style={{ fontSize: 14, color: '#ccc', marginTop: 4, lineHeight: 1.5 }}>
+                        See how {result.host} stacks up. Paste a competitor's URL — find out who promises more vs. who promises better.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      resetAudit();
+                      setTimeout(() => {
+                        const input = document.querySelector<HTMLInputElement>('input[inputmode="url"]');
+                        input?.focus();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className="vercel-btn-secondary"
+                    style={{ minHeight: 40, whiteSpace: 'nowrap' }}
+                  >
+                    Audit a competitor →
+                  </button>
                 </div>
               )}
 
