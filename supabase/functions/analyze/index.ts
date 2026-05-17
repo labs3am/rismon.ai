@@ -513,14 +513,59 @@ async function fetchHomepageSignals(rawUrl: string | null | undefined): Promise<
       const t = stripHtmlToText(cm[1]);
       if (t && t.length >= 2 && t.length <= 80) cta_text.push(t);
     }
+    // SPA fallback — if the raw HTML body is empty (typical for Vite/React/Next
+    // CSR shells), pull the rendered text via r.jina.ai, a free reader proxy
+    // that runs the page and returns markdown. This is what catches almost all
+    // Lovable / Bolt / Cursor apps, whose marketing copy lives in client JS.
+    let renderedText = text;
+    const looksLikeSpa = text.length < 400 && headings.length === 0 && cta_text.length < 3;
+    if (looksLikeSpa) {
+      try {
+        const ctrl2 = new AbortController();
+        const t2 = setTimeout(() => ctrl2.abort(), 6000);
+        const r2 = await fetch(`https://r.jina.ai/${url}`, {
+          headers: { "User-Agent": "RismonAnalyzer/1.0 (+https://rismon.ai)", "Accept": "text/plain" },
+          signal: ctrl2.signal,
+        });
+        clearTimeout(t2);
+        if (r2.ok) {
+          const md = (await r2.text()).slice(0, 60_000);
+          // r.jina.ai returns "Title: ...\n\nURL Source: ...\n\nMarkdown Content:\n..."
+          const body = md.replace(/^[\s\S]*?Markdown Content:\s*/i, "");
+          // Pull h1/h2 from markdown headings
+          const mdHeadings = body.match(/^#{1,2}\s+.+$/gm) || [];
+          for (const h of mdHeadings) {
+            if (headings.length >= 25) break;
+            const t = h.replace(/^#+\s+/, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").trim();
+            if (t) headings.push(t.slice(0, 200));
+          }
+          // Pull link/button labels [Label](url)
+          const linkRx = /\[([^\]\n]{2,80})\]\([^)]+\)/g;
+          let lm: RegExpExecArray | null;
+          while ((lm = linkRx.exec(body)) !== null && cta_text.length < 40) {
+            const t = lm[1].trim();
+            if (t && t.length >= 2 && t.length <= 80) cta_text.push(t);
+          }
+          // Flatten markdown to plain text for sentence-level promise extraction.
+          renderedText = body
+            .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+            .replace(/[#>*_`~|-]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+      } catch {
+        // Non-fatal — fall back to the empty-body raw signals.
+      }
+    }
     return {
       url,
       status: res.status,
       title: extractTag(html, "title"),
-      description: extractMeta(html, "description"),
+      description: extractMeta(html, "description") || extractMeta(html, "twitter:description"),
       og_title: extractMeta(html, "og:title"),
       og_description: extractMeta(html, "og:description"),
-      text: text.slice(0, 12_000),
+      text: renderedText.slice(0, 12_000),
       headings,
       cta_text,
       fetched_at: new Date().toISOString(),
@@ -562,7 +607,7 @@ function snippet(line: string, max = 200): string {
 // ============================================================
 
 const PROMISE_KEYWORDS: Array<{ rx: RegExp; codeHints: string[]; label: string }> = [
-  { rx: /\bai[- ]?powered\b|\b(uses?|with)\s+ai\b|\bgpt\b|\bllm\b/i,                 codeHints: ["openai", "anthropic", "@ai-sdk", "lovable-ai", "gemini", "claude", "/v1/chat", "VITE_OPENAI", "ai-gateway"], label: "AI integration" },
+  { rx: /\bai[- ]?(powered|built|driven|native|first|generated|assisted)\b|\b(uses?|with|using|powered\s+by)\s+ai\b|\b(your|an?)\s+ai\b|\bgpt\b|\bllm\b|\bchatbot\b|\bagent(s)?\b/i, codeHints: ["openai", "anthropic", "@ai-sdk", "lovable-ai", "gemini", "claude", "/v1/chat", "VITE_OPENAI", "ai-gateway", "ai_gateway"], label: "AI integration" },
   { rx: /\breal[- ]?time\b|\blive\s+(updates?|sync)\b/i,                              codeHints: ["channel(", "supabase.channel", "realtime", "websocket", "ws://", "postgres_changes", "EventSource"], label: "realtime channel" },
   { rx: /\bend[- ]to[- ]end\s+encrypt|\be2ee\b|\bencrypted\b|\bencryption\b/i,        codeHints: ["pgp_sym_encrypt", "crypto.subtle", "libsodium", "tweetnacl", "AES-", "WebCrypto", "encrypt("], label: "encryption" },
   { rx: /\bsync(s|ed|ing)?\b|\bauto[- ]?sync\b|\bsynchroniz/i,                        codeHints: ["sync", "syncQueue", "background sync", "useSync", "/sync"], label: "sync logic" },
@@ -578,6 +623,9 @@ const PROMISE_KEYWORDS: Array<{ rx: RegExp; codeHints: string[]; label: string }
   { rx: /\b(rate[- ]?limit|throttl)/i,                                                 codeHints: ["rate_limit", "ratelimit", "PLAN_LIMITS", "throttle"], label: "rate limiting" },
   { rx: /\b(secure|gdpr|soc[- ]?2|hipaa|compliant|privacy[- ]first)\b/i,               codeHints: ["RLS", "row level security", "auth.uid()", "policy", "encrypt", "consent"], label: "security/compliance" },
   { rx: /\b(free\s+(tier|plan)|task\s+limit|message\s+limit|free\s+users)\b/i,         codeHints: ["PLAN_LIMITS", "free:", "weeklyScans", "monthlyScans", "trigger", "enforce_"], label: "free-plan limits" },
+  { rx: /\b(github|git)\s+(integration|repo|sync|connect)|\bconnect\s+(your\s+)?github\b|\bscan(s|ning)?\s+(your\s+)?(github|repo)/i, codeHints: ["github.com/login/oauth", "api.github.com", "octokit", "github_token", "/repos/"], label: "GitHub integration" },
+  { rx: /\b(scan|audit|review|analyze|analy[sz]e)s?\b/i,                               codeHints: ["analyze", "scan", "audit", "review", "lint", "security_issues"], label: "scan/audit feature" },
+  { rx: /\b(report|verdict|score|grade|rating)s?\b/i,                                  codeHints: ["report", "verdict", "score", "grade", "rating", "analyses"], label: "report/score output" },
 ];
 
 function extractHomepagePromises(signals: any): Array<{ claim: string; matchedRule: string; codeHints: string[] }> {
