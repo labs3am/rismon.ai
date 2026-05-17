@@ -306,6 +306,47 @@ export default function HowWeScore() {
           </p>
         </div>
 
+        {/* Homepage vs code check */}
+        <div
+          className="hws-card-in"
+          style={{ marginTop: 24, padding: 32, animationDelay: '400ms', ...cardStyle }}
+        >
+          <p style={{ ...labelStyle, marginBottom: 6 }}>Homepage vs code check</p>
+          <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 20 }}>
+            Part of your Intent Match score. We compare every promise on your live homepage to what
+            actually exists in your repo, then weight each verdict.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0 }}>
+            {[
+              { dot: '#22c55e', label: 'Verified', desc: 'Claim is backed by working code.', delta: '0' },
+              { dot: '#f59e0b', label: 'Partial', desc: 'Built but incomplete, sandboxed, or only on some routes.', delta: '−2' },
+              { dot: '#ef4444', label: 'Contradicted', desc: 'Promised on the site, not present in the code. High-severity finding.', delta: '−5' },
+            ].map((r, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '14px 0',
+                  borderTop: i === 0 ? 'none' : '1px solid #ffffff0a',
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: r.dot, flexShrink: 0 }} />
+                <div style={{ width: 110, fontSize: 14, fontWeight: 500, color: '#fff' }}>{r.label}</div>
+                <div style={{ flex: 1, fontSize: 13, color: '#888', lineHeight: 1.55 }}>{r.desc}</div>
+                <div style={{ width: 56, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                  {r.delta}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: '#555', marginTop: 16, lineHeight: 1.5 }}>
+            Deductions per promise. A page with five contradicted claims can drop your Intent Match by
+            25 points on its own.
+          </p>
+        </div>
+
         {/* Local keyframes for marker reveal + card stagger */}
         <style>{`
           .hws-marker-line {
