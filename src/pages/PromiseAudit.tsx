@@ -638,6 +638,16 @@ export default function PromiseAudit() {
           color: rgba(134, 239, 172, 0.85);
           filter: drop-shadow(0 0 4px rgba(34,197,94,0.45));
         }
+        .rismon-glass-sentence {
+          font-size: 13px;
+          color: rgba(255,255,255,0.78);
+          letter-spacing: 0.005em;
+        }
+        .rismon-glass-sentence strong {
+          color: #ffffff;
+          font-weight: 600;
+          margin-right: 2px;
+        }
       `}</style>
     </div>
   );
