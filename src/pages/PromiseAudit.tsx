@@ -178,7 +178,7 @@ export default function PromiseAudit() {
             {stats && stats.total_all_time > 0 && (
               <div
                 aria-live="polite"
-                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-3 pl-3 pr-4 py-2"
+                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-2.5 pl-3 pr-4 py-2"
               >
                 <span className="rismon-glass-dot">
                   <span className="rismon-glass-dot-ping" />
