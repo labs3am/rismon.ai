@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import { usePageTracker } from "@/hooks/usePageTracker";
+import PageSkeleton from "@/components/PageSkeleton";
 
 // Code-split every non-landing route so the initial bundle stays small.
 const Signup = lazy(() => import("./pages/Signup"));
@@ -49,11 +50,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const RouteFallback = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+const RouteFallback = () => <PageSkeleton />;
 
 // Tracks page views on route change. Lives inside <BrowserRouter>.
 const PageTracker = () => {
