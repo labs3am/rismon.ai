@@ -145,7 +145,8 @@ export default function PromiseAudit() {
   const shareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(permalink)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(permalink)}`,
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(permalink)}`,
+    reddit: `https://www.reddit.com/submit?url=${encodeURIComponent(permalink)}&title=${encodeURIComponent(shareTitle)}`,
+    threads: `https://www.threads.net/intent/post?text=${encodeURIComponent(shareTitle + ' ' + permalink)}`,
   };
 
   const copyLink = async () => {
@@ -319,8 +320,11 @@ export default function PromiseAudit() {
                     <a href={shareLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="Share on LinkedIn" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
                       <Linkedin size={14} />
                     </a>
-                    <a href={shareLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
-                      <Facebook size={14} />
+                    <a href={shareLinks.reddit} target="_blank" rel="noopener noreferrer" aria-label="Share on Reddit" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <MessageCircle size={14} />
+                    </a>
+                    <a href={shareLinks.threads} target="_blank" rel="noopener noreferrer" aria-label="Share on Threads" className="inline-flex items-center justify-center" style={{ width: 32, height: 32, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 6, color: '#ccc' }}>
+                      <AtSign size={14} />
                     </a>
                   </div>
                 </div>
