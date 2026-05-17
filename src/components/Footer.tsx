@@ -109,6 +109,7 @@ export default function Footer() {
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/pricing" className={linkCls}>Pricing</Link></li>
               <li><Link to="/sample-report" className={linkCls}>Sample Report</Link></li>
+              <li><Link to="/promise-audit" className={linkCls}>Promise Audit <span style={{ marginLeft: 6, fontSize: 10, color: '#f97316', letterSpacing: '0.08em' }}>FREE</span></Link></li>
               <li>
                 <button
                   onClick={() => goToSection('how-it-works')}
