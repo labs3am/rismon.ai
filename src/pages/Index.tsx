@@ -175,18 +175,18 @@ export default function Index() {
 
       <main>
       {/* HERO */}
-      <section className="text-left px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
-        <div className="max-w-[800px] mx-auto text-left">
-          <span className="vercel-pill text-left">Built for non-technical founders who build with no-code tools</span>
-          <h1 className="vercel-hero-h1 text-left">Did your AI build<br />what you meant?</h1>
-          <p className="vercel-hero-sub text-left rounded-sm">
+      <section className="text-center px-5 sm:px-6 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-20 md:pb-[120px]" style={{ background: '#000000' }}>
+        <div className="max-w-[800px] mx-auto">
+          <span className="vercel-pill">Built for non-technical founders who build with no-code tools</span>
+          <h1 className="vercel-hero-h1">Did your AI build<br />what you meant?</h1>
+          <p className="vercel-hero-sub text-center rounded-sm">
             Most founders only discover broken logic, business gaps, or security holes after a real user hits them. Scan with Rismon.ai before shipping to real users.
           </p>
-          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-start" style={{ marginTop: '8px' }}>
+          <div className="vercel-hero-cta-group flex flex-col sm:flex-row gap-3 justify-center" style={{ marginTop: '8px' }}>
             <Link to="/sample-report" className="vercel-btn-primary">See a real report →</Link>
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
-          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px', textAlign: 'left' }}>Free. No credit card. No code knowledge needed.</p>
+          <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
         </div>
       </section>
 
@@ -209,9 +209,9 @@ export default function Index() {
 
       {/* HOMEPAGE VS CODE */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER}>
-          <p className={LABEL}>HOMEPAGE VS CODE</p>
-          <h2 className={HEADLINE}>Does your homepage<br />match your code?</h2>
+        <div className={CONTAINER} style={{ textAlign: 'center' }}>
+          <p className={LABEL} style={{ textAlign: 'center' }}>HOMEPAGE VS CODE</p>
+          <h2 className={HEADLINE} style={{ textAlign: 'center' }}>Does your homepage<br />match your code?</h2>
           <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
             We read your live landing page, extract every promise you make — "AI-powered", "Sign in with Google", "Stripe checkout", "real-time sync" — and check each one against your code. Every promise gets a verdict.
           </p>
