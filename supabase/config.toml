@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-complete-your-scan]
 verify_jwt = false
+
+[functions.public-promise-audit]
+verify_jwt = false
