@@ -69,7 +69,7 @@ export default function PromiseAudit() {
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
         title="Promise Audit — Free, no login | Rismon"
-        description="Paste any URL. We extract every claim your homepage makes and grade how concrete vs. vague your marketing is. No login. No repo. 60 seconds."
+        description="Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds."
         canonicalPath="/promise-audit"
       />
       <Navbar />
@@ -81,7 +81,7 @@ export default function PromiseAudit() {
             <span className="vercel-pill">Free · No login · No GitHub</span>
             <h1 className="vercel-hero-h1">Audit your<br />homepage promises</h1>
             <p className="vercel-hero-sub text-center">
-              Paste any URL. We pull every claim your site makes and tell you which are concrete vs. vague marketing fluff. Takes about 30 seconds.
+              Paste any URL. We pull every claim your site makes and tell you which are specific (testable) vs. fluffy (marketing words). Takes about 30 seconds.
             </p>
 
             <form onSubmit={runAudit} className="flex flex-col sm:flex-row gap-2 mt-4 max-w-[560px] mx-auto">
