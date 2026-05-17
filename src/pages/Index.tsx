@@ -207,37 +207,37 @@ export default function Index() {
         </div>
       </section>
 
-      {/* WHAT WE FIND */}
+      {/* HOMEPAGE VS CODE */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
-          <p className={LABEL}>WHAT WE FIND</p>
-          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
+          <p className={LABEL}>HOMEPAGE VS CODE</p>
+          <h2 className={HEADLINE}>Does your homepage<br />match your code?</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+            We read your live landing page, extract every promise you make — "AI-powered", "Sign in with Google", "Stripe checkout", "real-time sync" — and check each one against your code. Every promise gets a verdict.
+          </p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
-            <div>
-              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
-              <div className="flex flex-col gap-3">
-                {businessProblems.map((p, i) => (
-                  <div key={i} className="vercel-card">
-                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
-                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
-                  </div>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+            <div className="vercel-card">
+              <p style={{ fontSize: 11, color: '#22c55e', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● VERIFIED</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>The claim is real</p>
+              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You promise Google OAuth and we found a working Google sign-in flow in your code. Ship with confidence.</p>
             </div>
-
-            <div>
-              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
-              <div className="flex flex-col gap-3">
-                {securityProblems.map((p, i) => (
-                  <div key={i} className="vercel-card">
-                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
-                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="vercel-card">
+              <p style={{ fontSize: 11, color: '#f59e0b', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● PARTIAL</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Half-built or weak</p>
+              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You promise "encrypted" but only some routes use TLS. Or you mention Stripe, but checkout is wired to a sandbox key.</p>
+            </div>
+            <div className="vercel-card">
+              <p style={{ fontSize: 11, color: '#ef4444', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● CONTRADICTED</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>The claim is missing</p>
+              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Your homepage says "full AI integration" and we found zero AI calls in your repo. That becomes a high-severity finding.</p>
             </div>
           </div>
+
+          <p style={{ fontSize: 13, color: '#555', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
+            Each contradicted promise lowers your Intent Match score and shows up as a fix in your report.{' '}
+            <Link to="/how-we-score" style={{ color: '#888', textDecoration: 'underline' }}>How we score →</Link>
+          </p>
         </div>
       </section>
 
@@ -303,41 +303,41 @@ export default function Index() {
         </div>
       </section>
 
-      {/* HOMEPAGE VS CODE */}
+      {/* PERSONAS */}
+      {/* WHAT WE FIND */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
-          <p className={LABEL}>HOMEPAGE VS CODE</p>
-          <h2 className={HEADLINE}>Does your homepage<br />match your code?</h2>
-          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
-            We read your live landing page, extract every promise you make — "AI-powered", "Sign in with Google", "Stripe checkout", "real-time sync" — and check each one against your code. Every promise gets a verdict.
-          </p>
+          <p className={LABEL}>WHAT WE FIND</p>
+          <h2 className={HEADLINE}>Most AI-built apps have at least one of these problems</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
-            <div className="vercel-card">
-              <p style={{ fontSize: 11, color: '#22c55e', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● VERIFIED</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>The claim is real</p>
-              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You promise Google OAuth and we found a working Google sign-in flow in your code. Ship with confidence.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-12">
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>BUSINESS PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {businessProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="vercel-card">
-              <p style={{ fontSize: 11, color: '#f59e0b', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● PARTIAL</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Half-built or weak</p>
-              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You promise "encrypted" but only some routes use TLS. Or you mention Stripe, but checkout is wired to a sandbox key.</p>
-            </div>
-            <div className="vercel-card">
-              <p style={{ fontSize: 11, color: '#ef4444', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>● CONTRADICTED</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>The claim is missing</p>
-              <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Your homepage says "full AI integration" and we found zero AI calls in your repo. That becomes a high-severity finding.</p>
+
+            <div>
+              <p style={{ fontSize: 12, color: '#555555', letterSpacing: '0.08em', marginBottom: 20 }}>SECURITY PROBLEMS</p>
+              <div className="flex flex-col gap-3">
+                {securityProblems.map((p, i) => (
+                  <div key={i} className="vercel-card">
+                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', marginBottom: '8px' }}>{p.title}</p>
+                    <p style={{ fontSize: '14px', color: '#888888', lineHeight: 1.6 }}>{p.text}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          <p style={{ fontSize: 13, color: '#555', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
-            Each contradicted promise lowers your Intent Match score and shows up as a fix in your report.{' '}
-            <Link to="/how-we-score" style={{ color: '#888', textDecoration: 'underline' }}>How we score →</Link>
-          </p>
         </div>
       </section>
 
-      {/* PERSONAS */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
         <div className={CONTAINER}>
           <p className={LABEL}>WHO IT'S FOR</p>
