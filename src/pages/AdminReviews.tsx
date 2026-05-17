@@ -124,9 +124,7 @@ export default function AdminReviews() {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="flex items-center justify-center pt-32">
-          <Loader2 className="animate-spin text-primary" size={24} />
-        </div>
+        <PageSkeleton variant="dashboard" />
       </div>
     );
   }
