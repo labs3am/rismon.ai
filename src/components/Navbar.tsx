@@ -190,7 +190,7 @@ export default function Navbar() {
         >
           <Link to="/how-we-score" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>How we score</Link>
           <Link to="/sample-report" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>Sample report</Link>
-          <Link to="/promise-audit" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>Promise Audit <span style={{ marginLeft: 8, fontSize: 10, color: '#f97316', letterSpacing: '0.08em' }}>FREE</span></Link>
+          <Link to="/promise-audit" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08', minHeight: 44, display: 'flex', alignItems: 'center' }}>Promise Audit</Link>
           <Link to="/security" onClick={() => setOpen(false)} style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }}>Security</Link>
           <button onClick={() => goToSection('pricing')} className="text-left" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: '1px solid #ffffff08' }}>Pricing</button>
           <Link to="/blog" style={{ color: '#e5e5e5', fontSize: 15, padding: '14px 4px', borderBottom: '1px solid #ffffff08' }} onClick={() => setOpen(false)}>Blog</Link>
