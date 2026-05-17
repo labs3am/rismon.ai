@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -209,25 +209,161 @@ export default function PromiseAudit() {
                 })}
               </div>
 
+              {/* What to do next — prioritized actions */}
+              {(() => {
+                const fluffy = result.promises.filter(p => p.clarity === 'vague');
+                const specific = result.promises.filter(p => p.clarity === 'clear');
+                const sensitive = specific.filter(p => ['auth', 'payments', 'security', 'data'].includes(p.category));
+                const topFluffy = fluffy.slice(0, 3);
+                const topSensitive = (sensitive.length ? sensitive : specific).slice(0, 3);
+                const score = result.clarity_score ?? 0;
+
+                const actions: { num: string; icon: any; title: string; body: React.ReactNode; cta?: { label: string; to: string }; tone: string }[] = [];
+
+                // Action 1 — fix the fluff (only if there is fluff)
+                if (topFluffy.length > 0) {
+                  actions.push({
+                    num: '01',
+                    icon: AlertTriangle,
+                    tone: '#f59e0b',
+                    title: `Rewrite ${fluffy.length} fluffy claim${fluffy.length === 1 ? '' : 's'} with proof`,
+                    body: (
+                      <>
+                        <p style={{ fontSize: 13, color: '#999', lineHeight: 1.55, marginBottom: 10 }}>
+                          Replace marketing words with one specific fact a visitor can test. Example: "powerful AI" → "GPT-4o-powered, 2s avg response".
+                        </p>
+                        <ul style={{ fontSize: 12.5, color: '#bbb', lineHeight: 1.7, paddingLeft: 14, listStyle: 'disc' }}>
+                          {topFluffy.map((p, i) => (
+                            <li key={i} style={{ marginBottom: 2 }}>"{p.claim.slice(0, 80)}{p.claim.length > 80 ? '…' : ''}"</li>
+                          ))}
+                        </ul>
+                      </>
+                    ),
+                  });
+                }
+
+                // Action 2 — verify specific claims (always, this is the signup push)
+                if (topSensitive.length > 0) {
+                  actions.push({
+                    num: actions.length === 0 ? '01' : '02',
+                    icon: Shield,
+                    tone: '#22c55e',
+                    title: `Verify ${specific.length} specific claim${specific.length === 1 ? '' : 's'} against your code`,
+                    body: (
+                      <>
+                        <p style={{ fontSize: 13, color: '#999', lineHeight: 1.55, marginBottom: 10 }}>
+                          These promises say something real. The next question is: do they actually work? Riskiest ones first:
+                        </p>
+                        <ul style={{ fontSize: 12.5, color: '#bbb', lineHeight: 1.7, paddingLeft: 14, listStyle: 'disc' }}>
+                          {topSensitive.map((p, i) => (
+                            <li key={i} style={{ marginBottom: 2 }}>
+                              <span style={{ color: '#666', fontSize: 10, letterSpacing: '0.08em', marginRight: 6 }}>{(CAT_LABEL[p.category] || 'OTHER').toUpperCase()}</span>
+                              "{p.claim.slice(0, 70)}{p.claim.length > 70 ? '…' : ''}"
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ),
+                    cta: { label: 'Run full scan — free', to: '/signup' },
+                  });
+                }
+
+                // Action 3 — based on score
+                actions.push({
+                  num: String(actions.length + 1).padStart(2, '0'),
+                  icon: Sparkles,
+                  tone: '#f97316',
+                  title: score < 50
+                    ? 'Your homepage sells vibes, not features'
+                    : score < 80
+                      ? 'Tighten the weakest section'
+                      : 'Prove it with a public scan badge',
+                  body: (
+                    <p style={{ fontSize: 13, color: '#999', lineHeight: 1.55 }}>
+                      {score < 50
+                        ? `A ${score}/100 clarity score means visitors can't tell what your product does. Pick your top 3 features, write one specific sentence each, and re-audit.`
+                        : score < 80
+                          ? `${score}/100 is solid — but the fluffy claims drag trust down. Rewrite them, then connect your repo to prove the rest is real.`
+                          : `${score}/100 — strong clarity. Run a full scan and we'll give you a public Verified badge for your landing page.`}
+                    </p>
+                  ),
+                  cta: { label: 'Get my full scan', to: '/signup' },
+                });
+
+                return (
+                  <div className="mt-8 rounded-xl p-6 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                    <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
+                      <p style={{ fontSize: 11, color: '#888', letterSpacing: '0.12em', fontWeight: 600 }}>WHAT TO DO NEXT</p>
+                      <span style={{ fontSize: 11, color: '#666' }}>Prioritized by impact</span>
+                    </div>
+                    <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
+                      {actions.length} action{actions.length === 1 ? '' : 's'} to raise your clarity score
+                    </h2>
+                    <div className="mt-6 grid grid-cols-1 gap-3">
+                      {actions.map((a, i) => {
+                        const Icon = a.icon;
+                        return (
+                          <div key={i} className="rounded-lg p-5" style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }}>
+                            <div className="flex items-start gap-4">
+                              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 8, background: `${a.tone}14`, border: `1px solid ${a.tone}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Icon size={16} style={{ color: a.tone }} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-2 mb-1.5">
+                                  <span style={{ fontSize: 10, letterSpacing: '0.12em', color: '#666', fontWeight: 700 }}>{a.num}</span>
+                                  <h3 style={{ fontSize: 15, fontWeight: 600, color: '#fff', letterSpacing: '-0.01em' }}>{a.title}</h3>
+                                </div>
+                                <div>{a.body}</div>
+                                {a.cta && (
+                                  <Link
+                                    to={a.cta.to}
+                                    className="inline-flex items-center gap-1.5 mt-4"
+                                    style={{ fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderBottom: '1px solid #444', paddingBottom: 2 }}
+                                  >
+                                    {a.cta.label} <ArrowRight size={13} />
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* CTA */}
               <div
                 className="mt-8 rounded-xl p-6 sm:p-8 text-center"
                 style={{ background: 'radial-gradient(120% 100% at 0% 0%, #1a1308 0%, #0a0a0a 60%)', border: '1px solid #2a2a2a' }}
               >
-                <p style={{ fontSize: 11, color: '#f97316', letterSpacing: '0.1em', fontWeight: 600 }}>NEXT STEP</p>
-                <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginTop: 8 }}>
-                  Which of these are actually built?
+                <p style={{ fontSize: 11, color: '#f97316', letterSpacing: '0.1em', fontWeight: 600 }}>GO DEEPER · FREE</p>
+                <h2 style={{ fontSize: 26, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginTop: 8 }}>
+                  This audit checked your words.<br/>The full scan checks your code.
                 </h2>
-                <p style={{ fontSize: 15, color: '#888', marginTop: 10, lineHeight: 1.6, maxWidth: 520, margin: '10px auto 0' }}>
-                  Connect your repo and we'll verify every promise against your code. Verified · Partial · Contradicted. Free forever.
+                <p style={{ fontSize: 15, color: '#aaa', marginTop: 12, lineHeight: 1.6, maxWidth: 560, margin: '12px auto 0' }}>
+                  Sign up free, connect your repo (read-only), and every promise above gets a real verdict — <span style={{ color: '#22c55e' }}>Verified</span>, <span style={{ color: '#f59e0b' }}>Partial</span>, or <span style={{ color: '#ef4444' }}>Contradicted</span> — plus exposed API keys, broken auth, and security gaps.
                 </p>
-                <Link
-                  to="/signup"
-                  className="vercel-btn-primary inline-flex items-center gap-2 mt-6"
-                  style={{ minHeight: 44 }}
-                >
-                  Verify against my code <ArrowRight size={16} />
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-7">
+                  <Link
+                    to="/signup"
+                    className="vercel-btn-primary inline-flex items-center gap-2"
+                    style={{ minHeight: 44 }}
+                  >
+                    Sign up & run full scan <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    to="/sample-report"
+                    className="inline-flex items-center gap-2"
+                    style={{ fontSize: 13.5, color: '#aaa', textDecoration: 'none', minHeight: 44, padding: '0 12px' }}
+                  >
+                    See a real report <ExternalLink size={13} />
+                  </Link>
+                </div>
+                <p style={{ fontSize: 12, color: '#666', marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Lock size={11} /> Free forever · Read-only GitHub · Code never stored
+                </p>
                 <p style={{ fontSize: 12, color: '#555', marginTop: 14 }}>
                   {result.remaining_today} audits left today.{' '}
                   <button onClick={() => { setResult(null); setUrl(''); }} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
