@@ -546,6 +546,11 @@ export default function PromiseAudit() {
       </main>
 
       <Footer />
+      <style>{`
+        @keyframes rismonPing {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
