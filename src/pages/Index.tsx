@@ -209,10 +209,10 @@ export default function Index() {
 
       {/* HOMEPAGE VS CODE */}
       <section className={SECTION} style={{ background: '#000000', borderTop: '1px solid #ffffff14' }}>
-        <div className={CONTAINER} style={{ textAlign: 'center' }}>
-          <p className={LABEL} style={{ textAlign: 'center' }}>HOMEPAGE VS CODE</p>
-          <h2 className={HEADLINE} style={{ textAlign: 'center' }}>Does your homepage<br />match your code?</h2>
-          <p style={{ fontSize: 16, color: '#888888', textAlign: 'center', lineHeight: 1.7, maxWidth: 640, margin: '16px auto 0' }}>
+        <div className={CONTAINER} style={{ textAlign: 'left' }}>
+          <p className={LABEL} style={{ textAlign: 'left' }}>HOMEPAGE VS CODE</p>
+          <h2 className={HEADLINE} style={{ textAlign: 'left' }}>Does your homepage<br />match your code?</h2>
+          <p style={{ fontSize: 16, color: '#888888', textAlign: 'left', lineHeight: 1.7, maxWidth: 640, margin: '16px 0 0' }}>
             We read your live landing page, extract every promise you make — "AI-powered", "Sign in with Google", "Stripe checkout", "real-time sync" — and check each one against your code. Every promise gets a verdict.
           </p>
 
