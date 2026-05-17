@@ -94,7 +94,18 @@ export default function PromiseAudit() {
         body: { url: trimmed },
       });
       if (fnError) {
-        setError((fnError as any)?.context?.error || fnError.message || 'Something went wrong.');
+        // supabase-js wraps non-2xx responses in FunctionsHttpError. The real
+        // message lives in the Response body — parse it so the user sees
+        // "Daily limit reached" instead of "Edge Function returned a non-2xx status code".
+        let msg: string | null = null;
+        const ctx: any = (fnError as any)?.context;
+        if (ctx && typeof ctx.json === 'function') {
+          try { const parsed = await ctx.json(); msg = parsed?.error || null; } catch { /* ignore */ }
+        }
+        if (!msg && ctx && typeof ctx.text === 'function') {
+          try { const txt = await ctx.text(); const parsed = JSON.parse(txt); msg = parsed?.error || txt; } catch { /* ignore */ }
+        }
+        setError(msg || fnError.message || 'Something went wrong.');
         return;
       }
       if ((data as any)?.error) {
@@ -176,8 +187,8 @@ export default function PromiseAudit() {
                 <span className="rismon-glass-sentence">
                   <strong>{stats.total_all_time.toLocaleString()}</strong>
                   {stats.total_all_time === 1
-                    ? ' founder has audited their site with Rismon'
-                    : ' founders have audited their site with Rismon'}
+                    ? ' site audited by Rismon so far'
+                    : ' sites audited by Rismon so far'}
                 </span>
               </div>
             )}
