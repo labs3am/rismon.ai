@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -14,16 +14,17 @@ type Promise_ = {
 };
 
 type AuditResult = {
+  id?: string | null;
   url: string;
   host: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   promises: Promise_[];
   clarity_score: number | null;
   promise_count: number;
   clear_count: number;
   vague_count: number;
-  remaining_today: number;
+  remaining_today?: number;
 };
 
 const CAT_LABEL: Record<string, string> = {
@@ -33,10 +34,49 @@ const CAT_LABEL: Record<string, string> = {
 };
 
 export default function PromiseAudit() {
+  const { id: permalinkId } = useParams<{ id?: string }>();
+  const navigate = useNavigate();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResult | null>(null);
+  const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Load live social-proof stats once.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc('public_audit_stats');
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
+    })();
+  }, []);
+
+  // Load shared audit by id from URL.
+  useEffect(() => {
+    if (!permalinkId) return;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      const { data, error: rpcErr } = await supabase.rpc('get_public_audit', { _id: permalinkId });
+      setLoading(false);
+      if (rpcErr || !data || (Array.isArray(data) && data.length === 0)) {
+        setError("This audit link is invalid or has expired.");
+        return;
+      }
+      const row: any = Array.isArray(data) ? data[0] : data;
+      setResult({
+        id: row.id,
+        url: row.url,
+        host: row.url_host,
+        promises: (row.promises as Promise_[]) || [],
+        clarity_score: row.clarity_score,
+        promise_count: row.promise_count,
+        clear_count: row.clear_count,
+        vague_count: row.vague_count,
+      });
+    })();
+  }, [permalinkId]);
 
   const runAudit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -57,7 +97,12 @@ export default function PromiseAudit() {
         setError((data as any).error);
         return;
       }
-      setResult(data as AuditResult);
+      const r = data as AuditResult;
+      setResult(r);
+      if (r.id) {
+        // Clean permalink in the URL bar — no reload.
+        window.history.replaceState(null, '', `/promise-audit/${r.id}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -65,12 +110,40 @@ export default function PromiseAudit() {
     }
   };
 
+  const permalink = result?.id ? `https://rismon.ai/promise-audit/${result.id}` : '';
+  const shareTitle = result
+    ? `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit — ${result.clear_count} specific claims, ${result.vague_count} fluffy. Audit any site free:`
+    : '';
+  const shareLinks = {
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(permalink)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(permalink)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(permalink)}`,
+  };
+
+  const copyLink = async () => {
+    if (!permalink) return;
+    try {
+      await navigator.clipboard.writeText(permalink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {/* ignore */}
+  };
+
+  const resetAudit = () => {
+    setResult(null);
+    setUrl('');
+    setError(null);
+    if (permalinkId) navigate('/promise-audit', { replace: true });
+  };
+
   return (
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
-        title="Promise Audit — Free, no login | Rismon"
-        description="Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds."
-        canonicalPath="/promise-audit"
+        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free, no login | Rismon'}
+        description={result
+          ? `${result.host} scored ${result.clarity_score ?? '—'}/100. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Audit your own homepage free.`
+          : 'Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds.'}
+        canonicalPath={result?.id ? `/promise-audit/${result.id}` : '/promise-audit'}
       />
       <Navbar />
 
