@@ -1544,6 +1544,7 @@ async function callGeminiRaw(systemPrompt: string, userContent: string, model: s
         { role: "system", content: `${systemPrompt}\n\n${HOUSE_STYLE}` },
         { role: "user", content: userContent },
       ],
+      max_tokens: 8000,
     }),
   });
 
