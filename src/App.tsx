@@ -85,7 +85,6 @@ const App = () => (
               <Route path="/open-source" element={<OpenSource />} />
               <Route path="/how-we-score" element={<HowWeScore />} />
               <Route path="/promise-audit" element={<PromiseAudit />} />
-              <Route path="/check" element={<PromiseAudit />} />
               <Route path="/for/:platform" element={<ForPlatform />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
