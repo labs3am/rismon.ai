@@ -2733,6 +2733,7 @@ Founder answers to smart questions: ${JSON.stringify(user_answers)}`;
           fetched_at: homepageSignals.fetched_at,
           error: homepageSignals.error || null,
           has_live_url: true,
+          text: (homepageSignals.text || "").slice(0, 4000),
         };
       }
 
