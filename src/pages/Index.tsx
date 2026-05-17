@@ -238,6 +238,23 @@ export default function Index() {
             Each contradicted promise lowers your Intent Match score and shows up as a fix in your report.{' '}
             <Link to="/how-we-score" style={{ color: '#888', textDecoration: 'underline' }}>How we score →</Link>
           </p>
+
+          {/* No-login Promise Audit teaser */}
+          <div
+            className="mt-10 rounded-xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4"
+            style={{ background: 'radial-gradient(120% 100% at 0% 0%, #1a1308 0%, #0a0a0a 60%)', border: '1px solid #2a2a2a' }}
+          >
+            <div className="min-w-0 flex-1">
+              <p style={{ fontSize: 11, color: '#f97316', letterSpacing: '0.1em', fontWeight: 600 }}>NO LOGIN · NO GITHUB</p>
+              <p style={{ fontSize: 17, fontWeight: 600, color: '#fff', marginTop: 6 }}>Try a free Promise Audit</p>
+              <p style={{ fontSize: 14, color: '#888', marginTop: 4, lineHeight: 1.55 }}>
+                Paste a URL. See every claim your homepage makes and how concrete each one is. 30 seconds, no signup.
+              </p>
+            </div>
+            <Link to="/promise-audit" className="vercel-btn-primary" style={{ minHeight: 44, whiteSpace: 'nowrap' }}>
+              Run a free audit →
+            </Link>
+          </div>
         </div>
       </section>
 
