@@ -162,6 +162,7 @@ export default function Dashboard() {
   const [appSwitcherOpen, setAppSwitcherOpen] = useState(false);
   const [activeScan, setActiveScan] = useState<{ sessionId: string; appId: string | null; appName: string | null; startedAt: number } | null>(null);
   const generateStarted = useRef<Record<string, boolean>>({});
+  const generatingFor = useRef<string | null>(null);
   const [searchParams] = useSearchParams();
   const githubConflict = searchParams.get('github_conflict') === 'true';
   const urlAnalysisId = searchParams.get('analysis');
@@ -188,8 +189,13 @@ export default function Dashboard() {
         .eq('user_id', userId);
       const { data: analysesData } = await supabase.from('analyses').select('*').eq('user_id', userId).order('created_at', { ascending: false });
 
+      const isReportable = (a: any) =>
+        ['complete', 'review_pending', 'generating_prompts'].includes(a.status) ||
+        a.summary ||
+        typeof a.intent_match_score === 'number';
+
       const appsList: App[] = (appsData || []).map((app) => {
-        const appAnalyses = (analysesData || []).filter((a) => a.app_id === app.id);
+        const appAnalyses = (analysesData || []).filter((a) => a.app_id === app.id && isReportable(a));
         const latest = appAnalyses[0];
         return {
           id: app.id, app_name: app.app_name, github_repo_name: app.github_repo_name,
@@ -246,14 +252,16 @@ export default function Dashboard() {
 
   // ---- load analysis for selected app ----
   useEffect(() => {
+    let cancelled = false;
     if (!selectedAppId) { setAnalysis(null); return; }
     const selected = apps.find((a) => a.id === selectedAppId);
-    if (!selected || !selected.latest_analysis_id) { setAnalysis(null); return; }
-    const aid = selected.latest_analysis_id;
+    const aid = urlAnalysisId || selected?.latest_analysis_id;
+    if (!selected || !aid) { setAnalysis(null); return; }
     setAnalysisLoading(true);
     (async () => {
       const { data } = await supabase.from('analyses').select('*').eq('id', aid).maybeSingle();
-      if (!data) { setAnalysis(null); setAnalysisLoading(false); return; }
+      if (cancelled) return;
+      if (!data || data.app_id !== selectedAppId) { setAnalysis(null); setAnalysisLoading(false); return; }
       // Only generate fix prompts when the analysis pipeline has actually
       // produced findings. If the row is still 'reading' / 'questions_ready'
       // / 'analyzing' (e.g. the user just clicked "Scan again"), skip — the
@@ -265,6 +273,7 @@ export default function Dashboard() {
       if (readyForFixes && !data.fix_prompts) {
         if (!generateStarted.current[aid]) {
           generateStarted.current[aid] = true;
+          generatingFor.current = aid;
           setGenerating(true);
           const { data: appPlatform } = await supabase.from('apps').select('platform').eq('id', data.app_id).single();
           const { data: result, error: invErr } = await supabase.functions.invoke('analyze', {
@@ -282,13 +291,18 @@ export default function Dashboard() {
             (data as any).fix_prompts = result.fix_prompts;
             (data as any).status = 'complete';
           }
-          setGenerating(false);
+          if (generatingFor.current === aid) {
+            generatingFor.current = null;
+            setGenerating(false);
+          }
         }
       }
+      if (cancelled) return;
       setAnalysis(data);
       setAnalysisLoading(false);
     })();
-  }, [selectedAppId, apps]);
+    return () => { cancelled = true; };
+  }, [selectedAppId, apps, urlAnalysisId]);
 
   const relativeDate = (d: string) => {
     const diff = Date.now() - new Date(d).getTime();
