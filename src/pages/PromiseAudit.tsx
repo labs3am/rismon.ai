@@ -205,15 +205,29 @@ export default function PromiseAudit() {
             )}
 
             <form onSubmit={runAudit} className="flex flex-col sm:flex-row gap-2 mt-4 max-w-[560px] mx-auto">
-              <div className="flex-1 flex items-center gap-2 px-4" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, minHeight: 48 }}>
-                <Globe size={16} style={{ color: '#666' }} />
+              <div className="flex-1 flex items-center gap-2 pr-4 pl-2" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, minHeight: 48 }}>
+                <span
+                  style={{
+                    background: '#141414',
+                    border: '1px solid #1f1f1f',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    color: '#888',
+                    fontSize: 13,
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                    letterSpacing: '0.02em',
+                    userSelect: 'none',
+                  }}
+                >
+                  https://
+                </span>
                 <input
                   type="text"
                   inputMode="url"
                   autoComplete="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="yourapp.com"
+                  placeholder="google.com"
                   disabled={loading}
                   maxLength={500}
                   style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: 15, padding: '12px 0' }}
