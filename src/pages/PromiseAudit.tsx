@@ -173,17 +173,11 @@ export default function PromiseAudit() {
                   <span className="rismon-glass-dot-ping" />
                   <span className="rismon-glass-dot-core" />
                 </span>
-                <span className="rismon-glass-divider" />
-                <span className="rismon-glass-stat">
-                  <Activity size={13} strokeWidth={2.25} className="rismon-glass-icon" />
-                  <strong>{stats.total_24h.toLocaleString()}</strong>
-                  <span className="rismon-glass-label">last 24h</span>
-                </span>
-                <span className="rismon-glass-divider" />
-                <span className="rismon-glass-stat">
-                  <Radio size={13} strokeWidth={2.25} className="rismon-glass-icon" />
+                <span className="rismon-glass-sentence">
                   <strong>{stats.total_all_time.toLocaleString()}</strong>
-                  <span className="rismon-glass-label">all-time</span>
+                  {stats.total_all_time === 1
+                    ? ' founder has audited their site with Rismon'
+                    : ' founders have audited their site with Rismon'}
                 </span>
               </div>
             )}
@@ -643,6 +637,16 @@ export default function PromiseAudit() {
         .rismon-glass-icon {
           color: rgba(134, 239, 172, 0.85);
           filter: drop-shadow(0 0 4px rgba(34,197,94,0.45));
+        }
+        .rismon-glass-sentence {
+          font-size: 13px;
+          color: rgba(255,255,255,0.78);
+          letter-spacing: 0.005em;
+        }
+        .rismon-glass-sentence strong {
+          color: #ffffff;
+          font-weight: 600;
+          margin-right: 2px;
         }
       `}</style>
     </div>
