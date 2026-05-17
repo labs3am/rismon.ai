@@ -403,6 +403,7 @@ export type Database = {
           ip_hash: string | null
           promise_count: number
           promises: Json
+          title: string | null
           url: string
           url_host: string
           vague_count: number
@@ -415,6 +416,7 @@ export type Database = {
           ip_hash?: string | null
           promise_count?: number
           promises?: Json
+          title?: string | null
           url: string
           url_host: string
           vague_count?: number
@@ -427,6 +429,7 @@ export type Database = {
           ip_hash?: string | null
           promise_count?: number
           promises?: Json
+          title?: string | null
           url?: string
           url_host?: string
           vague_count?: number
@@ -860,6 +863,7 @@ export type Database = {
           id: string
           promise_count: number
           promises: Json
+          title: string
           url: string
           url_host: string
           vague_count: number
