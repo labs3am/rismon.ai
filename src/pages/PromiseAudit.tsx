@@ -43,13 +43,17 @@ export default function PromiseAudit() {
   const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Load live social-proof stats once.
+  // Load live social-proof stats. Polls every 15s so the counter feels alive
+  // even when other people are running audits.
+  const refreshStats = async () => {
+    const { data } = await supabase.rpc('public_audit_stats');
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
+  };
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.rpc('public_audit_stats');
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
-    })();
+    refreshStats();
+    const t = setInterval(refreshStats, 15000);
+    return () => clearInterval(t);
   }, []);
 
   // Load shared audit by id from URL.
@@ -99,6 +103,9 @@ export default function PromiseAudit() {
       }
       const r = data as AuditResult;
       setResult(r);
+      // Optimistically bump the live counter, then re-sync from the server.
+      setStats((s) => s ? { total_24h: s.total_24h + 1, total_all_time: s.total_all_time + 1 } : s);
+      refreshStats();
       if (r.id) {
         // Clean permalink in the URL bar — no reload.
         window.history.replaceState(null, '', `/promise-audit/${r.id}`);
@@ -157,6 +164,29 @@ export default function PromiseAudit() {
               Paste any URL. We pull every claim your site makes and tell you which are specific (testable) vs. fluffy (marketing words). Takes about 30 seconds.
             </p>
 
+            {stats && stats.total_all_time > 0 && (
+              <div
+                aria-live="polite"
+                className="mx-auto mt-5 inline-flex items-center gap-2.5 px-3.5 py-2"
+                style={{
+                  background: 'rgba(34,197,94,0.06)',
+                  border: '1px solid rgba(34,197,94,0.25)',
+                  borderRadius: 999,
+                  fontSize: 13,
+                  color: '#d1fadf',
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
+                  <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'rismonPing 1.6s cubic-bezier(0,0,0.2,1) infinite', opacity: 0.7 }} />
+                  <span style={{ position: 'relative', display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 10px #22c55e' }} />
+                </span>
+                <span><strong style={{ color: '#fff', fontWeight: 600 }}>{stats.total_24h.toLocaleString()}</strong> audit{stats.total_24h === 1 ? '' : 's'} run in the last 24h</span>
+                <span style={{ color: '#3a6a4a' }}>·</span>
+                <span style={{ color: '#9bb3a3' }}><strong style={{ color: '#d1fadf', fontWeight: 600 }}>{stats.total_all_time.toLocaleString()}</strong> all-time</span>
+              </div>
+            )}
+
             <form onSubmit={runAudit} className="flex flex-col sm:flex-row gap-2 mt-4 max-w-[560px] mx-auto">
               <div className="flex-1 flex items-center gap-2 px-4" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f', borderRadius: 8, minHeight: 48 }}>
                 <Globe size={16} style={{ color: '#666' }} />
@@ -182,13 +212,6 @@ export default function PromiseAudit() {
               </button>
             </form>
             <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>3 free audits per day per IP. No credit card.</p>
-            {stats && stats.total_all_time > 0 && (
-              <p style={{ fontSize: 12, color: '#777', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e88' }} />
-                {stats.total_24h.toLocaleString()} audit{stats.total_24h === 1 ? '' : 's'} in the last 24h ·{' '}
-                {stats.total_all_time.toLocaleString()} all-time
-              </p>
-            )}
 
             {error && (
               <div className="mt-6 mx-auto max-w-[560px] text-left px-4 py-3" style={{ background: '#1a0a0a', border: '1px solid #3a1010', borderRadius: 8 }}>
@@ -523,6 +546,11 @@ export default function PromiseAudit() {
       </main>
 
       <Footer />
+      <style>{`
+        @keyframes rismonPing {
+          75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
