@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook } from 'lucide-react';
+import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, Lock, Shield, Sparkles, Share2, Copy, Check, Twitter, Linkedin, Facebook, Activity, Radio } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
@@ -167,23 +167,24 @@ export default function PromiseAudit() {
             {stats && stats.total_all_time > 0 && (
               <div
                 aria-live="polite"
-                className="mx-auto mt-5 inline-flex items-center gap-2.5 px-3.5 py-2"
-                style={{
-                  background: 'rgba(34,197,94,0.06)',
-                  border: '1px solid rgba(34,197,94,0.25)',
-                  borderRadius: 999,
-                  fontSize: 13,
-                  color: '#d1fadf',
-                  fontVariantNumeric: 'tabular-nums',
-                }}
+                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-3 pl-3 pr-4 py-2"
               >
-                <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
-                  <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'rismonPing 1.6s cubic-bezier(0,0,0.2,1) infinite', opacity: 0.7 }} />
-                  <span style={{ position: 'relative', display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 10px #22c55e' }} />
+                <span className="rismon-glass-dot">
+                  <span className="rismon-glass-dot-ping" />
+                  <span className="rismon-glass-dot-core" />
                 </span>
-                <span><strong style={{ color: '#fff', fontWeight: 600 }}>{stats.total_24h.toLocaleString()}</strong> audit{stats.total_24h === 1 ? '' : 's'} run in the last 24h</span>
-                <span style={{ color: '#3a6a4a' }}>·</span>
-                <span style={{ color: '#9bb3a3' }}><strong style={{ color: '#d1fadf', fontWeight: 600 }}>{stats.total_all_time.toLocaleString()}</strong> all-time</span>
+                <span className="rismon-glass-divider" />
+                <span className="rismon-glass-stat">
+                  <Activity size={13} strokeWidth={2.25} className="rismon-glass-icon" />
+                  <strong>{stats.total_24h.toLocaleString()}</strong>
+                  <span className="rismon-glass-label">last 24h</span>
+                </span>
+                <span className="rismon-glass-divider" />
+                <span className="rismon-glass-stat">
+                  <Radio size={13} strokeWidth={2.25} className="rismon-glass-icon" />
+                  <strong>{stats.total_all_time.toLocaleString()}</strong>
+                  <span className="rismon-glass-label">all-time</span>
+                </span>
               </div>
             )}
 
@@ -549,6 +550,99 @@ export default function PromiseAudit() {
       <style>{`
         @keyframes rismonPing {
           75%, 100% { transform: scale(2.2); opacity: 0; }
+        }
+        @keyframes rismonGlassShimmer {
+          0%   { transform: translateX(-120%); }
+          100% { transform: translateX(220%); }
+        }
+        .rismon-glass-pill {
+          position: relative;
+          font-size: 12.5px;
+          letter-spacing: 0.01em;
+          font-variant-numeric: tabular-nums;
+          color: rgba(232, 255, 240, 0.78);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 60%),
+            radial-gradient(120% 200% at 0% 0%, rgba(34,197,94,0.10), transparent 55%),
+            rgba(255,255,255,0.025);
+          border: 1px solid rgba(255,255,255,0.10);
+          border-radius: 999px;
+          backdrop-filter: blur(18px) saturate(160%);
+          -webkit-backdrop-filter: blur(18px) saturate(160%);
+          box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.10),
+            inset 0 -1px 0 rgba(0,0,0,0.30),
+            0 1px 0 rgba(0,0,0,0.40),
+            0 10px 30px -12px rgba(34,197,94,0.18);
+          overflow: hidden;
+          isolation: isolate;
+        }
+        .rismon-glass-pill::before {
+          content: '';
+          position: absolute; inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 45%, rgba(34,197,94,0.20));
+          -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+                  mask-composite: exclude;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .rismon-glass-pill::after {
+          content: '';
+          position: absolute; top: 0; bottom: 0; left: 0;
+          width: 35%;
+          background: linear-gradient(100deg, transparent, rgba(255,255,255,0.16), transparent);
+          transform: translateX(-120%);
+          animation: rismonGlassShimmer 5.5s ease-in-out infinite;
+          pointer-events: none;
+          z-index: 1;
+          mix-blend-mode: screen;
+        }
+        .rismon-glass-pill > * { position: relative; z-index: 2; }
+        .rismon-glass-dot {
+          position: relative;
+          display: inline-flex;
+          width: 8px; height: 8px;
+        }
+        .rismon-glass-dot-core {
+          position: relative;
+          width: 8px; height: 8px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 30% 30%, #86efac, #22c55e 55%, #15803d);
+          box-shadow: 0 0 12px rgba(34,197,94,0.85), 0 0 2px rgba(255,255,255,0.6) inset;
+        }
+        .rismon-glass-dot-ping {
+          position: absolute; inset: 0;
+          border-radius: 50%;
+          background: #22c55e;
+          opacity: 0.55;
+          animation: rismonPing 1.8s cubic-bezier(0,0,0.2,1) infinite;
+        }
+        .rismon-glass-divider {
+          display: inline-block;
+          width: 1px; height: 14px;
+          background: linear-gradient(180deg, transparent, rgba(255,255,255,0.18), transparent);
+        }
+        .rismon-glass-stat {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .rismon-glass-stat strong {
+          color: #ffffff;
+          font-weight: 600;
+        }
+        .rismon-glass-label {
+          color: rgba(255,255,255,0.45);
+          font-size: 11.5px;
+        }
+        .rismon-glass-icon {
+          color: rgba(134, 239, 172, 0.85);
+          filter: drop-shadow(0 0 4px rgba(34,197,94,0.45));
         }
       `}</style>
     </div>
