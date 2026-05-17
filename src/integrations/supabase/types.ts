@@ -851,6 +851,20 @@ export type Database = {
           supabase_url: string
         }[]
       }
+      get_public_audit: {
+        Args: { _id: string }
+        Returns: {
+          clarity_score: number
+          clear_count: number
+          created_at: string
+          id: string
+          promise_count: number
+          promises: Json
+          url: string
+          url_host: string
+          vague_count: number
+        }[]
+      }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
       is_blog_admin: { Args: never; Returns: boolean }
