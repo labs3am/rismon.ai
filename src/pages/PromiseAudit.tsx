@@ -228,7 +228,17 @@ export default function PromiseAudit() {
                 {loading ? (<span className="inline-flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Auditing…</span>) : (<>Run audit →</>)}
               </button>
             </form>
-            <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>3 free audits per day per IP. No credit card.</p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2" style={{ fontSize: 12 }}>
+              {isDebug ? (
+                <span style={{ color: '#f97316', fontWeight: 600, letterSpacing: '0.05em' }}>● DEBUG MODE — rate limit bypassed</span>
+              ) : remaining !== null ? (
+                <span style={{ color: remaining === 0 ? '#fca5a5' : '#888' }}>
+                  <strong style={{ color: remaining === 0 ? '#fca5a5' : '#fff' }}>{remaining}</strong> of 3 free audits left today.
+                </span>
+              ) : (
+                <span style={{ color: '#555' }}>3 free audits per day per IP. No credit card.</span>
+              )}
+            </div>
 
             {error && (
               <div className="mt-6 mx-auto max-w-[560px] text-left px-4 py-3" style={{ background: '#1a0a0a', border: '1px solid #3a1010', borderRadius: 8 }}>
