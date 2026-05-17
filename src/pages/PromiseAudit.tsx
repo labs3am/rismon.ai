@@ -182,6 +182,13 @@ export default function PromiseAudit() {
               </button>
             </form>
             <p style={{ fontSize: 12, color: '#555', marginTop: 12 }}>3 free audits per day per IP. No credit card.</p>
+            {stats && stats.total_all_time > 0 && (
+              <p style={{ fontSize: 12, color: '#777', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e88' }} />
+                {stats.total_24h.toLocaleString()} audit{stats.total_24h === 1 ? '' : 's'} in the last 24h ·{' '}
+                {stats.total_all_time.toLocaleString()} all-time
+              </p>
+            )}
 
             {error && (
               <div className="mt-6 mx-auto max-w-[560px] text-left px-4 py-3" style={{ background: '#1a0a0a', border: '1px solid #3a1010', borderRadius: 8 }}>
@@ -439,7 +446,7 @@ export default function PromiseAudit() {
                 </p>
                 <p style={{ fontSize: 12, color: '#555', marginTop: 14 }}>
                   {result.remaining_today} audits left today.{' '}
-                  <button onClick={() => { setResult(null); setUrl(''); }} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
+                  <button onClick={resetAudit} style={{ background: 'none', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}>
                     Audit another site
                   </button>
                 </p>
