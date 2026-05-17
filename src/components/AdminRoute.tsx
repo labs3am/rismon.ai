@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import PageSkeleton from '@/components/PageSkeleton';
 
 /**
  * Gate /admin/* routes. Verifies admin status server-side via the
@@ -40,11 +41,7 @@ export default function AdminRoute({ children }: { children: React.ReactNode }) 
   }, [user, authLoading]);
 
   if (authLoading || (user && checking)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageSkeleton variant="dashboard" withNav />;
   }
 
   if (!user) {
