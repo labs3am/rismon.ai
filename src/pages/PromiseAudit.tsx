@@ -178,7 +178,7 @@ export default function PromiseAudit() {
             {stats && stats.total_all_time > 0 && (
               <div
                 aria-live="polite"
-                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-3 pl-3 pr-4 py-2"
+                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-2.5 pl-3 pr-4 py-2"
               >
                 <span className="rismon-glass-dot">
                   <span className="rismon-glass-dot-ping" />
@@ -575,69 +575,34 @@ export default function PromiseAudit() {
         }
         .rismon-glass-pill {
           position: relative;
-          font-size: 12.5px;
+          font-family: 'Inter', sans-serif;
+          font-size: 12px;
           letter-spacing: 0.01em;
           font-variant-numeric: tabular-nums;
-          color: rgba(232, 255, 240, 0.78);
-          background:
-            linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015) 60%),
-            radial-gradient(120% 200% at 0% 0%, rgba(34,197,94,0.10), transparent 55%),
-            rgba(255,255,255,0.025);
-          border: 1px solid rgba(255,255,255,0.10);
+          color: #a1a1aa;
+          background: #0a0a0a;
+          border: 1px solid #1f1f1f;
           border-radius: 999px;
-          backdrop-filter: blur(18px) saturate(160%);
-          -webkit-backdrop-filter: blur(18px) saturate(160%);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.10),
-            inset 0 -1px 0 rgba(0,0,0,0.30),
-            0 1px 0 rgba(0,0,0,0.40),
-            0 10px 30px -12px rgba(34,197,94,0.18);
-          overflow: hidden;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
           isolation: isolate;
         }
-        .rismon-glass-pill::before {
-          content: '';
-          position: absolute; inset: 0;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02) 45%, rgba(34,197,94,0.20));
-          -webkit-mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-                  mask-composite: exclude;
-          pointer-events: none;
-          z-index: 0;
-        }
-        .rismon-glass-pill::after {
-          content: '';
-          position: absolute; top: 0; bottom: 0; left: 0;
-          width: 35%;
-          background: linear-gradient(100deg, transparent, rgba(255,255,255,0.16), transparent);
-          transform: translateX(-120%);
-          animation: rismonGlassShimmer 5.5s ease-in-out infinite;
-          pointer-events: none;
-          z-index: 1;
-          mix-blend-mode: screen;
-        }
-        .rismon-glass-pill > * { position: relative; z-index: 2; }
         .rismon-glass-dot {
           position: relative;
           display: inline-flex;
-          width: 8px; height: 8px;
+          width: 6px; height: 6px;
         }
         .rismon-glass-dot-core {
           position: relative;
-          width: 8px; height: 8px;
+          width: 6px; height: 6px;
           border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, #86efac, #22c55e 55%, #15803d);
-          box-shadow: 0 0 12px rgba(34,197,94,0.85), 0 0 2px rgba(255,255,255,0.6) inset;
+          background: #f97316;
+          box-shadow: 0 0 8px rgba(249,115,22,0.7);
         }
         .rismon-glass-dot-ping {
           position: absolute; inset: 0;
           border-radius: 50%;
-          background: #22c55e;
-          opacity: 0.55;
+          background: #f97316;
+          opacity: 0.5;
           animation: rismonPing 1.8s cubic-bezier(0,0,0.2,1) infinite;
         }
         .rismon-glass-divider {
@@ -663,14 +628,15 @@ export default function PromiseAudit() {
           filter: drop-shadow(0 0 4px rgba(34,197,94,0.45));
         }
         .rismon-glass-sentence {
-          font-size: 13px;
-          color: rgba(255,255,255,0.78);
+          font-family: 'Inter', sans-serif;
+          font-size: 12px;
+          color: #a1a1aa;
           letter-spacing: 0.005em;
         }
         .rismon-glass-sentence strong {
           color: #ffffff;
           font-weight: 600;
-          margin-right: 2px;
+          margin-right: 3px;
         }
       `}</style>
     </div>
