@@ -430,6 +430,12 @@ export default function PromiseAudit() {
               <div className="mt-6 grid grid-cols-1 gap-3">
                 {result.promises.map((p, i) => {
                   const isClear = p.clarity === 'clear';
+                  const reality = result.reality_checks?.find((r) => r.index === i);
+                  const realityMeta = reality?.status === 'backed'
+                    ? { label: 'BACKED BY YOUR SITE', color: '#60a5fa', bg: '#0a1726', border: '#1e3a5f' }
+                    : reality?.status === 'missing'
+                      ? { label: "NOT FOUND ON SITE", color: '#ef4444', bg: '#1a0a0a', border: '#3a1010' }
+                      : { label: "COULDN'T VERIFY", color: '#a1a1aa', bg: '#0f0f0f', border: '#232323' };
                   return (
                     <div key={i} className="vercel-card flex items-start gap-3">
                       {isClear ? (
@@ -452,6 +458,19 @@ export default function PromiseAudit() {
                         <p style={{ fontSize: 15, color: '#fff', fontWeight: 500, lineHeight: 1.45 }}>"{p.claim}"</p>
                         {p.why && (
                           <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.5 }}>{p.why}</p>
+                        )}
+                        {reality && (
+                          <div
+                            className="mt-3 rounded-md px-3 py-2 flex items-start gap-2"
+                            style={{ background: realityMeta.bg, border: `1px solid ${realityMeta.border}` }}
+                          >
+                            <span style={{ fontSize: 10, letterSpacing: '0.08em', color: realityMeta.color, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+                              {realityMeta.label}
+                            </span>
+                            <span style={{ fontSize: 12.5, color: '#bbb', lineHeight: 1.5 }}>
+                              {reality.evidence}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
