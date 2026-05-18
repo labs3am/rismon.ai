@@ -147,11 +147,45 @@ export default function Analyze() {
       if (!appData) { toast.error('App not found'); navigate('/dashboard'); return; }
       setApp(appData);
 
-      // Check for active scan_session in Supabase
+      // First reconcile any locally saved analysis. If the report is already
+      // ready, never resume the loader again — this prevents completed scans
+      // from bouncing back into "analyzing" after a reload/refocus.
+      const savedAnalysisId = localStorage.getItem('rismon_active_analysis');
+      if (savedAnalysisId) {
+        const { data: savedAnalysis } = await supabase
+          .from('analyses')
+          .select('*')
+          .eq('id', savedAnalysisId)
+          .eq('app_id', appId)
+          .maybeSingle();
+        if (savedAnalysis) {
+          const reportReady =
+            ['review_pending', 'generating_prompts', 'complete'].includes(savedAnalysis.status) ||
+            !!savedAnalysis.summary ||
+            typeof savedAnalysis.intent_match_score === 'number';
+          if (reportReady) {
+            localStorage.removeItem('rismon_active_analysis');
+            localStorage.removeItem('rismon_analysis_stage');
+            navigate(`/report/${savedAnalysis.id}`);
+            return;
+          }
+          if (savedAnalysis.status === 'questions_ready' && savedAnalysis.code_understanding) {
+            setAnalysisId(savedAnalysis.id);
+            setCodeUnderstanding(savedAnalysis.code_understanding);
+            setQuestions((savedAnalysis.smart_questions as any[]) || []);
+            setStage('confirm');
+            return;
+          }
+        }
+      }
+
+      // Check for active scan_session in Supabase, scoped to this exact repo.
+      // A scan running for another app should not hijack this analyze page.
       const { data: activeSession } = await supabase
         .from('scan_sessions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('repo_name', `${appData.github_owner}/${appData.github_repo_name}`)
         .in('status', ['pending', 'analyzing'])
         .order('created_at', { ascending: false })
         .limit(1)
