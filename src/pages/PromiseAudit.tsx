@@ -13,6 +13,12 @@ type Promise_ = {
   why: string;
 };
 
+type RealityCheck = {
+  index: number;
+  status: 'backed' | 'unverified' | 'missing';
+  evidence: string;
+};
+
 type AuditResult = {
   id?: string | null;
   url: string;
@@ -20,10 +26,13 @@ type AuditResult = {
   title?: string;
   description?: string;
   promises: Promise_[];
+  reality_checks?: RealityCheck[];
   clarity_score: number | null;
+  reality_score?: number | null;
   promise_count: number;
   clear_count: number;
   vague_count: number;
+  backed_count?: number;
   remaining_today?: number;
 };
 
@@ -81,10 +90,13 @@ export default function PromiseAudit() {
         host: row.url_host,
         title: row.title || undefined,
         promises: (row.promises as Promise_[]) || [],
+        reality_checks: (row.reality_checks as RealityCheck[]) || [],
         clarity_score: row.clarity_score,
+        reality_score: row.reality_score ?? null,
         promise_count: row.promise_count,
         clear_count: row.clear_count,
         vague_count: row.vague_count,
+        backed_count: row.backed_count ?? 0,
       });
     })();
   }, [permalinkId]);
