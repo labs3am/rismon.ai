@@ -296,11 +296,21 @@ export default function PromiseAudit() {
                       <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.5 }}>{result.title}</p>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span style={{ fontSize: 48, fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                      {result.clarity_score ?? '—'}
-                    </span>
-                    <span style={{ fontSize: 13, color: '#888' }}>clarity</span>
+                  <div className="flex items-end gap-5">
+                    <div className="flex items-baseline gap-1.5">
+                      <span style={{ fontSize: 44, fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        {result.clarity_score ?? '—'}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#888' }}>clarity</span>
+                    </div>
+                    {typeof result.reality_score === 'number' && (
+                      <div className="flex items-baseline gap-1.5" title="How many promises are backed up by what we found on your live site">
+                        <span style={{ fontSize: 44, fontWeight: 700, color: '#60a5fa', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                          {result.reality_score}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#888' }}>reality</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -315,6 +325,9 @@ export default function PromiseAudit() {
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5" style={{ fontSize: 13 }}>
                   <span style={{ color: '#22c55e' }}>● {result.clear_count} specific</span>
                   <span style={{ color: '#f59e0b' }}>● {result.vague_count} fluffy</span>
+                  {typeof result.backed_count === 'number' && (
+                    <span style={{ color: '#60a5fa' }}>● {result.backed_count} backed by your site</span>
+                  )}
                   <span style={{ color: '#555', marginLeft: 'auto' }}>{result.promise_count} total promises</span>
                 </div>
                 <div
@@ -325,9 +338,13 @@ export default function PromiseAudit() {
                     <span style={{ color: '#22c55e', fontWeight: 600 }}>● Specific</span>
                     <span style={{ color: '#666' }}> — a real, testable claim. Something a user (or a scanner) can actually check, like "Sign in with Google" or "Stripe checkout".</span>
                   </p>
-                  <p>
+                  <p style={{ marginBottom: 6 }}>
                     <span style={{ color: '#f59e0b', fontWeight: 600 }}>● Fluffy</span>
                     <span style={{ color: '#666' }}> — marketing language with no proof. Words like "powerful", "seamless", or "founder-friendly" — nice to read, impossible to verify.</span>
+                  </p>
+                  <p>
+                    <span style={{ color: '#60a5fa', fontWeight: 600 }}>● Backed by your site</span>
+                    <span style={{ color: '#666' }}> — we cross-checked each promise against signals from your live homepage (matching brands, /privacy, /pricing, signup, trust badges, etc.) and confirmed the claim is visible.</span>
                   </p>
                 </div>
               </div>
