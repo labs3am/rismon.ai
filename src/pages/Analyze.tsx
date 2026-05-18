@@ -160,9 +160,10 @@ export default function Analyze() {
           .maybeSingle();
         if (savedAnalysis) {
           const reportReady =
-            ['review_pending', 'generating_prompts', 'complete'].includes(savedAnalysis.status) ||
-            !!savedAnalysis.summary ||
-            typeof savedAnalysis.intent_match_score === 'number';
+            !['failed', 'cancelled'].includes(savedAnalysis.status) &&
+            (['review_pending', 'generating_prompts', 'complete'].includes(savedAnalysis.status) ||
+              !!savedAnalysis.summary ||
+              typeof savedAnalysis.intent_match_score === 'number');
           if (reportReady) {
             localStorage.removeItem('rismon_active_analysis');
             localStorage.removeItem('rismon_analysis_stage');
