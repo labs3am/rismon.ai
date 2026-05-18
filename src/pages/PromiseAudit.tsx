@@ -678,8 +678,8 @@ export default function PromiseAudit() {
                 </div>
                 <div className="vercel-card">
                   <p style={{ fontSize: 11, color: '#666', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>03 — GRADE</p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Specific vs. fluffy</p>
-                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Real, testable claims score high. Marketing fluff with nothing to verify drags your clarity score down.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Grade + cross-check</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Specific vs. fluffy gives you a clarity score. Then we cross-check each promise against signals on your live site (brands, /privacy, /pricing, signup, trust badges) to flag what's <span style={{ color: '#60a5fa' }}>backed</span> vs. <span style={{ color: '#ef4444' }}>missing</span>.</p>
                 </div>
               </div>
               <p style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
