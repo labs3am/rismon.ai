@@ -3178,61 +3178,103 @@ Claimed gaps to verify: ${JSON.stringify(claudeResult.gaps)}`;
 
       // Strip findings down to just the fields the model needs, and preserve
       // each finding's confidence so the generated prompt can inherit it.
-      const slim = (arr: any[]) => (Array.isArray(arr) ? arr : []).map((f: any) => ({
-        id: f?.id,
-        name: f?.name || f?.title,
-        severity: f?.severity,
-        description: f?.description,
-        file_path: f?.file_path,
-        line_number: f?.line_number,
-        code_snippet: typeof f?.code_snippet === "string" ? f.code_snippet.slice(0, 300) : undefined,
-        confidence: f?.confidence || (f?.verified ? "verified" : "unverified"),
-      }));
+      // Tag every item with its source so the model can branch: gaps are
+      // missing features (no file to edit) and must NEVER be written as a
+      // code-edit prompt — that's where hallucinated "edit the file where X
+      // is handled" placeholders come from.
+      const slim = (arr: any[], source: "gap" | "security_issue" | "unknown_feature") =>
+        (Array.isArray(arr) ? arr : []).map((f: any) => {
+          const snippet = typeof f?.code_snippet === "string" ? f.code_snippet.slice(0, 300) : undefined;
+          const filePath = typeof f?.file_path === "string" && f.file_path.trim() ? f.file_path.trim() : undefined;
+          return {
+            source,
+            id: f?.id,
+            name: f?.name || f?.title,
+            severity: f?.severity,
+            description: f?.description,
+            file_path: filePath,
+            line_number: filePath ? f?.line_number : undefined,
+            code_snippet: filePath ? snippet : undefined,
+            // True only when we actually have a file path AND a real code snippet.
+            // Without both, the model has no grounding to write a code edit.
+            has_code_context: !!(filePath && snippet),
+            confidence: f?.confidence || (f?.verified ? "verified" : "unverified"),
+          };
+        });
 
-      const systemPrompt = `You generate copy-paste fix prompts that another AI coding agent (${platform || "Lovable"}, Cursor, Claude Code, Copilot) will execute verbatim. The receiving AI has NO memory of this scan — every prompt must stand alone.
+      const systemPrompt = `You generate copy-paste prompts another AI coding agent (${platform || "Lovable"}, Cursor, Claude Code, Copilot) will execute verbatim. The receiving AI has NO memory of this scan — every prompt must stand alone.
 
 CONTEXT FROM THIS SCAN:
 - Backend detected in scanned code: ${hasBackend ? "YES" : "NO"}
-- Each finding includes a "confidence" field ("verified" or "unverified"). You MUST carry that through to the fix.
+- Each input item has a "source" ("gap" | "security_issue" | "unknown_feature"), a "has_code_context" boolean, and a "confidence" ("verified" | "unverified").
 
-Each "prompt" field MUST contain, in order:
-  1. The exact file path to edit (real path from the app — e.g. "src/pages/Admin.tsx", "supabase/functions/checkout/index.ts"). Never use placeholders.
-  2. The exact line number or a unique 1-3 line code snippet so the AI can locate the change.
-  3. One sentence on what is currently wrong there.
-  4. The exact edit. When it is a code change, show BEFORE and AFTER as fenced code blocks with the real surrounding code. When it is a Supabase change, give the literal SQL with the real table/column names.
-  5. Any related edits required (imports to add, RLS policies, route guards, env vars, files to delete).
-  6. A single verification line ("After this change, <X> should <Y>.").
+CHOOSE THE PROMPT SHAPE BASED ON THE INPUT — DO NOT MIX THEM UP:
 
-Hard rules:
-  - Use the real identifiers from the app (table names, columns, components, routes). No <placeholders>, no "your table", no TODO.
-  - Concrete verbs only: "Replace", "Add", "Delete", "Wrap", "Run this SQL". Never "improve", "harden", "consider", "review".
-  - 60-180 words per prompt. Plain English around the code. No fluff, no apologies. Keep it tight — long prompts get truncated.
-  - "where_to_paste" must be specific: "Lovable chat on this project", "Cursor inline edit on src/pages/Admin.tsx", or "Supabase SQL editor".
+A) "source": "gap"  →  it is a MISSING FEATURE, not a bug in a file.
+   - You MUST NOT invent a file path. You MUST NOT write BEFORE/AFTER code.
+   - Set "verification_status" to "needs_backend" if the feature requires server-side work, otherwise "worth_checking".
+   - The "prompt" is a feature spec: what to build, which existing files/tables it should integrate with (use ONLY names you can see in app_understanding — do not guess), the new files/tables/edge functions to create, and how to verify it works end-to-end.
+   - "where_to_paste" must be "Lovable chat on this project" (or equivalent for the platform).
+
+B) "source" is "security_issue" or "unknown_feature" AND "has_code_context": true  →  CODE EDIT.
+   - Use the exact file_path and line_number/code_snippet provided. Quote the snippet verbatim.
+   - Show BEFORE and AFTER as fenced code blocks using the real snippet. Add related edits (imports, RLS, route guards, env vars) only when you can name them concretely.
+   - "verification_status": "verified" if confidence="verified", else "worth_checking".
+
+C) "source" is "security_issue" or "unknown_feature" AND "has_code_context": false  →  WORTH-CHECKING ONLY.
+   - You CANNOT see the code, so DO NOT write a BEFORE/AFTER block. DO NOT invent a file path.
+   - "verification_status": "worth_checking".
+   - Start the prompt with: "Worth checking — this finding could not be confirmed from the scanned files. Open <area we DO know exists from app_understanding> and verify <X>. If confirmed, apply: <one concrete sentence>."
+
+BANNED PHRASES (these are tells that you are guessing — if you write them, the prompt is dropped):
+  - "where <anything> is handled in your codebase"
+  - "in the relevant file", "in the appropriate location", "in the file responsible for"
+  - "your <X>.tsx", "your component", "your page", "the relevant component"
+  - "<placeholder>", "<your-...>", "TODO", "FIXME"
+  - "Create a new page where <feature> is handled" — say what the page IS and what it contains.
+
+Hard rules (apply to every prompt):
+  - Use real identifiers from app_understanding only (tables, columns, components, routes, edge functions). If you don't see it in the input, do not name it.
+  - Concrete verbs: "Replace", "Add", "Create", "Delete", "Wrap", "Run this SQL". Never "improve", "harden", "consider", "review", "enhance".
+  - 60-180 words. No fluff, no apologies.
   - "expected_result" is one sentence describing the user-visible outcome after the fix.
-  - Match the app's existing code style (TypeScript, the same import style, the same Supabase client variable name).
 
-VERIFICATION STATUS (REQUIRED on every fix):
-Set "verification_status" to exactly one of:
-  - "verified": the underlying finding was confirmed in the scanned code (confidence=verified) AND the fix targets a file you can name from the scan.
-  - "worth_checking": the finding was inferred (confidence=unverified) OR you cannot point to the exact file. Start the prompt with: "Worth checking — this finding could not be confirmed from the scanned files. Before applying, open <file or area> and verify <X>."
-  - "needs_backend": the fix requires backend code (server-side enforcement, webhooks, RLS, AI key proxying, rate limiting, payment verification) AND backend detected=${hasBackend ? "YES" : "NO"}. If backend detected is NO, you MUST use this status for any backend fix. Start the prompt with: "This fix requires a backend. Your scanned app has no backend code — adding this is a new feature, not a patch. If you already have a backend that wasn't scanned, verify the behavior there first."
-
-Skip generating a fix entirely when verification_status would be "needs_backend" AND the original finding's confidence is "unverified" — that combo means we are guessing about a backend that may not exist. Better to omit than to mislead.
+SKIP RULES (omit entirely — better no prompt than a fake one):
+  - source="gap" + confidence="unverified" + backend detected=NO  →  skip; we'd be guessing a feature on top of guessing infrastructure.
+  - Any item where you cannot satisfy the rules above without using a banned phrase.
 
 Return ONLY:
 { "fix_prompts": [{ "fix_id": "", "title": "", "platform": "lovable|cursor|supabase|general", "verification_status": "verified|worth_checking|needs_backend", "prompt": "", "where_to_paste": "", "expected_result": "" }] }`;
 
       const userContent = `Platform: ${platform || "unknown"}
 Backend detected in scan: ${hasBackend ? "YES" : "NO"}
-Gaps: ${JSON.stringify(slim(gaps))}
-Security issues: ${JSON.stringify(slim(security_issues))}
-Unknown features: ${JSON.stringify(slim(unknown_features))}
+Items: ${JSON.stringify([
+        ...slim(security_issues, "security_issue"),
+        ...slim(unknown_features, "unknown_feature"),
+        ...slim(gaps, "gap"),
+      ])}
 App understanding: ${JSON.stringify(code_understanding)}`;
 
       const text = await callGemini(systemPrompt, userContent);
+      // Sanitize: drop any prompt that still leaks placeholder/hallucination
+      // tells. Better to ship fewer real prompts than confident-sounding fakes.
+      const BANNED_RE = /(where\s+[\w\s'-]{0,60}\s+is\s+handled\s+in\s+your\s+codebase|in\s+the\s+relevant\s+file|in\s+the\s+appropriate\s+location|in\s+the\s+file\s+responsible\s+for|the\s+relevant\s+component|your\s+(?:component|page)\b|<your-[\w-]+>|<placeholder>|\bTODO\b|\bFIXME\b)/i;
+      const sanitizeFixPrompts = (input: any) => {
+        const list = Array.isArray(input?.fix_prompts) ? input.fix_prompts : [];
+        const filtered = list.filter((fp: any) => {
+          const blob = `${fp?.title || ""}\n${fp?.prompt || ""}\n${fp?.where_to_paste || ""}\n${fp?.expected_result || ""}`;
+          if (!fp?.prompt || typeof fp.prompt !== "string" || fp.prompt.trim().length < 40) return false;
+          if (BANNED_RE.test(blob)) {
+            console.warn("generate_fixes: dropped hallucinated prompt:", (fp?.title || "").slice(0, 80));
+            return false;
+          }
+          return true;
+        });
+        return { ...input, fix_prompts: filtered };
+      };
       try {
         const parsed = parseJSON(text);
-        return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify(sanitizeFixPrompts(parsed)), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (e) {
         // Robust fallback: try to salvage JSON from the raw text before giving up.
         try {
@@ -3249,7 +3291,7 @@ App understanding: ${JSON.stringify(code_understanding)}`;
               .replace(/,\s*]/g, "]")
               .replace(/[\x00-\x1F\x7F]/g, "");
             const parsed = JSON.parse(cleaned);
-            return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+            return new Response(JSON.stringify(sanitizeFixPrompts(parsed)), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
           }
         } catch (_) { /* fall through */ }
         console.error("generate_fixes parse failed:", (e as Error)?.message, "raw:", String(text || "").slice(0, 500));
