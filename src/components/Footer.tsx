@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Github, Mail } from 'lucide-react';
 import Logo from './Logo';
 
@@ -14,22 +14,6 @@ const headingCls =
   'text-[11px] font-semibold tracking-[0.1em] uppercase text-[#e5e5e5] mb-5';
 
 export default function Footer() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const goToSection = (id: string) => {
-    if (location.pathname !== '/') {
-      navigate('/#' + id);
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      return;
-    }
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <footer style={{ background: '#000000' }}>
       <div className="max-w-[1200px] mx-auto px-6 py-16">
@@ -108,16 +92,8 @@ export default function Footer() {
             <h3 className={headingCls}>Product</h3>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/pricing" className={linkCls}>Pricing</Link></li>
+              <li><Link to="/promise-audit" className={linkCls}>Promise Audit</Link></li>
               <li><Link to="/sample-report" className={linkCls}>Sample Report</Link></li>
-              <li>
-                <button
-                  onClick={() => goToSection('how-it-works')}
-                  className={linkCls}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-                >
-                  How it works
-                </button>
-              </li>
             </ul>
           </div>
 

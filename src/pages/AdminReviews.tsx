@@ -3,6 +3,7 @@ import { Loader2, Sparkles, ThumbsUp, ThumbsDown, HelpCircle, Star } from 'lucid
 import ReactMarkdown from 'react-markdown';
 import DashboardNavbar from '@/components/DashboardNavbar';
 import BackButton from '@/components/BackButton';
+import PageSkeleton from '@/components/PageSkeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -124,9 +125,7 @@ export default function AdminReviews() {
     return (
       <div className="min-h-screen bg-background">
         <DashboardNavbar />
-        <div className="flex items-center justify-center pt-32">
-          <Loader2 className="animate-spin text-primary" size={24} />
-        </div>
+        <PageSkeleton variant="dashboard" />
       </div>
     );
   }

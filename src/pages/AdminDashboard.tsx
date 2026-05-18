@@ -15,6 +15,7 @@ import {
   UserX,
   GitBranch,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -455,7 +456,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mt-6 border-b border-border">
+        <div className="flex gap-1 mt-6 border-b border-border overflow-x-auto no-scrollbar -mx-5 px-5">
           {([
             ["overview", "Overview", TrendingUp],
             ["users", `Users (${stats?.total_users ?? "…"})`, Users],
@@ -468,7 +469,7 @@ export default function AdminDashboard() {
             <button
               key={key}
               onClick={() => setTab(key as Tab)}
-              className={`px-4 py-2.5 text-sm flex items-center gap-2 border-b-2 -mb-px transition-colors ${
+              className={`px-4 py-2.5 text-sm flex items-center gap-2 border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
                 tab === key
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -1026,6 +1027,16 @@ export default function AdminDashboard() {
               </h3>
               <p className="text-muted-foreground text-sm mt-1">
                 Send the founder note to inactive users (signed up 14+ days ago, never scanned). Test first, then broadcast.
+              </p>
+            </Link>
+            <Link
+              to="/admin/audit-test"
+              className="bg-card border border-border rounded-2xl p-5 hover:border-hover-border transition-colors group"
+            >
+              <ShieldCheck className="text-primary" size={20} />
+              <h3 className="text-foreground font-semibold mt-3">Promise Audit tester</h3>
+              <p className="text-muted-foreground text-sm mt-1">
+                Run the public audit without the 3/day IP limit. Debug token stays server-side.
               </p>
             </Link>
             <div className="bg-card border border-border rounded-2xl p-5">

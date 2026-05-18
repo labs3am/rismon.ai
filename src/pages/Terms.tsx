@@ -16,7 +16,7 @@ export default function Terms() {
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />
         <h1 className="text-foreground text-4xl font-semibold">Terms of Service</h1>
-        <p className="text-muted-foreground text-sm mt-2">Last updated: April 2026</p>
+        <p className="text-muted-foreground text-sm mt-2">Last updated: May 17, 2026</p>
 
         <div className="flex items-start gap-3 mt-8 p-4 rounded-xl" style={{ background: '#191207', border: '1px solid #3a2810' }}>
           <AlertTriangle size={20} className="text-warning shrink-0 mt-0.5" />
@@ -39,6 +39,16 @@ export default function Terms() {
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">Data Handling</h2>
             <p>We read your code for analysis purposes only. Code is never stored on our servers. See our Privacy Policy for details.</p>
+          </section>
+          <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Promise Audit (free public tool)</h2>
+            <p>The Promise Audit is a free tool that fetches a public URL and grades its marketing claims using AI. By using it you agree that:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1.5">
+              <li>You will only submit URLs you have the right to audit. Don't use the tool to scrape, harass, or attack any site.</li>
+              <li>Each IP is limited to 3 audits per 24 hours. Attempts to bypass this limit may be blocked.</li>
+              <li>AI grading is best-effort and may misclassify claims. Results are advisory, not a legal or marketing certification.</li>
+              <li>Audit results are stored and accessible by their permalink. Don't audit URLs that contain private information in the path.</li>
+            </ul>
           </section>
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">Limitation of Liability</h2>

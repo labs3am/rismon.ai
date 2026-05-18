@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
+import PageSkeleton from '@/components/PageSkeleton';
 
 
 export default function AdminWaitlist() {
@@ -60,11 +60,7 @@ export default function AdminWaitlist() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <PageSkeleton variant="dashboard" withNav />;
   }
 
   if (!authed) return null;

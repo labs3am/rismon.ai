@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import { usePageTracker } from "@/hooks/usePageTracker";
+import PageSkeleton from "@/components/PageSkeleton";
 
 // Code-split every non-landing route so the initial bundle stays small.
 const Signup = lazy(() => import("./pages/Signup"));
@@ -37,6 +38,8 @@ const OpenSource = lazy(() => import("./pages/OpenSource"));
 const ForPlatform = lazy(() => import("./pages/ForPlatform"));
 const HowWeScore = lazy(() => import("./pages/HowWeScore"));
 const Status = lazy(() => import("./pages/Status"));
+const PromiseAudit = lazy(() => import("./pages/PromiseAudit"));
+const AdminAuditTest = lazy(() => import("./pages/AdminAuditTest"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,11 +50,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const RouteFallback = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+const RouteFallback = () => <PageSkeleton />;
 
 // Tracks page views on route change. Lives inside <BrowserRouter>.
 const PageTracker = () => {
@@ -83,6 +82,8 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/open-source" element={<OpenSource />} />
               <Route path="/how-we-score" element={<HowWeScore />} />
+              <Route path="/promise-audit" element={<PromiseAudit />} />
+              <Route path="/promise-audit/:id" element={<PromiseAudit />} />
               <Route path="/for/:platform" element={<ForPlatform />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
@@ -90,6 +91,7 @@ const App = () => (
               <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
               <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
               <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcast /></AdminRoute>} />
+              <Route path="/admin/audit-test" element={<AdminRoute><AdminAuditTest /></AdminRoute>} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />

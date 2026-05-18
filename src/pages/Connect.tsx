@@ -234,7 +234,7 @@ export default function Connect() {
         <DashboardNavbar />
         <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
         <div className="flex items-center justify-center pt-32 px-4">
-          <div className="bg-card border border-border rounded-2xl p-10 max-w-[480px] w-full text-center">
+          <div className="bg-card border border-border rounded-2xl p-6 sm:p-10 max-w-[480px] w-full text-center">
             <Lock size={48} className="text-primary mx-auto" />
             <h2 className="text-foreground text-[22px] font-semibold mt-5">You have used your free app</h2>
             <p className="text-muted-foreground text-[15px] mt-3 leading-relaxed">

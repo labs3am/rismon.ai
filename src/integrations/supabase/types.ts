@@ -394,6 +394,48 @@ export type Database = {
         }
         Relationships: []
       }
+      public_audits: {
+        Row: {
+          clarity_score: number | null
+          clear_count: number
+          created_at: string
+          id: string
+          ip_hash: string | null
+          promise_count: number
+          promises: Json
+          title: string | null
+          url: string
+          url_host: string
+          vague_count: number
+        }
+        Insert: {
+          clarity_score?: number | null
+          clear_count?: number
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          promise_count?: number
+          promises?: Json
+          title?: string | null
+          url: string
+          url_host: string
+          vague_count?: number
+        }
+        Update: {
+          clarity_score?: number | null
+          clear_count?: number
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          promise_count?: number
+          promises?: Json
+          title?: string | null
+          url?: string
+          url_host?: string
+          vague_count?: number
+        }
+        Relationships: []
+      }
       report_feedback: {
         Row: {
           analysis_id: string
@@ -812,12 +854,34 @@ export type Database = {
           supabase_url: string
         }[]
       }
+      get_public_audit: {
+        Args: { _id: string }
+        Returns: {
+          clarity_score: number
+          clear_count: number
+          created_at: string
+          id: string
+          promise_count: number
+          promises: Json
+          title: string
+          url: string
+          url_host: string
+          vague_count: number
+        }[]
+      }
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
       is_blog_admin: { Args: never; Returns: boolean }
       notify_admin_event: {
         Args: { _event: string; _payload: Json }
         Returns: undefined
+      }
+      public_audit_stats: {
+        Args: never
+        Returns: {
+          total_24h: number
+          total_all_time: number
+        }[]
       }
       set_app_supabase_credentials: {
         Args: {
