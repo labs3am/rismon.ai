@@ -402,7 +402,7 @@ export default function Dashboard() {
       );
     }
 
-    if (analysisLoading || generating) return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
+    if (analysisLoading || (generating && !analysis)) return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
     if (!analysis) return null;
 
     const intentScore = analysis.intent_match_score ?? null;
