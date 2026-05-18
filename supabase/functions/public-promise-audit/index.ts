@@ -81,7 +81,7 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-async function fetchPageText(url: string): Promise<{ text: string; title: string; description: string }> {
+async function fetchPageText(url: string): Promise<{ text: string; title: string; description: string; html: string }> {
   let html = "";
   let title = "";
   let description = "";
@@ -119,6 +119,7 @@ async function fetchPageText(url: string): Promise<{ text: string; title: string
     text: text.slice(0, 8000),
     title,
     description,
+    html,
   };
 }
 
@@ -128,6 +129,161 @@ type Promise_ = {
   clarity: "clear" | "vague";
   why: string;
 };
+
+type RealityStatus = "backed" | "unverified" | "missing";
+type RealityCheck = {
+  index: number;
+  status: RealityStatus;
+  evidence: string;
+};
+
+type SiteSignals = {
+  https: boolean;
+  has_privacy: boolean;
+  has_terms: boolean;
+  has_pricing: boolean;
+  has_signup: boolean;
+  has_login: boolean;
+  has_contact_email: boolean;
+  has_social_proof: boolean;
+  brands_mentioned: string[];
+  trust_badges: string[];
+  word_count: number;
+};
+
+const KNOWN_BRANDS = [
+  "stripe","paypal","google","github","slack","notion","figma","openai","anthropic",
+  "aws","azure","gcp","supabase","firebase","vercel","cloudflare","auth0","clerk",
+  "twilio","sendgrid","mailgun","resend","intercom","hubspot","salesforce","shopify",
+  "linkedin","facebook","meta","apple","microsoft","linear","jira","zapier","webhook",
+];
+
+const TRUST_KEYWORDS = [
+  "soc 2","soc2","iso 27001","iso27001","gdpr","hipaa","pci dss","pci-dss","ccpa",
+  "ssl","tls","encrypted","end-to-end","2fa","sso","oauth","verified","badge",
+];
+
+async function collectSignals(homepageHtml: string, origin: string): Promise<SiteSignals> {
+  const lower = homepageHtml.toLowerCase();
+  const text = stripHtml(homepageHtml);
+  const lowerText = text.toLowerCase();
+
+  const hasPath = async (path: string): Promise<boolean> => {
+    if (lower.includes(`href="${path}`) || lower.includes(`href='${path}`)) return true;
+    try {
+      const r = await fetchWithTimeout(`${origin}${path}`, 4000, {
+        method: "GET",
+        headers: { "User-Agent": "RismonBot/1.0" },
+        redirect: "follow",
+      });
+      return r.ok;
+    } catch { return false; }
+  };
+
+  const [hasPrivacy, hasTerms, hasPricing] = await Promise.all([
+    hasPath("/privacy"),
+    hasPath("/terms"),
+    hasPath("/pricing"),
+  ]);
+
+  const signupRe = /(sign\s*up|get\s*started|start\s*free|create\s*account|try\s*free|join\s*now)/i;
+  const loginRe = /(sign\s*in|log\s*in|login)/i;
+  const emailRe = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+
+  const brands_mentioned: string[] = [];
+  for (const b of KNOWN_BRANDS) {
+    const re = new RegExp(`\\b${b}\\b`, "i");
+    if (re.test(lowerText)) brands_mentioned.push(b);
+  }
+
+  const trust_badges: string[] = [];
+  for (const k of TRUST_KEYWORDS) {
+    if (lowerText.includes(k)) trust_badges.push(k);
+  }
+
+  return {
+    https: origin.startsWith("https://"),
+    has_privacy: hasPrivacy,
+    has_terms: hasTerms,
+    has_pricing: hasPricing,
+    has_signup: signupRe.test(text),
+    has_login: loginRe.test(text),
+    has_contact_email: emailRe.test(text),
+    has_social_proof: /(customers|trusted by|loved by|users|testimonial|review|rating|stars)/i.test(text),
+    brands_mentioned: Array.from(new Set(brands_mentioned)).slice(0, 12),
+    trust_badges: Array.from(new Set(trust_badges)).slice(0, 8),
+    word_count: text.split(/\s+/).length,
+  };
+}
+
+async function verifyPromises(opts: {
+  url: string;
+  promises: Promise_[];
+  signals: SiteSignals;
+}): Promise<RealityCheck[]> {
+  if (opts.promises.length === 0) return [];
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) return [];
+
+  const system = `You verify whether a website's marketing promises are actually backed up by what's observable on the site itself.
+
+You receive a list of promises and a set of deterministic SITE SIGNALS pulled from the live homepage and adjacent pages. For each promise, return a verdict:
+
+- "backed"     — Clear on-site evidence supports the promise (matching signal present, brand mentioned, or page exists).
+- "unverified" — The promise is plausible but the homepage shows no direct evidence either way. Common for backend features.
+- "missing"    — The promise is contradicted by, or noticeably absent from, the site signals (e.g. "free trial" with no signup, "Stripe payments" with no Stripe mention).
+
+Rules:
+- One verdict per promise, in the SAME ORDER as input.
+- "evidence" = ONE short sentence (max 110 chars) quoting the signal you used, or saying what's missing.
+- Be strict. If signals don't support it, prefer "unverified" over "backed".
+- Return ONLY valid JSON: { "checks": [{ "index": 0, "status": "backed", "evidence": "..." }, ...] }`;
+
+  const user = `URL: ${opts.url}
+
+SITE SIGNALS (deterministic, scraped from the live site):
+${JSON.stringify(opts.signals, null, 2)}
+
+PROMISES TO VERIFY (in order):
+${opts.promises.map((p, i) => `${i}. [${p.category}] "${p.claim}"`).join("\n")}`;
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": lovableKey },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+      }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || "{}";
+    let parsed: any = {};
+    try { parsed = JSON.parse(content); } catch { return []; }
+    const raw = Array.isArray(parsed.checks) ? parsed.checks : [];
+    const out: RealityCheck[] = [];
+    for (const c of raw) {
+      const index = Number(c?.index);
+      if (!Number.isInteger(index) || index < 0 || index >= opts.promises.length) continue;
+      const status: RealityStatus = c.status === "backed" || c.status === "missing" ? c.status : "unverified";
+      const evidence = String(c.evidence || "").trim().slice(0, 140);
+      out.push({ index, status, evidence });
+    }
+    const seen = new Set(out.map((c) => c.index));
+    for (let i = 0; i < opts.promises.length; i++) {
+      if (!seen.has(i)) out.push({ index: i, status: "unverified", evidence: "No signal found on the homepage." });
+    }
+    return out.sort((a, b) => a.index - b.index);
+  } catch {
+    return opts.promises.map((_, i) => ({ index: i, status: "unverified" as const, evidence: "Verification skipped." }));
+  }
+}
 
 async function extractPromises(opts: {
   url: string;
@@ -279,6 +435,20 @@ Deno.serve(async (req) => {
     ? null
     : Math.round((clearCount / promises.length) * 100);
 
+  // Reality checks — cross-reference promises against live-site signals.
+  let signals: SiteSignals | null = null;
+  let realityChecks: RealityCheck[] = [];
+  try {
+    signals = await collectSignals(page.html || "", u.origin);
+    realityChecks = await verifyPromises({ url: u.toString(), promises, signals });
+  } catch {
+    realityChecks = promises.map((_, i) => ({ index: i, status: "unverified" as const, evidence: "Verification skipped." }));
+  }
+  const backedCount = realityChecks.filter((c) => c.status === "backed").length;
+  const realityScore = promises.length === 0
+    ? null
+    : Math.round((backedCount / promises.length) * 100);
+
   const { data: inserted } = await supabase
     .from("public_audits")
     .insert({
@@ -287,10 +457,13 @@ Deno.serve(async (req) => {
       ip_hash: ipHash,
       title: page.title || null,
       promises: promises as any,
+      reality_checks: realityChecks as any,
       clarity_score: clarityScore,
+      reality_score: realityScore,
       promise_count: promises.length,
       clear_count: clearCount,
       vague_count: vagueCount,
+      backed_count: backedCount,
     })
     .select("id")
     .single();
@@ -302,10 +475,14 @@ Deno.serve(async (req) => {
     title: page.title,
     description: page.description,
     promises,
+    reality_checks: realityChecks,
+    signals,
     clarity_score: clarityScore,
+    reality_score: realityScore,
     promise_count: promises.length,
     clear_count: clearCount,
     vague_count: vagueCount,
+    backed_count: backedCount,
     remaining_today: isDebug ? 999 : Math.max(0, DAILY_LIMIT - ((recent ?? 0) + 1)),
     debug: isDebug || undefined,
   });

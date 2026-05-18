@@ -396,6 +396,7 @@ export type Database = {
       }
       public_audits: {
         Row: {
+          backed_count: number | null
           clarity_score: number | null
           clear_count: number
           created_at: string
@@ -403,12 +404,15 @@ export type Database = {
           ip_hash: string | null
           promise_count: number
           promises: Json
+          reality_checks: Json | null
+          reality_score: number | null
           title: string | null
           url: string
           url_host: string
           vague_count: number
         }
         Insert: {
+          backed_count?: number | null
           clarity_score?: number | null
           clear_count?: number
           created_at?: string
@@ -416,12 +420,15 @@ export type Database = {
           ip_hash?: string | null
           promise_count?: number
           promises?: Json
+          reality_checks?: Json | null
+          reality_score?: number | null
           title?: string | null
           url: string
           url_host: string
           vague_count?: number
         }
         Update: {
+          backed_count?: number | null
           clarity_score?: number | null
           clear_count?: number
           created_at?: string
@@ -429,6 +436,8 @@ export type Database = {
           ip_hash?: string | null
           promise_count?: number
           promises?: Json
+          reality_checks?: Json | null
+          reality_score?: number | null
           title?: string | null
           url?: string
           url_host?: string
@@ -857,12 +866,15 @@ export type Database = {
       get_public_audit: {
         Args: { _id: string }
         Returns: {
+          backed_count: number
           clarity_score: number
           clear_count: number
           created_at: string
           id: string
           promise_count: number
           promises: Json
+          reality_checks: Json
+          reality_score: number
           title: string
           url: string
           url_host: string
