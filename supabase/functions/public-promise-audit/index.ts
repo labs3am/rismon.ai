@@ -409,7 +409,7 @@ Deno.serve(async (req) => {
 
   if (!page.text || page.text.length < 80) {
     return json({
-      error: "We couldn't read any text from that page. If it's a single-page app, make sure it renders content without JavaScript or try again.",
+      error: "We couldn't read any meaningful text from that homepage. This usually means the site is JavaScript-only (a blank SPA shell), blocks bots (Cloudflare/anti-scrape), or returned an empty response. Try a different URL — like a marketing page that renders content server-side.",
     }, 422);
   }
 
