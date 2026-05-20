@@ -279,15 +279,15 @@ export default function PromiseAudit() {
           <section className="px-5 sm:px-6 pb-12" style={{ background: '#000' }}>
             <div className="max-w-[900px] mx-auto">
               {/* Summary card */}
-              <div className="rounded-xl p-6 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
+              <div className="rounded-xl p-5 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-5">
+                  <div className="min-w-0 sm:flex-1">
                     <p style={{ fontSize: 11, color: '#666', letterSpacing: '0.1em', fontWeight: 600 }}>AUDITED</p>
                     <a
                       href={result.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 mt-1"
+                      className="inline-flex items-center gap-1.5 mt-1 break-all"
                       style={{ color: '#fff', fontSize: 18, fontWeight: 600, textDecoration: 'none' }}
                     >
                       {result.host} <ExternalLink size={14} style={{ color: '#666' }} />
@@ -296,16 +296,16 @@ export default function PromiseAudit() {
                       <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.5 }}>{result.title}</p>
                     )}
                   </div>
-                  <div className="flex items-end gap-5">
+                  <div className="flex items-end gap-6 sm:gap-5 shrink-0">
                     <div className="flex items-baseline gap-1.5">
-                      <span style={{ fontSize: 44, fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      <span className="text-[36px] sm:text-[44px]" style={{ fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
                         {result.clarity_score ?? '—'}
                       </span>
                       <span style={{ fontSize: 12, color: '#888' }}>clarity</span>
                     </div>
                     {typeof result.reality_score === 'number' && (
                       <div className="flex items-baseline gap-1.5" title="How many promises are backed up by what we found on your live site">
-                        <span style={{ fontSize: 44, fontWeight: 700, color: '#60a5fa', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        <span className="text-[36px] sm:text-[44px]" style={{ fontWeight: 700, color: '#60a5fa', letterSpacing: '-0.04em', lineHeight: 1 }}>
                           {result.reality_score}
                         </span>
                         <span style={{ fontSize: 12, color: '#888' }}>reality</span>
