@@ -8,6 +8,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
+import WelcomeGuide from '@/components/WelcomeGuide';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getGithubToken, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
@@ -262,6 +263,8 @@ export default function Dashboard() {
       const { data } = await supabase.from('analyses').select('*').eq('id', aid).maybeSingle();
       if (cancelled) return;
       if (!data || data.app_id !== selectedAppId) { setAnalysis(null); setAnalysisLoading(false); return; }
+      setAnalysis(data);
+      setAnalysisLoading(false);
       // Only generate fix prompts when the analysis pipeline has actually
       // produced findings. If the row is still 'reading' / 'questions_ready'
       // / 'analyzing' (e.g. the user just clicked "Scan again"), skip — the
@@ -290,6 +293,7 @@ export default function Dashboard() {
             await supabase.from('analyses').update({ fix_prompts: result.fix_prompts, status: 'complete' }).eq('id', aid);
             (data as any).fix_prompts = result.fix_prompts;
             (data as any).status = 'complete';
+            if (!cancelled) setAnalysis({ ...data });
           }
           if (generatingFor.current === aid) {
             generatingFor.current = null;
@@ -297,9 +301,6 @@ export default function Dashboard() {
           }
         }
       }
-      if (cancelled) return;
-      setAnalysis(data);
-      setAnalysisLoading(false);
     })();
     return () => { cancelled = true; };
   }, [selectedAppId, apps, urlAnalysisId]);
@@ -402,7 +403,7 @@ export default function Dashboard() {
       );
     }
 
-    if (analysisLoading || generating) return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
+    if (analysisLoading || (generating && !analysis)) return <AnalysisLoadingScreen stage={generating ? 'generating' : 'reading'} />;
     if (!analysis) return null;
 
     const intentScore = analysis.intent_match_score ?? null;
@@ -663,6 +664,8 @@ export default function Dashboard() {
                 </button>
               </div>
             )}
+
+            {hasApp && <WelcomeGuide />}
 
             {renderMain()}
           </div>

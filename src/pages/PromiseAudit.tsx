@@ -13,6 +13,12 @@ type Promise_ = {
   why: string;
 };
 
+type RealityCheck = {
+  index: number;
+  status: 'backed' | 'unverified' | 'missing';
+  evidence: string;
+};
+
 type AuditResult = {
   id?: string | null;
   url: string;
@@ -20,10 +26,13 @@ type AuditResult = {
   title?: string;
   description?: string;
   promises: Promise_[];
+  reality_checks?: RealityCheck[];
   clarity_score: number | null;
+  reality_score?: number | null;
   promise_count: number;
   clear_count: number;
   vague_count: number;
+  backed_count?: number;
   remaining_today?: number;
 };
 
@@ -81,10 +90,13 @@ export default function PromiseAudit() {
         host: row.url_host,
         title: row.title || undefined,
         promises: (row.promises as Promise_[]) || [],
+        reality_checks: (row.reality_checks as RealityCheck[]) || [],
         clarity_score: row.clarity_score,
+        reality_score: row.reality_score ?? null,
         promise_count: row.promise_count,
         clear_count: row.clear_count,
         vague_count: row.vague_count,
+        backed_count: row.backed_count ?? 0,
       });
     })();
   }, [permalinkId]);
@@ -267,15 +279,15 @@ export default function PromiseAudit() {
           <section className="px-5 sm:px-6 pb-12" style={{ background: '#000' }}>
             <div className="max-w-[900px] mx-auto">
               {/* Summary card */}
-              <div className="rounded-xl p-6 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
+              <div className="rounded-xl p-5 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-start sm:justify-between gap-5">
+                  <div className="min-w-0 sm:flex-1">
                     <p style={{ fontSize: 11, color: '#666', letterSpacing: '0.1em', fontWeight: 600 }}>AUDITED</p>
                     <a
                       href={result.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 mt-1"
+                      className="inline-flex items-center gap-1.5 mt-1 break-all"
                       style={{ color: '#fff', fontSize: 18, fontWeight: 600, textDecoration: 'none' }}
                     >
                       {result.host} <ExternalLink size={14} style={{ color: '#666' }} />
@@ -284,11 +296,21 @@ export default function PromiseAudit() {
                       <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.5 }}>{result.title}</p>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span style={{ fontSize: 48, fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                      {result.clarity_score ?? '—'}
-                    </span>
-                    <span style={{ fontSize: 13, color: '#888' }}>clarity</span>
+                  <div className="flex items-end gap-6 sm:gap-5 shrink-0">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[36px] sm:text-[44px]" style={{ fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        {result.clarity_score ?? '—'}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#888' }}>clarity</span>
+                    </div>
+                    {typeof result.reality_score === 'number' && (
+                      <div className="flex items-baseline gap-1.5" title="How many promises are backed up by what we found on your live site">
+                        <span className="text-[36px] sm:text-[44px]" style={{ fontWeight: 700, color: '#60a5fa', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                          {result.reality_score}
+                        </span>
+                        <span style={{ fontSize: 12, color: '#888' }}>reality</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -303,6 +325,9 @@ export default function PromiseAudit() {
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5" style={{ fontSize: 13 }}>
                   <span style={{ color: '#22c55e' }}>● {result.clear_count} specific</span>
                   <span style={{ color: '#f59e0b' }}>● {result.vague_count} fluffy</span>
+                  {typeof result.backed_count === 'number' && (
+                    <span style={{ color: '#60a5fa' }}>● {result.backed_count} backed by your site</span>
+                  )}
                   <span style={{ color: '#555', marginLeft: 'auto' }}>{result.promise_count} total promises</span>
                 </div>
                 <div
@@ -313,9 +338,13 @@ export default function PromiseAudit() {
                     <span style={{ color: '#22c55e', fontWeight: 600 }}>● Specific</span>
                     <span style={{ color: '#666' }}> — a real, testable claim. Something a user (or a scanner) can actually check, like "Sign in with Google" or "Stripe checkout".</span>
                   </p>
-                  <p>
+                  <p style={{ marginBottom: 6 }}>
                     <span style={{ color: '#f59e0b', fontWeight: 600 }}>● Fluffy</span>
                     <span style={{ color: '#666' }}> — marketing language with no proof. Words like "powerful", "seamless", or "founder-friendly" — nice to read, impossible to verify.</span>
+                  </p>
+                  <p>
+                    <span style={{ color: '#60a5fa', fontWeight: 600 }}>● Backed by your site</span>
+                    <span style={{ color: '#666' }}> — we cross-checked each promise against signals from your live homepage (matching brands, /privacy, /pricing, signup, trust badges, etc.) and confirmed the claim is visible.</span>
                   </p>
                 </div>
               </div>
@@ -401,6 +430,12 @@ export default function PromiseAudit() {
               <div className="mt-6 grid grid-cols-1 gap-3">
                 {result.promises.map((p, i) => {
                   const isClear = p.clarity === 'clear';
+                  const reality = result.reality_checks?.find((r) => r.index === i);
+                  const realityMeta = reality?.status === 'backed'
+                    ? { label: 'BACKED BY YOUR SITE', color: '#60a5fa', bg: '#0a1726', border: '#1e3a5f' }
+                    : reality?.status === 'missing'
+                      ? { label: "NOT FOUND ON SITE", color: '#ef4444', bg: '#1a0a0a', border: '#3a1010' }
+                      : { label: "COULDN'T VERIFY", color: '#a1a1aa', bg: '#0f0f0f', border: '#232323' };
                   return (
                     <div key={i} className="vercel-card flex items-start gap-3">
                       {isClear ? (
@@ -423,6 +458,19 @@ export default function PromiseAudit() {
                         <p style={{ fontSize: 15, color: '#fff', fontWeight: 500, lineHeight: 1.45 }}>"{p.claim}"</p>
                         {p.why && (
                           <p style={{ fontSize: 13, color: '#888', marginTop: 6, lineHeight: 1.5 }}>{p.why}</p>
+                        )}
+                        {reality && (
+                          <div
+                            className="mt-3 rounded-md px-3 py-2 flex items-start gap-2"
+                            style={{ background: realityMeta.bg, border: `1px solid ${realityMeta.border}` }}
+                          >
+                            <span style={{ fontSize: 10, letterSpacing: '0.08em', color: realityMeta.color, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+                              {realityMeta.label}
+                            </span>
+                            <span style={{ fontSize: 12.5, color: '#bbb', lineHeight: 1.5 }}>
+                              {reality.evidence}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -630,8 +678,8 @@ export default function PromiseAudit() {
                 </div>
                 <div className="vercel-card">
                   <p style={{ fontSize: 11, color: '#666', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 10 }}>03 — GRADE</p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Specific vs. fluffy</p>
-                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Real, testable claims score high. Marketing fluff with nothing to verify drags your clarity score down.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Grade + cross-check</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Specific vs. fluffy gives you a clarity score. Then we cross-check each promise against signals on your live site (brands, /privacy, /pricing, signup, trust badges) to flag what's <span style={{ color: '#60a5fa' }}>backed</span> vs. <span style={{ color: '#ef4444' }}>missing</span>.</p>
                 </div>
               </div>
               <p style={{ fontSize: 14, color: '#666', textAlign: 'center', marginTop: 32, lineHeight: 1.6 }}>
