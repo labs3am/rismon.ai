@@ -8,6 +8,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import WaitlistModal from '@/components/WaitlistModal';
+import WelcomeGuide from '@/components/WelcomeGuide';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getGithubToken, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
@@ -663,6 +664,8 @@ export default function Dashboard() {
                 </button>
               </div>
             )}
+
+            {hasApp && <WelcomeGuide />}
 
             {renderMain()}
           </div>
