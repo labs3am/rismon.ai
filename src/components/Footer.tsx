@@ -109,13 +109,24 @@ export default function Footer() {
           </div>
 
           {/* Legal */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-2">
             <h3 className={headingCls}>Legal</h3>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/security" className={linkCls}>Security</Link></li>
               <li><Link to="/status" className={linkCls}>Status</Link></li>
               <li><Link to="/privacy" className={linkCls}>Privacy Policy</Link></li>
               <li><Link to="/terms" className={linkCls}>Terms of Service</Link></li>
+            </ul>
+          </div>
+
+          {/* For builders — internal links so Google can crawl /for/* and /how-we-score */}
+          <div className="md:col-span-1">
+            <h3 className={headingCls}>For</h3>
+            <ul className="flex flex-col" style={{ lineHeight: 2 }}>
+              <li><Link to="/for/lovable" className={linkCls}>Lovable</Link></li>
+              <li><Link to="/for/bolt" className={linkCls}>Bolt</Link></li>
+              <li><Link to="/for/cursor" className={linkCls}>Cursor</Link></li>
+              <li><Link to="/how-we-score" className={linkCls}>How we score</Link></li>
             </ul>
           </div>
         </div>
