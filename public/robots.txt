@@ -25,6 +25,9 @@ Allow: /about
 Allow: /security
 Allow: /open-source
 Allow: /for/
+Allow: /promise-audit
+Allow: /promise-audit/
+Allow: /how-we-score
 Allow: /privacy
 Allow: /terms
 Allow: /sitemap.xml
