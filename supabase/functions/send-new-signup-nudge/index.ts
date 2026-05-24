@@ -28,10 +28,10 @@ function buildHtml(userName?: string): string {
       </p>
       <p style="margin:0 0 14px;font-family:${BRAND.font};font-size:13px;color:${BRAND.accent};letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">What you'll see in your first report</p>
       <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;background-color:${BRAND.cardInner};border:1px solid ${BRAND.border};border-radius:12px;padding:6px 22px;">
-        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Paywalls that accidentally give everyone Pro for free</td></tr>
-        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Admin pages any visitor can open</td></tr>
-        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Features your landing page promises but the code doesn't deliver</td></tr>
-        <tr><td style="padding:14px 0;font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">User data visible to other users</td></tr>
+        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Paywalls that may accidentally give everyone Pro for free</td></tr>
+        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Admin pages any visitor may be able to open</td></tr>
+        <tr><td style="padding:14px 0;border-bottom:1px solid ${BRAND.border};font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">Features your landing page promises but the code may not deliver</td></tr>
+        <tr><td style="padding:14px 0;font-family:${BRAND.font};font-size:14px;color:${BRAND.textMuted};line-height:1.6;">User data that may be visible to other users</td></tr>
       </table>
       ${ctaButton("Run my first scan →", BRAND.dashboardUrl)}
       <p style="margin:14px 0 0;font-family:${BRAND.font};font-size:12px;color:${BRAND.textDim};">Free. No credit card. ~90 seconds.</p>
