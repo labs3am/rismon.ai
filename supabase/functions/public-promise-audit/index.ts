@@ -11,7 +11,7 @@ const corsHeaders = {
 
 const DAILY_LIMIT = 3;
 const FETCH_TIMEOUT_MS = 8000;
-const JINA_TIMEOUT_MS = 10000;
+const JINA_TIMEOUT_MS = 15000;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -98,21 +98,32 @@ async function fetchPageText(url: string): Promise<{ text: string; title: string
   } catch {/* fall through to jina */}
 
   let text = stripHtml(html);
-  // SPA fallback: short text or no headings -> rendered fetch via r.jina.ai
+  // SPA fallback: short text or no headings -> rendered fetch via r.jina.ai.
+  // Jina can be flaky/slow on cold calls, so retry once before giving up.
   const headings = (html.match(/<h[1-3][^>]*>([^<]+)<\/h[1-3]>/gi) || []).length;
   if (text.length < 2000 || headings < 2) {
-    try {
-      const jinaRes = await fetchWithTimeout(`https://r.jina.ai/${url}`, JINA_TIMEOUT_MS, {
-        headers: { "User-Agent": "RismonBot/1.0" },
-      });
-      if (jinaRes.ok) {
-        const md = await jinaRes.text();
-        // r.jina.ai returns markdown with a header block; strip it.
-        const stripped = md.replace(/^Title:.*$/m, "").replace(/^URL Source:.*$/m, "").replace(/^Markdown Content:/m, "").trim();
-        if (stripped.length > text.length) text = stripped;
-        if (!title) title = md.match(/^Title:\s*(.+)$/m)?.[1] || "";
-      }
-    } catch {/* keep raw text */}
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const jinaRes = await fetchWithTimeout(`https://r.jina.ai/${url}`, JINA_TIMEOUT_MS, {
+          headers: { "User-Agent": "RismonBot/1.0" },
+        });
+        if (jinaRes.ok) {
+          const md = await jinaRes.text();
+          const stripped = md.replace(/^Title:.*$/m, "").replace(/^URL Source:.*$/m, "").replace(/^Markdown Content:/m, "").trim();
+          if (stripped.length > text.length) text = stripped;
+          if (!title) title = md.match(/^Title:\s*(.+)$/m)?.[1] || "";
+          if (text.length >= 200) break;
+        }
+      } catch {/* retry */}
+      if (attempt === 0) await new Promise(r => setTimeout(r, 600));
+    }
+  }
+
+  // Always fold title + meta description into the text corpus so minimal
+  // SPA pages with good metadata still pass the 80-char floor.
+  const metaBlob = [title, description].filter(Boolean).join(" — ");
+  if (metaBlob && !text.includes(metaBlob)) {
+    text = `${metaBlob}\n\n${text}`.trim();
   }
 
   return {
