@@ -101,6 +101,7 @@ export default function ForPlatform() {
         title={`Rismon for ${c.name} — Scan your AI-built app`}
         description={`${c.tagline} Rismon reviews ${c.name} apps for security gaps, intent drift, and legal mismatches. Free first scan.`}
         canonicalPath={`/for/${key}`}
+        robots="index, follow"
       />
       <Navbar />
 

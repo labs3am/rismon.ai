@@ -10,6 +10,7 @@ export default function Privacy() {
         title="Privacy Policy — Rismon.ai"
         description="How Rismon.ai handles your code, GitHub tokens, and Supabase keys. Read-only access, no source code stored, transparent data flow."
         canonicalPath="/privacy"
+        robots="index, follow"
       />
       <Navbar />
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">

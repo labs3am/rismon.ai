@@ -70,6 +70,7 @@ export default function OpenSource() {
         title="Open Source — Rismon.ai"
         description="Rismon is open source. Read the scanner, inspect the prompts, file issues, or fork it. MIT-licensed and built in public."
         canonicalPath="/open-source"
+        robots="index, follow"
       />
       <Navbar />
 
