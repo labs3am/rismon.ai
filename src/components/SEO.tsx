@@ -92,7 +92,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
         cleanupScript.remove();
       }
     };
-  }, [title, description, canonicalPath, image, noindex, location.pathname, jsonLd, type]);
+  }, [title, description, canonicalPath, image, noindex, robots, location.pathname, jsonLd, type]);
 
   return null;
 }
