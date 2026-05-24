@@ -46,7 +46,7 @@ const upsertLink = (rel: string, href: string) => {
  * Per-page SEO updater. Keeps title, description, canonical and social cards
  * in sync with the current route so Google shows the right snippet for each link.
  */
-export default function SEO({ title, description, canonicalPath, image, noindex, jsonLd, type = 'website' }: SEOProps) {
+export default function SEO({ title, description, canonicalPath, image, noindex, robots, jsonLd, type = 'website' }: SEOProps) {
   const location = useLocation();
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
 
     document.title = trimmedTitle;
     upsertMeta('meta[name="description"]', 'name', 'description', trimmedDesc);
-    upsertMeta('meta[name="robots"]', 'name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
+    upsertMeta('meta[name="robots"]', 'name', 'robots', robots ?? (noindex ? 'noindex, nofollow' : 'index, follow'));
 
     upsertLink('canonical', canonicalUrl);
 
