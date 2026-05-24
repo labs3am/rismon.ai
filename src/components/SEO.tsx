@@ -10,6 +10,8 @@ interface SEOProps {
   image?: string;
   /** Set to true for auth/admin/utility pages we don't want indexed. */
   noindex?: boolean;
+  /** Explicit robots directive. Defaults to "index, follow". Use "noindex, nofollow" to block. */
+  robots?: string;
   /** JSON-LD structured data object to inject as <script type="application/ld+json"> */
   jsonLd?: Record<string, unknown>;
   /** OpenGraph type. Defaults to 'website'. Use 'article' for blog posts. */
