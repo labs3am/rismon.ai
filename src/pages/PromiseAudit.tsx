@@ -180,6 +180,7 @@ export default function PromiseAudit() {
   return (
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
+        robots="index, follow"
         title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free Website Claim Checker | Rismon'}
         description={result
           ? `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Run a free promise audit on any homepage.`
