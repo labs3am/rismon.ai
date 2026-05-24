@@ -584,6 +584,22 @@ export default function AdminDashboard() {
 
             <div className="grid lg:grid-cols-2 gap-4">
               <div className="bg-card border border-border rounded-2xl p-5">
+                <h3 className="text-foreground font-semibold text-sm">Recent signups</h3>
+                <p className="text-subtle text-xs mt-1">Newest accounts first.</p>
+                <div className="mt-4 space-y-1">
+                  {users.slice(0, 8).map((u) => (
+                    <div key={u.id} className="flex items-center justify-between py-2 border-t border-border first:border-t-0 gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-foreground text-sm truncate">{u.email}</div>
+                        <div className="text-subtle text-xs truncate">{u.full_name || "—"}</div>
+                      </div>
+                      <div className="text-subtle text-xs">{formatDate(u.created_at)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5">
                 <h3 className="text-foreground font-semibold text-sm">Top scanners</h3>
                 <p className="text-subtle text-xs mt-1">Most active users by scan count.</p>
                 <div className="mt-4 space-y-1">
@@ -605,22 +621,6 @@ export default function AdminDashboard() {
                       </div>
                     ))
                   )}
-                </div>
-              </div>
-
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <h3 className="text-foreground font-semibold text-sm">Recent signups</h3>
-                <p className="text-subtle text-xs mt-1">Newest accounts first.</p>
-                <div className="mt-4 space-y-1">
-                  {users.slice(0, 8).map((u) => (
-                    <div key={u.id} className="flex items-center justify-between py-2 border-t border-border first:border-t-0 gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-foreground text-sm truncate">{u.email}</div>
-                        <div className="text-subtle text-xs truncate">{u.full_name || "—"}</div>
-                      </div>
-                      <div className="text-subtle text-xs">{formatDate(u.created_at)}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
