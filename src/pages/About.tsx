@@ -29,6 +29,7 @@ export default function About() {
         title="About — Rismon.ai"
         description="Why we built Rismon: every founder shipping with AI deserves to understand what their app actually does — and whether it's safe."
         canonicalPath="/about"
+        robots="index, follow"
       />
       <Navbar />
 

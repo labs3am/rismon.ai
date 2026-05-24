@@ -10,6 +10,8 @@ interface SEOProps {
   image?: string;
   /** Set to true for auth/admin/utility pages we don't want indexed. */
   noindex?: boolean;
+  /** Explicit robots directive. Defaults to "index, follow". Use "noindex, nofollow" to block. */
+  robots?: string;
   /** JSON-LD structured data object to inject as <script type="application/ld+json"> */
   jsonLd?: Record<string, unknown>;
   /** OpenGraph type. Defaults to 'website'. Use 'article' for blog posts. */
@@ -44,7 +46,7 @@ const upsertLink = (rel: string, href: string) => {
  * Per-page SEO updater. Keeps title, description, canonical and social cards
  * in sync with the current route so Google shows the right snippet for each link.
  */
-export default function SEO({ title, description, canonicalPath, image, noindex, jsonLd, type = 'website' }: SEOProps) {
+export default function SEO({ title, description, canonicalPath, image, noindex, robots, jsonLd, type = 'website' }: SEOProps) {
   const location = useLocation();
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
 
     document.title = trimmedTitle;
     upsertMeta('meta[name="description"]', 'name', 'description', trimmedDesc);
-    upsertMeta('meta[name="robots"]', 'name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
+    upsertMeta('meta[name="robots"]', 'name', 'robots', robots ?? (noindex ? 'noindex, nofollow' : 'index, follow'));
 
     upsertLink('canonical', canonicalUrl);
 
@@ -90,7 +92,7 @@ export default function SEO({ title, description, canonicalPath, image, noindex,
         cleanupScript.remove();
       }
     };
-  }, [title, description, canonicalPath, image, noindex, location.pathname, jsonLd, type]);
+  }, [title, description, canonicalPath, image, noindex, robots, location.pathname, jsonLd, type]);
 
   return null;
 }

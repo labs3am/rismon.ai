@@ -130,6 +130,7 @@ export default function Security() {
         title="Security & Trust — Rismon.ai"
         description="How Rismon protects your code: read-only GitHub access, code never stored, what data we keep, and exactly what our team can and cannot see."
         canonicalPath="/security"
+        robots="index, follow"
       />
       <Navbar />
 
