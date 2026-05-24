@@ -1,6 +1,34 @@
 # Rismon.ai — robots.txt
 # Default: allow everything. Block only private app routes.
 
+User-agent: Googlebot
+Allow: /promise-audit
+Allow: /
+Disallow: /dashboard
+Disallow: /connect
+Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+Disallow: /api
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+
+User-agent: Google-InspectionTool
+Allow: /promise-audit
+Allow: /
+Disallow: /dashboard
+Disallow: /connect
+Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+Disallow: /api
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+
 User-agent: *
 Allow: /
 
