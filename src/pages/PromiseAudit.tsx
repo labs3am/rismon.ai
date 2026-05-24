@@ -180,11 +180,61 @@ export default function PromiseAudit() {
   return (
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
-        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free, no login | Rismon'}
+        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free Website Claim Checker | Rismon'}
         description={result
-          ? `${result.host} scored ${result.clarity_score ?? '—'}/100. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Audit your own homepage free.`
-          : 'Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds.'}
+          ? `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Run a free promise audit on any homepage.`
+          : 'Free Promise Audit by Rismon. Paste any URL — we extract every marketing claim your homepage makes, score clarity vs. fluff, and reality-check each promise against your live site. No login. No repo. 30 seconds.'}
         canonicalPath={result?.id ? `/promise-audit/${result.id}` : '/promise-audit'}
+        jsonLd={result ? {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: `Promise Audit — ${result.host}`,
+          url: `https://rismon.ai/promise-audit/${result.id ?? ''}`,
+          description: `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit. ${result.clear_count} specific, ${result.vague_count} fluffy promises.`,
+          breadcrumb: {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rismon.ai/' },
+              { '@type': 'ListItem', position: 2, name: 'Promise Audit', item: 'https://rismon.ai/promise-audit' },
+              { '@type': 'ListItem', position: 3, name: result.host, item: `https://rismon.ai/promise-audit/${result.id ?? ''}` },
+            ],
+          },
+        } : {
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'SoftwareApplication',
+              name: 'Rismon Promise Audit',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              url: 'https://rismon.ai/promise-audit',
+              description: 'Free tool that extracts every claim from a website homepage, grades each one as specific or fluffy, and reality-checks promises against the live site.',
+              offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+              featureList: [
+                'Extracts marketing claims from any public URL',
+                'Scores clarity (specific vs. fluffy)',
+                'Reality-checks promises against live homepage signals',
+                'Shareable public audit report',
+              ],
+            },
+            {
+              '@type': 'FAQPage',
+              mainEntity: [
+                { '@type': 'Question', name: 'What is a Promise Audit?', acceptedAnswer: { '@type': 'Answer', text: 'A Promise Audit pulls every claim your homepage makes — features, integrations, guarantees — and tells you which are specific (testable) and which are vague marketing fluff. It then checks each promise against your live site.' } },
+                { '@type': 'Question', name: 'Is the Promise Audit free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Three free audits per day per IP, no login or credit card required.' } },
+                { '@type': 'Question', name: 'How long does it take?', acceptedAnswer: { '@type': 'Answer', text: 'About 30 seconds. Paste a URL and Rismon returns a clarity score, a reality score, and the full list of promises.' } },
+                { '@type': 'Question', name: 'Do I need to connect my code?', acceptedAnswer: { '@type': 'Answer', text: 'No. The Promise Audit works on any public website — no GitHub, no repo, no signup.' } },
+              ],
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rismon.ai/' },
+                { '@type': 'ListItem', position: 2, name: 'Promise Audit', item: 'https://rismon.ai/promise-audit' },
+              ],
+            },
+          ],
+        }}
       />
       <Navbar />
 
