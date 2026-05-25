@@ -36,6 +36,19 @@ export default function Contact() {
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
       });
       if (error) throw error;
+      try {
+        await supabase.functions.invoke('send-contact-message', {
+          body: {
+            name: parsed.data.name,
+            email: parsed.data.email,
+            subject: parsed.data.subject || null,
+            message: parsed.data.message,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
+          },
+        });
+      } catch (e) {
+        console.warn('send-contact-message failed (message is still saved):', e);
+      }
       setSent(true);
       setForm({ name: '', email: '', subject: '', message: '' });
     } catch (err: any) {
@@ -86,7 +99,7 @@ export default function Contact() {
           Talk to the team behind Rismon.ai
         </h1>
         <p style={{ color: '#a1a1aa', fontSize: 17, lineHeight: 1.7, marginTop: 16, maxWidth: 560 }}>
-          Questions about a scan, partnership ideas, press, or product feedback — drop us a note below and we'll reply within one business day.
+          Questions about a scan, partnership ideas, press, or product feedback — drop us a note below and we'll reply within one business day. Prefer email? Write to <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>.
         </p>
 
         {/* Contact form */}
@@ -96,7 +109,7 @@ export default function Contact() {
               <CheckCircle2 size={36} style={{ color: '#22c55e', margin: '0 auto 12px' }} />
               <div style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Message sent</div>
               <p style={{ color: '#a1a1aa', fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
-                Thanks for reaching out — we'll get back to you within one business day.
+                Thanks for reaching out — we'll get back to you within one business day at the email you provided. You can also reach us anytime at <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>.
               </p>
               <button
                 type="button"
@@ -160,9 +173,11 @@ export default function Contact() {
         <div className="grid sm:grid-cols-2 gap-4" style={{ marginTop: 40 }}>
           <div style={cardStyle}>
             <Mail size={20} style={{ color: '#f97316' }} />
-            <div style={{ color: '#fff', fontSize: 16, fontWeight: 600, marginTop: 14 }}>Form, not inbox</div>
-            <div style={{ color: '#a1a1aa', fontSize: 14, marginTop: 4 }}>Use the form above</div>
-            <div style={{ color: '#52525b', fontSize: 12, marginTop: 10 }}>Goes straight to the team — for support, billing, partnerships, and press.</div>
+            <div style={{ color: '#fff', fontSize: 16, fontWeight: 600, marginTop: 14 }}>Prefer email?</div>
+            <div style={{ color: '#a1a1aa', fontSize: 14, marginTop: 4 }}>
+              <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>
+            </div>
+            <div style={{ color: '#52525b', fontSize: 12, marginTop: 10 }}>Write to us directly — for support, billing, partnerships, and press.</div>
           </div>
 
           <a href="https://github.com/labs3am/rismon.ai/issues" target="_blank" rel="noopener noreferrer" style={cardStyle} className="block hover:border-white/20 transition-colors">
