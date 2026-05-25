@@ -4,6 +4,8 @@ import { ArrowRight, Globe, CheckCircle2, AlertTriangle, Loader2, ExternalLink, 
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
+import FeaturedScans from '@/components/FeaturedScans';
+import BuiltOnLovable from '@/components/BuiltOnLovable';
 import { supabase } from '@/integrations/supabase/client';
 
 type Promise_ = {
@@ -322,8 +324,14 @@ export default function PromiseAudit() {
                 <p style={{ fontSize: 13, color: '#fca5a5', lineHeight: 1.5 }}>{error}</p>
               </div>
             )}
+            <div className="mt-5 flex justify-center">
+              <BuiltOnLovable />
+            </div>
           </div>
         </section>
+
+        {/* Featured example scans — shown when the user hasn't run one yet */}
+        {!result && !loading && <FeaturedScans />}
 
         {/* RESULTS */}
         {result && (
