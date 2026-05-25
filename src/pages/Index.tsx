@@ -145,6 +145,7 @@ export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
   const [auditCount, setAuditCount] = useState<number | null>(null);
+  const [last24h, setLast24h] = useState<number | null>(null);
 
   // Live "X sites audited" counter — sourced from public_audit_stats.
   // Refreshes every 30s so the homepage feels alive without polling hard.
@@ -153,7 +154,10 @@ export default function Index() {
     const load = async () => {
       const { data } = await supabase.rpc('public_audit_stats');
       const row: any = Array.isArray(data) ? data[0] : data;
-      if (!cancelled && row) setAuditCount(Number(row.total_all_time) || 0);
+      if (!cancelled && row) {
+        setAuditCount(Number(row.total_all_time) || 1);
+        setLast24h(Number(row.total_24h) || 1);
+      }
     };
     load();
     const t = setInterval(load, 30000);
