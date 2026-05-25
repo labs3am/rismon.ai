@@ -250,20 +250,34 @@ export default function PromiseAudit() {
             </p>
 
             {stats && stats.total_all_time > 0 && (
-              <div
-                aria-live="polite"
-                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-2.5 pl-3 pr-4 py-2"
-              >
-                <span className="rismon-glass-dot">
-                  <span className="rismon-glass-dot-ping" />
-                  <span className="rismon-glass-dot-core" />
-                </span>
-                <span className="rismon-glass-sentence">
-                  <strong>{stats.total_all_time.toLocaleString()}</strong>
-                  {stats.total_all_time === 1
-                    ? ' site audited by Rismon so far'
-                    : ' sites audited by Rismon so far'}
-                </span>
+              <div className="inline-flex items-center justify-center gap-6 mt-5 mx-auto group" style={{ textDecoration: 'none' }}>
+                <div className="flex flex-col items-center">
+                  <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {stats.total_all_time.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Sites audited
+                  </span>
+                </div>
+                <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+                <div className="flex flex-col items-center">
+                  <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {stats.total_24h.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Last 24h
+                  </span>
+                </div>
+                <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+                <div className="flex flex-col items-center">
+                  <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+                    <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Updating now
+                  </span>
+                </div>
               </div>
             )}
 
