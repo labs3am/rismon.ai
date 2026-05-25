@@ -15,6 +15,27 @@ function esc(s: string) {
   }[c] as string));
 }
 
+// Mirror of the client-side filter — blocks prompt-injection attempts and
+// suspicious payloads server-side so the form can't be bypassed by a custom client.
+const SUSPICIOUS_PATTERNS: RegExp[] = [
+  /\bignore\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts|rules)\b/i,
+  /\b(system|developer|assistant)\s*:\s*you\s+are\b/i,
+  /\b(jailbreak|DAN mode|do anything now|act as (an? )?(unrestricted|uncensored))\b/i,
+  /\b(disregard|override|bypass)\s+(your|the)\s+(instructions|guidelines|policies|rules|system prompt)\b/i,
+  /\b(reveal|print|show|leak|expose)\s+(your|the)\s+(system\s*prompt|instructions|source\s*code|api[\s-]?key|secret|env|environment)\b/i,
+  /<\s*script[\s>]/i,
+  /\bjavascript\s*:/i,
+  /\bdata:\s*text\/html/i,
+  /\.(exe|bat|cmd|sh|ps1|msi|apk|dmg|jar|scr|vbs)\b/i,
+  /\b(?:https?:\/\/|www\.)?(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gid|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at)\/\S+/i,
+];
+
+function isSuspicious(text: string): boolean {
+  if (SUSPICIOUS_PATTERNS.some((re) => re.test(text))) return true;
+  const urls = text.match(/https?:\/\/\S+/gi) ?? [];
+  return urls.length > 3;
+}
+
 function buildHtml(d: { name: string; email: string; subject?: string | null; message: string; userAgent?: string | null }) {
   return `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:${BRAND.bg};font-family:${BRAND.font};color:${BRAND.text};">
   <div style="max-width:600px;margin:0 auto;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:14px;overflow:hidden;">
@@ -50,6 +71,11 @@ Deno.serve(async (req) => {
     if (!name || name.length > 200) return new Response(JSON.stringify({ error: "invalid_name" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 320) return new Response(JSON.stringify({ error: "invalid_email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!message || message.length > 5000) return new Response(JSON.stringify({ error: "invalid_message" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    if (isSuspicious(`${name}\n${subject ?? ""}\n${message}`)) {
+      console.warn("send-contact-message: blocked suspicious submission", { name, email });
+      return new Response(JSON.stringify({ error: "blocked_suspicious_content" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
