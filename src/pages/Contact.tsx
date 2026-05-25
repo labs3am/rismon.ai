@@ -36,6 +36,19 @@ export default function Contact() {
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
       });
       if (error) throw error;
+      try {
+        await supabase.functions.invoke('send-contact-message', {
+          body: {
+            name: parsed.data.name,
+            email: parsed.data.email,
+            subject: parsed.data.subject || null,
+            message: parsed.data.message,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
+          },
+        });
+      } catch (e) {
+        console.warn('send-contact-message failed (message is still saved):', e);
+      }
       setSent(true);
       setForm({ name: '', email: '', subject: '', message: '' });
     } catch (err: any) {
