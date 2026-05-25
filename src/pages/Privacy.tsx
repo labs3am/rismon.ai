@@ -16,11 +16,21 @@ export default function Privacy() {
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />
         <h1 className="text-foreground text-4xl font-semibold">Privacy Policy</h1>
-        <p className="text-muted-foreground text-sm mt-2">Last updated: May 17, 2026</p>
+        <p className="text-muted-foreground text-sm mt-2">Last updated: May 25, 2026</p>
         <div className="mt-10 space-y-8 text-muted-foreground leading-[1.8]">
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">What we collect</h2>
             <p>Name, email, company name, and analysis results (not your code).</p>
+          </section>
+
+          <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Contact form &amp; waitlist</h2>
+            <p>When you submit our contact form we store your name, email, subject, message, and browser user agent so we can reply. When you join the waitlist we store only your email address. We email submissions to <a href="mailto:hello@rismon.ai" className="text-primary hover:underline">hello@rismon.ai</a> via Resend so the team can respond. We never use these emails for marketing, never share them with third parties, and disposable inboxes (mailinator, tempmail, etc.) are blocked at submission time so we can actually reply to you.</p>
+          </section>
+
+          <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Analytics</h2>
+            <p>We record privacy-preserving page-view analytics: the URL path you visited, the referring page (if any), an opaque session identifier, and your viewport size. We do not store IP addresses, browser fingerprints, cookies for tracking, or any data we could use to identify you across sessions. Admins can see aggregate page-view counts only.</p>
           </section>
 
           <section>
@@ -62,6 +72,11 @@ export default function Privacy() {
           </section>
 
           <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Admin actions are audited</h2>
+            <p>Every privileged action a Rismon admin takes (changing a user's plan, deleting an account, rotating an internal secret) is recorded in a tamper-resistant audit log. The log captures the admin's identity, the action, and the affected user — so we can hold ourselves accountable and answer any question you have about your account.</p>
+          </section>
+
+          <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">GitHub permissions</h2>
             <p>We request read-only access to your repositories. We cannot modify, delete, or push code to your GitHub account. You can revoke access anytime from your <a href="https://github.com/settings/applications" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GitHub Settings → Applications</a>.</p>
           </section>
@@ -72,6 +87,7 @@ export default function Privacy() {
               <li><strong className="text-foreground">Anthropic (Claude)</strong> — processes code snippets during analysis. Per their <a href="https://www.anthropic.com/policies/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">API privacy policy</a>, API inputs are not used for training and are not retained after processing.</li>
               <li><strong className="text-foreground">Lovable AI Gateway</strong> — processes the text of public pages submitted to the Promise Audit. Inputs are used only to return the audit result and are not used for model training.</li>
               <li><strong className="text-foreground">Supabase</strong> — hosts our database and authentication. Stores your account and analysis results only.</li>
+              <li><strong className="text-foreground">Resend</strong> — delivers transactional email (contact form replies, scan-ready notifications). They only see the email content needed to deliver the message.</li>
             </ul>
           </section>
 
