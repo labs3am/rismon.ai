@@ -14,6 +14,34 @@ const contactSchema = z.object({
   message: z.string().trim().min(1, 'Message is required').max(5000),
 });
 
+// Block prompt-injection attempts and suspicious payloads in free-text fields.
+// Returns a user-friendly reason if the input looks malicious, else null.
+const SUSPICIOUS_PATTERNS: { re: RegExp; reason: string }[] = [
+  { re: /\bignore\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts|rules)\b/i, reason: 'Prompt-injection language is not allowed.' },
+  { re: /\b(system|developer|assistant)\s*:\s*you\s+are\b/i, reason: 'Prompt-injection language is not allowed.' },
+  { re: /\b(jailbreak|DAN mode|do anything now|act as (an? )?(unrestricted|uncensored))\b/i, reason: 'Jailbreak phrasing is not allowed.' },
+  { re: /\b(disregard|override|bypass)\s+(your|the)\s+(instructions|guidelines|policies|rules|system prompt)\b/i, reason: 'Prompt-injection language is not allowed.' },
+  { re: /\b(reveal|print|show|leak|expose)\s+(your|the)\s+(system\s*prompt|instructions|source\s*code|api[\s-]?key|secret|env|environment)\b/i, reason: 'Requests to reveal internals are not allowed.' },
+  { re: /<\s*script[\s>]/i, reason: 'Script tags are not allowed.' },
+  { re: /\bjavascript\s*:/i, reason: 'javascript: links are not allowed.' },
+  { re: /\bdata:\s*text\/html/i, reason: 'Inline HTML data URLs are not allowed.' },
+  { re: /\.(exe|bat|cmd|sh|ps1|msi|apk|dmg|jar|scr|vbs)\b/i, reason: 'Executable file references are not allowed. Describe the issue in text instead.' },
+  { re: /\b(?:https?:\/\/|www\.)?(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gid|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at)\/\S+/i, reason: 'Shortened URLs are not allowed — please paste the full link.' },
+];
+
+function detectSuspicious(text: string): string | null {
+  for (const { re, reason } of SUSPICIOUS_PATTERNS) {
+    if (re.test(text)) return reason;
+  }
+  // Cap on number of links pasted in a single message
+  const urls = text.match(/https?:\/\/\S+/gi) ?? [];
+  if (urls.length > 3) return 'Too many links in one message — please share at most 3.';
+  return null;
+}
+
+const COOLDOWN_MS = 30_000;
+const COOLDOWN_KEY = 'rismon:contact:lastSent';
+
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -26,6 +54,22 @@ export default function Contact() {
       toast({ title: 'Please check the form', description: parsed.error.issues[0]?.message ?? 'Invalid input', variant: 'destructive' });
       return;
     }
+    // Block prompt-injection / suspicious payloads in user-controlled free text
+    const combined = `${parsed.data.name}\n${parsed.data.subject ?? ''}\n${parsed.data.message}`;
+    const suspicious = detectSuspicious(combined);
+    if (suspicious) {
+      toast({ title: "We can't send that message", description: suspicious, variant: 'destructive' });
+      return;
+    }
+    // Simple client-side cooldown to discourage spammy double-submits
+    try {
+      const last = Number(localStorage.getItem(COOLDOWN_KEY) ?? '0');
+      const wait = COOLDOWN_MS - (Date.now() - last);
+      if (wait > 0) {
+        toast({ title: 'Please slow down', description: `You can send another message in ${Math.ceil(wait / 1000)}s.`, variant: 'destructive' });
+        return;
+      }
+    } catch { /* localStorage unavailable — ignore */ }
     setSubmitting(true);
     try {
       const { error } = await supabase.from('contact_submissions').insert({
@@ -36,6 +80,7 @@ export default function Contact() {
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 500) : null,
       });
       if (error) throw error;
+      try { localStorage.setItem(COOLDOWN_KEY, String(Date.now())); } catch { /* ignore */ }
       try {
         await supabase.functions.invoke('send-contact-message', {
           body: {
