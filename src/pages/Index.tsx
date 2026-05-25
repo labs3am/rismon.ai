@@ -145,6 +145,7 @@ export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
   const [auditCount, setAuditCount] = useState<number | null>(null);
+  const [last24h, setLast24h] = useState<number | null>(null);
 
   // Live "X sites audited" counter — sourced from public_audit_stats.
   // Refreshes every 30s so the homepage feels alive without polling hard.
@@ -153,7 +154,10 @@ export default function Index() {
     const load = async () => {
       const { data } = await supabase.rpc('public_audit_stats');
       const row: any = Array.isArray(data) ? data[0] : data;
-      if (!cancelled && row) setAuditCount(Number(row.total_all_time) || 0);
+      if (!cancelled && row) {
+        setAuditCount(Number(row.total_all_time) || 1);
+        setLast24h(Number(row.total_24h) || 1);
+      }
     };
     load();
     const t = setInterval(load, 30000);
@@ -218,10 +222,10 @@ export default function Index() {
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
               <div className="flex flex-col items-center">
                 <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                  100<span style={{ color: '#666', fontSize: 20 }}>%</span>
+                  {last24h?.toLocaleString() ?? '—'}
                 </span>
                 <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Real scans
+                  Last 24h
                 </span>
               </div>
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
