@@ -1,4 +1,5 @@
 import { BRAND } from "../_shared/email-brand.ts";
+import { isSuspicious, isDisposableEmail } from "../_shared/content-filter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,27 +14,6 @@ function esc(s: string) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c] as string));
-}
-
-// Mirror of the client-side filter — blocks prompt-injection attempts and
-// suspicious payloads server-side so the form can't be bypassed by a custom client.
-const SUSPICIOUS_PATTERNS: RegExp[] = [
-  /\bignore\s+(all\s+)?(previous|prior|above)\s+(instructions|prompts|rules)\b/i,
-  /\b(system|developer|assistant)\s*:\s*you\s+are\b/i,
-  /\b(jailbreak|DAN mode|do anything now|act as (an? )?(unrestricted|uncensored))\b/i,
-  /\b(disregard|override|bypass)\s+(your|the)\s+(instructions|guidelines|policies|rules|system prompt)\b/i,
-  /\b(reveal|print|show|leak|expose)\s+(your|the)\s+(system\s*prompt|instructions|source\s*code|api[\s-]?key|secret|env|environment)\b/i,
-  /<\s*script[\s>]/i,
-  /\bjavascript\s*:/i,
-  /\bdata:\s*text\/html/i,
-  /\.(exe|bat|cmd|sh|ps1|msi|apk|dmg|jar|scr|vbs)\b/i,
-  /\b(?:https?:\/\/|www\.)?(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gid|buff\.ly|rebrand\.ly|cutt\.ly|shorturl\.at)\/\S+/i,
-];
-
-function isSuspicious(text: string): boolean {
-  if (SUSPICIOUS_PATTERNS.some((re) => re.test(text))) return true;
-  const urls = text.match(/https?:\/\/\S+/gi) ?? [];
-  return urls.length > 3;
 }
 
 function buildHtml(d: { name: string; email: string; subject?: string | null; message: string; userAgent?: string | null }) {
@@ -75,6 +55,10 @@ Deno.serve(async (req) => {
     if (isSuspicious(`${name}\n${subject ?? ""}\n${message}`)) {
       console.warn("send-contact-message: blocked suspicious submission", { name, email });
       return new Response(JSON.stringify({ error: "blocked_suspicious_content" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (isDisposableEmail(email)) {
+      return new Response(JSON.stringify({ error: "disposable_email" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

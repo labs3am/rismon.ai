@@ -8,6 +8,7 @@ import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { detectSuspicious } from '@/lib/contentFilter';
 import RisGuide from '@/components/RisGuide';
 import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
@@ -623,6 +624,14 @@ export default function Analyze() {
   // Stage 3: Analysis
   const runAnalysis = useCallback(async () => {
     if (analysisStarted.current) return;
+    // Guard the free-text concern against prompt injection before it reaches the model.
+    if (concern) {
+      const suspicious = detectSuspicious(concern);
+      if (suspicious) {
+        toast.error(suspicious);
+        return;
+      }
+    }
     analysisStarted.current = true;
     setStage('analyzing');
     // Switch the loader UI into "scan running" mode immediately so the
