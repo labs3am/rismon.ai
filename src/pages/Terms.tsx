@@ -16,7 +16,7 @@ export default function Terms() {
       <div className="max-w-[720px] mx-auto px-6 pt-28 pb-20">
         <BackButton useHistory label="Back" />
         <h1 className="text-foreground text-4xl font-semibold">Terms of Service</h1>
-        <p className="text-muted-foreground text-sm mt-2">Last updated: May 17, 2026</p>
+        <p className="text-muted-foreground text-sm mt-2">Last updated: May 25, 2026</p>
 
         <div className="flex items-start gap-3 mt-8 p-4 rounded-xl" style={{ background: '#191207', border: '1px solid #3a2810' }}>
           <AlertTriangle size={20} className="text-warning shrink-0 mt-0.5" />
@@ -35,6 +35,19 @@ export default function Terms() {
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">User Responsibilities</h2>
             <p>You are responsible for the security of your applications. Rismon.ai analysis is provided as guidance only.</p>
+          </section>
+          <section>
+            <h2 className="text-foreground text-xl font-semibold mb-3">Acceptable use</h2>
+            <p>To keep Rismon.ai safe and useful for everyone, you agree not to:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1.5">
+              <li>Attempt to manipulate, jailbreak, or override the AI models that power our scans, contact form, or any other surface (prompt injection, instruction overrides, etc.). Suspicious payloads are filtered automatically and may result in account suspension.</li>
+              <li>Submit content designed to attack other users, leak credentials, distribute malware, or exfiltrate code from our infrastructure.</li>
+              <li>Use disposable, throwaway, or fraudulent email addresses to sign up, join the waitlist, or contact us. We block known disposable domains at submission time.</li>
+              <li>Connect repositories, paste URLs, or upload content you do not have the legal right to analyze.</li>
+              <li>Scrape, mass-automate, or otherwise abuse our APIs, scan endpoints, or Promise Audit. Programmatic access requires written permission.</li>
+              <li>Attempt to bypass per-account scan limits, fair-use limits, or any other technical or policy-based limit.</li>
+            </ul>
+            <p className="mt-3">We reserve the right to block, rate-limit, or terminate any account that violates this section, with or without notice.</p>
           </section>
           <section>
             <h2 className="text-foreground text-xl font-semibold mb-3">Data Handling</h2>

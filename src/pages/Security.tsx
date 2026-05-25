@@ -130,6 +130,7 @@ export default function Security() {
         title="Security & Trust — Rismon.ai"
         description="How Rismon protects your code: read-only GitHub access, code never stored, what data we keep, and exactly what our team can and cannot see."
         canonicalPath="/security"
+        robots="index, follow"
       />
       <Navbar />
 
@@ -318,6 +319,56 @@ export default function Security() {
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* Application security */}
+        <section style={{ marginTop: 120 }}>
+          <SectionLabel>Application security</SectionLabel>
+          <SectionHeadline>The guardrails baked into every page and endpoint.</SectionHeadline>
+          <SectionLead>
+            We eat our own dog food. The same protections we look for in your code are running on rismon.ai right now —
+            and most of them are visible in our public repo if you want to verify.
+          </SectionLead>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: 16,
+              marginTop: 40,
+            }}
+          >
+            <PrincipleCard
+              icon={Lock}
+              title="Row-level security on every table"
+              body="Postgres RLS policies enforce per-user access at the database layer. Even if a bug bypasses our API, the database refuses to leak another user's row."
+            />
+            <PrincipleCard
+              icon={ShieldCheck}
+              title="Strict CSP + HSTS"
+              body="A locked-down Content Security Policy, HSTS preload, X-Frame-Options DENY, and a minimal Permissions-Policy block clickjacking, XSS, and rogue script injection."
+            />
+            <PrincipleCard
+              icon={EyeOff}
+              title="Prompt-injection filter"
+              body="Every free-text submission (contact form, scan concern, feedback) is scanned for jailbreak phrases, script tags, executable file refs, and shortened URLs before it reaches our AI models."
+            />
+            <PrincipleCard
+              icon={KeyRound}
+              title="Encrypted credentials"
+              body="Supabase URLs and anon keys you attach to an app are encrypted at rest with a vault-managed key and only decrypted server-side during a scan."
+            />
+            <PrincipleCard
+              icon={Eye}
+              title="Admin audit log"
+              body="Every privileged action (changing a plan, deleting an account, rotating a secret) is recorded with the admin's identity. Tamper-resistant and admin-readable only."
+            />
+            <PrincipleCard
+              icon={FileCode2}
+              title="Validated inputs, validated URLs"
+              body="Every form runs Zod validation client- and server-side. GitHub repo URLs are allowlist-checked to block SSRF tricks like javascript: or file:// payloads."
+            />
+          </div>
         </section>
 
         {/* What our team can / cannot see */}

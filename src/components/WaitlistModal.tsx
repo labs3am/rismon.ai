@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { isDisposableEmail } from '@/lib/contentFilter';
 
 interface Props { isOpen: boolean; onClose: () => void; }
 
@@ -15,8 +16,17 @@ export default function WaitlistModal({ isOpen, onClose }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    const trimmed = email.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed) || trimmed.length > 254) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (isDisposableEmail(trimmed)) {
+      toast.error('Please use a real email — disposable inboxes are not accepted');
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.from('waitlist').insert({ email });
+    const { error } = await supabase.from('waitlist').insert({ email: trimmed });
     if (error) {
       toast.error(error.code === '23505' ? 'Already on the waitlist' : 'Something went wrong');
     } else {

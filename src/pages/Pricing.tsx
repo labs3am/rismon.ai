@@ -23,6 +23,7 @@ export default function Pricing() {
         title="Pricing — Rismon.ai"
         description="Rismon.ai pricing: Free plan with 3 scans per week, full reports, and fix prompts. Pro at $12/mo for unlimited scans, priority analysis, and early features."
         canonicalPath="/pricing"
+        robots="index, follow"
       />
       <Index />
     </>

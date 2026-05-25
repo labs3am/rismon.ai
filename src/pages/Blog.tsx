@@ -78,6 +78,7 @@ export default function Blog() {
         title="Blog — Rismon.ai"
         description="Guides and deep dives on shipping production-ready AI-built apps. Verify findings, fix Supabase setups, and harden your stack."
         canonicalPath="/blog"
+        robots="index, follow"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Blog',

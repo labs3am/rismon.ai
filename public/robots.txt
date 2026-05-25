@@ -1,37 +1,38 @@
 # Rismon.ai — robots.txt
-# Public, SEO-indexable routes are listed explicitly for clarity.
-# Private app routes and duplicate-content sources are blocked.
+# Default: allow everything. Block only private app routes.
+
+User-agent: Googlebot
+Allow: /promise-audit
+Allow: /
+Disallow: /dashboard
+Disallow: /connect
+Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+Disallow: /api
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
+
+User-agent: Google-InspectionTool
+Allow: /promise-audit
+Allow: /
+Disallow: /dashboard
+Disallow: /connect
+Disallow: /analyze
+Disallow: /report
+Disallow: /settings
+Disallow: /admin
+Disallow: /api
+Disallow: /login
+Disallow: /signup
+Disallow: /reset-password
 
 User-agent: *
+Allow: /
 
-# --- Allow build assets (Googlebot needs CSS/JS to render the page) ---
-Allow: /assets/
-Allow: /*.css$
-Allow: /*.js$
-Allow: /*.svg$
-Allow: /*.png$
-Allow: /*.jpg$
-Allow: /*.webp$
-Allow: /*.woff2$
-
-# --- Public pages (explicit allow) ---
-Allow: /$
-Allow: /pricing
-Allow: /blog
-Allow: /blog/
-Allow: /sample-report
-Allow: /contact
-Allow: /about
-Allow: /security
-Allow: /open-source
-Allow: /for/
-Allow: /privacy
-Allow: /terms
-Allow: /sitemap.xml
-Allow: /favicon.png
-Allow: /manifest.json
-
-# --- Private app routes (no SEO value, keep out of index) ---
+# Private app routes (no SEO value)
 Disallow: /dashboard
 Disallow: /connect
 Disallow: /analyze
@@ -40,23 +41,12 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /api
 
-# --- Auth + utility routes (no SEO value) ---
+# Auth routes
 Disallow: /login
 Disallow: /signup
 Disallow: /reset-password
 
-# --- Block duplicate-content crawl paths ---
-# Tracking and session params create duplicate URLs of the same page.
-Disallow: /*?*utm_
-Disallow: /*?*gclid=
-Disallow: /*?*fbclid=
-Disallow: /*?*ref=
-Disallow: /*?*sessionid=
-Disallow: /*?*sid=
-# Hash-fragment duplicates of canonical URLs (canonical tags handle the rest).
-Disallow: /*#*
-
-# --- Block aggressive AI training scrapers (optional, polite) ---
+# Block aggressive AI training scrapers from private routes only
 User-agent: GPTBot
 Disallow: /dashboard
 Disallow: /admin
@@ -65,5 +55,4 @@ User-agent: CCBot
 Disallow: /dashboard
 Disallow: /admin
 
-# --- Sitemap ---
 Sitemap: https://rismon.ai/sitemap.xml

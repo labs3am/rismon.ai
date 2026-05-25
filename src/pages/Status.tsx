@@ -8,6 +8,7 @@ export default function Status() {
       <SEO
         title="Status — Rismon"
         description="Real-time uptime and reliability status for Rismon, powered by Better Stack."
+        robots="index, follow"
       />
       <Navbar />
       <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-10">

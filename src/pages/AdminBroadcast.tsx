@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock, Rocket, Bell, Sparkles, GitBranch, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Eye, AlertTriangle, CheckCircle2, Mail, CalendarClock, Rocket, Bell, Sparkles, GitBranch, MessageCircle, UserPlus, Megaphone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const ADMIN_EMAILS = new Set(["risvan@labs3am.com", "hello@rismon.ai"]);
 
-type CampaignId = "scan-nudge" | "producthunt-launch" | "first-scan-reminder" | "complete-your-scan" | "personal-outreach";
+type CampaignId = "scan-nudge" | "producthunt-launch" | "first-scan-reminder" | "complete-your-scan" | "personal-outreach" | "new-signup-nudge" | "promise-audit-announcement";
 
 interface Campaign {
   id: CampaignId;
@@ -73,6 +73,26 @@ const CAMPAIGNS: Campaign[] = [
     description: "Plain-text personal note from Risvan to users who signed up but never ran a scan. No HTML, no buttons.",
     audience: "Users with zero analyses (deduped, one-time per user)",
     icon: MessageCircle,
+    supportsInactiveDays: false,
+  },
+  {
+    id: "new-signup-nudge",
+    fn: "send-new-signup-nudge",
+    label: "New signup nudge (24h)",
+    subject: "You signed up — but you haven't run your first scan yet",
+    description: "Friendly nudge to users who signed up in the last 24 hours and haven't run a scan yet.",
+    audience: "Users who signed up < 24h ago with zero analyses",
+    icon: UserPlus,
+    supportsInactiveDays: false,
+  },
+  {
+    id: "promise-audit-announcement",
+    fn: "send-promise-audit-announcement",
+    label: "Promise Audit announcement",
+    subject: "New in Rismon.ai: Promise Audit — does your landing page tell the truth?",
+    description: "Announces the new Promise Audit feature with feature list and CTA to /promise-audit.",
+    audience: "All users with an email in profiles",
+    icon: Megaphone,
     supportsInactiveDays: false,
   },
 ];

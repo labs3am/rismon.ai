@@ -30,5 +30,14 @@ verify_jwt = false
 [functions.send-complete-your-scan]
 verify_jwt = false
 
+[functions.send-new-signup-nudge]
+verify_jwt = false
+
+[functions.send-promise-audit-announcement]
+verify_jwt = false
+
 [functions.public-promise-audit]
+verify_jwt = false
+
+[functions.send-contact-message]
 verify_jwt = false

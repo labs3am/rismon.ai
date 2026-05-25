@@ -180,11 +180,62 @@ export default function PromiseAudit() {
   return (
     <div className="min-h-screen" style={{ background: '#000', color: '#fff' }}>
       <SEO
-        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free, no login | Rismon'}
+        robots="index, follow"
+        title={result ? `Promise Audit · ${result.host} — ${result.clarity_score ?? '—'}/100 | Rismon` : 'Promise Audit — Free Website Claim Checker | Rismon'}
         description={result
-          ? `${result.host} scored ${result.clarity_score ?? '—'}/100. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Audit your own homepage free.`
-          : 'Paste any URL. We extract every claim your homepage makes and grade how specific vs. fluffy your marketing is. No login. No repo. 60 seconds.'}
+          ? `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit. ${result.clear_count} specific, ${result.vague_count} fluffy promises. Run a free promise audit on any homepage.`
+          : 'Free Promise Audit by Rismon. Paste any URL — we extract every marketing claim your homepage makes, score clarity vs. fluff, and reality-check each promise against your live site. No login. No repo. 30 seconds.'}
         canonicalPath={result?.id ? `/promise-audit/${result.id}` : '/promise-audit'}
+        jsonLd={result ? {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: `Promise Audit — ${result.host}`,
+          url: `https://rismon.ai/promise-audit/${result.id ?? ''}`,
+          description: `${result.host} scored ${result.clarity_score ?? '—'}/100 on the Rismon Promise Audit. ${result.clear_count} specific, ${result.vague_count} fluffy promises.`,
+          breadcrumb: {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rismon.ai/' },
+              { '@type': 'ListItem', position: 2, name: 'Promise Audit', item: 'https://rismon.ai/promise-audit' },
+              { '@type': 'ListItem', position: 3, name: result.host, item: `https://rismon.ai/promise-audit/${result.id ?? ''}` },
+            ],
+          },
+        } : {
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'SoftwareApplication',
+              name: 'Rismon Promise Audit',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              url: 'https://rismon.ai/promise-audit',
+              description: 'Free tool that extracts every claim from a website homepage, grades each one as specific or fluffy, and reality-checks promises against the live site.',
+              offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+              featureList: [
+                'Extracts marketing claims from any public URL',
+                'Scores clarity (specific vs. fluffy)',
+                'Reality-checks promises against live homepage signals',
+                'Shareable public audit report',
+              ],
+            },
+            {
+              '@type': 'FAQPage',
+              mainEntity: [
+                { '@type': 'Question', name: 'What is a Promise Audit?', acceptedAnswer: { '@type': 'Answer', text: 'A Promise Audit pulls every claim your homepage makes — features, integrations, guarantees — and tells you which are specific (testable) and which are vague marketing fluff. It then checks each promise against your live site.' } },
+                { '@type': 'Question', name: 'Is the Promise Audit free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Three free audits per day per IP, no login or credit card required.' } },
+                { '@type': 'Question', name: 'How long does it take?', acceptedAnswer: { '@type': 'Answer', text: 'About 30 seconds. Paste a URL and Rismon returns a clarity score, a reality score, and the full list of promises.' } },
+                { '@type': 'Question', name: 'Do I need to connect my code?', acceptedAnswer: { '@type': 'Answer', text: 'No. The Promise Audit works on any public website — no GitHub, no repo, no signup.' } },
+              ],
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://rismon.ai/' },
+                { '@type': 'ListItem', position: 2, name: 'Promise Audit', item: 'https://rismon.ai/promise-audit' },
+              ],
+            },
+          ],
+        }}
       />
       <Navbar />
 
@@ -199,20 +250,34 @@ export default function PromiseAudit() {
             </p>
 
             {stats && stats.total_all_time > 0 && (
-              <div
-                aria-live="polite"
-                className="rismon-glass-pill mx-auto mt-5 inline-flex items-center gap-2.5 pl-3 pr-4 py-2"
-              >
-                <span className="rismon-glass-dot">
-                  <span className="rismon-glass-dot-ping" />
-                  <span className="rismon-glass-dot-core" />
-                </span>
-                <span className="rismon-glass-sentence">
-                  <strong>{stats.total_all_time.toLocaleString()}</strong>
-                  {stats.total_all_time === 1
-                    ? ' site audited by Rismon so far'
-                    : ' sites audited by Rismon so far'}
-                </span>
+              <div className="inline-flex items-center justify-center gap-6 mt-5 mx-auto group" style={{ textDecoration: 'none' }}>
+                <div className="flex flex-col items-center">
+                  <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {stats.total_all_time.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Sites audited
+                  </span>
+                </div>
+                <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+                <div className="flex flex-col items-center">
+                  <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {stats.total_24h.toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Last 24h
+                  </span>
+                </div>
+                <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+                <div className="flex flex-col items-center">
+                  <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+                    <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                  </span>
+                  <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    Updating now
+                  </span>
+                </div>
               </div>
             )}
 
@@ -654,6 +719,71 @@ export default function PromiseAudit() {
                     Audit another site
                   </button>
                 </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* HOW IT WORKS (only when no result) */}
+        {!result && !loading && (
+          <section className="px-5 sm:px-6 py-16" style={{ background: '#000', borderTop: '1px solid #ffffff14' }}>
+            <div className="max-w-[1000px] mx-auto">
+              <p className="vercel-label" style={{ textAlign: 'center' }}>WHY IT MATTERS</p>
+              <h2 className="vercel-headline" style={{ textAlign: 'center' }}>Your homepage is a contract</h2>
+              <p style={{ fontSize: 15, color: '#888', textAlign: 'center', maxWidth: 620, margin: '14px auto 0', lineHeight: 1.6 }}>
+                Every claim on your landing page is a promise to the visitor. When the product doesn't match, trust collapses — users bounce, refunds spike, investors lose interest. Most founders never audit what their site actually says.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+                <div className="vercel-card">
+                  <Target size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Catch vague claims before users do</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>"Powered by AI" means nothing. "Summarizes 50-page PDFs in 12s with GPT-4o" converts. We flag every fluffy line so you can rewrite it.</p>
+                </div>
+                <div className="vercel-card">
+                  <ShieldCheck size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Reality-check every promise</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You say "Stripe payments" — is there a checkout? You say "Sign in with Google" — does the button work? We look for proof on your live site, not just words.</p>
+                </div>
+                <div className="vercel-card">
+                  <Swords size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>See yourself the way buyers do</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Investors, customers, and competitors are already reading your homepage skeptically. Run the audit and read it the same way — before they do.</p>
+                </div>
+              </div>
+
+              <div className="mt-14 rounded-xl p-6 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <p className="vercel-label" style={{ marginBottom: 10 }}>WHAT MAKES THIS DIFFERENT</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Two scores, not one</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Clarity (how specific) and Reality (how backed). Most tools only check grammar.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>No login, no GitHub</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Paste any URL — your own, a competitor's, a portfolio you're reviewing. 30 seconds.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Shareable permalink</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Send the report to your co-founder, designer, or marketer — it stays live.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Built for AI-built apps</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Lovable, Bolt, Cursor sites overpromise more than anything. We know the patterns.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>

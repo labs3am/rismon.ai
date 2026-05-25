@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_notify_settings: {
         Row: {
           broadcast_secret: string | null
@@ -211,6 +241,36 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          subject: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          subject?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          subject?: string | null
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -756,6 +816,17 @@ export type Database = {
           user_count: number
         }[]
       }
+      admin_recent_audit_log: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor_email: string
+          created_at: string
+          details: Json
+          id: string
+          target_user_id: string
+        }[]
+      }
       admin_recent_scans: {
         Args: { _limit?: number }
         Returns: {
@@ -884,6 +955,10 @@ export type Database = {
       get_user_plan: { Args: { _user_id: string }; Returns: string }
       has_pro_access: { Args: { _user_id: string }; Returns: boolean }
       is_blog_admin: { Args: never; Returns: boolean }
+      log_admin_action: {
+        Args: { _action: string; _details?: Json; _target_user_id?: string }
+        Returns: undefined
+      }
       notify_admin_event: {
         Args: { _event: string; _payload: Json }
         Returns: undefined

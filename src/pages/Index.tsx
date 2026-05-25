@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ZoomIn, Lock, Github, Database, FileCode } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
 import SEO from '@/components/SEO';
+import { supabase } from '@/integrations/supabase/client';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -143,6 +144,25 @@ const HEADLINE = 'vercel-headline';
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
+  const [auditCount, setAuditCount] = useState<number | null>(null);
+  const [last24h, setLast24h] = useState<number | null>(null);
+
+  // Live "X sites audited" counter — sourced from public_audit_stats.
+  // Refreshes every 30s so the homepage feels alive without polling hard.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase.rpc('public_audit_stats');
+      const row: any = Array.isArray(data) ? data[0] : data;
+      if (!cancelled && row) {
+        setAuditCount(Number(row.total_all_time) || 1);
+        setLast24h(Number(row.total_24h) || 1);
+      }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
 
   const securityItems = [
     { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
@@ -185,6 +205,41 @@ export default function Index() {
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
+          {auditCount !== null && auditCount > 0 && (
+            <Link
+              to="/promise-audit"
+              className="inline-flex items-center justify-center gap-6 mt-8 mx-auto group"
+              style={{ textDecoration: 'none' }}
+            >
+              <div className="flex flex-col items-center">
+                <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {auditCount.toLocaleString()}
+                </span>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Sites audited
+                </span>
+              </div>
+              <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+              <div className="flex flex-col items-center">
+                <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {last24h?.toLocaleString() ?? '—'}
+                </span>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Last 24h
+                </span>
+              </div>
+              <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+              <div className="flex flex-col items-center">
+                <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+                  <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                </span>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Updating now
+                </span>
+              </div>
+            </Link>
+          )}
         </div>
       </section>
 
