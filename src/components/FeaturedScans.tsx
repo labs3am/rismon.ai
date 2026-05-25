@@ -9,13 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
  * click through to a real report in one tap, without running a scan.
  * Keep this list short and current — replace IDs as better scans land.
  */
-const FEATURED_IDS = [
-  '930a8529-fb50-46a0-a6c5-f8a361086e8b', // lovable.dev
-  '22a6d43e-bcc4-4c5c-bcc4-c3c484f56c7c', // placeholder, overwritten below
-  'e9fda108-e71c-43a6-83f6-e52338563a04', // kubiq.priyanshumodi.in
-] as const;
-
-// Real curated IDs (kept here so a single edit updates the row).
 const FEATURED = [
   { id: '930a8529-fb50-46a0-a6c5-f8a361086e8b', tagline: 'AI app builder' },
   { id: '2b338ef9-4a09-4ed8-ac5e-68a720fce270', tagline: 'Pre-ship safety scanner' },
