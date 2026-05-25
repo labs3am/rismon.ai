@@ -222,10 +222,10 @@ export default function Index() {
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
               <div className="flex flex-col items-center">
                 <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                  100<span style={{ color: '#666', fontSize: 20 }}>%</span>
+                  {last24h?.toLocaleString() ?? '—'}
                 </span>
                 <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Real scans
+                  Last 24h
                 </span>
               </div>
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
