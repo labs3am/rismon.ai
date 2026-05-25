@@ -8,6 +8,7 @@ import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { detectSuspicious } from '@/lib/contentFilter';
 import RisGuide from '@/components/RisGuide';
 import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
