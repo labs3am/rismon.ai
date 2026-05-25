@@ -173,9 +173,11 @@ export default function Contact() {
         <div className="grid sm:grid-cols-2 gap-4" style={{ marginTop: 40 }}>
           <div style={cardStyle}>
             <Mail size={20} style={{ color: '#f97316' }} />
-            <div style={{ color: '#fff', fontSize: 16, fontWeight: 600, marginTop: 14 }}>Form, not inbox</div>
-            <div style={{ color: '#a1a1aa', fontSize: 14, marginTop: 4 }}>Use the form above</div>
-            <div style={{ color: '#52525b', fontSize: 12, marginTop: 10 }}>Goes straight to the team — for support, billing, partnerships, and press.</div>
+            <div style={{ color: '#fff', fontSize: 16, fontWeight: 600, marginTop: 14 }}>Prefer email?</div>
+            <div style={{ color: '#a1a1aa', fontSize: 14, marginTop: 4 }}>
+              <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>
+            </div>
+            <div style={{ color: '#52525b', fontSize: 12, marginTop: 10 }}>Write to us directly — for support, billing, partnerships, and press.</div>
           </div>
 
           <a href="https://github.com/labs3am/rismon.ai/issues" target="_blank" rel="noopener noreferrer" style={cardStyle} className="block hover:border-white/20 transition-colors">
