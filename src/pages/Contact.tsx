@@ -99,7 +99,7 @@ export default function Contact() {
           Talk to the team behind Rismon.ai
         </h1>
         <p style={{ color: '#a1a1aa', fontSize: 17, lineHeight: 1.7, marginTop: 16, maxWidth: 560 }}>
-          Questions about a scan, partnership ideas, press, or product feedback — drop us a note below and we'll reply within one business day.
+          Questions about a scan, partnership ideas, press, or product feedback — drop us a note below and we'll reply within one business day. Prefer email? Write to <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>.
         </p>
 
         {/* Contact form */}
@@ -109,7 +109,7 @@ export default function Contact() {
               <CheckCircle2 size={36} style={{ color: '#22c55e', margin: '0 auto 12px' }} />
               <div style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}>Message sent</div>
               <p style={{ color: '#a1a1aa', fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
-                Thanks for reaching out — we'll get back to you within one business day.
+                Thanks for reaching out — we'll get back to you within one business day at the email you provided. You can also reach us anytime at <a href="mailto:hello@rismon.ai" style={{ color: '#f97316', textDecoration: 'none' }}>hello@rismon.ai</a>.
               </p>
               <button
                 type="button"
