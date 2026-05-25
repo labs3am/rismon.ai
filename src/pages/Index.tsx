@@ -8,7 +8,6 @@ import Footer from '@/components/Footer';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
 import SEO from '@/components/SEO';
-import BuiltOnLovable from '@/components/BuiltOnLovable';
 import { supabase } from '@/integrations/supabase/client';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
@@ -202,9 +201,8 @@ export default function Index() {
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
-            <BuiltOnLovable />
-            {auditCount !== null && auditCount > 0 && (
+          {auditCount !== null && auditCount > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
               <Link
                 to="/promise-audit"
                 className="inline-flex items-center gap-2 rounded-full transition-colors"
@@ -227,8 +225,8 @@ export default function Index() {
                 </span>
                 <span><strong style={{ color: '#fff', fontWeight: 600 }}>{auditCount.toLocaleString()}</strong> sites audited</span>
               </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

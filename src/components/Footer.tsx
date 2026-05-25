@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Github, Mail } from 'lucide-react';
 import Logo from './Logo';
-import BuiltOnLovable from './BuiltOnLovable';
 
 const XLogo = ({ size = 18 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -85,7 +84,6 @@ export default function Footer() {
                   style={{ width: 180, height: 39, display: 'block' }}
                 />
               </a>
-              <BuiltOnLovable />
             </div>
           </div>
 
