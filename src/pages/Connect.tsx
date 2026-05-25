@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import RisGuide from '@/components/RisGuide';
 import { Skeleton } from '@/components/ui/skeleton';
 import { githubFetch, GithubAuthRequiredError, clearReauthFlag } from '@/lib/github-auth';
+import { detectSuspicious, isValidGithubRepoUrl } from '@/lib/contentFilter';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
 
