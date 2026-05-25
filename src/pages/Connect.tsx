@@ -208,6 +208,16 @@ export default function Connect() {
 
   const handleSkipSupabase = async () => {
     if (!user || !selectedRepo) return;
+    const combined = `${appName ?? ''}\n${appDescription ?? ''}\n${otherPlatform ?? ''}`;
+    const suspicious = detectSuspicious(combined);
+    if (suspicious) { toast.error(suspicious); return; }
+    if (!isValidGithubRepoUrl(selectedRepo.html_url)) { toast.error('Unsupported repository URL'); return; }
+    if (liveUrl.trim()) {
+      try {
+        const lu = new URL(liveUrl.trim());
+        if (lu.protocol !== 'https:' && lu.protocol !== 'http:') { toast.error('Live URL must be http(s)'); return; }
+      } catch { toast.error('Live URL is not a valid URL'); return; }
+    }
     setSaving(true);
     const { data, error } = await supabase.from('apps').insert({
       user_id: user.id, app_name: appName, github_repo_url: selectedRepo.html_url,
