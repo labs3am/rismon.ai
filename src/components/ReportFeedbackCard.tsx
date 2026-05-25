@@ -3,6 +3,7 @@ import { Star, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { detectSuspicious } from "@/lib/contentFilter";
 
 interface Props {
   analysisId: string;
@@ -68,6 +69,13 @@ export default function ReportFeedbackCard({ analysisId }: Props) {
     if (trimmed.length > MAX_COMMENT) {
       toast.error(`Comment must be under ${MAX_COMMENT} characters`);
       return;
+    }
+    if (trimmed) {
+      const suspicious = detectSuspicious(trimmed);
+      if (suspicious) {
+        toast.error(suspicious);
+        return;
+      }
     }
 
     setSubmitting(true);
