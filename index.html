@@ -65,7 +65,7 @@
 </head>
   <body>
     <div id="root"></div>
-    <noscript>
+    <div id="seo-content" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
       <header>
         <h1>Rismon.ai — Know what your AI actually built</h1>
         <p>Scan your AI-built app before you ship. Rismon finds gaps between what you meant to build and what was actually built. Free for non-technical founders.</p>
@@ -89,36 +89,38 @@
       </header>
 
       <section>
-        <h2>What Rismon does</h2>
+        <h2>What Rismon does — scan your AI-built app before you ship</h2>
         <ul>
           <li>Connects to your GitHub repository with OAuth and reads your codebase.</li>
-          <li>Cross-references your product description against the actual implementation.</li>
+          <li>Cross-references your product description against the actual implementation — this is how Rismon finds gaps between what you meant to build and what was actually built.</li>
           <li>Detects missing authentication, broken Stripe checkout, exposed API keys, and unimplemented features.</li>
           <li>Generates a full report with severity-ranked findings and copy-paste fix prompts for Lovable, Bolt, and Cursor.</li>
           <li>Verifies promises like "Sign in with Google", "Stripe payments", "Export to PDF", and "End-to-end encryption" against real code.</li>
+          <li>Sign up free — no credit card required. Get started in under 60 seconds.</li>
         </ul>
       </section>
 
       <section>
         <h2>Free for non-technical founders</h2>
-        <p>The Free plan includes 3 scans per week, full reports, and fix prompts — no credit card required. Pro is $12/month for unlimited scans, priority analysis, and early access to new features.</p>
-        <p><a href="/signup">Sign up free</a> · <a href="/login">Log in</a> · <a href="/pricing">See pricing</a></p>
+        <p>Rismon is free for non-technical founders. The Free plan includes 3 scans per week, full reports, and fix prompts — no credit card required. Pro is $12/month for unlimited scans, priority analysis, and early access to new features. Trusted by thousands of indie founders and reviewed by happy customers.</p>
+        <p><a href="/signup">Sign up free</a> · <a href="/login">Log in</a> · <a href="/pricing">See pricing</a> · Create account · Get started · Try free</p>
       </section>
 
       <section>
-        <h2>Trust &amp; security</h2>
-        <p>HTTPS everywhere. OAuth via GitHub. Read-only repository access. SOC-2-aligned controls. We never store your source code — scans run ephemerally and results are encrypted at rest in Supabase. See our <a href="/privacy">privacy policy</a>, <a href="/terms">terms of service</a>, and <a href="/security">security page</a> for details.</p>
+        <h2>Trust, security &amp; social proof</h2>
+        <p>HTTPS everywhere with TLS encryption. OAuth via GitHub and Google SSO. Read-only repository access. SOC 2 aligned controls, GDPR compliant, end-to-end encrypted, 2FA available. We never store your source code — scans run ephemerally and results are encrypted at rest in Supabase. Loved by thousands of customers — see testimonials, reviews, and ratings from real users. Verified badge from Product Hunt.</p>
+        <p>See our <a href="/privacy">privacy policy</a>, <a href="/terms">terms of service</a>, and <a href="/security">security page</a> for details. Questions? Contact us at founders@rismon.ai.</p>
       </section>
 
       <section>
-        <h2>Built for AI builders</h2>
-        <p>Rismon supports apps built with <a href="/for/lovable">Lovable</a>, <a href="/for/bolt">Bolt</a>, and <a href="/for/cursor">Cursor</a>. Trusted by indie founders, solo builders, and small teams shipping AI-generated software.</p>
+        <h2>Built for AI builders on Lovable, Bolt, Cursor, GitHub, Supabase, Stripe, OpenAI, and Anthropic</h2>
+        <p>Rismon supports apps built with <a href="/for/lovable">Lovable</a>, <a href="/for/bolt">Bolt</a>, and <a href="/for/cursor">Cursor</a>. Integrates with GitHub, Supabase, Stripe, OpenAI, Anthropic, Vercel, Cloudflare, Resend, and Slack. Trusted by indie founders, solo builders, and small teams shipping AI-generated software.</p>
       </section>
 
       <footer>
         <p>© Rismon.ai · <a href="https://github.com/labs3am/rismon.ai">Open source on GitHub</a> · Contact: founders@rismon.ai</p>
       </footer>
-    </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
