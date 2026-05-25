@@ -726,6 +726,71 @@ export default function PromiseAudit() {
 
         {/* HOW IT WORKS (only when no result) */}
         {!result && !loading && (
+          <section className="px-5 sm:px-6 py-16" style={{ background: '#000', borderTop: '1px solid #ffffff14' }}>
+            <div className="max-w-[1000px] mx-auto">
+              <p className="vercel-label" style={{ textAlign: 'center' }}>WHY IT MATTERS</p>
+              <h2 className="vercel-headline" style={{ textAlign: 'center' }}>Your homepage is a contract</h2>
+              <p style={{ fontSize: 15, color: '#888', textAlign: 'center', maxWidth: 620, margin: '14px auto 0', lineHeight: 1.6 }}>
+                Every claim on your landing page is a promise to the visitor. When the product doesn't match, trust collapses — users bounce, refunds spike, investors lose interest. Most founders never audit what their site actually says.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
+                <div className="vercel-card">
+                  <Target size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Catch vague claims before users do</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>"Powered by AI" means nothing. "Summarizes 50-page PDFs in 12s with GPT-4o" converts. We flag every fluffy line so you can rewrite it.</p>
+                </div>
+                <div className="vercel-card">
+                  <ShieldCheck size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>Reality-check every promise</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>You say "Stripe payments" — is there a checkout? You say "Sign in with Google" — does the button work? We look for proof on your live site, not just words.</p>
+                </div>
+                <div className="vercel-card">
+                  <Swords size={18} style={{ color: '#fff', marginBottom: 12 }} />
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', marginBottom: 8 }}>See yourself the way buyers do</p>
+                  <p style={{ fontSize: 14, color: '#888', lineHeight: 1.6 }}>Investors, customers, and competitors are already reading your homepage skeptically. Run the audit and read it the same way — before they do.</p>
+                </div>
+              </div>
+
+              <div className="mt-14 rounded-xl p-6 sm:p-8" style={{ background: '#0a0a0a', border: '1px solid #1f1f1f' }}>
+                <p className="vercel-label" style={{ marginBottom: 10 }}>WHAT MAKES THIS DIFFERENT</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Two scores, not one</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Clarity (how specific) and Reality (how backed). Most tools only check grammar.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>No login, no GitHub</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Paste any URL — your own, a competitor's, a portfolio you're reviewing. 30 seconds.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Shareable permalink</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Send the report to your co-founder, designer, or marketer — it stays live.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 size={16} style={{ color: '#22c55e', marginTop: 3, flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Built for AI-built apps</p>
+                      <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5, marginTop: 2 }}>Lovable, Bolt, Cursor sites overpromise more than anything. We know the patterns.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* HOW IT WORKS (only when no result) */}
+        {!result && !loading && (
           <section className="px-5 sm:px-6 py-16" style={{ background: '#0a0a0a', borderTop: '1px solid #ffffff14' }}>
             <div className="max-w-[1000px] mx-auto">
               <p className="vercel-label" style={{ textAlign: 'center' }}>HOW IT WORKS</p>
