@@ -202,30 +202,39 @@ export default function Index() {
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
           {auditCount !== null && auditCount > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
-              <Link
-                to="/promise-audit"
-                className="inline-flex items-center gap-2 rounded-full transition-colors"
-                style={{
-                  padding: '6px 12px',
-                  border: '1px solid #1f1f1f',
-                  background: '#0a0a0a',
-                  color: '#a3a3a3',
-                  fontSize: 12,
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                  lineHeight: 1,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#a3a3a3'; e.currentTarget.style.borderColor = '#1f1f1f'; }}
-              >
-                <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
-                  <span style={{ position: 'absolute', inset: 0, borderRadius: 9999, background: '#22c55e', opacity: 0.5, animation: 'ping 1.8s cubic-bezier(0,0,0.2,1) infinite' }} />
-                  <span style={{ position: 'relative', display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+            <Link
+              to="/promise-audit"
+              className="inline-flex items-center justify-center gap-6 mt-8 mx-auto group"
+              style={{ textDecoration: 'none' }}
+            >
+              <div className="flex flex-col items-center">
+                <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {auditCount.toLocaleString()}
                 </span>
-                <span><strong style={{ color: '#fff', fontWeight: 600 }}>{auditCount.toLocaleString()}</strong> sites audited</span>
-              </Link>
-            </div>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Sites audited
+                </span>
+              </div>
+              <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+              <div className="flex flex-col items-center">
+                <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  100<span style={{ color: '#666', fontSize: 20 }}>%</span>
+                </span>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Real scans
+                </span>
+              </div>
+              <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
+              <div className="flex flex-col items-center">
+                <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+                  <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                </span>
+                <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  Updating now
+                </span>
+              </div>
+            </Link>
           )}
         </div>
       </section>
