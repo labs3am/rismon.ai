@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ZoomIn, Lock, Github, Database, FileCode } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -8,6 +8,8 @@ import Footer from '@/components/Footer';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import WaitlistModal from '@/components/WaitlistModal';
 import SEO from '@/components/SEO';
+import BuiltOnLovable from '@/components/BuiltOnLovable';
+import { supabase } from '@/integrations/supabase/client';
 import lovableLogo from '@/assets/logos/lovable.png';
 import boltLogo from '@/assets/logos/bolt.png';
 import cursorLogo from '@/assets/logos/cursor.png';
@@ -143,6 +145,21 @@ const HEADLINE = 'vercel-headline';
 export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
+  const [auditCount, setAuditCount] = useState<number | null>(null);
+
+  // Live "X sites audited" counter — sourced from public_audit_stats.
+  // Refreshes every 30s so the homepage feels alive without polling hard.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase.rpc('public_audit_stats');
+      const row: any = Array.isArray(data) ? data[0] : data;
+      if (!cancelled && row) setAuditCount(Number(row.total_all_time) || 0);
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
 
   const securityItems = [
     { icon: Lock, title: 'Your code is never stored', text: 'Read in memory, sent to AI for analysis, then immediately discarded. Zero code in our database.' },
@@ -185,6 +202,33 @@ export default function Index() {
             <Link to="/signup" className="vercel-btn-secondary">Get started free</Link>
           </div>
           <p style={{ fontSize: '13px', color: '#555555', marginTop: '16px' }}>Free. No credit card. No code knowledge needed.</p>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-5">
+            <BuiltOnLovable />
+            {auditCount !== null && auditCount > 0 && (
+              <Link
+                to="/promise-audit"
+                className="inline-flex items-center gap-2 rounded-full transition-colors"
+                style={{
+                  padding: '6px 12px',
+                  border: '1px solid #1f1f1f',
+                  background: '#0a0a0a',
+                  color: '#a3a3a3',
+                  fontSize: 12,
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  lineHeight: 1,
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#2a2a2a'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#a3a3a3'; e.currentTarget.style.borderColor = '#1f1f1f'; }}
+              >
+                <span style={{ position: 'relative', display: 'inline-flex', width: 8, height: 8 }}>
+                  <span style={{ position: 'absolute', inset: 0, borderRadius: 9999, background: '#22c55e', opacity: 0.5, animation: 'ping 1.8s cubic-bezier(0,0,0.2,1) infinite' }} />
+                  <span style={{ position: 'relative', display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
+                </span>
+                <span><strong style={{ color: '#fff', fontWeight: 600 }}>{auditCount.toLocaleString()}</strong> sites audited</span>
+              </Link>
+            )}
+          </div>
         </div>
       </section>
 
