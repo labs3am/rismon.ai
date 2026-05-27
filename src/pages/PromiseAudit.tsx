@@ -266,20 +266,19 @@ export default function PromiseAudit() {
                 <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
                 <div className="flex flex-col items-center">
                   <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                    {stats.total_24h.toLocaleString()}
+                    {stats.promises_analyzed.toLocaleString()}
                   </span>
                   <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Last 24h
+                    Promises analyzed
                   </span>
                 </div>
                 <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
                 <div className="flex flex-col items-center">
-                  <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                    <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
-                    <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                  <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {stats.vague_claims_caught.toLocaleString()}
                   </span>
                   <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                    Updating now
+                    Vague claims caught
                   </span>
                 </div>
               </div>
