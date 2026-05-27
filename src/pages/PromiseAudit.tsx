@@ -49,7 +49,7 @@ export default function PromiseAudit() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResult | null>(null);
-  const [stats, setStats] = useState<{ total_24h: number; total_all_time: number } | null>(null);
+  const [stats, setStats] = useState<{ total_all_time: number; promises_analyzed: number; vague_claims_caught: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [isDebug, setIsDebug] = useState(false);
@@ -63,7 +63,11 @@ export default function PromiseAudit() {
   const refreshStats = async () => {
     const { data } = await supabase.rpc('public_audit_stats');
     const row = Array.isArray(data) ? data[0] : data;
-    if (row) setStats({ total_24h: Number(row.total_24h) || 0, total_all_time: Number(row.total_all_time) || 0 });
+    if (row) setStats({
+      total_all_time: Number((row as any).total_all_time) || 0,
+      promises_analyzed: Number((row as any).promises_analyzed) || 0,
+      vague_claims_caught: Number((row as any).vague_claims_caught) || 0,
+    });
   };
   useEffect(() => {
     refreshStats();
@@ -137,7 +141,7 @@ export default function PromiseAudit() {
       if (typeof r.remaining_today === 'number') setRemaining(r.remaining_today);
       if ((data as any)?.debug) setIsDebug(true);
       // Optimistically bump the live counter, then re-sync from the server.
-      setStats((s) => s ? { total_24h: s.total_24h + 1, total_all_time: s.total_all_time + 1 } : s);
+      setStats((s) => s ? { ...s, total_all_time: s.total_all_time + 1 } : s);
       refreshStats();
       if (r.id) {
         // Clean permalink in the URL bar — no reload.
