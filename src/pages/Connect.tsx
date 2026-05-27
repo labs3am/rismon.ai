@@ -11,6 +11,7 @@ import RisGuide from '@/components/RisGuide';
 import { Skeleton } from '@/components/ui/skeleton';
 import { githubFetch, GithubAuthRequiredError, clearReauthFlag } from '@/lib/github-auth';
 import { detectSuspicious, isValidGithubRepoUrl } from '@/lib/contentFilter';
+import SEO from '@/components/SEO';
 
 const platforms = ['Lovable', 'Bolt', 'Cursor', 'Emergent', 'Replit', 'v0', 'Windsurf', 'Copilot', 'Gemini Code', 'Claude Code', 'Other AI'];
 
@@ -238,6 +239,7 @@ export default function Connect() {
   if (checkingLimit) {
     return (
       <div className="min-h-screen bg-background">
+      <SEO title="Connect repo — Rismon" description="Connect your GitHub repository to Rismon to start a scan." noindex />
         <DashboardNavbar />
         <div className="max-w-[640px] mx-auto px-4 sm:px-5 pt-20 sm:pt-24 pb-16">
           <Skeleton className="h-4 w-24" />
