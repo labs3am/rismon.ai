@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import SEO from '@/components/SEO';
 
 const ADMIN_EMAILS = ['risvan@labs3am.com', 'hello@rismon.ai'];
 
@@ -114,6 +115,7 @@ export default function AdminReviews() {
         display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600,
         color: m.color, background: m.bg, padding: '3px 8px', borderRadius: 999,
       }}>
+      <SEO title="Admin: Reviews — Rismon" description="Internal review moderation for Rismon staff." noindex />
         <m.Icon size={11} /> {m.label}
       </span>
     );

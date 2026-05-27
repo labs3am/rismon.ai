@@ -16,6 +16,7 @@ import ReportContent from '@/components/ReportContent';
 import AnalysisLoadingScreen from '@/components/AnalysisLoadingScreen';
 import DashboardSidebar, { SectionKey } from '@/components/dashboard/DashboardSidebar';
 import { IntentGaugeCard, PromiseCoverageCard, SeverityBarCard } from '@/components/dashboard/OverviewCards';
+import SEO from '@/components/SEO';
 
 // (Overview cards extracted to src/components/dashboard/OverviewCards.tsx)
 
@@ -46,6 +47,7 @@ function LockedSection({
       className="rounded-xl p-8 sm:p-12 text-center"
       style={{ background: PANEL_BG, border: '1px dashed #2a2a2a' }}
     >
+      <SEO title="Dashboard — Rismon" description="Your Rismon dashboard: connected apps, scans, and reports." noindex />
       <div
         style={{
           width: 56, height: 56, borderRadius: 14, margin: '0 auto',

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import { supabase } from "@/integrations/supabase/client";
+import SEO from '@/components/SEO';
 
 interface Promise_ {
   claim: string;
@@ -54,6 +55,7 @@ export default function AdminAuditTest() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Admin: Audit test — Rismon" description="Internal promise audit testing tool for Rismon staff." noindex />
       <DashboardNavbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         <Link to="/admin" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm mb-6">

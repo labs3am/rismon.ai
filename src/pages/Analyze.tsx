@@ -14,6 +14,7 @@ import { PreAnalysis } from '@/components/SmartIntentQuestions';
 import AppUnderstandingCard from '@/components/AppUnderstandingCard';
 import AiSmartQuestions from '@/components/AiSmartQuestions';
 import { githubFetch, getGithubToken, GithubAuthRequiredError, reauthenticateGithub, clearReauthFlag } from '@/lib/github-auth';
+import SEO from '@/components/SEO';
 
 export default function Analyze() {
   const { appId } = useParams();
@@ -864,6 +865,7 @@ export default function Analyze() {
   if (blocked) {
     return (
       <div className="min-h-screen bg-background">
+      <SEO title="Analyzing app — Rismon" description="Rismon is analyzing your app for intent gaps and missing features." noindex />
         <DashboardNavbar />
         <WaitlistModal isOpen={waitlistOpen} onClose={() => setWaitlistOpen(false)} />
         <div className="flex items-center justify-center pt-40">
