@@ -272,17 +272,19 @@ export default function BlogPost() {
         {/* Related */}
         {related.length > 0 && (
           <div style={{ marginTop: 64 }}>
-            <div
+            <h2
               style={{
                 fontSize: 11,
                 color: '#555555',
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
                 marginBottom: 24,
+                fontWeight: 500,
+                margin: '0 0 24px',
               }}
             >
               More from the blog
-            </div>
+            </h2>
             <div className="rismon-related-grid">
               {related.map((r) => (
                 <Link
