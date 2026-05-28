@@ -55,7 +55,7 @@ export default function HowWeScore() {
     >
       <div className="max-w-[1100px] mx-auto">
         <p className="vercel-label">HOW WE SCORE</p>
-        <h2 className="vercel-headline">From 100 to your real score</h2>
+        <h1 className="vercel-headline">From 100 to your real score</h1>
         <p
           style={{
             fontSize: 16,
