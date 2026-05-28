@@ -31,6 +31,9 @@ const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = 
   { path: '/status', changefreq: 'daily', priority: '0.5' },
   { path: '/privacy', changefreq: 'yearly', priority: '0.3' },
   { path: '/terms', changefreq: 'yearly', priority: '0.3' },
+  { path: '/signup', changefreq: 'yearly', priority: '0.3' },
+  { path: '/login', changefreq: 'yearly', priority: '0.3' },
+  { path: '/reset-password', changefreq: 'yearly', priority: '0.2' },
 ];
 
 const fmt = (d: Date) => d.toISOString().slice(0, 10);
@@ -42,6 +45,7 @@ export async function generateSitemap(): Promise<void> {
   const anonKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const today = fmt(new Date());
   let posts: { slug: string; published_at: string | null; updated_at: string }[] = [];
+  let audits: { id: string; created_at: string }[] = [];
 
   if (supabaseUrl && anonKey) {
     try {
@@ -53,6 +57,16 @@ export async function generateSitemap(): Promise<void> {
       else console.warn(`[sitemap] Supabase fetch failed: ${res.status}`);
     } catch (e) {
       console.warn(`[sitemap] Supabase fetch error: ${(e as Error).message}`);
+    }
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/public_audits?select=id,created_at&order=created_at.desc&limit=1000`,
+        { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } },
+      );
+      if (res.ok) audits = (await res.json()) as typeof audits;
+      else console.warn(`[sitemap] Supabase audits fetch failed: ${res.status}`);
+    } catch (e) {
+      console.warn(`[sitemap] Supabase audits fetch error: ${(e as Error).message}`);
     }
   } else {
     console.warn('[sitemap] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY — emitting static-only sitemap.');
@@ -70,9 +84,15 @@ export async function generateSitemap(): Promise<void> {
       `  <url>\n    <loc>${SITE}/blog/${esc(p.slug)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>`,
     );
   }
+  for (const a of audits) {
+    const lastmod = fmt(new Date(a.created_at || Date.now()));
+    urls.push(
+      `  <url>\n    <loc>${SITE}/promise-audit/${esc(a.id)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>`,
+    );
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 
   writeFileSync(resolve(process.cwd(), 'public/sitemap.xml'), xml, 'utf8');
-  console.log(`[sitemap] Wrote public/sitemap.xml (${STATIC_ROUTES.length} static + ${posts.length} blog posts)`);
+  console.log(`[sitemap] Wrote public/sitemap.xml (${STATIC_ROUTES.length} static + ${posts.length} blog posts + ${audits.length} audits)`);
 }
