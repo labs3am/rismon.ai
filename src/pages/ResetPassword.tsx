@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
+import SEO from '@/components/SEO';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -59,6 +60,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen" style={{ background: '#000000' }}>
+      <SEO title="Reset password — Rismon" description="Set a new password for your Rismon account." noindex />
       <Navbar />
       <div className="flex items-center justify-center px-4" style={{ minHeight: 'calc(100vh - 64px)', padding: '80px 16px' }}>
         <div className="auth-glass-card">

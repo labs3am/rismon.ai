@@ -30,6 +30,7 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SEO from '@/components/SEO';
 
 type Tab = "overview" | "users" | "scans" | "traffic" | "inactive" | "no-github" | "tools";
 
@@ -142,6 +143,7 @@ function formatDate(s: string | null) {
 function StatCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
     <div className="bg-card border border-border rounded-xl p-5">
+      <SEO title="Admin: Dashboard — Rismon" description="Internal admin dashboard for Rismon staff." noindex />
       <div className="text-muted-foreground text-xs uppercase tracking-wider font-medium">{label}</div>
       <div className="text-foreground text-3xl font-semibold mt-2 tabular-nums">{value}</div>
       {hint && <div className="text-subtle text-xs mt-1">{hint}</div>}

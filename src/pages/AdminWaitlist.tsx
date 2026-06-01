@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PageSkeleton from '@/components/PageSkeleton';
+import SEO from '@/components/SEO';
 
 
 export default function AdminWaitlist() {
@@ -67,6 +68,7 @@ export default function AdminWaitlist() {
 
   return (
     <div className="min-h-screen bg-background px-6 py-10">
+      <SEO title="Admin: Waitlist — Rismon" description="Internal waitlist management for Rismon staff." noindex />
       <div className="max-w-[800px] mx-auto">
         <div className="flex items-center justify-between">
           <h1 className="text-foreground text-[24px] font-semibold">Waitlist</h1>

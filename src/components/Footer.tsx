@@ -89,7 +89,7 @@ export default function Footer() {
 
           {/* Product */}
           <div className="md:col-span-2">
-            <h3 className={headingCls}>Product</h3>
+            <h2 className={headingCls}>Product</h2>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/pricing" className={linkCls}>Pricing</Link></li>
               <li><Link to="/promise-audit" className={linkCls}>Promise Audit</Link></li>
@@ -99,7 +99,7 @@ export default function Footer() {
 
           {/* Company */}
           <div className="md:col-span-2">
-            <h3 className={headingCls}>Company</h3>
+            <h2 className={headingCls}>Company</h2>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/about" className={linkCls}>About</Link></li>
               <li><Link to="/blog" className={linkCls}>Blog</Link></li>
@@ -110,7 +110,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div className="md:col-span-2">
-            <h3 className={headingCls}>Legal</h3>
+            <h2 className={headingCls}>Legal</h2>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/security" className={linkCls}>Security</Link></li>
               <li><Link to="/status" className={linkCls}>Status</Link></li>
@@ -121,7 +121,7 @@ export default function Footer() {
 
           {/* For builders — internal links so Google can crawl /for/* and /how-we-score */}
           <div className="md:col-span-1">
-            <h3 className={headingCls}>For</h3>
+            <h2 className={headingCls}>For</h2>
             <ul className="flex flex-col" style={{ lineHeight: 2 }}>
               <li><Link to="/for/lovable" className={linkCls}>Lovable</Link></li>
               <li><Link to="/for/bolt" className={linkCls}>Bolt</Link></li>
