@@ -7,6 +7,7 @@ import DashboardNavbar from '@/components/DashboardNavbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import SEO from '@/components/SEO';
 
 interface PostRow {
   id: string;
@@ -62,6 +63,7 @@ function AdminBlogList() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Admin: Blog — Rismon" description="Internal blog management for Rismon staff." noindex />
       <DashboardNavbar />
       <div className="max-w-[920px] mx-auto px-5 pt-24 pb-16">
         <Link to="/blog" className="inline-flex items-center gap-1.5 text-muted-foreground text-sm hover:text-foreground transition-colors">

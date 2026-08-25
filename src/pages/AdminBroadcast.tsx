@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import SEO from '@/components/SEO';
 
 // Admin broadcast hub: pick a campaign → test → confirm → broadcast.
 // Hard-gated to admins (also enforced server-side).
@@ -205,6 +206,7 @@ const AdminBroadcast = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO title="Admin: Broadcast — Rismon" description="Internal broadcast email tool for Rismon staff." noindex />
       <div className="max-w-3xl mx-auto px-6 py-12">
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to admin

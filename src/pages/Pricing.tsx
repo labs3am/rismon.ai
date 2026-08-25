@@ -25,6 +25,7 @@ export default function Pricing() {
         canonicalPath="/pricing"
         robots="index, follow"
       />
+      <h1 className="sr-only">Simple and honest pricing for Rismon.ai</h1>
       <Index />
     </>
   );

@@ -966,8 +966,9 @@ export type Database = {
       public_audit_stats: {
         Args: never
         Returns: {
-          total_24h: number
+          promises_analyzed: number
           total_all_time: number
+          vague_claims_caught: number
         }[]
       }
       set_app_supabase_credentials: {

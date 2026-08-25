@@ -315,6 +315,7 @@ export default function Blog() {
 
                     {/* Right: content */}
                     <div>
+                      <h2 style={{ margin: 0 }}>
                       <a
                         href={`/blog/${p.slug}`}
                         target="_blank"
@@ -333,6 +334,7 @@ export default function Blog() {
                       >
                         {p.title}
                       </a>
+                      </h2>
                       {p.excerpt && (
                         <p
                           style={{

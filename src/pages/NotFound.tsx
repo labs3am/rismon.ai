@@ -85,7 +85,7 @@ function MessageDisplay() {
           404
         </h1>
 
-        <p className="mx-auto mt-4 max-w-[420px] text-sm leading-relaxed text-zinc-400 sm:text-base">
+        <p className="mx-auto mt-4 max-w-[420px] text-sm leading-relaxed text-muted-foreground sm:text-base">
           The page you are looking for might have been removed, had its name
           changed, or is temporarily unavailable.
         </p>

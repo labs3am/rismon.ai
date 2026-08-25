@@ -145,7 +145,8 @@ export default function Index() {
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [zoomedImg, setZoomedImg] = useState<{ full: string; placeholder: string } | null>(null);
   const [auditCount, setAuditCount] = useState<number | null>(null);
-  const [last24h, setLast24h] = useState<number | null>(null);
+  const [promisesAnalyzed, setPromisesAnalyzed] = useState<number | null>(null);
+  const [vagueCaught, setVagueCaught] = useState<number | null>(null);
 
   // Live "X sites audited" counter — sourced from public_audit_stats.
   // Refreshes every 30s so the homepage feels alive without polling hard.
@@ -156,7 +157,8 @@ export default function Index() {
       const row: any = Array.isArray(data) ? data[0] : data;
       if (!cancelled && row) {
         setAuditCount(Number(row.total_all_time) || 1);
-        setLast24h(Number(row.total_24h) || 1);
+        setPromisesAnalyzed(Number(row.promises_analyzed) || 0);
+        setVagueCaught(Number(row.vague_claims_caught) || 0);
       }
     };
     load();
@@ -222,20 +224,19 @@ export default function Index() {
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
               <div className="flex flex-col items-center">
                 <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                  {last24h?.toLocaleString() ?? '—'}
+                  {promisesAnalyzed?.toLocaleString() ?? '—'}
                 </span>
                 <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Last 24h
+                  Promises analyzed
                 </span>
               </div>
               <div style={{ width: 1, height: 36, background: '#1f1f1f' }} />
               <div className="flex flex-col items-center">
-                <span className="inline-flex items-center gap-2" style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                  <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 9999, background: '#22c55e' }} />
-                  <span style={{ fontSize: 14, color: '#a3a3a3', fontWeight: 400 }}>Live</span>
+                <span style={{ fontSize: 32, fontWeight: 600, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {vagueCaught?.toLocaleString() ?? '—'}
                 </span>
                 <span style={{ fontSize: 11, color: '#666', marginTop: 6, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  Updating now
+                  Vague claims caught
                 </span>
               </div>
             </Link>
@@ -252,7 +253,7 @@ export default function Index() {
           <div className="marquee-track">
             {[...platforms, ...platforms].map((p, i) => (
               <div key={i} className="inline-flex items-center gap-2 px-4 py-2 shrink-0 vercel-platform">
-                {p.logo && <img src={p.logo} alt={p.name} className="w-5 h-5 object-contain" loading="lazy" width={20} height={20} />}
+                {p.logo && <img src={p.logo} alt={`${p.name} platform logo`} className="w-5 h-5 object-contain" loading="lazy" width={20} height={20} />}
                 <span style={{ fontSize: '13px', color: '#888888' }}>{p.name}</span>
               </div>
             ))}

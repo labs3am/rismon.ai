@@ -6,10 +6,12 @@ import BackButton from '@/components/BackButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import SEO from '@/components/SEO';
 
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <SEO title="Settings — Rismon" description="Manage your Rismon account, profile, and connected providers." noindex />
       <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.66 4.1-5.5 4.1-3.31 0-6-2.74-6-6.12s2.69-6.12 6-6.12c1.88 0 3.14.8 3.86 1.49l2.63-2.53C16.83 3.42 14.66 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.54 0 9.21-3.89 9.21-9.37 0-.63-.07-1.11-.16-1.59H12z"/>
       <path fill="#4285F4" d="M21.21 12.23c0-.63-.07-1.11-.16-1.59H12v3.9h5.5c-.11.65-.7 2-2 2.92l3.13 2.43c1.86-1.72 2.94-4.25 2.94-7.66z"/>
       <path fill="#FBBC05" d="M6 14.05a5.86 5.86 0 0 1 0-4.1L2.84 7.61A9.59 9.59 0 0 0 2.4 12c0 1.55.37 3.02 1.04 4.32L6 14.05z"/>
