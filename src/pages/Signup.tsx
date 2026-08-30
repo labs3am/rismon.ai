@@ -7,6 +7,7 @@ import Navbar from '@/components/Navbar';
 import SEO from '@/components/SEO';
 import Logo from '@/components/Logo';
 import OAuthButtons from '@/components/OAuthButtons';
+import AuthMaintenance, { AUTH_MAINTENANCE } from '@/components/AuthMaintenance';
 
 export default function Signup() {
   const [fullName, setFullName] = useState('');
@@ -17,6 +18,8 @@ export default function Signup() {
   const [agreed, setAgreed] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+
+  if (AUTH_MAINTENANCE) return <AuthMaintenance />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
 // Anonymous "Promise Audit" — extracts marketing claims from a public URL
-// using Lovable AI. No login. Rate-limited per IP per day.
+// using deterministic heuristics (no AI). No login. Rate-limited per IP per day.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -227,142 +227,300 @@ async function collectSignals(homepageHtml: string, origin: string): Promise<Sit
   };
 }
 
-async function verifyPromises(opts: {
+function verifyPromises(opts: {
   url: string;
   promises: Promise_[];
   signals: SiteSignals;
-}): Promise<RealityCheck[]> {
-  if (opts.promises.length === 0) return [];
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) return [];
+}): RealityCheck[] {
+  return opts.promises.map((p, index) => {
+    const s = opts.signals;
+    const lower = p.claim.toLowerCase();
+    let status: RealityStatus = "unverified";
+    let evidence = "No signal found on the homepage.";
 
-  const system = `You verify whether a website's marketing promises are actually backed up by what's observable on the site itself.
-
-You receive a list of promises and a set of deterministic SITE SIGNALS pulled from the live homepage and adjacent pages. For each promise, return a verdict:
-
-- "backed"     — Clear on-site evidence supports the promise (matching signal present, brand mentioned, or page exists).
-- "unverified" — The promise is plausible but the homepage shows no direct evidence either way. Common for backend features.
-- "missing"    — The promise is contradicted by, or noticeably absent from, the site signals (e.g. "free trial" with no signup, "Stripe payments" with no Stripe mention).
-
-Rules:
-- One verdict per promise, in the SAME ORDER as input.
-- "evidence" = ONE short sentence (max 110 chars) quoting the signal you used, or saying what's missing.
-- Be strict. If signals don't support it, prefer "unverified" over "backed".
-- Return ONLY valid JSON: { "checks": [{ "index": 0, "status": "backed", "evidence": "..." }, ...] }`;
-
-  const user = `URL: ${opts.url}
-
-SITE SIGNALS (deterministic, scraped from the live site):
-${JSON.stringify(opts.signals, null, 2)}
-
-PROMISES TO VERIFY (in order):
-${opts.promises.map((p, i) => `${i}. [${p.category}] "${p.claim}"`).join("\n")}`;
-
-  try {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": lovableKey },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
-      }),
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || "{}";
-    let parsed: any = {};
-    try { parsed = JSON.parse(content); } catch { return []; }
-    const raw = Array.isArray(parsed.checks) ? parsed.checks : [];
-    const out: RealityCheck[] = [];
-    for (const c of raw) {
-      const index = Number(c?.index);
-      if (!Number.isInteger(index) || index < 0 || index >= opts.promises.length) continue;
-      const status: RealityStatus = c.status === "backed" || c.status === "missing" ? c.status : "unverified";
-      const evidence = String(c.evidence || "").trim().slice(0, 140);
-      out.push({ index, status, evidence });
+    // "No login / no account needed" — directly observable on the homepage.
+    if (/\bno (login|signup|account)\b/.test(lower)) {
+      const hasAccountFlow = s.has_signup || s.has_login;
+      status = hasAccountFlow ? "missing" : "backed";
+      evidence = hasAccountFlow
+        ? "Promises no login/account, but a sign-up or login CTA is visible."
+        : "No sign-up or login CTA is visible — consistent with the promise.";
+      return { index, status, evidence };
     }
-    const seen = new Set(out.map((c) => c.index));
-    for (let i = 0; i < opts.promises.length; i++) {
-      if (!seen.has(i)) out.push({ index: i, status: "unverified", evidence: "No signal found on the homepage." });
+
+    // Free / trial offers are checkable via the sign-up flow.
+    if (/\b(free|trial)\b|no credit card/.test(lower)) {
+      status = s.has_signup ? "backed" : "missing";
+      evidence = s.has_signup
+        ? "A sign-up CTA is visible, backing the free/trial promise."
+        : "No sign-up CTA is visible, so the free/trial promise has no on-site support.";
+      return { index, status, evidence };
     }
-    return out.sort((a, b) => a.index - b.index);
-  } catch {
-    return opts.promises.map((_, i) => ({ index: i, status: "unverified" as const, evidence: "Verification skipped." }));
-  }
+
+    // Social proof ("trusted by", "customers", "teams", ...).
+    if (/\b(customers|trusted by|loved by|teams|users|testimonials?)\b/.test(lower)) {
+      status = s.has_social_proof ? "backed" : "missing";
+      evidence = s.has_social_proof
+        ? "Customer or testimonial mentions found on the homepage."
+        : "The homepage shows no customer or testimonial evidence.";
+      return { index, status, evidence };
+    }
+
+    switch (p.category) {
+      case "auth": {
+        if (s.has_signup || s.has_login) {
+          status = "backed";
+          evidence = "A sign-up or login flow is visible on the homepage.";
+        } else {
+          status = "missing";
+          evidence = "No sign-up or login flow is visible on the homepage.";
+        }
+        break;
+      }
+
+      case "payments": {
+        const payBrand = ["stripe", "paypal", "shopify"].find((b) =>
+          s.brands_mentioned.includes(b),
+        );
+        if (payBrand) {
+          status = "backed";
+          evidence = payBrand[0].toUpperCase() + payBrand.slice(1) + " is mentioned on the homepage.";
+        } else if (s.has_pricing) {
+          status = "unverified";
+          evidence = "A pricing page exists, but no payment provider is named.";
+        } else {
+          status = "missing";
+          evidence = "No payment provider or pricing evidence is visible on the homepage.";
+        }
+        break;
+      }
+
+      case "security": {
+        if (s.trust_badges.length > 0) {
+          status = "backed";
+          evidence = "Security signals on the homepage: " + s.trust_badges.slice(0, 3).join(", ") + ".";
+        } else if (s.https) {
+          status = "backed";
+          evidence = "The site is served over HTTPS.";
+        } else if (/(encrypt|end-to-end|secure|soc|gdpr|complian|safety)/.test(lower)) {
+          status = "missing";
+          evidence = "No security badges or certifications are visible on the homepage.";
+        } else {
+          status = "unverified";
+          evidence = "No security certifications are visible on the homepage.";
+        }
+        break;
+      }
+
+      case "integration": {
+        const brand = KNOWN_BRANDS.find((b) => new RegExp("\\b" + b + "\\b", "i").test(p.claim));
+        if (brand) {
+          if (s.brands_mentioned.includes(brand)) {
+            status = "backed";
+            evidence = brand[0].toUpperCase() + brand.slice(1) + " is mentioned on the homepage.";
+          } else {
+            status = "missing";
+            evidence = "The claim names " + brand + ", but it doesn't appear on the homepage.";
+          }
+        } else if (s.brands_mentioned.length > 0) {
+          status = "backed";
+          evidence = "Integrations named on the homepage: " + s.brands_mentioned.slice(0, 4).join(", ") + ".";
+        } else {
+          status = "unverified";
+          evidence = "No integration partners are named on the homepage.";
+        }
+        break;
+      }
+
+      case "support": {
+        status = s.has_contact_email ? "backed" : "unverified";
+        evidence = s.has_contact_email
+          ? "A contact email is listed on the homepage."
+          : "No contact email is visible on the homepage.";
+        break;
+      }
+
+      case "performance": {
+        status = "unverified";
+        evidence = /\d+\s*(ms|sec|seconds|fps|%)/.test(lower)
+          ? "A performance number is claimed, but it isn't measurable from the homepage."
+          : "No performance benchmark is measurable from the homepage.";
+        break;
+      }
+
+      case "ai": {
+        status = "unverified";
+        evidence = "No AI capability test is possible from the homepage alone.";
+        break;
+      }
+
+      case "data": {
+        status = "unverified";
+        evidence = "No product data sample is visible on the homepage.";
+        break;
+      }
+
+      case "feature":
+      default: {
+        if (s.has_signup || s.has_pricing) {
+          status = "backed";
+          evidence = "The product is offered via a sign-up or pricing page.";
+        } else if (s.has_social_proof) {
+          status = "backed";
+          evidence = "Adoption is implied by customer mentions on the homepage.";
+        } else {
+          status = "unverified";
+          evidence = "No product availability evidence is visible on the homepage.";
+        }
+        break;
+      }
+    }
+
+    return { index, status, evidence };
+  });
 }
 
-async function extractPromises(opts: {
+const CLAIM_CATEGORY_KEYWORDS: [string, string[]][] = [
+  ["ai", ["artificial intelligence", "machine learning", "/\\bai\\b/", "gpt", "llm", "copilot", "chatbot", "automat", "generative", "predictive", "recommend"]],
+  ["auth", ["sign in", "sign-in", "log in", "log-in", "login", "signup", "sign up", "sso", "oauth", "password", "two-factor", "2fa", "single sign-on"]],
+  ["integration", ["integration", "integrat", "connect", "sync", "import", "export", "api", "apis", "webhook", "sdks", "plugin", "extension", "works with", "native"]],
+  ["payments", ["payment", "checkout", "billing", "invoice", "subscription", "refund", "stripe", "paypal", "pricing", "per month", "/mo", "pay-as-you-go"]],
+  ["data", ["analytics", "dashboard", "reports", "insights", "metrics", "tracking", "monitor", "measur", "kpi"]],
+  ["security", ["secure", "security", "encrypted", "encryption", "end-to-end", "privacy", "gdpr", "soc 2", "soc2", "complian", "certified", "ssl"]],
+  ["performance", ["fast", "faster", "speed", "performance", "seconds", "millisecond", "instant", "real-time", "realtime", "scale", "lightning"]],
+  ["support", ["support", "help center", "customer service", "24/7", "onboarding", "documentation", "docs", "tutorial", "community"]],
+  ["feature", ["feature", "features", "editor", "workspace", "collaborat", "template", "templates", "build", "create", "customize", "all-in-one", "suite", "everything you need"]],
+];
+
+const PROMISE_MARKERS = /(free|trial|guarantee|unlimited|no credit card|no login|no signup|money-back|real-?time|in seconds|just seconds|under \d+|within \d+|in \d+|100%|24\/7)/i;
+const CONCRETE_TERMS = /(api|sdk|webhook|oauth|sso|export|import|template|dashboard|ios|android|plugin|extension|pdf|csv|json|free|trial|unlimited|24\/7|every|end-to-end|encryption|soc 2|gdpr|\d)/i;
+const VAGUE_TERMS = ["powerful", "seamless", "easy", "easily", "best", "great", "amazing", "beautiful", "modern", "effortless", "ultimate", "perfect", "revolutionary", "world-class", "cutting-edge", "game-changing", "simple", "fastest", "unique", "magic"];
+const LEGAL_FOOTER = /(cookie|copyright|all rights reserved|©|privacy policy|terms of service|unsubscribe|newsletter)/i;
+const NAV_CTA = ["home", "sign up", "sign in", "log in", "login", "signup", "get started", "start free", "try free", "join now", "pricing", "features", "blog", "docs", "documentation", "about", "about us", "contact", "contact us", "help", "faq", "search", "menu", "back to top", "read more", "learn more", "book a demo", "request access", "open source", "security", "status", "changelog", "careers", "get the app", "download", "subscribe", "terms", "privacy", "email", "email address", "password", "remember me", "forgot password", "full name", "submit"];
+
+function kwMatch(lower: string, term: string): boolean {
+  if (term.startsWith("/") && term.endsWith("/")) {
+    return new RegExp(term.slice(1, -1), "i").test(lower);
+  }
+  return lower.includes(term);
+}
+
+function splitSentences(text: string): string[] {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 5);
+}
+
+function dedupeKey(lower: string): string {
+  return lower.replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function extractPromises(opts: {
   url: string;
   title: string;
   description: string;
   text: string;
-}): Promise<Promise_[]> {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+}): Promise_[] {
+  const raw: { text: string; meta: boolean }[] = [];
+  const addUnique = (sentence: string, meta: boolean) => {
+    const t = sentence.trim();
+    if (!t) return;
+    const lower = t.toLowerCase();
+    if (LEGAL_FOOTER.test(lower)) return;
+    const key = dedupeKey(lower);
+    if (key.length < 4) return;
+    if (raw.some((r) => dedupeKey(r.text.toLowerCase()) === key)) return;
+    raw.push({ text: t, meta });
+  };
 
-  const system = `You audit marketing copy on landing pages. From the input, extract distinct product claims a buyer would expect to be backed by working code or a real feature.
+  // 1) Title — the single strongest claim candidate on any landing page.
+  if (opts.title) addUnique(opts.title, true);
+  // 2) Meta description sentences.
+  for (const s of splitSentences(opts.description)) addUnique(s, true);
+  // 3) Body text sentences.
+  for (const s of splitSentences(opts.text)) addUnique(s, false);
 
-Rules:
-- Maximum 15 claims, minimum 3 if any meaningful text exists.
-- Each claim = ONE concrete thing the site promises. No duplicates, no nav labels, no footer links, no cookie banners.
-- "category" must be one of: ai, auth, payments, integration, data, security, performance, support, feature, other.
-- "clarity" = "clear" if the claim is specific and testable (e.g. "Sign in with Google", "Stripe checkout", "Export to PDF"). "clarity" = "vague" if it's marketing fluff (e.g. "next-generation platform", "world-class", "powerful").
-- "why" = ONE short sentence (max 100 chars) explaining the verdict.
-- Return ONLY valid JSON matching the schema. No prose, no markdown.`;
+  const score = (c: { text: string; meta: boolean }): number => {
+    const lower = c.text.toLowerCase();
+    const words = lower.split(/\s+/).length;
+    let points = 0;
+    let catHits = 0;
+    for (const [, kws] of CLAIM_CATEGORY_KEYWORDS) {
+      for (const k of kws) if (kwMatch(lower, k)) catHits++;
+    }
+    points += catHits;
+    if (c.meta) points += 3;
+    if (PROMISE_MARKERS.test(lower)) points += 2;
+    if (/\d/.test(lower)) points += 1;
+    if (/[$€£%]/.test(lower)) points += 1;
+    if (CONCRETE_TERMS.test(lower)) points += 1;
+    for (const v of VAGUE_TERMS) if (lower.includes(v)) points--;
+    if (words < 5) points--;
+    if (words > 24) points -= 2;
+    return points;
+  };
 
-  const user = `URL: ${opts.url}
-TITLE: ${opts.title}
-META DESCRIPTION: ${opts.description}
-
-PAGE TEXT:
-${opts.text}`;
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": lovableKey,
-    },
-    body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-    }),
+  const sorted = raw.slice().sort((a, b) => {
+    const d = score(b) - score(a);
+    if (d !== 0) return d;
+    if (a.meta !== b.meta) return a.meta ? -1 : 1;
+    return b.text.length - a.text.length;
   });
 
-  if (res.status === 429) throw new Error("rate_limited");
-  if (res.status === 402) throw new Error("credits_exhausted");
-  if (!res.ok) throw new Error(`AI gateway error: ${res.status}`);
-
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content || "{}";
-  let parsed: any = {};
-  try { parsed = JSON.parse(content); } catch { parsed = {}; }
-  const rawList = Array.isArray(parsed.promises) ? parsed.promises
-    : Array.isArray(parsed.claims) ? parsed.claims
-    : Array.isArray(parsed) ? parsed : [];
-
-  const cleaned: Promise_[] = [];
-  for (const p of rawList.slice(0, 15)) {
-    if (!p || typeof p !== "object") continue;
-    const claim = String(p.claim || p.text || "").trim().slice(0, 280);
-    if (!claim) continue;
-    const category = ["ai","auth","payments","integration","data","security","performance","support","feature","other"]
-      .includes(p.category) ? p.category : "other";
-    const clarity = p.clarity === "clear" ? "clear" : "vague";
-    const why = String(p.why || "").trim().slice(0, 160);
-    cleaned.push({ claim, category, clarity, why });
+  const pick: typeof sorted = [];
+  for (const c of sorted) {
+    if (pick.length >= 15) break;
+    const lower = c.text.toLowerCase();
+    const words = lower.split(/\s+/).length;
+    if (words <= 3 && NAV_CTA.some((n) => lower === n || lower.startsWith(n + " "))) continue;
+    pick.push(c);
   }
-  return cleaned;
+
+  // Guarantee a minimum of 3 claims when at least 3 meaningful sentences exist.
+  if (pick.length < 3) {
+    for (const c of sorted) {
+      if (pick.length >= 3) break;
+      if (!pick.includes(c)) pick.push(c);
+    }
+  }
+
+  const claims: Promise_[] = [];
+  for (const c of pick) {
+    const lower = c.text.toLowerCase();
+    const claim = c.text.slice(0, 280);
+
+    // Category = keyword family with the most hits (ties go to the earlier family).
+    let category = "other";
+    let best = 0;
+    for (const [cat, kws] of CLAIM_CATEGORY_KEYWORDS) {
+      let hits = 0;
+      for (const k of kws) if (kwMatch(lower, k)) hits++;
+      if (hits > best) {
+        best = hits;
+        category = cat;
+      }
+    }
+
+    // Clarity: a concrete detail (number, currency, named brand/feature) → "clear".
+    const concrete =
+      /\d/.test(lower) ||
+      /[$€£%]/.test(lower) ||
+      CONCRETE_TERMS.test(lower) ||
+      KNOWN_BRANDS.some((b) => new RegExp("\\b" + b + "\\b", "i").test(lower));
+    const vagueHits = VAGUE_TERMS.filter((t) => lower.includes(t)).length;
+    const clarity: "clear" | "vague" = concrete && vagueHits < 2 ? "clear" : "vague";
+
+    const why =
+      clarity === "clear"
+        ? "Specific claim — cites a concrete detail (a number, product name, or named feature) a buyer can verify."
+        : "Vague claim — marketing language without a concrete detail a buyer can verify.";
+
+    claims.push({ claim, category, clarity, why });
+  }
+
+  return claims.slice(0, 15);
 }
 
 Deno.serve(async (req) => {
@@ -424,19 +582,16 @@ Deno.serve(async (req) => {
     }, 422);
   }
 
-  // Extract promises via Lovable AI.
+  // Extract promises via deterministic heuristics (no AI dependency).
   let promises: Promise_[] = [];
   try {
-    promises = await extractPromises({
+    promises = extractPromises({
       url: u.toString(),
       title: page.title,
       description: page.description,
       text: page.text,
     });
-  } catch (e) {
-    const msg = (e as Error).message;
-    if (msg === "rate_limited") return json({ error: "Our AI is busy right now. Try again in a minute." }, 429);
-    if (msg === "credits_exhausted") return json({ error: "AI quota exhausted. Please try again later." }, 402);
+  } catch {
     return json({ error: "Couldn't analyze the page right now. Try again." }, 500);
   }
 
@@ -451,7 +606,7 @@ Deno.serve(async (req) => {
   let realityChecks: RealityCheck[] = [];
   try {
     signals = await collectSignals(page.html || "", u.origin);
-    realityChecks = await verifyPromises({ url: u.toString(), promises, signals });
+    realityChecks = verifyPromises({ url: u.toString(), promises, signals });
   } catch {
     realityChecks = promises.map((_, i) => ({ index: i, status: "unverified" as const, evidence: "Verification skipped." }));
   }
