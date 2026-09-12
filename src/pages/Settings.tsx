@@ -11,7 +11,6 @@ import SEO from '@/components/SEO';
 function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <SEO title="Settings — Rismon" description="Manage your Rismon account, profile, and connected providers." noindex />
       <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.66 4.1-5.5 4.1-3.31 0-6-2.74-6-6.12s2.69-6.12 6-6.12c1.88 0 3.14.8 3.86 1.49l2.63-2.53C16.83 3.42 14.66 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.54 0 9.21-3.89 9.21-9.37 0-.63-.07-1.11-.16-1.59H12z"/>
       <path fill="#4285F4" d="M21.21 12.23c0-.63-.07-1.11-.16-1.59H12v3.9h5.5c-.11.65-.7 2-2 2.92l3.13 2.43c1.86-1.72 2.94-4.25 2.94-7.66z"/>
       <path fill="#FBBC05" d="M6 14.05a5.86 5.86 0 0 1 0-4.1L2.84 7.61A9.59 9.59 0 0 0 2.4 12c0 1.55.37 3.02 1.04 4.32L6 14.05z"/>
@@ -26,9 +25,7 @@ export default function Settings() {
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [company, setCompany] = useState(profile?.company_name || '');
   const [saving, setSaving] = useState(false);
-  const [apps, setApps] = useState<any[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmApp, setConfirmApp] = useState<string | null>(null);
   const [identities, setIdentities] = useState<any[]>([]);
   const [hasPassword, setHasPassword] = useState(false);
   const [providerLoading, setProviderLoading] = useState<string | null>(null);
@@ -50,15 +47,6 @@ export default function Settings() {
     setCompany(profile?.company_name || '');
   }, [profile]);
 
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('apps')
-      .select('id,app_name,github_repo_name,github_owner,platform,created_at')
-      .eq('user_id', user.id)
-      .then(({ data }) => setApps(data || []));
-  }, [user]);
-
   const saveProfile = async () => {
     if (!user) return;
     setSaving(true);
@@ -66,28 +54,6 @@ export default function Settings() {
     await refreshProfile();
     toast.success('Profile updated');
     setSaving(false);
-  };
-
-  const removeApp = async (id: string) => {
-    const app = apps.find(a => a.id === id);
-    // Cancel any in-flight scan sessions tied to this app's repo so the
-    // dashboard doesn't surface a stale "scan in progress" banner pointing
-    // at an app that no longer exists.
-    if (app?.github_owner && app?.github_repo_name && user) {
-      await supabase
-        .from('scan_sessions')
-        .update({ status: 'cancelled' })
-        .eq('user_id', user.id)
-        .eq('repo_name', `${app.github_owner}/${app.github_repo_name}`)
-        .in('status', ['pending', 'analyzing']);
-    }
-    const { error: analysesError } = await supabase.from('analyses').delete().eq('app_id', id);
-    if (analysesError) { toast.error('Failed to remove app. Please try again.'); return; }
-    const { error: appError } = await supabase.from('apps').delete().eq('id', id);
-    if (appError) { toast.error('Failed to remove app. Please try again.'); return; }
-    setApps(apps.filter(a => a.id !== id));
-    setConfirmApp(null);
-    toast.success('App removed');
   };
 
   const deleteAccount = async () => {
@@ -234,31 +200,6 @@ export default function Settings() {
           <button onClick={saveProfile} disabled={saving} className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium mt-5 hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
             {saving && <Loader2 size={14} className="animate-spin" />} Save changes
           </button>
-        </div>
-
-        {/* Apps */}
-        <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mt-6">
-          <h2 className="text-foreground text-lg font-semibold">Connected apps</h2>
-          {apps.length === 0 ? <p className="text-muted-foreground text-sm mt-4">No apps connected yet.</p> : (
-            <div className="mt-4 space-y-3">
-              {apps.map(app => (
-                <div key={app.id} className="flex items-start justify-between gap-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-foreground text-[15px]">{app.app_name}</p>
-                    <p className="text-muted-foreground text-[13px] truncate">{app.github_repo_name}</p>
-                  </div>
-                  {confirmApp === app.id ? (
-                    <div className="flex gap-2 shrink-0">
-                      <button onClick={() => removeApp(app.id)} className="text-destructive text-xs font-medium px-2 py-1">Confirm</button>
-                      <button onClick={() => setConfirmApp(null)} className="text-muted-foreground text-xs px-2 py-1">Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setConfirmApp(app.id)} className="text-destructive text-sm hover:underline shrink-0">Remove</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Connected Accounts */}

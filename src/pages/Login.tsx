@@ -8,7 +8,6 @@ import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import SEO from '@/components/SEO';
 import Logo from '@/components/Logo';
 import OAuthButtons from '@/components/OAuthButtons';
-import AuthMaintenance, { AUTH_MAINTENANCE } from '@/components/AuthMaintenance';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,8 +17,6 @@ export default function Login() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
-
-  if (AUTH_MAINTENANCE) return <AuthMaintenance />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
