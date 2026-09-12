@@ -118,17 +118,6 @@ export default function Footer() {
               <li><Link to="/terms" className={linkCls}>Terms of Service</Link></li>
             </ul>
           </div>
-
-          {/* For builders — internal links so Google can crawl /for/* and /how-we-score */}
-          <div className="md:col-span-1">
-            <h2 className={headingCls}>For</h2>
-            <ul className="flex flex-col" style={{ lineHeight: 2 }}>
-              <li><Link to="/for/lovable" className={linkCls}>Lovable</Link></li>
-              <li><Link to="/for/bolt" className={linkCls}>Bolt</Link></li>
-              <li><Link to="/for/cursor" className={linkCls}>Cursor</Link></li>
-              <li><Link to="/how-we-score" className={linkCls}>How we score</Link></li>
-            </ul>
-          </div>
         </div>
 
         <div
